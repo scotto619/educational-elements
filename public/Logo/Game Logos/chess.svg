@@ -1,0 +1,194 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c0a00"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="boardLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0d9b5"/>
+      <stop offset="100%" stop-color="#dcc090"/>
+    </linearGradient>
+    <linearGradient id="boardDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b58863"/>
+      <stop offset="100%" stop-color="#9a6f4b"/>
+    </linearGradient>
+    <linearGradient id="whitePiece" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffdf0"/>
+      <stop offset="100%" stop-color="#d4c8a0"/>
+    </linearGradient>
+    <linearGradient id="blackPiece" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c2c3e"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#92400e"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.6)"/>
+    </filter>
+    <filter id="glow">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="rgba(251,191,36,0.5)"/>
+    </filter>
+    <clipPath id="boardClip">
+      <rect x="30" y="30" width="160" height="160" rx="4"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" rx="28" fill="url(#bg)"/>
+
+  <!-- Subtle radial glow -->
+  <radialGradient id="centerGlow" cx="55%" cy="50%" r="55%">
+    <stop offset="0%" stop-color="rgba(251,191,36,0.08)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <rect width="400" height="300" rx="28" fill="url(#centerGlow)"/>
+
+  <!-- Board frame -->
+  <rect x="26" y="26" width="168" height="168" rx="6" fill="#7c4a1a" filter="url(#shadow)"/>
+
+  <!-- Chessboard squares (4x4 visible portion) -->
+  <g clip-path="url(#boardClip)">
+    <!-- Row 1 -->
+    <rect x="30"  y="30"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="50"  y="30"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="70"  y="30"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="90"  y="30"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="110" y="30"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="130" y="30"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="150" y="30"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="170" y="30"  width="20" height="20" fill="url(#boardDark)"/>
+    <!-- Row 2 -->
+    <rect x="30"  y="50"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="50"  y="50"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="70"  y="50"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="90"  y="50"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="110" y="50"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="130" y="50"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="150" y="50"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="170" y="50"  width="20" height="20" fill="url(#boardLight)"/>
+    <!-- Row 3 -->
+    <rect x="30"  y="70"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="50"  y="70"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="70"  y="70"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="90"  y="70"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="110" y="70"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="130" y="70"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="150" y="70"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="170" y="70"  width="20" height="20" fill="url(#boardDark)"/>
+    <!-- Row 4 -->
+    <rect x="30"  y="90"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="50"  y="90"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="70"  y="90"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="90"  y="90"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="110" y="90"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="130" y="90"  width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="150" y="90"  width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="170" y="90"  width="20" height="20" fill="url(#boardLight)"/>
+    <!-- Row 5 -->
+    <rect x="30"  y="110" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="50"  y="110" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="70"  y="110" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="90"  y="110" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="110" y="110" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="130" y="110" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="150" y="110" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="170" y="110" width="20" height="20" fill="url(#boardDark)"/>
+    <!-- Row 6 -->
+    <rect x="30"  y="130" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="50"  y="130" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="70"  y="130" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="90"  y="130" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="110" y="130" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="130" y="130" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="150" y="130" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="170" y="130" width="20" height="20" fill="url(#boardLight)"/>
+    <!-- Row 7 -->
+    <rect x="30"  y="150" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="50"  y="150" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="70"  y="150" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="90"  y="150" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="110" y="150" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="130" y="150" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="150" y="150" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="170" y="150" width="20" height="20" fill="url(#boardDark)"/>
+    <!-- Row 8 -->
+    <rect x="30"  y="170" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="50"  y="170" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="70"  y="170" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="90"  y="170" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="110" y="170" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="130" y="170" width="20" height="20" fill="url(#boardLight)"/>
+    <rect x="150" y="170" width="20" height="20" fill="url(#boardDark)"/>
+    <rect x="170" y="170" width="20" height="20" fill="url(#boardLight)"/>
+
+    <!-- Pieces on board -->
+    <!-- Black King on e8 (col 4, row 0) = x=110+, y=30+ -->
+    <text x="120" y="48" text-anchor="middle" font-size="17" fill="#1c1c2e" font-family="serif" filter="url(#shadow)">♚</text>
+    <!-- Black Queen on d8 -->
+    <text x="100" y="48" text-anchor="middle" font-size="17" fill="#1c1c2e" font-family="serif" filter="url(#shadow)">♛</text>
+    <!-- White Queen on d4 (col 3, row 4) = x=90+10, y=90+10 -->
+    <text x="100" y="108" text-anchor="middle" font-size="17" fill="#fffdf0" font-family="serif" filter="url(#shadow)" stroke="#000" stroke-width="0.5">♕</text>
+    <!-- White King on e1 (col 4, row 7) -->
+    <text x="120" y="188" text-anchor="middle" font-size="17" fill="#fffdf0" font-family="serif" filter="url(#shadow)" stroke="#000" stroke-width="0.5">♔</text>
+    <!-- Black rook -->
+    <text x="40"  y="48"  text-anchor="middle" font-size="17" fill="#1c1c2e" font-family="serif" filter="url(#shadow)">♜</text>
+    <!-- White rook -->
+    <text x="40"  y="188" text-anchor="middle" font-size="17" fill="#fffdf0" font-family="serif" filter="url(#shadow)" stroke="#000" stroke-width="0.5">♖</text>
+    <!-- Pawns -->
+    <text x="40"  y="68"  text-anchor="middle" font-size="15" fill="#1c1c2e" font-family="serif">♟</text>
+    <text x="60"  y="68"  text-anchor="middle" font-size="15" fill="#1c1c2e" font-family="serif">♟</text>
+    <text x="80"  y="68"  text-anchor="middle" font-size="15" fill="#1c1c2e" font-family="serif">♟</text>
+    <text x="40"  y="168" text-anchor="middle" font-size="15" fill="#fffdf0" font-family="serif" stroke="#000" stroke-width="0.4">♙</text>
+    <text x="60"  y="168" text-anchor="middle" font-size="15" fill="#fffdf0" font-family="serif" stroke="#000" stroke-width="0.4">♙</text>
+    <text x="80"  y="168" text-anchor="middle" font-size="15" fill="#fffdf0" font-family="serif" stroke="#000" stroke-width="0.4">♙</text>
+    <!-- Knight mid-board -->
+    <text x="80"  y="128" text-anchor="middle" font-size="17" fill="#fffdf0" font-family="serif" filter="url(#shadow)" stroke="#000" stroke-width="0.5">♘</text>
+    <text x="140" y="88"  text-anchor="middle" font-size="17" fill="#1c1c2e" font-family="serif" filter="url(#shadow)">♞</text>
+  </g>
+
+  <!-- Board border overlay -->
+  <rect x="26" y="26" width="168" height="168" rx="6" fill="none" stroke="#7c4a1a" stroke-width="3"/>
+
+  <!-- Title -->
+  <text x="264" y="108"
+    font-family="Georgia,'Times New Roman',serif"
+    font-size="68"
+    font-weight="900"
+    fill="url(#gold)"
+    text-anchor="middle"
+    filter="url(#glow)"
+    letter-spacing="-2">Chess</text>
+
+  <!-- Subtitle -->
+  <text x="264" y="135"
+    font-family="'Segoe UI',Arial,sans-serif"
+    font-size="13"
+    fill="#92704a"
+    text-anchor="middle"
+    letter-spacing="4"
+    font-weight="600">MULTIPLAYER</text>
+
+  <!-- Two king icons flanking -->
+  <text x="210" y="175" font-size="28" fill="#fffdf0" font-family="serif" text-anchor="middle" opacity="0.6" filter="url(#shadow)">♔</text>
+  <text x="318" y="175" font-size="28" fill="#1c1c2e" font-family="serif" text-anchor="middle" opacity="0.8"
+    style="paint-order:stroke" stroke="#c8a97e" stroke-width="1.5">♚</text>
+
+  <!-- VS text -->
+  <text x="264" y="178"
+    font-family="'Segoe UI',Arial,sans-serif"
+    font-size="11"
+    fill="#6b4226"
+    text-anchor="middle"
+    font-weight="900"
+    letter-spacing="2">VS</text>
+
+  <!-- Bottom sparkle dots -->
+  <circle cx="210" cy="220" r="2" fill="#f59e0b" opacity="0.4"/>
+  <circle cx="240" cy="228" r="1.5" fill="#f59e0b" opacity="0.3"/>
+  <circle cx="264" cy="232" r="3" fill="#f59e0b" opacity="0.5"/>
+  <circle cx="288" cy="228" r="1.5" fill="#f59e0b" opacity="0.3"/>
+  <circle cx="318" cy="220" r="2" fill="#f59e0b" opacity="0.4"/>
+</svg>

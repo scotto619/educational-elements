@@ -33,6 +33,7 @@ const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading:
 const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
 const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
 const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoadingSpinner, ssr: false });
+const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -198,6 +199,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       multiplayer: true,
       category: 'multiplayer',
       logo: getGameLogo('battleships')
+    },
+    {
+      id: 'chess',
+      name: 'Chess',
+      icon: '♟',
+      description: 'Classic 2-player chess with full rules — castling, en passant, promotion, check & checkmate. Host plays White, guest plays Black.',
+      component: ChessGame,
+      color: 'from-amber-600 to-amber-900',
+      difficulty: 'Medium - Hard',
+      time: '10-60 minutes',
+      multiplayer: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('chess')
     },
     {
       id: 'uno',
