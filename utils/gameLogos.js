@@ -103,7 +103,8 @@ const GAME_LOGO_MAP = {
   boggle: createLogoCandidates('boggle', ['boggle.svg', 'Boggle']),
   'coordinate-quest': createLogoCandidates('coordinate-quest', ['coordinate.png', 'Coordinate Quest', 'Space Coordinates']),
   noggle: createLogoCandidates('noggle', ['noggle.svg', 'Noggle']),
-  'type-defender': createLogoCandidates('type-defender', ['typedefender.png', 'Type Defender'])
+  'type-defender': createLogoCandidates('type-defender', ['typedefender.png', 'Type Defender']),
+  uno: createLogoCandidates('uno', ['/Logo/Game Logos/uno.png', 'uno.png', 'UNO'])
 };
 
 const GAME_LOGO_ALIASES = {
