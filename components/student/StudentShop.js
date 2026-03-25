@@ -1824,6 +1824,20 @@ const StudentShop = ({
     }
   };
 
+  // Returns the coin value a student would receive for selling this item
+  const getSellPrice = (item, type) => {
+    const itemName = type === 'pet' ? item?.name : type === 'avatar' ? item : item?.name;
+    const originalPrice = findOriginalPrice(
+      itemName, type,
+      SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS,
+      SHOP_BASIC_PETS, SHOP_PREMIUM_PETS,
+      availableClassRewards,
+      HALLOWEEN_BASIC_AVATARS, HALLOWEEN_PREMIUM_AVATARS, HALLOWEEN_PETS,
+      CHRISTMAS_BASIC_AVATARS, CHRISTMAS_PREMIUM_AVATARS, CHRISTMAS_PETS
+    );
+    return calculateSellPrice(originalPrice);
+  };
+
   const handleHatchEgg = async (egg) => {
     if (!egg) return;
 
@@ -2261,26 +2275,67 @@ const StudentShop = ({
   const renderSellModal = () => {
     if (!mounted) return null;
 
+    const itemName = sellModal.type === 'pet' ? sellModal.item?.name
+      : sellModal.type === 'avatar' ? sellModal.item
+      : sellModal.item?.name;
+
+    let itemImage = null;
+    if (sellModal.type === 'avatar' && sellModal.item) {
+      const avatarData = [
+        ...(SHOP_BASIC_AVATARS || []), ...(SHOP_PREMIUM_AVATARS || []),
+        ...(HALLOWEEN_BASIC_AVATARS || []), ...(HALLOWEEN_PREMIUM_AVATARS || []),
+        ...(CHRISTMAS_BASIC_AVATARS || []), ...(CHRISTMAS_PREMIUM_AVATARS || [])
+      ].find(a => a.name === sellModal.item);
+      itemImage = avatarData?.path || getAvatarImage(sellModal.item, 1);
+    } else if (sellModal.type === 'pet' && sellModal.item) {
+      const petArt = resolvePetArt(getPetImage(sellModal.item));
+      itemImage = petArt.src;
+    }
+
     const modalContent = (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[120] p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm text-center p-4 md:p-6">
-          <h2 className="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-red-600">Sell Item?</h2>
-          <p className="mb-4 text-sm md:text-base">
-            Sell this item for <span className="font-bold text-green-600">💰{sellModal.price} coins</span>?
-          </p>
-          <p className="text-xs text-gray-500 mb-4">This action cannot be undone!</p>
-          <div className="flex gap-3 md:gap-4">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[120] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-orange-400 to-red-500 p-4 text-center">
+            <p className="text-white/80 text-xs font-semibold uppercase tracking-wider mb-0.5">Shop</p>
+            <h2 className="text-xl font-extrabold text-white">Sell Item</h2>
+          </div>
+
+          {/* Item preview */}
+          <div className="p-6 text-center">
+            {itemImage && (
+              <div className="w-20 h-20 mx-auto mb-3 bg-gray-50 rounded-2xl flex items-center justify-center border-2 border-gray-100 shadow-inner">
+                <img
+                  src={itemImage}
+                  alt={itemName || 'Item'}
+                  className="w-16 h-16 object-contain"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              </div>
+            )}
+            <p className="font-bold text-gray-900 text-lg mb-3">{itemName}</p>
+            <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-5 py-2.5 mb-3">
+              <span className="text-xl">💰</span>
+              <span className="font-extrabold text-green-700 text-2xl">{sellModal.price}</span>
+              <span className="text-green-600 font-semibold text-sm">coins</span>
+            </div>
+            <p className="text-xs text-gray-400">Items sell for 25% of their purchase price.</p>
+            <p className="text-xs text-red-400 font-medium mt-1">⚠️ This cannot be undone.</p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex border-t border-gray-100">
             <button
               onClick={() => setSellModal({ visible: false, item: null, type: null, price: 0 })}
-              className="flex-1 py-2 md:py-3 border rounded-lg hover:bg-gray-50 text-sm md:text-base"
+              className="flex-1 py-4 text-gray-500 font-semibold hover:bg-gray-50 transition-colors border-r border-gray-100 text-sm"
             >
-              Cancel
+              Keep it
             </button>
             <button
               onClick={confirmSell}
-              className="flex-1 py-2 md:py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm md:text-base"
+              className="flex-1 py-4 text-red-600 font-bold hover:bg-red-50 transition-colors text-sm"
             >
-              Sell Item
+              Sell for 💰{sellModal.price}
             </button>
           </div>
         </div>
@@ -2359,7 +2414,17 @@ const StudentShop = ({
                       <p className="font-semibold text-gray-800 text-sm truncate mb-1">{avatar.name}</p>
                       <p className="font-bold text-blue-600 text-sm mb-2">💰 {avatar.price}</p>
                       {owned ? (
-                        <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">Owned ✓</span>
+                        <div className="space-y-1">
+                          <span className="block w-full py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-lg">Owned ✓</span>
+                          {studentData?.avatarBase !== avatar.name && (
+                            <button
+                              onClick={() => handleSellItem(avatar.name, 'avatar')}
+                              className="w-full py-1 bg-orange-50 text-orange-600 text-[10px] font-bold rounded-lg hover:bg-orange-100 border border-orange-200 transition-colors active:scale-95"
+                            >
+                              💵 Sell · {getSellPrice(avatar.name, 'avatar')}🪙
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         <button
                           onClick={() => setPurchaseModal({ visible: true, item: avatar, type: 'avatar' })}
@@ -2451,7 +2516,20 @@ const StudentShop = ({
                       <p className="font-semibold text-gray-800 text-sm truncate mb-1">{pet.name}</p>
                       <p className="font-bold text-purple-600 text-sm mb-2">💰 {pet.price}</p>
                       {owned ? (
-                        <span className="block w-full py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-lg">Owned ✓</span>
+                        <div className="space-y-1">
+                          <span className="block w-full py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-lg">Owned ✓</span>
+                          {studentData?.ownedPets?.[0]?.name !== pet.name && (
+                            <button
+                              onClick={() => {
+                                const ownedPet = studentData?.ownedPets?.find(p => p.name === pet.name);
+                                if (ownedPet) handleSellItem(ownedPet, 'pet');
+                              }}
+                              className="w-full py-1 bg-orange-50 text-orange-600 text-[10px] font-bold rounded-lg hover:bg-orange-100 border border-orange-200 transition-colors active:scale-95"
+                            >
+                              💵 Sell · {getSellPrice(pet, 'pet')}🪙
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         <button
                           onClick={() => setPurchaseModal({ visible: true, item: pet, type: 'pet' })}
@@ -2555,6 +2633,14 @@ const StudentShop = ({
 
       return (
         <div className="space-y-6">
+          {/* Sell info banner */}
+          <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+            <span className="text-2xl flex-shrink-0">💵</span>
+            <div>
+              <p className="text-sm font-bold text-orange-800">Sell your items for coins!</p>
+              <p className="text-xs text-orange-600">Items sell for 25% of their original price. Your equipped avatar and active pet cannot be sold.</p>
+            </div>
+          </div>
           {/* Owned Avatars */}
           <div>
             <h4 className="font-bold text-gray-700 mb-3 text-base">👤 Avatars ({ownedAvatars.length})</h4>
@@ -2583,12 +2669,18 @@ const StudentShop = ({
                       <div className="p-2">
                         <p className="text-xs font-semibold truncate mb-1">{avatarName}</p>
                         {isEquipped ? (
-                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Equipped</span>
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg block text-center">Equipped ✓</span>
                         ) : (
-                          <button
-                            onClick={() => handleEquip('avatar', avatarName)}
-                            className="text-[10px] font-semibold text-gray-500 hover:text-blue-600 transition-colors"
-                          >Equip</button>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => handleEquip('avatar', avatarName)}
+                              className="text-[10px] font-semibold text-white bg-blue-500 hover:bg-blue-600 px-2 py-1 rounded-lg transition-colors"
+                            >Equip</button>
+                            <button
+                              onClick={() => handleSellItem(avatarName, 'avatar')}
+                              className="text-[10px] font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-1 rounded-lg transition-colors"
+                            >💵 Sell · {getSellPrice(avatarName, 'avatar')}🪙</button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -2619,12 +2711,18 @@ const StudentShop = ({
                       <div className="p-2">
                         <p className="text-xs font-semibold truncate mb-1">{pet.name}</p>
                         {isActive ? (
-                          <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Active</span>
+                          <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg block text-center">Active ✓</span>
                         ) : (
-                          <button
-                            onClick={() => handleEquip('pet', pet.id)}
-                            className="text-[10px] font-semibold text-gray-500 hover:text-purple-600 transition-colors"
-                          >Equip</button>
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={() => handleEquip('pet', pet.id)}
+                              className="text-[10px] font-semibold text-white bg-purple-500 hover:bg-purple-600 px-2 py-1 rounded-lg transition-colors"
+                            >Equip</button>
+                            <button
+                              onClick={() => handleSellItem(pet, 'pet')}
+                              className="text-[10px] font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-1 rounded-lg transition-colors"
+                            >💵 Sell · {getSellPrice(pet, 'pet')}🪙</button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -2813,13 +2911,10 @@ const StudentShop = ({
           📖 Card Book
         </button>
         <button
-          onClick={() => setShowSellMode(!showSellMode)}
-          className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-semibold transition-all text-xs md:text-sm shadow-sm ${showSellMode
-            ? 'bg-red-500 text-white hover:bg-red-600'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-            }`}
+          onClick={() => { setActiveCategory('inventory'); setSearchQuery(''); }}
+          className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-semibold transition-all text-xs md:text-sm shadow-sm bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200"
         >
-          💵 {showSellMode ? 'Stop Selling' : 'Sell Items'}
+          💵 Sell Items
         </button>
         {tradeAvailabilityText && (
           <span className="text-xs text-gray-500 ml-auto hidden md:inline">{tradeAvailabilityText}</span>
@@ -2897,6 +2992,18 @@ const StudentShop = ({
               <div>
                 <h3 className="text-base md:text-lg font-bold text-amber-800">Class Rewards</h3>
                 <p className="text-amber-600 text-xs md:text-sm">Special privileges set by your teacher!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeCategory === 'inventory' && (
+          <div className="mx-4 mt-4 p-3 md:p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl md:text-3xl">🎒</div>
+              <div>
+                <h3 className="text-base md:text-lg font-bold text-orange-800">My Stuff</h3>
+                <p className="text-orange-600 text-xs md:text-sm">Equip, manage, or sell your avatars and pets for coins.</p>
               </div>
             </div>
           </div>

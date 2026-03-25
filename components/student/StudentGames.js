@@ -32,6 +32,7 @@ const PrecisionTimerGame = dynamic(() => import('../games/PrecisionTimerGame'), 
 const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading: GameLoadingSpinner, ssr: false });
 const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
 const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
+const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -197,6 +198,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       multiplayer: true,
       category: 'multiplayer',
       logo: getGameLogo('battleships')
+    },
+    {
+      id: 'uno',
+      name: 'UNO',
+      icon: '🃏',
+      description: 'The classic card game! Match colours and numbers, play action cards, and be the first to empty your hand. Up to 4 players.',
+      component: UNOGame,
+      color: 'from-red-500 to-yellow-500',
+      difficulty: 'Easy',
+      time: '10-20 minutes',
+      multiplayer: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('uno')
     },
     {
       id: 'tic-tac-toe',
