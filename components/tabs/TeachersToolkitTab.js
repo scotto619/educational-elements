@@ -597,6 +597,8 @@ const TeachersToolkitTab = ({
             <StudentHelpQueue 
               students={students} 
               showToast={showNotification}
+              getAvatarImage={getAvatarImage}
+              calculateAvatarLevel={calculateAvatarLevel}
             />
           )}
           {activeToolkitTab === 'group-maker' && (
