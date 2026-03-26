@@ -141,6 +141,7 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
   const [nearMissStreak,setNearMissStreak]= useState(0);
   const [milestone,     setMilestone]     = useState(null);
   const [lastTrophy,    setLastTrophy]    = useState(null);
+  const [joystickViz,   setJoystickViz]   = useState(null); // { ox, oy, cx, cy } in game coords
 
   // Power-up states
   const [activeShield, setActiveShield] = useState(false);
@@ -155,7 +156,7 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
   const lastTimeRef        = useRef(0);
   const startTimeRef       = useRef(0);
   const keysRef            = useRef({});
-  const touchRef           = useRef({ active: false, startX: 0, startY: 0, curX: 0, curY: 0 });
+  const touchRef           = useRef({ active: false, originX: 0, originY: 0, curX: 0, curY: 0 });
   const gameStateRef       = useRef('idle');
   const playerRef          = useRef({ x: GW / 2, y: GH / 2 });
   const ballsRef           = useRef([]);
@@ -307,16 +308,16 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
     if (k['arrowleft']  || k['a']) p.x -= mv;
     if (k['arrowright'] || k['d']) p.x += mv;
 
-    // Touch movement
+    // Touch movement (virtual joystick)
     const t = touchRef.current;
     if (t.active) {
-      const tdx  = t.curX - t.startX;
-      const tdy  = t.curY - t.startY;
+      const tdx  = t.curX - t.originX;
+      const tdy  = t.curY - t.originY;
       const tmag = Math.sqrt(tdx * tdx + tdy * tdy);
-      if (tmag > 8) {
-        const sense = Math.min(tmag / 55, 1);
-        p.x += (tdx / tmag) * PLAYER_SPEED * speedMult * dt * sense;
-        p.y += (tdy / tmag) * PLAYER_SPEED * speedMult * dt * sense;
+      if (tmag > 5) {
+        const speedFactor = Math.min(tmag / 70, 1);
+        p.x += (tdx / tmag) * PLAYER_SPEED * speedMult * dt * speedFactor;
+        p.y += (tdy / tmag) * PLAYER_SPEED * speedMult * dt * speedFactor;
       }
     }
 
@@ -555,6 +556,8 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
 
   // ── Touch handlers ──────────────────────────────────────────────────────────
 
+  const JOYSTICK_MAX_R = 70; // max joystick radius in game units
+
   const handleTouchStart = useCallback((e) => {
     if (gameStateRef.current !== 'playing') return;
     e.preventDefault();
@@ -562,13 +565,10 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
     const touch = e.touches[0];
     const scaleX = GW / (rect?.width  || GW);
     const scaleY = GH / (rect?.height || GH);
-    touchRef.current = {
-      active: true,
-      startX: (touch.clientX - (rect?.left || 0)) * scaleX,
-      startY: (touch.clientY - (rect?.top  || 0)) * scaleY,
-      curX:   (touch.clientX - (rect?.left || 0)) * scaleX,
-      curY:   (touch.clientY - (rect?.top  || 0)) * scaleY,
-    };
+    const gx = (touch.clientX - (rect?.left || 0)) * scaleX;
+    const gy = (touch.clientY - (rect?.top  || 0)) * scaleY;
+    touchRef.current = { active: true, originX: gx, originY: gy, curX: gx, curY: gy };
+    setJoystickViz({ ox: gx, oy: gy, cx: gx, cy: gy });
   }, []);
 
   const handleTouchMove = useCallback((e) => {
@@ -578,12 +578,28 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
     const touch = e.touches[0];
     const scaleX = GW / (rect?.width  || GW);
     const scaleY = GH / (rect?.height || GH);
-    touchRef.current.curX = (touch.clientX - (rect?.left || 0)) * scaleX;
-    touchRef.current.curY = (touch.clientY - (rect?.top  || 0)) * scaleY;
+    const cx = (touch.clientX - (rect?.left || 0)) * scaleX;
+    const cy = (touch.clientY - (rect?.top  || 0)) * scaleY;
+
+    let { originX: ox, originY: oy } = touchRef.current;
+    const tdx = cx - ox, tdy = cy - oy;
+    const tmag = Math.sqrt(tdx * tdx + tdy * tdy);
+    // Auto-recenter origin so knob never strays beyond max radius
+    if (tmag > JOYSTICK_MAX_R) {
+      const excess = tmag - JOYSTICK_MAX_R;
+      ox += (tdx / tmag) * excess;
+      oy += (tdy / tmag) * excess;
+      touchRef.current.originX = ox;
+      touchRef.current.originY = oy;
+    }
+    touchRef.current.curX = cx;
+    touchRef.current.curY = cy;
+    setJoystickViz({ ox, oy, cx, cy });
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    touchRef.current = { active: false, startX: 0, startY: 0, curX: 0, curY: 0 };
+    touchRef.current = { active: false, originX: 0, originY: 0, curX: 0, curY: 0 };
+    setJoystickViz(null);
   }, []);
 
   // ── Derived values ──────────────────────────────────────────────────────────
@@ -814,6 +830,35 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
             </div>
           ))}
 
+          {/* Virtual joystick */}
+          {joystickViz && (
+            <>
+              {/* Outer ring */}
+              <div className="absolute rounded-full pointer-events-none"
+                style={{
+                  left:   `${(joystickViz.ox / GW) * 100}%`,
+                  top:    `${(joystickViz.oy / GH) * 100}%`,
+                  width:  `${(JOYSTICK_MAX_R * 2 / GW) * 100}%`,
+                  height: `${(JOYSTICK_MAX_R * 2 / GH) * 100}%`,
+                  transform: 'translate(-50%,-50%)',
+                  border: '2px solid rgba(255,255,255,0.35)',
+                  background: 'rgba(255,255,255,0.06)',
+                }} />
+              {/* Inner knob */}
+              <div className="absolute rounded-full pointer-events-none"
+                style={{
+                  left:   `${(joystickViz.cx / GW) * 100}%`,
+                  top:    `${(joystickViz.cy / GH) * 100}%`,
+                  width:  `${(48 / GW) * 100}%`,
+                  height: `${(48 / GH) * 100}%`,
+                  transform: 'translate(-50%,-50%)',
+                  background: 'rgba(255,255,255,0.45)',
+                  border: '2px solid rgba(255,255,255,0.7)',
+                  boxShadow: '0 0 12px rgba(255,255,255,0.3)',
+                }} />
+            </>
+          )}
+
           {/* Player */}
           <div className="absolute"
             style={{
@@ -891,7 +936,7 @@ const DodgeballGame = ({ studentData, showToast, storageKeySuffix = 'student-dod
               <h3 className="text-3xl font-black text-white mb-2">Dodgeball Frenzy</h3>
               <p className="text-purple-200 mb-2 max-w-sm text-sm leading-relaxed">
                 Use <strong className="text-white">WASD</strong> or <strong className="text-white">Arrow Keys</strong> to move.<br />
-                On mobile: <strong className="text-white">drag</strong> anywhere to control your player.
+                On mobile/iPad: <strong className="text-white">touch &amp; drag</strong> anywhere — a virtual joystick appears to guide your player.
               </p>
               <p className="text-purple-400 text-sm mb-6">Dodge the balls · collect power-ups · earn near-miss bonuses!</p>
               <button onClick={startGame}

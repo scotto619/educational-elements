@@ -13,6 +13,8 @@ const AgarGame = ({ gameMode = "digital", showToast, studentData, updateStudentD
     timePlayed: 0,
     bestScore: 0
   });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const gameContainerRef = useRef(null);
 
   // Game constants
   const WORLD_WIDTH = 3000;
@@ -228,7 +230,6 @@ const AgarGame = ({ gameMode = "digital", showToast, studentData, updateStudentD
         if (canEat(cell, food)) {
           // Eat food
           cell.size += food.size * 0.3;
-          cell.size = Math.min(cell.size, MAX_CELL_SIZE);
           
           if (cell.isPlayer) {
             const points = Math.floor(food.size * 2);
@@ -261,7 +262,6 @@ const AgarGame = ({ gameMode = "digital", showToast, studentData, updateStudentD
           // Eat the cell
           const sizeGain = food.size * 0.7;
           eater.size += sizeGain;
-          eater.size = Math.min(eater.size, MAX_CELL_SIZE);
 
           if (eater.isPlayer) {
             const points = Math.floor(food.size * 5);
@@ -585,6 +585,22 @@ const AgarGame = ({ gameMode = "digital", showToast, studentData, updateStudentD
     };
   }, []);
 
+  const toggleFullscreen = useCallback(() => {
+    const el = gameContainerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
   if (gameState === 'menu') {
     return (
       <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl p-8 text-white text-center min-h-96">
@@ -636,7 +652,11 @@ const AgarGame = ({ gameMode = "digital", showToast, studentData, updateStudentD
   }
 
   return (
-    <div className="space-y-4">
+    <div
+      ref={gameContainerRef}
+      className="space-y-4"
+      style={isFullscreen ? { position: 'fixed', inset: 0, zIndex: 9999, background: '#111827', padding: '16px', overflow: 'auto' } : {}}
+    >
       {/* Game HUD */}
       <div className="bg-black bg-opacity-50 rounded-lg p-4 text-white">
         <div className="flex justify-between items-center mb-2">
@@ -669,6 +689,12 @@ const AgarGame = ({ gameMode = "digital", showToast, studentData, updateStudentD
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
             >
               🔄 Restart
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+            >
+              {isFullscreen ? '⛶ Exit Full' : '⛶ Fullscreen'}
             </button>
           </div>
         </div>
@@ -725,16 +751,16 @@ const AgarGame = ({ gameMode = "digital", showToast, studentData, updateStudentD
         </div>
 
         {/* Leaderboard */}
-        <div className="w-64 bg-white rounded-lg p-4">
+        <div className={isFullscreen ? 'w-52 bg-gray-800 bg-opacity-90 rounded-lg p-3 text-white' : 'w-64 bg-white rounded-lg p-4'}>
           <h3 className="text-lg font-bold mb-4 text-center">🏆 Leaderboard</h3>
           <div className="space-y-2">
             {leaderboard.map((entry, index) => (
               <div
                 key={entry.name}
                 className={`flex items-center justify-between p-2 rounded-lg text-sm ${
-                  entry.isPlayer 
-                    ? 'bg-yellow-100 border-2 border-yellow-400 font-bold' 
-                    : 'bg-gray-50'
+                  entry.isPlayer
+                    ? 'bg-yellow-100 border-2 border-yellow-400 font-bold text-black'
+                    : isFullscreen ? 'bg-gray-700' : 'bg-gray-50'
                 }`}
               >
                 <div className="flex items-center space-x-2">
