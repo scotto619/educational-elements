@@ -1,8 +1,6 @@
 // components/games/WerewolfGame.js - One Night Ultimate Werewolf
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { database } from '../../utils/firebase';
-import { ref, set, onValue, update, off, get, remove } from 'firebase/database';
 
 // ─── Role Definitions ─────────────────────────────────────────────────────────
 const ROLES = {
@@ -326,6 +324,7 @@ const NightRoleIndicator = ({ currentRole, nightStep }) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) => {
+  const [fb, setFb] = useState(null); // Firebase functions
   const [screen, setScreen] = useState('menu');
   const [joinCode, setJoinCode] = useState('');
   const [isHost, setIsHost] = useState(false);
@@ -333,11 +332,11 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const [roomCode, setRoomCode] = useState('');
   const [roomData, setRoomData] = useState(null);
   const [myOriginalRole, setMyOriginalRole] = useState(null);
-  const [nightResult, setNightResult] = useState(null); // what I saw during night
+  const [nightResult, setNightResult] = useState(null);
   const [nightActionDone, setNightActionDone] = useState(false);
   const [selectedTargets, setSelectedTargets] = useState([]);
   const [myVote, setMyVote] = useState(null);
-  const [seerMode, setSeerMode] = useState(null); // 'player' | 'center'
+  const [seerMode, setSeerMode] = useState(null);
   const [showRoleReveal, setShowRoleReveal] = useState(false);
   const [hostRolePool, setHostRolePool] = useState([
     'werewolf', 'werewolf', 'seer', 'robber', 'troublemaker', 'villager', 'villager'
@@ -349,13 +348,28 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const hostIntervalRef = useRef(null);
   const playerName = studentData?.firstName || studentData?.name || 'Player';
 
+  // ── Dynamic Firebase init ────────────────────────────────────────────────
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const { database } = await import('../../utils/firebase');
+        const { ref, set, onValue, update, off, get, remove } = await import('firebase/database');
+        setFb({ database, ref, set, onValue, update, off, get, remove });
+      } catch (err) {
+        console.error('Firebase load error:', err);
+        showToast?.('Failed to load game engine', 'error');
+      }
+    };
+    init();
+  }, []);
+
   // ── Firebase: subscribe to room ──────────────────────────────────────────
   useEffect(() => {
-    if (!roomCode) return;
-    const rRef = ref(database, `werewolfRooms/${roomCode}`);
+    if (!roomCode || !fb) return;
+    const rRef = fb.ref(fb.database, `werewolfRooms/${roomCode}`);
     roomRef.current = rRef;
 
-    const unsub = onValue(rRef, (snap) => {
+    const unsub = fb.onValue(rRef, (snap) => {
       if (!snap.exists()) {
         if (screen !== 'menu') {
           showToast?.('Room no longer exists.', 'error');
@@ -406,21 +420,19 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       }
     });
 
-    return () => off(rRef, 'value', unsub);
-  }, [roomCode, screen, myId, myOriginalRole]);
+    return () => fb.off(rRef, 'value', unsub);
+  }, [roomCode, screen, myId, myOriginalRole, fb]);
 
   // ── Host: drive night phase progression ──────────────────────────────────
   useEffect(() => {
-    if (!isHost || !roomData || roomData.phase !== 'night') return;
+    if (!isHost || !roomData || roomData.phase !== 'night' || !fb) return;
 
-    const nightStep = roomData.nightStep ?? 0;
-    const stepStartTime = roomData.stepStartTime ?? Date.now();
-    const STEP_DURATION = 25000; // 25 seconds per role
+    const STEP_DURATION = 25000;
 
     if (hostIntervalRef.current) clearInterval(hostIntervalRef.current);
 
     hostIntervalRef.current = setInterval(async () => {
-      const snap = await get(ref(database, `werewolfRooms/${roomCode}`));
+      const snap = await fb.get(fb.ref(fb.database, `werewolfRooms/${roomCode}`));
       if (!snap.exists()) return;
       const data = snap.val();
       if (data.phase !== 'night') { clearInterval(hostIntervalRef.current); return; }
@@ -429,28 +441,24 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       const startTime = data.stepStartTime ?? Date.now();
       const elapsed = Date.now() - startTime;
 
-      // Find current role
       const currentRole = NIGHT_ORDER[currentStep];
       const playersWithRole = Object.entries(data.players || {})
         .filter(([, p]) => p.originalRole === currentRole)
         .map(([id]) => id);
 
-      // Check if all players with this role have submitted
       const allDone = playersWithRole.length === 0 ||
         playersWithRole.every(id => data.nightActions?.[id]?.done);
 
-      // Advance if all done or timer expired
       if (allDone || elapsed >= STEP_DURATION) {
         const nextStep = currentStep + 1;
         if (nextStep >= NIGHT_ORDER.length) {
-          // Night over → day phase
           clearInterval(hostIntervalRef.current);
-          await update(ref(database, `werewolfRooms/${roomCode}`), {
+          await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
             phase: 'day',
-            dayEndTime: Date.now() + 120000, // 2 min discussion
+            dayEndTime: Date.now() + 120000,
           });
         } else {
-          await update(ref(database, `werewolfRooms/${roomCode}`), {
+          await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
             nightStep: nextStep,
             stepStartTime: Date.now(),
           });
@@ -459,27 +467,25 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     }, 2000);
 
     return () => clearInterval(hostIntervalRef.current);
-  }, [isHost, roomData?.phase, roomData?.nightStep, roomCode]);
+  }, [isHost, roomData?.phase, roomData?.nightStep, roomCode, fb]);
 
   // ── Host: drive day → vote → results ─────────────────────────────────────
   useEffect(() => {
-    if (!isHost || !roomData) return;
+    if (!isHost || !roomData || !fb) return;
 
     if (roomData.phase === 'day') {
       const dayEnd = roomData.dayEndTime;
       if (!dayEnd) return;
       const remaining = dayEnd - Date.now();
       if (remaining <= 0) {
-        update(ref(database, `werewolfRooms/${roomCode}`), {
-          phase: 'vote',
-          voteEndTime: Date.now() + 45000, // 45 second vote
+        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
+          phase: 'vote', voteEndTime: Date.now() + 45000,
         });
         return;
       }
       const tid = setTimeout(() => {
-        update(ref(database, `werewolfRooms/${roomCode}`), {
-          phase: 'vote',
-          voteEndTime: Date.now() + 45000,
+        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
+          phase: 'vote', voteEndTime: Date.now() + 45000,
         });
       }, remaining);
       return () => clearTimeout(tid);
@@ -490,22 +496,23 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       if (!voteEnd) return;
       const remaining = voteEnd - Date.now();
       if (remaining <= 0) {
-        update(ref(database, `werewolfRooms/${roomCode}`), { phase: 'results' });
+        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'results' });
         return;
       }
       const tid = setTimeout(() => {
-        update(ref(database, `werewolfRooms/${roomCode}`), { phase: 'results' });
+        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'results' });
       }, remaining);
       return () => clearTimeout(tid);
     }
-  }, [isHost, roomData?.phase, roomData?.dayEndTime, roomData?.voteEndTime, roomCode]);
+  }, [isHost, roomData?.phase, roomData?.dayEndTime, roomData?.voteEndTime, roomCode, fb]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
   const createRoom = useCallback(async () => {
+    if (!fb) { showToast?.('Game engine not ready yet, please try again.', 'error'); return; }
     const code = genRoomCode();
     setRoomCode(code);
     setIsHost(true);
-    await set(ref(database, `werewolfRooms/${code}`), {
+    await fb.set(fb.ref(fb.database, `werewolfRooms/${code}`), {
       host: myId,
       phase: 'lobby',
       createdAt: Date.now(),
@@ -520,12 +527,13 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     });
     setScreen('lobby');
     showToast?.(`Room created! Code: ${code}`, 'success');
-  }, [myId, playerName, hostRolePool, showToast]);
+  }, [fb, myId, playerName, hostRolePool, showToast]);
 
   const joinRoom = useCallback(async () => {
+    if (!fb) { showToast?.('Game engine not ready yet, please try again.', 'error'); return; }
     const code = joinCode.toUpperCase().trim();
     if (code.length !== 4) { showToast?.('Enter a 4-character room code.', 'error'); return; }
-    const snap = await get(ref(database, `werewolfRooms/${code}`));
+    const snap = await fb.get(fb.ref(fb.database, `werewolfRooms/${code}`));
     if (!snap.exists()) { showToast?.('Room not found.', 'error'); return; }
     const data = snap.val();
     if (data.phase !== 'lobby') { showToast?.('Game already started.', 'error'); return; }
@@ -534,12 +542,12 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
 
     setRoomCode(code);
     setIsHost(false);
-    await update(ref(database, `werewolfRooms/${code}/players/${myId}`), {
+    await fb.update(fb.ref(fb.database, `werewolfRooms/${code}/players/${myId}`), {
       name: playerName, isHost: false, originalRole: '', vote: null, nightActionDone: false
     });
     setScreen('lobby');
     showToast?.(`Joined room ${code}!`, 'success');
-  }, [joinCode, myId, playerName, showToast]);
+  }, [fb, joinCode, myId, playerName, showToast]);
 
   const startGame = useCallback(async () => {
     if (!isHost) return;
@@ -567,43 +575,41 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     updates.nightStep = 0;
     updates.stepStartTime = Date.now() + 10000; // 10s to reveal role
 
-    await update(ref(database, `werewolfRooms/${roomCode}`), updates);
+    await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), updates);
     showToast?.('Game started! Players are seeing their roles.', 'success');
-  }, [isHost, roomData, hostRolePool, roomCode, showToast]);
+  }, [fb, isHost, roomData, hostRolePool, roomCode, showToast]);
 
   const beginNight = useCallback(async () => {
-    if (!isHost) return;
-    await update(ref(database, `werewolfRooms/${roomCode}`), {
+    if (!isHost || !fb) return;
+    await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
       phase: 'night',
       nightStep: 0,
       stepStartTime: Date.now(),
     });
-  }, [isHost, roomCode]);
+  }, [fb, isHost, roomCode]);
 
   const submitNightAction = useCallback(async (actionData) => {
-    if (nightActionDone) return;
+    if (nightActionDone || !fb) return;
     setNightActionDone(true);
-    await update(ref(database, `werewolfRooms/${roomCode}/nightActions/${myId}`), {
+    await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}/nightActions/${myId}`), {
       ...actionData,
       done: true,
     });
-    await update(ref(database, `werewolfRooms/${roomCode}/players/${myId}`), {
+    await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}/players/${myId}`), {
       nightActionDone: true
     });
-  }, [nightActionDone, roomCode, myId]);
+  }, [fb, nightActionDone, roomCode, myId]);
 
   const submitVote = useCallback(async (targetId) => {
-    if (myVote) return;
+    if (myVote || !fb) return;
     setMyVote(targetId);
-    await update(ref(database, `werewolfRooms/${roomCode}/votes/${myId}`), targetId);
-    // Also store in votes object (Firebase path update)
-    await set(ref(database, `werewolfRooms/${roomCode}/votes/${myId}`), targetId);
+    await fb.set(fb.ref(fb.database, `werewolfRooms/${roomCode}/votes/${myId}`), targetId);
     showToast?.('Vote cast!', 'success');
-  }, [myVote, roomCode, myId, showToast]);
+  }, [fb, myVote, roomCode, myId, showToast]);
 
   const leaveGame = useCallback(async () => {
-    if (roomCode) {
-      await remove(ref(database, `werewolfRooms/${roomCode}/players/${myId}`));
+    if (roomCode && fb) {
+      await fb.remove(fb.ref(fb.database, `werewolfRooms/${roomCode}/players/${myId}`));
     }
     setScreen('menu');
     setRoomCode('');
@@ -1532,7 +1538,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                   updates.votes = {};
                   updates.dayEndTime = null;
                   updates.voteEndTime = null;
-                  await update(ref(database, `werewolfRooms/${roomCode}`), updates);
+                  if (fb) await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), updates);
                 }}
                 className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl transition-all"
               >
