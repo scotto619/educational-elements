@@ -27,12 +27,13 @@ const MultiplayerAgarGame = ({
     timePlayed: 0,
     playersEaten: 0
   });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const gameContainerRef = useRef(null);
 
   // Game constants
   const WORLD_WIDTH = 4000;
   const WORLD_HEIGHT = 4000;
   const MIN_CELL_SIZE = 15;
-  const MAX_CELL_SIZE = 300;
   const FOOD_COUNT = 800;
   const VIEWPORT_WIDTH = 800;
   const VIEWPORT_HEIGHT = 600;
@@ -318,7 +319,7 @@ const MultiplayerAgarGame = ({
         delete gameObjects.current.food[food.id];
         
         // Update stats
-        p.size = Math.min(MAX_CELL_SIZE, p.size + food.size * 0.2);
+        p.size = p.size + food.size * 0.2;
         p.score += Math.floor(food.size * 2);
         setScore(p.score);
         setGameStats(s => ({...s, cellsEaten: s.cellsEaten + 1}));
@@ -336,7 +337,7 @@ const MultiplayerAgarGame = ({
       // Can we eat them? (Must be 10% larger)
       if (sizeDiff > remote.size * 0.1 && dist < p.size * 0.8) {
         // Eat them!
-        p.size = Math.min(MAX_CELL_SIZE, p.size + remote.size * 0.5);
+        p.size = p.size + remote.size * 0.5;
         p.score += Math.floor(remote.size * 10);
         setScore(p.score);
         setGameStats(s => ({...s, playersEaten: s.playersEaten + 1}));
@@ -523,6 +524,22 @@ const MultiplayerAgarGame = ({
     return () => leaveGameRoom();
   }, [leaveGameRoom]);
 
+  const toggleFullscreen = useCallback(() => {
+    const el = gameContainerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
   const updatePointer = (clientX, clientY) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -590,7 +607,11 @@ const MultiplayerAgarGame = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div
+      ref={gameContainerRef}
+      className="space-y-4"
+      style={isFullscreen ? { position: 'fixed', inset: 0, zIndex: 9999, background: '#111827', padding: '16px', overflow: 'auto' } : {}}
+    >
       {/* Game Header */}
       <div className="bg-gray-900 rounded-2xl p-4 md:p-5 text-white shadow-lg border border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-6">
@@ -610,12 +631,20 @@ const MultiplayerAgarGame = ({
           </div>
         </div>
         
-        <button
-          onClick={leaveGameRoom}
-          className="bg-red-500/10 text-red-400 border border-red-500/30 px-5 py-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all font-semibold"
-        >
-          Leave Game
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={toggleFullscreen}
+            className="bg-blue-500/10 text-blue-400 border border-blue-500/30 px-5 py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all font-semibold"
+          >
+            {isFullscreen ? '⛶ Exit Full' : '⛶ Fullscreen'}
+          </button>
+          <button
+            onClick={leaveGameRoom}
+            className="bg-red-500/10 text-red-400 border border-red-500/30 px-5 py-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all font-semibold"
+          >
+            Leave Game
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4">

@@ -395,6 +395,30 @@ Realtime Database Rules
       }
     },
     
+    // Chess multiplayer game
+    "chess": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
+    // UNO multiplayer game
+    "uno": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
+    // One Night Werewolf multiplayer game
+    "werewolfRooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
     // Memory Game monitoring
     "memoryGameMonitoring": {
       "$gameCode": {
