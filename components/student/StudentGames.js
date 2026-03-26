@@ -34,6 +34,7 @@ const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoa
 const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
 const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoadingSpinner, ssr: false });
 const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
+const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -227,6 +228,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'multiplayer',
       logo: getGameLogo('uno')
+    },
+    {
+      id: 'werewolf',
+      name: 'One Night Werewolf',
+      icon: '🐺',
+      description: 'A social deduction game! Get secret roles, take night actions, then vote to eliminate the werewolf before they escape.',
+      component: WerewolfGame,
+      color: 'from-purple-900 to-red-900',
+      difficulty: 'Medium',
+      time: '10-20 minutes',
+      multiplayer: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('werewolf')
     },
     {
       id: 'tic-tac-toe',

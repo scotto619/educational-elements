@@ -105,7 +105,8 @@ const GAME_LOGO_MAP = {
   noggle: createLogoCandidates('noggle', ['noggle.svg', 'Noggle']),
   'type-defender': createLogoCandidates('type-defender', ['typedefender.png', 'Type Defender']),
   uno: createLogoCandidates('uno', ['/Logo/Game Logos/uno.png', 'uno.png', 'UNO']),
-  chess: createLogoCandidates('chess', ['/Logo/Game Logos/chess.svg', 'chess.png', 'Chess'])
+  chess: createLogoCandidates('chess', ['/Logo/Game Logos/chess.svg', 'chess.png', 'Chess']),
+  werewolf: createLogoCandidates('werewolf', ['werewolf.png', 'One Night Werewolf', 'Werewolf'])
 };
 
 const GAME_LOGO_ALIASES = {
