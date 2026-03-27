@@ -4,104 +4,163 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── Role Definitions ─────────────────────────────────────────────────────────
 const ROLES = {
+  // ── Base Game ──────────────────────────────────────────────────────────────
   werewolf: {
-    name: 'Werewolf', team: 'werewolves',
-    description: 'You are a Werewolf! Work together to avoid being caught.',
-    nightAction: 'Wake up and look for fellow werewolves. If alone, peek at one center card.',
-    icon: '🐺', emoji: '🐺',
-    bg: 'from-red-800 to-red-950', border: 'border-red-600',
-    text: 'text-red-100', badge: 'bg-red-700',
-    priority: 1, hasAction: true
+    name: 'Werewolf', team: 'werewolves', expansion: 'Base Game',
+    description: 'You are a Werewolf! Work with your pack to avoid being caught.',
+    nightAction: 'Wake up and see fellow werewolves. If alone (lone wolf), peek at one center card.',
+    winCondition: 'Win if no werewolf is eliminated.',
+    icon: '🐺', bg: 'from-red-800 to-red-950', border: 'border-red-600', text: 'text-red-100', badge: 'bg-red-700', priority: 3, hasAction: true
   },
   minion: {
-    name: 'Minion', team: 'werewolves',
-    description: 'You serve the Werewolves. You win if they win — even if you die.',
-    nightAction: 'Wake up and see who the werewolves are.',
-    icon: '😈', emoji: '😈',
-    bg: 'from-red-600 to-rose-900', border: 'border-rose-500',
-    text: 'text-rose-100', badge: 'bg-rose-700',
-    priority: 2, hasAction: true
+    name: 'Minion', team: 'werewolves', expansion: 'Base Game',
+    description: 'You serve the Werewolves and share their victory — even if you are eliminated!',
+    nightAction: 'Wake up and see who the werewolves are. They do NOT see you.',
+    winCondition: 'Win with the werewolves. Even if you die, you win if they win.',
+    icon: '😈', bg: 'from-red-600 to-rose-900', border: 'border-rose-500', text: 'text-rose-100', badge: 'bg-rose-700', priority: 4, hasAction: true
   },
   seer: {
-    name: 'Seer', team: 'villagers',
-    description: 'You can glimpse the truth. Use your vision wisely.',
-    nightAction: 'Look at ONE player\'s card, OR look at TWO center cards.',
-    icon: '👁️', emoji: '👁️',
-    bg: 'from-blue-600 to-blue-900', border: 'border-blue-400',
-    text: 'text-blue-100', badge: 'bg-blue-700',
-    priority: 3, hasAction: true
+    name: 'Seer', team: 'villagers', expansion: 'Base Game',
+    description: 'You can glimpse one truth in the night. Use your vision wisely in discussion.',
+    nightAction: 'Look at ONE other player\'s card, OR look at TWO center cards.',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '👁️', bg: 'from-blue-600 to-blue-900', border: 'border-blue-400', text: 'text-blue-100', badge: 'bg-blue-700', priority: 5, hasAction: true
   },
   robber: {
-    name: 'Robber', team: 'villagers',
-    description: 'Steal a role from another player and look at your new card.',
+    name: 'Robber', team: 'villagers', expansion: 'Base Game',
+    description: 'Steal a role from another player, look at your new card, and play as that role!',
     nightAction: 'Swap your card with another player\'s card. Look at your new role.',
-    icon: '🦹', emoji: '🦹',
-    bg: 'from-purple-600 to-purple-900', border: 'border-purple-400',
-    text: 'text-purple-100', badge: 'bg-purple-700',
-    priority: 4, hasAction: true
+    winCondition: 'Win with your new team (whatever role you stole).',
+    icon: '🦹', bg: 'from-purple-600 to-purple-900', border: 'border-purple-400', text: 'text-purple-100', badge: 'bg-purple-700', priority: 11, hasAction: true
   },
   troublemaker: {
-    name: 'Troublemaker', team: 'villagers',
-    description: 'Swap two other players\' cards without looking at them.',
-    nightAction: 'Pick two other players and swap their cards (you don\'t see them).',
-    icon: '🔀', emoji: '🔀',
-    bg: 'from-yellow-600 to-amber-900', border: 'border-yellow-400',
-    text: 'text-yellow-100', badge: 'bg-yellow-700',
-    priority: 5, hasAction: true
+    name: 'Troublemaker', team: 'villagers', expansion: 'Base Game',
+    description: 'Swap two other players\' cards without looking. Cause chaos and confusion!',
+    nightAction: 'Pick two other players and swap their cards (you don\'t see the roles).',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '🔀', bg: 'from-yellow-600 to-amber-900', border: 'border-yellow-400', text: 'text-yellow-100', badge: 'bg-yellow-700', priority: 12, hasAction: true
   },
   drunk: {
-    name: 'Drunk', team: 'villagers',
-    description: 'You\'re too drunk to know your own role. You swap with a center card.',
-    nightAction: 'Pick a center card and swap it with your card. You don\'t know what you got.',
-    icon: '🍺', emoji: '🍺',
-    bg: 'from-orange-600 to-amber-800', border: 'border-orange-400',
-    text: 'text-orange-100', badge: 'bg-orange-700',
-    priority: 6, hasAction: true
+    name: 'Drunk', team: 'villagers', expansion: 'Base Game',
+    description: 'You\'re too drunk to know your own role. You swap with a mystery center card and have no idea what you are!',
+    nightAction: 'Pick a center card to take. Your card goes to center. You don\'t see your new role.',
+    winCondition: 'Win with your new team (whatever card you unknowingly took).',
+    icon: '🍺', bg: 'from-orange-600 to-amber-800', border: 'border-orange-400', text: 'text-orange-100', badge: 'bg-orange-700', priority: 13, hasAction: true
   },
   insomniac: {
-    name: 'Insomniac', team: 'villagers',
-    description: 'You can\'t sleep. At the end of the night, you check your card.',
-    nightAction: 'Look at your own card one more time (it may have changed!).',
-    icon: '😴', emoji: '😴',
-    bg: 'from-indigo-600 to-indigo-900', border: 'border-indigo-400',
-    text: 'text-indigo-100', badge: 'bg-indigo-700',
-    priority: 7, hasAction: true
+    name: 'Insomniac', team: 'villagers', expansion: 'Base Game',
+    description: 'You can\'t sleep. At the end of the night you check your card — it may have changed!',
+    nightAction: 'Look at your own card at the END of the night (it may have been swapped).',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '😴', bg: 'from-indigo-600 to-indigo-900', border: 'border-indigo-400', text: 'text-indigo-100', badge: 'bg-indigo-700', priority: 14, hasAction: true
   },
   villager: {
-    name: 'Villager', team: 'villagers',
-    description: 'You are a simple Villager. No special powers — use your wits!',
+    name: 'Villager', team: 'villagers', expansion: 'Base Game',
+    description: 'A simple Villager with no special powers. Trust your instincts and deduce who the werewolf is!',
     nightAction: null,
-    icon: '👤', emoji: '👤',
-    bg: 'from-green-600 to-green-900', border: 'border-green-400',
-    text: 'text-green-100', badge: 'bg-green-700',
-    priority: 99, hasAction: false
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '👤', bg: 'from-green-600 to-green-900', border: 'border-green-400', text: 'text-green-100', badge: 'bg-green-700', priority: 99, hasAction: false
   },
   hunter: {
-    name: 'Hunter', team: 'villagers',
-    description: 'If you are eliminated, the player you voted for is also eliminated.',
+    name: 'Hunter', team: 'villagers', expansion: 'Base Game',
+    description: 'If you are eliminated, the player you voted for is also eliminated. Use your vote carefully!',
     nightAction: null,
-    icon: '🏹', emoji: '🏹',
-    bg: 'from-teal-600 to-teal-900', border: 'border-teal-400',
-    text: 'text-teal-100', badge: 'bg-teal-700',
-    priority: 99, hasAction: false
+    winCondition: 'Win with village. If eliminated, drag your vote target down with you.',
+    icon: '🏹', bg: 'from-teal-600 to-teal-900', border: 'border-teal-400', text: 'text-teal-100', badge: 'bg-teal-700', priority: 99, hasAction: false
   },
   tanner: {
-    name: 'Tanner', team: 'tanner',
-    description: 'You WANT to be eliminated! Win by getting the most votes.',
+    name: 'Tanner', team: 'tanner', expansion: 'Base Game',
+    description: 'You WANT to be eliminated! Your goal is to trick the village into voting you out.',
     nightAction: null,
-    icon: '😅', emoji: '😅',
-    bg: 'from-gray-600 to-gray-900', border: 'border-gray-400',
-    text: 'text-gray-100', badge: 'bg-gray-700',
-    priority: 99, hasAction: false
-  }
+    winCondition: 'WIN by being eliminated! Get the most votes against you.',
+    icon: '😅', bg: 'from-gray-600 to-gray-900', border: 'border-gray-400', text: 'text-gray-100', badge: 'bg-gray-700', priority: 99, hasAction: false
+  },
+  mason: {
+    name: 'Mason', team: 'villagers', expansion: 'Base Game',
+    description: 'Part of a secret brotherhood. You and the other Masons wake up and recognize each other — total trust!',
+    nightAction: 'Wake up and see the other Masons. If alone, you know no other Mason is in play.',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '🤝', bg: 'from-stone-600 to-stone-900', border: 'border-stone-400', text: 'text-stone-100', badge: 'bg-stone-700', priority: 99, hasAction: true
+  },
+
+  // ── Daybreak Expansion ─────────────────────────────────────────────────────
+  mysticWolf: {
+    name: 'Mystic Wolf', team: 'werewolves', expansion: 'Daybreak',
+    description: 'A werewolf with mystic sight. You wake with your pack AND secretly peek at one player\'s card.',
+    nightAction: 'Wake with werewolves (see your pack). Then look at ONE other player\'s card.',
+    winCondition: 'Win with the werewolves if no werewolf is eliminated.',
+    icon: '🔮', bg: 'from-red-700 to-violet-900', border: 'border-violet-500', text: 'text-violet-100', badge: 'bg-violet-800', priority: 3, hasAction: true
+  },
+  dreamWolf: {
+    name: 'Dream Wolf', team: 'werewolves', expansion: 'Daybreak',
+    description: 'A werewolf who sleeps through the night. Other wolves don\'t know you exist — you are a hidden threat!',
+    nightAction: null,
+    winCondition: 'Win with the werewolves if no werewolf is eliminated.',
+    icon: '🌙', bg: 'from-slate-700 to-red-900', border: 'border-slate-500', text: 'text-slate-100', badge: 'bg-slate-700', priority: 99, hasAction: false
+  },
+  alphaWolf: {
+    name: 'Alpha Wolf', team: 'werewolves', expansion: 'Daybreak',
+    description: 'The pack leader. You wake with your pack and can secretly replace a player with a hidden wolf from the center!',
+    nightAction: 'Wake with werewolves. Then look at center cards. If a wolf card is there, swap it with any player\'s card.',
+    winCondition: 'Win with the werewolves if no werewolf is eliminated.',
+    icon: '⚔️', bg: 'from-red-900 to-red-950', border: 'border-red-400', text: 'text-red-100', badge: 'bg-red-800', priority: 2, hasAction: true
+  },
+  apprenticeSeer: {
+    name: 'Apprentice Seer', team: 'villagers', expansion: 'Daybreak',
+    description: 'Learning the craft. Not as powerful as the Seer — you can only peek at one center card.',
+    nightAction: 'Look at ONE center card.',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '🔭', bg: 'from-cyan-600 to-blue-900', border: 'border-cyan-400', text: 'text-cyan-100', badge: 'bg-cyan-700', priority: 6, hasAction: true
+  },
+  pi: {
+    name: 'Paranormal Investigator', team: 'villagers', expansion: 'Daybreak',
+    description: 'An investigator chasing the supernatural. Peek at player cards one by one — but stop if you find evil!',
+    nightAction: 'Look at one player\'s card. If it\'s a village role, you MAY look at one more. Stop if you find a non-village role.',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '🔍', bg: 'from-emerald-600 to-teal-900', border: 'border-emerald-400', text: 'text-emerald-100', badge: 'bg-emerald-700', priority: 7, hasAction: true
+  },
+  witch: {
+    name: 'Witch', team: 'villagers', expansion: 'Daybreak',
+    description: 'A powerful potion-brewer. You peek at a center card and may brew a swap with any player.',
+    nightAction: 'Look at ONE center card. You may then swap it with any player\'s card (including yourself).',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '🧙', bg: 'from-fuchsia-700 to-purple-950', border: 'border-fuchsia-500', text: 'text-fuchsia-100', badge: 'bg-fuchsia-800', priority: 8, hasAction: true
+  },
+  revealer: {
+    name: 'Revealer', team: 'villagers', expansion: 'Daybreak',
+    description: 'You can expose a player\'s card. If it\'s evil it goes back face-down (only you know). If it\'s village, everyone learns the truth!',
+    nightAction: 'Flip a player\'s card face-up. If they\'re a werewolf or tanner, their card goes back face-down.',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '📢', bg: 'from-lime-600 to-green-900', border: 'border-lime-400', text: 'text-lime-100', badge: 'bg-lime-700', priority: 9, hasAction: true
+  },
+  villageIdiot: {
+    name: 'Village Idiot', team: 'villagers', expansion: 'Daybreak',
+    description: 'Your bumbling chaos actually helps! You rotate ALL other players\' cards in one direction during the night.',
+    nightAction: 'Choose a direction: shift ALL other players\' cards LEFT or RIGHT (their roles rotate around).',
+    winCondition: 'Win with the village if a werewolf is eliminated.',
+    icon: '🤪', bg: 'from-pink-600 to-rose-900', border: 'border-pink-400', text: 'text-pink-100', badge: 'bg-pink-700', priority: 10, hasAction: true
+  },
 };
 
-const NIGHT_ORDER = ['werewolf', 'minion', 'seer', 'robber', 'troublemaker', 'drunk', 'insomniac'];
+// Roles that count as "actual werewolf" for win condition
+const WEREWOLF_ROLES = new Set(['werewolf', 'mysticWolf', 'alphaWolf', 'dreamWolf']);
+
+const NIGHT_ORDER = [
+  'alphaWolf', 'mysticWolf', 'werewolf',
+  'minion', 'mason',
+  'seer', 'apprenticeSeer', 'pi', 'witch', 'revealer', 'villageIdiot',
+  'robber', 'troublemaker', 'drunk', 'insomniac'
+];
 
 const ROLE_DESCRIPTIONS = {
-  werewolves: 'Werewolves team',
-  villagers: 'Village team',
-  tanner: 'Tanner (solo)'
+  werewolves: 'Werewolf Team 🐺',
+  villagers: 'Village Team 🏘️',
+  tanner: 'Solo — Tanner 😅'
+};
+
+const EXPANSION_COLORS = {
+  'Base Game': 'text-blue-300 bg-blue-900/40 border-blue-700',
+  'Daybreak': 'text-orange-300 bg-orange-900/40 border-orange-700',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -130,10 +189,21 @@ function resolveNightActions(originalRoles, centerCards, nightActions) {
   const finalCenter = [...centerCards];
   const na = nightActions || {};
 
-  // Night actions are stored keyed by player ID, so find each by the 'role' field
+  // Night actions stored keyed by player ID — find each by the 'role' field
   const findAction = (roleName) => Object.values(na).find(a => a?.role === roleName);
 
-  // Robber acts first
+  // 1. Alpha Wolf: swap a center wolf card into a player
+  const alphaWolfAction = findAction('alphaWolf');
+  if (alphaWolfAction && !alphaWolfAction.noWolf && alphaWolfAction.targetId && alphaWolfAction.centerIndex !== undefined) {
+    const { targetId, centerIndex } = alphaWolfAction;
+    if (finalRoles[targetId] !== undefined && finalCenter[centerIndex] !== undefined) {
+      const tmp = finalRoles[targetId];
+      finalRoles[targetId] = finalCenter[centerIndex];
+      finalCenter[centerIndex] = tmp;
+    }
+  }
+
+  // 2. Robber
   const robberAction = findAction('robber');
   if (robberAction) {
     const { actorId, targetId } = robberAction;
@@ -143,7 +213,8 @@ function resolveNightActions(originalRoles, centerCards, nightActions) {
       finalRoles[targetId] = tmp;
     }
   }
-  // Troublemaker
+
+  // 3. Troublemaker
   const troublemakerAction = findAction('troublemaker');
   if (troublemakerAction) {
     const { target1Id, target2Id } = troublemakerAction;
@@ -153,7 +224,30 @@ function resolveNightActions(originalRoles, centerCards, nightActions) {
       finalRoles[target2Id] = tmp;
     }
   }
-  // Drunk
+
+  // 4. Village Idiot: rotate all other players' roles
+  const villageIdiotAction = findAction('villageIdiot');
+  if (villageIdiotAction && villageIdiotAction.playerOrder && villageIdiotAction.playerOrder.length > 1) {
+    const { direction, playerOrder } = villageIdiotAction;
+    const roles = playerOrder.map(id => finalRoles[id]);
+    const shifted = direction === 'left'
+      ? [...roles.slice(1), roles[0]]
+      : [roles[roles.length - 1], ...roles.slice(0, -1)];
+    playerOrder.forEach((id, i) => { finalRoles[id] = shifted[i]; });
+  }
+
+  // 5. Witch: optionally swap a center card with a player
+  const witchAction = findAction('witch');
+  if (witchAction && witchAction.swapTargetId) {
+    const { centerIndex, swapTargetId } = witchAction;
+    if (finalRoles[swapTargetId] !== undefined && finalCenter[centerIndex] !== undefined) {
+      const tmp = finalRoles[swapTargetId];
+      finalRoles[swapTargetId] = finalCenter[centerIndex];
+      finalCenter[centerIndex] = tmp;
+    }
+  }
+
+  // 6. Drunk
   const drunkAction = findAction('drunk');
   if (drunkAction) {
     const { actorId, centerIndex } = drunkAction;
@@ -195,8 +289,8 @@ function determineWinner(finalRoles, votes, playerIds) {
   const tannerElim = eliminated.some(id => finalRoles[id] === 'tanner');
   if (tannerElim) return { winner: 'tanner', eliminated };
 
-  const hasRealWerewolf = playerIds.some(id => finalRoles[id] === 'werewolf');
-  const werewolfEliminated = eliminated.some(id => finalRoles[id] === 'werewolf');
+  const hasRealWerewolf = playerIds.some(id => WEREWOLF_ROLES.has(finalRoles[id]));
+  const werewolfEliminated = eliminated.some(id => WEREWOLF_ROLES.has(finalRoles[id]));
 
   if (!hasRealWerewolf) {
     // No werewolves in play: villagers win only if no one is eliminated
@@ -277,10 +371,14 @@ const PlayerChip = ({ player, isMe, isSelected, onClick, showRole, finalRole, el
   );
 };
 
-const PhaseTimer = ({ endTime, onExpire }) => {
+const PhaseTimer = ({ endTime, paused, pausedRemaining, onExpire }) => {
   const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
+    if (paused) {
+      setRemaining(Math.ceil((pausedRemaining || 0) / 1000));
+      return;
+    }
     const tick = () => {
       const secs = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
       setRemaining(secs);
@@ -289,17 +387,108 @@ const PhaseTimer = ({ endTime, onExpire }) => {
     tick();
     const id = setInterval(tick, 500);
     return () => clearInterval(id);
-  }, [endTime, onExpire]);
+  }, [endTime, paused, pausedRemaining, onExpire]);
 
-  const pct = endTime ? Math.max(0, (endTime - Date.now()) / ((endTime - Date.now() + remaining * 1000)) * 100) : 0;
-  const urgent = remaining <= 10;
+  const urgent = !paused && remaining <= 10;
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className={`text-3xl font-black tabular-nums ${urgent ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-        {remaining}s
+      <p className={`text-3xl font-black tabular-nums ${paused ? 'text-yellow-400' : urgent ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+        {paused ? '⏸' : ''}{remaining}s
       </p>
     </div>
+  );
+};
+
+// ─── Role Info Modal (standalone, used in lobby) ──────────────────────────────
+const RoleInfoCard = ({ roleId, onClose }) => {
+  const r = ROLES[roleId];
+  if (!r) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.85, y: 30 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.85, y: 30 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+        className={`bg-gradient-to-br ${r.bg} border-2 ${r.border} rounded-3xl p-6 max-w-sm w-full shadow-2xl`}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="text-center mb-4">
+          <div className="text-6xl mb-2">{r.icon}</div>
+          <h2 className="text-2xl font-black text-white">{r.name}</h2>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${EXPANSION_COLORS[r.expansion] || 'text-white/60 bg-white/10 border-white/20'}`}>{r.expansion}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${r.badge} text-white font-semibold`}>{ROLE_DESCRIPTIONS[r.team] || r.team}</span>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="bg-black/30 rounded-xl p-3">
+            <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">Description</p>
+            <p className={`${r.text} text-sm leading-relaxed`}>{r.description}</p>
+          </div>
+          {r.nightAction && (
+            <div className="bg-black/30 rounded-xl p-3">
+              <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">🌙 Night Action</p>
+              <p className={`${r.text} text-sm`}>{r.nightAction}</p>
+            </div>
+          )}
+          {r.winCondition && (
+            <div className="bg-black/30 rounded-xl p-3">
+              <p className="text-white/50 text-xs font-bold uppercase tracking-wider mb-1">🏆 Win Condition</p>
+              <p className={`${r.text} text-sm`}>{r.winCondition}</p>
+            </div>
+          )}
+        </div>
+        <button onClick={onClose} className="mt-4 w-full bg-black/30 hover:bg-black/50 text-white/70 hover:text-white font-bold py-2 rounded-xl transition-all text-sm">Close</button>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─── Role Guide (all roles) ───────────────────────────────────────────────────
+const RoleGuide = ({ onClose, onSelectRole }) => {
+  const expansions = ['Base Game', 'Daybreak'];
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm overflow-y-auto p-4"
+    >
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center justify-between mb-6 sticky top-0 bg-black/80 py-3 -mx-4 px-4 backdrop-blur-sm">
+          <h2 className="text-2xl font-black text-white">📖 Role Guide</h2>
+          <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl font-bold transition-all">✕ Close</button>
+        </div>
+        {expansions.map(exp => (
+          <div key={exp} className="mb-6">
+            <div className={`inline-block text-xs px-3 py-1 rounded-full border font-bold mb-3 ${EXPANSION_COLORS[exp] || 'text-white/60 bg-white/10 border-white/20'}`}>{exp}</div>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(ROLES).filter(([, r]) => r.expansion === exp).map(([id, r]) => (
+                <button
+                  key={id}
+                  onClick={() => onSelectRole(id)}
+                  className={`flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r ${r.bg} border ${r.border} text-left hover:scale-[1.02] transition-all`}
+                >
+                  <span className="text-2xl flex-shrink-0">{r.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-white font-bold text-sm truncate">{r.name}</p>
+                    <p className={`text-xs ${r.text} opacity-70 truncate`}>{ROLE_DESCRIPTIONS[r.team] || r.team}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   );
 };
 
@@ -350,7 +539,13 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const [gameResult, setGameResult] = useState(null);
   const [finalRolesComputed, setFinalRolesComputed] = useState(null);
   const [roleHidden, setRoleHidden] = useState(false);
-  const [nightResultModal, setNightResultModal] = useState(null); // full-screen reveal
+  const [nightResultModal, setNightResultModal] = useState(null);
+  const [roleInfoModal, setRoleInfoModal] = useState(null); // roleId to show info for
+  const [showRoleGuide, setShowRoleGuide] = useState(false);
+  // Multi-step night action state
+  const [nightActionSubStep, setNightActionSubStep] = useState(null);
+  const [witchPeekedCard, setWitchPeekedCard] = useState(null); // {index, role}
+  const [piSeen, setPiSeen] = useState([]); // [{id, name, role}]
 
   const roomRef = useRef(null);
   const hostIntervalRef = useRef(null);
@@ -480,21 +675,18 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   // ── Host: drive day → vote → results ─────────────────────────────────────
   useEffect(() => {
     if (!isHost || !roomData || !fb) return;
+    if (roomData.timerPaused) return; // paused — do nothing
 
     if (roomData.phase === 'day') {
       const dayEnd = roomData.dayEndTime;
       if (!dayEnd) return;
       const remaining = dayEnd - Date.now();
       if (remaining <= 0) {
-        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
-          phase: 'vote', voteEndTime: Date.now() + 45000,
-        });
+        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'vote', voteEndTime: Date.now() + 60000, timerPaused: false });
         return;
       }
       const tid = setTimeout(() => {
-        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
-          phase: 'vote', voteEndTime: Date.now() + 45000,
-        });
+        fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'vote', voteEndTime: Date.now() + 60000, timerPaused: false });
       }, remaining);
       return () => clearTimeout(tid);
     }
@@ -512,7 +704,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       }, remaining);
       return () => clearTimeout(tid);
     }
-  }, [isHost, roomData?.phase, roomData?.dayEndTime, roomData?.voteEndTime, roomCode, fb]);
+  }, [isHost, roomData?.phase, roomData?.dayEndTime, roomData?.voteEndTime, roomData?.timerPaused, roomCode, fb]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
   const createRoom = useCallback(async () => {
@@ -632,6 +824,9 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     setRoleHidden(false);
     setSeerMode(null);
     setSelectedTargets([]);
+    setNightActionSubStep(null);
+    setWitchPeekedCard(null);
+    setPiSeen([]);
   }, [roomCode, myId]);
 
   // ── Night action logic ────────────────────────────────────────────────────
@@ -641,65 +836,155 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     const centerCards = roomData?.centerCards || [];
     const originalRoles = {};
     Object.entries(players).forEach(([id, p]) => { originalRoles[id] = p.originalRole; });
+    const otherIds = Object.keys(players).filter(id => id !== myId);
+
+    // Helper: get pack members (all wolf-team roles)
+    const getWolfPack = (includeRole) => Object.entries(players)
+      .filter(([id, p]) => WEREWOLF_ROLES.has(p.originalRole) && id !== myId && p.originalRole !== 'dreamWolf')
+      .map(([, p]) => p.name);
 
     let result = null;
     let actionData = null;
 
     if (role === 'werewolf') {
-      const werewolves = Object.entries(players)
-        .filter(([id, p]) => p.originalRole === 'werewolf' && id !== myId)
-        .map(([, p]) => p.name);
-
-      if (werewolves.length > 0) {
-        result = { type: 'werewolf_team', werewolves };
+      const pack = getWolfPack();
+      if (pack.length > 0) {
+        result = { type: 'werewolf_team', werewolves: pack };
         actionData = { role: 'werewolf', saw: 'teammates' };
       } else if (selectedTargets.length === 1) {
         const idx = selectedTargets[0];
-        const card = centerCards[idx];
+        const card = centerCards[idx] || '';
         result = { type: 'center_card', index: idx, role: card };
         actionData = { role: 'werewolf', lookedAtCenter: true, centerIndex: idx, saw: card };
       } else {
-        return; // lone wolf - needs to pick center first
+        return; // lone wolf — needs to pick center first
       }
     } else if (role === 'minion') {
-      const werewolves = Object.entries(players)
-        .filter(([, p]) => p.originalRole === 'werewolf')
+      const wolves = Object.entries(players)
+        .filter(([, p]) => WEREWOLF_ROLES.has(p.originalRole))
         .map(([, p]) => p.name);
-      result = { type: 'minion_see', werewolves };
+      result = { type: 'minion_see', werewolves: wolves };
       actionData = { role: 'minion', saw: 'werewolves' };
+
+    } else if (role === 'mason') {
+      const masons = Object.entries(players)
+        .filter(([id, p]) => p.originalRole === 'mason' && id !== myId)
+        .map(([, p]) => p.name);
+      result = { type: 'mason', masons };
+      actionData = { role: 'mason' };
+
+    } else if (role === 'mysticWolf') {
+      if (nightActionSubStep === null) {
+        // Step 1: see pack, advance to peek
+        setNightActionSubStep('peek');
+        setSelectedTargets([]);
+        return;
+      } else if (selectedTargets.length === 1) {
+        const targetId = selectedTargets[0];
+        const pack = getWolfPack();
+        result = { type: 'mysticWolf', pack, targetName: players[targetId]?.name || '?', targetRole: originalRoles[targetId] || '' };
+        actionData = { role: 'mysticWolf', playerTarget: targetId };
+      } else return;
+
+    } else if (role === 'alphaWolf') {
+      const pack = getWolfPack();
+      const wolfCenterIdx = centerCards.findIndex(c => WEREWOLF_ROLES.has(c));
+      if (nightActionSubStep === null) {
+        if (wolfCenterIdx === -1 || selectedTargets.length === 0) {
+          // No wolf in center OR skipping — just done
+          result = { type: 'alphaWolf_no_wolf', pack };
+          actionData = { role: 'alphaWolf', noWolf: true };
+        } else {
+          // Advance to player selection
+          setNightActionSubStep('place');
+          return;
+        }
+      } else if (nightActionSubStep === 'place' && selectedTargets.length === 1) {
+        const targetId = selectedTargets[0];
+        result = { type: 'alphaWolf', pack, targetName: players[targetId]?.name || '?', wolfCenterIdx };
+        actionData = { role: 'alphaWolf', targetId, centerIndex: wolfCenterIdx };
+      } else return;
+
     } else if (role === 'seer') {
       if (seerMode === 'player' && selectedTargets.length === 1) {
         const targetId = selectedTargets[0];
-        const targetRole = originalRoles[targetId] || '';
-        const targetName = players[targetId]?.name || '?';
-        result = { type: 'seer_player', targetName, targetRole };
+        result = { type: 'seer_player', targetName: players[targetId]?.name || '?', targetRole: originalRoles[targetId] || '' };
         actionData = { role: 'seer', mode: 'player', playerTarget: targetId };
       } else if (seerMode === 'center' && selectedTargets.length === 2) {
-        const r1 = centerCards[selectedTargets[0]] || '';
-        const r2 = centerCards[selectedTargets[1]] || '';
-        result = { type: 'seer_center', indices: [...selectedTargets], roles: [r1, r2] };
+        result = { type: 'seer_center', indices: [...selectedTargets], roles: [centerCards[selectedTargets[0]] || '', centerCards[selectedTargets[1]] || ''] };
         actionData = { role: 'seer', mode: 'center', center1: selectedTargets[0], center2: selectedTargets[1] };
       } else return;
+
+    } else if (role === 'apprenticeSeer') {
+      if (selectedTargets.length === 1) {
+        const idx = selectedTargets[0];
+        result = { type: 'apprenticeSeer', index: idx, role: centerCards[idx] || '' };
+        actionData = { role: 'apprenticeSeer', centerIndex: idx };
+      } else return;
+
+    } else if (role === 'pi') {
+      const lastId = selectedTargets[0];
+      if (!lastId) return;
+      const targetRole = originalRoles[lastId] || '';
+      const targetName = players[lastId]?.name || '?';
+      const isVillage = ROLES[targetRole]?.team === 'villagers';
+      const allSeen = [...piSeen, { id: lastId, name: targetName, role: targetRole }];
+      // If found non-village OR second investigation OR chose to stop
+      if (!isVillage || nightActionSubStep === 'second' || allSeen.length >= 2) {
+        result = { type: 'pi', seen: allSeen };
+        actionData = { role: 'pi', targets: allSeen.map(s => s.id) };
+      } else {
+        // Village found on first look — advance to optional second
+        setPiSeen(allSeen);
+        setNightActionSubStep('second');
+        setSelectedTargets([]);
+        return;
+      }
+
+    } else if (role === 'witch') {
+      if (!witchPeekedCard) return;
+      const swapTargetId = selectedTargets[0] || null;
+      result = { type: 'witch', peekedCard: witchPeekedCard, swapTargetId, swapTargetName: swapTargetId ? players[swapTargetId]?.name : null };
+      actionData = { role: 'witch', centerIndex: witchPeekedCard.index, swapTargetId: swapTargetId || null };
+
+    } else if (role === 'revealer') {
+      if (selectedTargets.length === 1) {
+        const targetId = selectedTargets[0];
+        const targetRole = originalRoles[targetId] || '';
+        const isEvil = WEREWOLF_ROLES.has(targetRole) || targetRole === 'tanner' || targetRole === 'minion';
+        result = { type: 'revealer', targetName: players[targetId]?.name || '?', targetRole, flippedBack: isEvil };
+        actionData = { role: 'revealer', targetId, revealed: !isEvil };
+      } else return;
+
+    } else if (role === 'villageIdiot') {
+      if (selectedTargets.length === 1) {
+        const direction = selectedTargets[0] === 0 ? 'left' : 'right';
+        const playerOrder = otherIds; // consistent order
+        result = { type: 'villageIdiot', direction };
+        actionData = { role: 'villageIdiot', direction, playerOrder };
+      } else return;
+
     } else if (role === 'robber') {
       if (selectedTargets.length === 1) {
         const targetId = selectedTargets[0];
-        const stolenRole = originalRoles[targetId] || '';
-        const targetName = players[targetId]?.name || '?';
-        result = { type: 'robber', targetName, newRole: stolenRole };
+        result = { type: 'robber', targetName: players[targetId]?.name || '?', newRole: originalRoles[targetId] || '' };
         actionData = { role: 'robber', actorId: myId, targetId };
       } else return;
+
     } else if (role === 'troublemaker') {
       if (selectedTargets.length === 2) {
         const [t1, t2] = selectedTargets;
         result = { type: 'troublemaker', name1: players[t1]?.name || '?', name2: players[t2]?.name || '?' };
         actionData = { role: 'troublemaker', target1Id: t1, target2Id: t2 };
       } else return;
+
     } else if (role === 'drunk') {
       if (selectedTargets.length === 1) {
         const idx = selectedTargets[0];
         result = { type: 'drunk', index: idx };
         actionData = { role: 'drunk', actorId: myId, centerIndex: idx };
       } else return;
+
     } else if (role === 'insomniac') {
       const { finalRoles } = resolveNightActions(originalRoles, centerCards, roomData?.nightActions || {});
       const myFinalRole = finalRoles[myId] || myOriginalRole;
@@ -709,10 +994,10 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
 
     if (result && actionData) {
       setNightResult(result);
-      setNightResultModal(result); // show full-screen reveal
+      setNightResultModal(result);
       submitNightAction(actionData);
     }
-  }, [myOriginalRole, roomData, myId, selectedTargets, seerMode, submitNightAction]);
+  }, [myOriginalRole, roomData, myId, selectedTargets, seerMode, nightActionSubStep, witchPeekedCard, piSeen, submitNightAction]);
 
   // ─── RENDER HELPERS ────────────────────────────────────────────────────────
   const players = roomData?.players || {};
@@ -830,55 +1115,61 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           {/* Role Selection (host only) */}
           {isHost && (
             <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-1">
                 <h3 className="font-bold text-white/80">Role Pool</h3>
-                <span className={`text-sm px-2 py-1 rounded-lg ${
-                  hostRolePool.length === neededRoles ? 'bg-green-600/40 text-green-300' : 'bg-yellow-600/40 text-yellow-300'
-                }`}>
-                  {hostRolePool.length}/{neededRoles} roles needed
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm px-2 py-1 rounded-lg ${hostRolePool.length === neededRoles ? 'bg-green-600/40 text-green-300' : 'bg-yellow-600/40 text-yellow-300'}`}>
+                    {hostRolePool.length}/{neededRoles}
+                  </span>
+                  <button onClick={() => setShowRoleGuide(true)} className="text-xs bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 px-2 py-1 rounded-lg transition-all">📖 Guide</button>
+                </div>
               </div>
               <p className="text-white/50 text-xs mb-3">Need exactly {playerCount} players + 3 center = {neededRoles} total roles</p>
 
-              <div className="grid grid-cols-2 gap-2">
-                {allRoleTypes.map(roleId => {
-                  const r = ROLES[roleId];
-                  const count = roleCounts[roleId] || 0;
-                  return (
-                    <div key={roleId} className={`flex items-center justify-between p-2 rounded-xl border
-                      ${count > 0 ? `bg-gradient-to-r ${r.bg} ${r.border}` : 'bg-white/5 border-white/10'}`}>
-                      <div className="flex items-center gap-2">
-                        <span>{r.icon}</span>
-                        <div>
-                          <p className="text-xs font-bold">{r.name}</p>
-                          <p className="text-xs opacity-60">{r.team}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setHostRolePool(prev => {
-                            const idx = prev.lastIndexOf(roleId);
-                            if (idx === -1) return prev;
-                            return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
-                          })}
-                          className="w-6 h-6 rounded-full bg-red-500/40 hover:bg-red-500/70 text-white text-xs font-bold flex items-center justify-center"
-                          disabled={count === 0}
-                        >−</button>
-                        <span className="w-5 text-center text-sm font-bold">{count}</span>
-                        <button
-                          onClick={() => setHostRolePool(prev => [...prev, roleId])}
-                          className="w-6 h-6 rounded-full bg-green-500/40 hover:bg-green-500/70 text-white text-xs font-bold flex items-center justify-center"
-                        >+</button>
-                      </div>
+              {['Base Game', 'Daybreak'].map(exp => {
+                const expRoles = allRoleTypes.filter(id => ROLES[id].expansion === exp);
+                return (
+                  <div key={exp} className="mb-3">
+                    <div className={`text-xs px-2 py-0.5 rounded-full border inline-block mb-2 font-semibold ${EXPANSION_COLORS[exp] || 'text-white/50 bg-white/5 border-white/10'}`}>{exp}</div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {expRoles.map(roleId => {
+                        const r = ROLES[roleId];
+                        const count = roleCounts[roleId] || 0;
+                        return (
+                          <div key={roleId} className={`flex items-center justify-between p-2 rounded-xl border
+                            ${count > 0 ? `bg-gradient-to-r ${r.bg} ${r.border}` : 'bg-white/5 border-white/10'}`}>
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="text-base flex-shrink-0">{r.icon}</span>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold leading-tight truncate">{r.name}</p>
+                                <p className="text-xs opacity-60 truncate">{r.team === 'werewolves' ? '🐺' : r.team === 'tanner' ? '😅' : '🏘️'}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <button onClick={() => setRoleInfoModal(roleId)} className="w-5 h-5 rounded-full bg-white/20 hover:bg-white/40 text-white text-xs flex items-center justify-center">?</button>
+                              <button
+                                onClick={() => setHostRolePool(prev => { const idx = prev.lastIndexOf(roleId); if (idx === -1) return prev; return [...prev.slice(0, idx), ...prev.slice(idx + 1)]; })}
+                                className="w-5 h-5 rounded-full bg-red-500/40 hover:bg-red-500/70 text-white text-xs font-bold flex items-center justify-center"
+                                disabled={count === 0}
+                              >−</button>
+                              <span className="w-4 text-center text-xs font-bold">{count}</span>
+                              <button
+                                onClick={() => setHostRolePool(prev => [...prev, roleId])}
+                                className="w-5 h-5 rounded-full bg-green-500/40 hover:bg-green-500/70 text-white text-xs font-bold flex items-center justify-center"
+                              >+</button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
 
               <button
                 onClick={startGame}
                 disabled={hostRolePool.length !== neededRoles || playerCount < 3}
-                className="mt-4 w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all"
+                className="mt-2 w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all"
               >
                 {playerCount < 3 ? `Need ${3 - playerCount} more player(s)` :
                  hostRolePool.length !== neededRoles ? `Adjust roles (need ${neededRoles})` :
@@ -892,9 +1183,16 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               <div className="text-4xl mb-2 animate-pulse">⏳</div>
               <p className="text-white/70">Waiting for the host to start the game...</p>
               <p className="text-white/40 text-sm mt-1">Share room code <span className="text-yellow-300 font-mono font-bold">{roomCode}</span> with friends</p>
+              <button onClick={() => setShowRoleGuide(true)} className="mt-3 text-sm bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 px-4 py-2 rounded-xl transition-all">📖 View Role Guide</button>
             </div>
           )}
         </div>
+
+        {/* Modals */}
+        <AnimatePresence>
+          {showRoleGuide && <RoleGuide onClose={() => setShowRoleGuide(false)} onSelectRole={(id) => { setRoleInfoModal(id); }} />}
+          {roleInfoModal && <RoleInfoCard roleId={roleInfoModal} onClose={() => setRoleInfoModal(null)} />}
+        </AnimatePresence>
       </div>
     );
   }
@@ -1087,6 +1385,102 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           {!changed && <p className="text-white/40 text-sm text-center mt-2">Your card was not changed.</p>}
         </div>
       ) : <p className="text-white/60">Role: {res.finalRole}</p>;
+
+    } else if (res.type === 'mason') {
+      title = '🤝 Fellow Masons';
+      content = res.masons.length > 0
+        ? <div className="space-y-2">{res.masons.map(n => <div key={n} className="px-4 py-3 bg-stone-700/60 rounded-xl border border-stone-500 text-stone-200 font-bold text-lg">🤝 {n}</div>)}</div>
+        : <p className="text-stone-300 text-lg text-center">You are the lone Mason. No other Mason is in this game.</p>;
+
+    } else if (res.type === 'mysticWolf') {
+      const mr = ROLES[res.targetRole];
+      title = `🔮 Mystic Wolf`;
+      content = (
+        <div className="space-y-3">
+          {res.pack.length > 0 && <div className="bg-red-900/40 rounded-xl p-3"><p className="text-red-300 text-xs font-bold mb-1">YOUR PACK</p>{res.pack.map(n => <p key={n} className="text-red-200 font-semibold">🐺 {n}</p>)}</div>}
+          {res.pack.length === 0 && <p className="text-red-300 text-sm">You are the lone wolf.</p>}
+          <div className="border-t border-white/10 pt-3">
+            <p className="text-white/60 text-xs mb-2">You peeked at <strong className="text-white">{res.targetName}</strong>:</p>
+            {mr ? <div className={`bg-gradient-to-br ${mr.bg} ${mr.border} border-2 rounded-xl p-4 text-center`}><div className="text-3xl mb-1">{mr.icon}</div><p className="text-white font-black">{mr.name}</p></div> : <p className="text-white/60">Unknown role</p>}
+          </div>
+        </div>
+      );
+
+    } else if (res.type === 'alphaWolf') {
+      title = `⚔️ Alpha Wolf`;
+      content = (
+        <div className="space-y-3">
+          {res.pack.length > 0 && <div className="bg-red-900/40 rounded-xl p-3"><p className="text-red-300 text-xs font-bold mb-1">YOUR PACK</p>{res.pack.map(n => <p key={n} className="text-red-200 font-semibold">🐺 {n}</p>)}</div>}
+          <div className="bg-green-900/40 rounded-xl p-3 text-center"><p className="text-green-300 text-sm">You placed a 🐺 Werewolf card onto <strong className="text-white">{res.targetName}</strong>!</p><p className="text-white/40 text-xs mt-1">Their old card is now in the center.</p></div>
+        </div>
+      );
+
+    } else if (res.type === 'alphaWolf_no_wolf') {
+      title = `⚔️ Alpha Wolf`;
+      content = (
+        <div className="space-y-3">
+          {res.pack.length > 0 && <div className="bg-red-900/40 rounded-xl p-3"><p className="text-red-300 text-xs font-bold mb-1">YOUR PACK</p>{res.pack.map(n => <p key={n} className="text-red-200 font-semibold">🐺 {n}</p>)}</div>}
+          <p className="text-white/60 text-sm text-center">No Werewolf card in the center — nothing to swap.</p>
+        </div>
+      );
+
+    } else if (res.type === 'apprenticeSeer') {
+      const ar = ROLES[res.role];
+      title = `🔭 Center Card ${res.index + 1}`;
+      content = ar ? <div className={`bg-gradient-to-br ${ar.bg} ${ar.border} border-2 rounded-2xl p-6 text-center`}><div className="text-5xl mb-2">{ar.icon}</div><p className="text-white font-black text-2xl">{ar.name}</p><p className={`${ar.text} text-sm mt-1`}>{ROLE_DESCRIPTIONS[ar.team]}</p></div> : <p className="text-white/60">Unknown card</p>;
+
+    } else if (res.type === 'pi') {
+      title = '🔍 Investigation Results';
+      content = (
+        <div className="space-y-2">
+          {res.seen.map((s, i) => {
+            const pr = ROLES[s.role];
+            return pr ? (
+              <div key={i} className={`bg-gradient-to-r ${pr.bg} ${pr.border} border rounded-xl p-3 flex items-center gap-3`}>
+                <span className="text-2xl">{pr.icon}</span>
+                <div><p className="text-white font-bold">{s.name}</p><p className={`text-xs ${pr.text}`}>{pr.name}</p></div>
+              </div>
+            ) : null;
+          })}
+        </div>
+      );
+
+    } else if (res.type === 'witch') {
+      const wc = ROLES[res.peekedCard.role];
+      title = '🧙 Witch Brewed';
+      content = (
+        <div className="space-y-3">
+          <div className="text-center">
+            <p className="text-white/60 text-xs mb-2">You peeked at Center Card {res.peekedCard.index + 1}:</p>
+            {wc ? <div className={`bg-gradient-to-br ${wc.bg} ${wc.border} border-2 rounded-xl p-4 text-center inline-block min-w-[120px]`}><div className="text-3xl mb-1">{wc.icon}</div><p className="text-white font-black">{wc.name}</p></div> : null}
+          </div>
+          {res.swapTargetId
+            ? <p className="text-fuchsia-300 text-sm text-center">✅ You swapped it with <strong className="text-white">{res.swapTargetName}</strong>&apos;s card!</p>
+            : <p className="text-white/50 text-sm text-center">You chose not to swap — the center card stays.</p>}
+        </div>
+      );
+
+    } else if (res.type === 'revealer') {
+      const rv = ROLES[res.targetRole];
+      title = '📢 Revealer';
+      content = (
+        <div className="space-y-3">
+          {rv ? <div className={`bg-gradient-to-br ${rv.bg} ${rv.border} border-2 rounded-2xl p-5 text-center`}><div className="text-4xl mb-1">{rv.icon}</div><p className="text-white font-black text-xl">{res.targetName}</p><p className={`${rv.text} font-semibold`}>{rv.name}</p></div> : null}
+          {res.flippedBack
+            ? <div className="bg-red-900/40 rounded-xl p-3 text-center"><p className="text-red-300 text-sm font-bold">⚠️ This is an evil role — card goes back face-down.</p><p className="text-white/50 text-xs mt-1">Only you know what you saw!</p></div>
+            : <div className="bg-green-900/40 rounded-xl p-3 text-center"><p className="text-green-300 text-sm font-bold">✅ Village role — this card stays revealed!</p><p className="text-white/50 text-xs mt-1">During day discussion, tell everyone what you found.</p></div>}
+        </div>
+      );
+
+    } else if (res.type === 'villageIdiot') {
+      title = '🤪 Village Idiot';
+      content = (
+        <div className="text-center">
+          <div className="text-6xl mb-3">{res.direction === 'left' ? '⬅️' : '➡️'}</div>
+          <p className="text-pink-200 text-lg font-bold">Shifted {res.direction === 'left' ? 'Left' : 'Right'}!</p>
+          <p className="text-white/50 text-sm mt-2">All other players&apos; roles have been rotated. Nobody knows — except you!</p>
+        </div>
+      );
     }
 
     return (
@@ -1373,9 +1767,212 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               {role === 'insomniac' && (
                 <div className="space-y-3">
                   <p className="text-white/80 text-sm">Check your final role card...</p>
-                  <button onClick={handleNightAction} className="w-full py-2 bg-indigo-700 hover:bg-indigo-600 text-white font-bold rounded-xl transition-all">
-                    Look at My Card
-                  </button>
+                  <button onClick={handleNightAction} className="w-full py-2 bg-indigo-700 hover:bg-indigo-600 text-white font-bold rounded-xl transition-all">Look at My Card</button>
+                </div>
+              )}
+
+              {/* Mason */}
+              {role === 'mason' && (
+                <div className="space-y-2">
+                  <p className="text-white/80 text-sm">Your fellow Masons:</p>
+                  {otherPlayers.filter(p => p.originalRole === 'mason').length > 0
+                    ? otherPlayers.filter(p => p.originalRole === 'mason').map(p => (
+                        <div key={p.id} className="px-3 py-2 bg-stone-700/60 rounded-xl border border-stone-500 text-stone-200 font-bold">🤝 {p.name}</div>
+                      ))
+                    : <p className="text-stone-300 text-sm">No other Masons — you are alone.</p>}
+                  <button onClick={handleNightAction} className="w-full py-2 bg-stone-700 hover:bg-stone-600 text-white font-bold rounded-xl mt-1 transition-all">Got it ✓</button>
+                </div>
+              )}
+
+              {/* Mystic Wolf — Step 1: see pack */}
+              {role === 'mysticWolf' && nightActionSubStep === null && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Your wolf pack:</p>
+                  {otherPlayers.filter(p => WEREWOLF_ROLES.has(p.originalRole) && p.originalRole !== 'dreamWolf').length > 0
+                    ? otherPlayers.filter(p => WEREWOLF_ROLES.has(p.originalRole) && p.originalRole !== 'dreamWolf').map(p => (
+                        <div key={p.id} className="px-3 py-2 bg-red-900/60 rounded-xl border border-red-500 text-red-200 font-bold">🐺 {p.name}</div>
+                      ))
+                    : <p className="text-red-300 text-sm">Lone wolf...</p>}
+                  <button onClick={handleNightAction} className="w-full py-2 bg-violet-700 hover:bg-violet-600 text-white font-bold rounded-xl transition-all">Got it → Now Peek at a Player</button>
+                </div>
+              )}
+              {/* Mystic Wolf — Step 2: peek at player */}
+              {role === 'mysticWolf' && nightActionSubStep === 'peek' && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Select a player to peek at their card:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {otherPlayers.map(p => (
+                      <button key={p.id} onClick={() => setSelectedTargets([p.id])}
+                        className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${selectedTargets.includes(p.id) ? 'bg-violet-500/40 border-violet-300 text-white' : 'bg-white/10 border-white/20 text-white/70'}`}>
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="w-full py-2 bg-violet-700 hover:bg-violet-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">See Card</button>
+                </div>
+              )}
+
+              {/* Alpha Wolf — Step 1: see pack + center preview */}
+              {role === 'alphaWolf' && nightActionSubStep === null && (() => {
+                const wolfCenterIdx = (roomData?.centerCards || []).findIndex(c => WEREWOLF_ROLES.has(c));
+                return (
+                  <div className="space-y-3">
+                    <p className="text-white/80 text-sm">Your wolf pack:</p>
+                    {otherPlayers.filter(p => WEREWOLF_ROLES.has(p.originalRole) && p.originalRole !== 'dreamWolf').length > 0
+                      ? otherPlayers.filter(p => WEREWOLF_ROLES.has(p.originalRole) && p.originalRole !== 'dreamWolf').map(p => (
+                          <div key={p.id} className="px-3 py-2 bg-red-900/60 rounded-xl border border-red-500 text-red-200 font-bold">🐺 {p.name}</div>
+                        ))
+                      : <p className="text-red-300 text-sm">Lone wolf.</p>}
+                    {wolfCenterIdx >= 0
+                      ? <><p className="text-white/70 text-sm mt-1">🐺 Wolf card found in <strong>Center {wolfCenterIdx + 1}</strong>! Pick a player to receive it:</p>
+                          <button onClick={() => { setNightActionSubStep('place'); setSelectedTargets([]); }} className="w-full py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-xl transition-all">Choose Target →</button></>
+                      : <><p className="text-white/60 text-sm">No wolf card in center. Nothing to swap.</p>
+                          <button onClick={handleNightAction} className="w-full py-2 bg-red-900 hover:bg-red-800 text-white font-bold rounded-xl transition-all">Close Eyes ✓</button></>}
+                  </div>
+                );
+              })()}
+              {/* Alpha Wolf — Step 2: pick target */}
+              {role === 'alphaWolf' && nightActionSubStep === 'place' && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Pick a player to receive the wolf card:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {otherPlayers.map(p => (
+                      <button key={p.id} onClick={() => setSelectedTargets([p.id])}
+                        className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${selectedTargets.includes(p.id) ? 'bg-red-500/40 border-red-300 text-white' : 'bg-white/10 border-white/20 text-white/70'}`}>
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="w-full py-2 bg-red-700 hover:bg-red-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Give Wolf Card</button>
+                </div>
+              )}
+
+              {/* Apprentice Seer */}
+              {role === 'apprenticeSeer' && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Pick one center card to peek at:</p>
+                  <div className="flex gap-2 justify-center">
+                    {[0, 1, 2].map(i => (
+                      <button key={i} onClick={() => setSelectedTargets([i])}
+                        className={`flex-1 py-3 rounded-xl border-2 font-bold text-sm transition-all ${selectedTargets.includes(i) ? 'bg-white/30 border-white text-white' : 'bg-white/10 border-white/30 text-white/70'}`}>
+                        Center {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="w-full py-2 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Peek</button>
+                </div>
+              )}
+
+              {/* PI — Step 1 */}
+              {role === 'pi' && nightActionSubStep === null && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Pick a player to investigate:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {otherPlayers.map(p => (
+                      <button key={p.id} onClick={() => setSelectedTargets([p.id])}
+                        className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${selectedTargets.includes(p.id) ? 'bg-emerald-500/40 border-emerald-300 text-white' : 'bg-white/10 border-white/20 text-white/70'}`}>
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="w-full py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Investigate</button>
+                </div>
+              )}
+              {/* PI — Step 2 (optional second) */}
+              {role === 'pi' && nightActionSubStep === 'second' && (
+                <div className="space-y-3">
+                  {piSeen.length > 0 && <div className="bg-emerald-900/40 rounded-xl p-2 text-xs text-emerald-300">Found <strong>{ROLES[piSeen[0]?.role]?.name}</strong> on {piSeen[0]?.name} — village role! May investigate one more.</div>}
+                  <p className="text-white/80 text-sm">Investigate one more (optional):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {otherPlayers.filter(p => !piSeen.some(s => s.id === p.id)).map(p => (
+                      <button key={p.id} onClick={() => setSelectedTargets([p.id])}
+                        className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${selectedTargets.includes(p.id) ? 'bg-emerald-500/40 border-emerald-300 text-white' : 'bg-white/10 border-white/20 text-white/70'}`}>
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setNightResult({ type: 'pi', seen: piSeen }); setNightResultModal({ type: 'pi', seen: piSeen }); submitNightAction({ role: 'pi', targets: piSeen.map(s => s.id) }); }} className="flex-1 py-2 bg-white/10 rounded-xl text-sm font-bold text-white/70">Stop Here</button>
+                    <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="flex-1 py-2 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Investigate & Done</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Witch — Step 1: pick center card */}
+              {role === 'witch' && nightActionSubStep === null && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Pick a center card to peek at:</p>
+                  <div className="flex gap-2 justify-center">
+                    {[0, 1, 2].map(i => (
+                      <button key={i} onClick={() => setSelectedTargets([i])}
+                        className={`flex-1 py-3 rounded-xl border-2 font-bold text-sm transition-all ${selectedTargets.includes(i) ? 'bg-fuchsia-500/40 border-fuchsia-300 text-white' : 'bg-white/10 border-white/30 text-white/70'}`}>
+                        Center {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  <button disabled={selectedTargets.length === 0} onClick={() => {
+                    const idx = selectedTargets[0];
+                    setWitchPeekedCard({ index: idx, role: (roomData?.centerCards || [])[idx] || '' });
+                    setNightActionSubStep('decide');
+                    setSelectedTargets([]);
+                  }} className="w-full py-2 bg-fuchsia-700 hover:bg-fuchsia-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Peek at Card</button>
+                </div>
+              )}
+              {/* Witch — Step 2: decide swap */}
+              {role === 'witch' && nightActionSubStep === 'decide' && witchPeekedCard && (() => {
+                const wc = ROLES[witchPeekedCard.role];
+                return (
+                  <div className="space-y-3">
+                    <div className="text-center">
+                      <p className="text-white/60 text-xs mb-2">Center Card {witchPeekedCard.index + 1} is:</p>
+                      {wc && <div className={`inline-block bg-gradient-to-br ${wc.bg} ${wc.border} border-2 rounded-xl p-3`}><span className="text-3xl">{wc.icon}</span><p className="text-white font-bold mt-1 text-sm">{wc.name}</p></div>}
+                    </div>
+                    <p className="text-white/80 text-sm">Swap with a player (optional):</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[...otherPlayers, { id: myId, name: 'Yourself' }].map(p => (
+                        <button key={p.id} onClick={() => setSelectedTargets(prev => prev.includes(p.id) ? [] : [p.id])}
+                          className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${selectedTargets.includes(p.id) ? 'bg-fuchsia-500/40 border-fuchsia-300 text-white' : 'bg-white/10 border-white/20 text-white/70'}`}>
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => { setSelectedTargets([]); handleNightAction(); }} className="flex-1 py-2 bg-white/10 rounded-xl text-sm font-bold text-white/70">Keep as-is</button>
+                      <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="flex-1 py-2 bg-fuchsia-700 hover:bg-fuchsia-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Swap!</button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Revealer */}
+              {role === 'revealer' && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Pick a player to reveal their card:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {otherPlayers.map(p => (
+                      <button key={p.id} onClick={() => setSelectedTargets([p.id])}
+                        className={`px-3 py-2 rounded-xl border text-sm font-semibold transition-all ${selectedTargets.includes(p.id) ? 'bg-lime-500/40 border-lime-300 text-white' : 'bg-white/10 border-white/20 text-white/70'}`}>
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="w-full py-2 bg-lime-700 hover:bg-lime-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Flip Card</button>
+                </div>
+              )}
+
+              {/* Village Idiot */}
+              {role === 'villageIdiot' && (
+                <div className="space-y-3">
+                  <p className="text-white/80 text-sm">Shift all other players&apos; cards:</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[{ label: '⬅️ Shift Left', val: 0 }, { label: '➡️ Shift Right', val: 1 }].map(({ label, val }) => (
+                      <button key={val} onClick={() => setSelectedTargets([val])}
+                        className={`py-4 rounded-xl border-2 font-bold text-sm transition-all ${selectedTargets.includes(val) ? 'bg-pink-500/40 border-pink-300 text-white' : 'bg-white/10 border-white/30 text-white/70'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={handleNightAction} disabled={selectedTargets.length === 0} className="w-full py-2 bg-pink-700 hover:bg-pink-600 disabled:opacity-40 text-white font-bold rounded-xl transition-all">Shift Roles</button>
                 </div>
               )}
             </motion.div>
@@ -1466,9 +2063,28 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           <div className="text-center py-4">
             <div className="text-5xl mb-2">☀️</div>
             <h2 className="text-2xl font-black">Morning — Discuss!</h2>
-            {dayEnd && <PhaseTimer endTime={dayEnd} />}
+            {dayEnd && <PhaseTimer endTime={dayEnd} paused={roomData?.timerPaused} pausedRemaining={roomData?.pausedRemaining} />}
             <p className="text-white/60 text-sm mt-1">Talk to each other. Accuse, bluff, and deduce.</p>
           </div>
+
+          {/* Host timer controls */}
+          {isHost && (
+            <div className="bg-black/30 rounded-2xl p-3 border border-white/10 flex flex-wrap gap-2 justify-center">
+              <button onClick={() => {
+                if (roomData?.timerPaused) {
+                  fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { timerPaused: false, dayEndTime: Date.now() + (roomData.pausedRemaining || 30000), pausedRemaining: null });
+                } else {
+                  const rem = Math.max(0, (roomData?.dayEndTime || Date.now()) - Date.now());
+                  fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { timerPaused: true, pausedRemaining: rem });
+                }
+              }} className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all ${roomData?.timerPaused ? 'bg-green-600/40 border-green-500 text-green-300 hover:bg-green-600/60' : 'bg-yellow-600/40 border-yellow-500 text-yellow-300 hover:bg-yellow-600/60'}`}>
+                {roomData?.timerPaused ? '▶ Resume' : '⏸ Pause'}
+              </button>
+              <button onClick={() => fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { dayEndTime: (roomData?.dayEndTime || Date.now()) + 60000, timerPaused: false })} className="px-3 py-2 rounded-xl text-sm font-bold bg-blue-600/40 border border-blue-500 text-blue-300 hover:bg-blue-600/60 transition-all">+1 min</button>
+              <button onClick={() => fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { dayEndTime: Math.max(Date.now() + 10000, (roomData?.dayEndTime || Date.now()) - 60000) })} className="px-3 py-2 rounded-xl text-sm font-bold bg-orange-600/40 border border-orange-500 text-orange-300 hover:bg-orange-600/60 transition-all">−1 min</button>
+              <button onClick={() => fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'vote', voteEndTime: Date.now() + 60000, timerPaused: false })} className="px-3 py-2 rounded-xl text-sm font-bold bg-red-600/40 border border-red-500 text-red-300 hover:bg-red-600/60 transition-all">⏭ Skip to Vote</button>
+            </div>
+          )}
 
           {r && (
             roleHidden ? (
@@ -1556,9 +2172,29 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           <div className="text-center py-4">
             <div className="text-5xl mb-2">🗳️</div>
             <h2 className="text-2xl font-black">Vote!</h2>
-            {voteEnd && <PhaseTimer endTime={voteEnd} />}
+            {voteEnd && <PhaseTimer endTime={voteEnd} paused={roomData?.timerPaused} pausedRemaining={roomData?.pausedRemaining} />}
             <p className="text-white/60 text-sm mt-1">Who do you think is the werewolf?</p>
           </div>
+
+          {isHost && (
+            <div className="flex flex-wrap gap-2 justify-center">
+              <button
+                onClick={() => {
+                  if (roomData?.timerPaused) {
+                    const newEnd = Date.now() + (roomData.pausedRemaining || 0);
+                    fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { timerPaused: false, voteEndTime: newEnd, pausedRemaining: null });
+                  } else {
+                    const remaining = (voteEnd || Date.now()) - Date.now();
+                    fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { timerPaused: true, pausedRemaining: Math.max(0, remaining) });
+                  }
+                }}
+                className="px-3 py-2 rounded-xl text-sm font-bold bg-yellow-600/40 border border-yellow-500 text-yellow-300 hover:bg-yellow-600/60 transition-all"
+              >{roomData?.timerPaused ? '▶ Resume' : '⏸ Pause'}</button>
+              <button onClick={() => fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { voteEndTime: (roomData?.voteEndTime || Date.now()) + 30000, timerPaused: false })} className="px-3 py-2 rounded-xl text-sm font-bold bg-blue-600/40 border border-blue-500 text-blue-300 hover:bg-blue-600/60 transition-all">+30s</button>
+              <button onClick={() => fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { voteEndTime: Math.max(Date.now() + 5000, (roomData?.voteEndTime || Date.now()) - 30000) })} className="px-3 py-2 rounded-xl text-sm font-bold bg-orange-600/40 border border-orange-500 text-orange-300 hover:bg-orange-600/60 transition-all">−30s</button>
+              <button onClick={() => fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'results', timerPaused: false })} className="px-3 py-2 rounded-xl text-sm font-bold bg-red-600/40 border border-red-500 text-red-300 hover:bg-red-600/60 transition-all">⏭ End Voting Now</button>
+            </div>
+          )}
 
           {myVote ? (
             <div className="bg-green-900/40 rounded-2xl p-4 border border-green-500/40 text-center">
