@@ -130,28 +130,34 @@ function resolveNightActions(originalRoles, centerCards, nightActions) {
   const finalCenter = [...centerCards];
   const na = nightActions || {};
 
-  // Robber acts first (from night action order perspective of resolution)
-  if (na.robber) {
-    const { actorId, targetId } = na.robber;
-    if (actorId && targetId && finalRoles[actorId] && finalRoles[targetId]) {
+  // Night actions are stored keyed by player ID, so find each by the 'role' field
+  const findAction = (roleName) => Object.values(na).find(a => a?.role === roleName);
+
+  // Robber acts first
+  const robberAction = findAction('robber');
+  if (robberAction) {
+    const { actorId, targetId } = robberAction;
+    if (actorId && targetId && finalRoles[actorId] !== undefined && finalRoles[targetId] !== undefined) {
       const tmp = finalRoles[actorId];
       finalRoles[actorId] = finalRoles[targetId];
       finalRoles[targetId] = tmp;
     }
   }
   // Troublemaker
-  if (na.troublemaker) {
-    const { target1Id, target2Id } = na.troublemaker;
-    if (target1Id && target2Id && finalRoles[target1Id] && finalRoles[target2Id]) {
+  const troublemakerAction = findAction('troublemaker');
+  if (troublemakerAction) {
+    const { target1Id, target2Id } = troublemakerAction;
+    if (target1Id && target2Id && finalRoles[target1Id] !== undefined && finalRoles[target2Id] !== undefined) {
       const tmp = finalRoles[target1Id];
       finalRoles[target1Id] = finalRoles[target2Id];
       finalRoles[target2Id] = tmp;
     }
   }
   // Drunk
-  if (na.drunk) {
-    const { actorId, centerIndex } = na.drunk;
-    if (actorId !== undefined && centerIndex !== undefined && finalRoles[actorId]) {
+  const drunkAction = findAction('drunk');
+  if (drunkAction) {
+    const { actorId, centerIndex } = drunkAction;
+    if (actorId !== undefined && centerIndex !== undefined && finalRoles[actorId] !== undefined) {
       const tmp = finalRoles[actorId];
       finalRoles[actorId] = finalCenter[centerIndex];
       finalCenter[centerIndex] = tmp;
@@ -343,6 +349,8 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   ]);
   const [gameResult, setGameResult] = useState(null);
   const [finalRolesComputed, setFinalRolesComputed] = useState(null);
+  const [roleHidden, setRoleHidden] = useState(false);
+  const [nightResultModal, setNightResultModal] = useState(null); // full-screen reveal
 
   const roomRef = useRef(null);
   const hostIntervalRef = useRef(null);
@@ -616,20 +624,26 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     setRoomData(null);
     setMyOriginalRole(null);
     setNightResult(null);
+    setNightResultModal(null);
     setNightActionDone(false);
     setMyVote(null);
     setGameResult(null);
     setFinalRolesComputed(null);
+    setRoleHidden(false);
+    setSeerMode(null);
+    setSelectedTargets([]);
   }, [roomCode, myId]);
 
   // ── Night action logic ────────────────────────────────────────────────────
   const handleNightAction = useCallback(() => {
     const role = myOriginalRole;
     const players = roomData?.players || {};
-    const otherPlayers = Object.entries(players).filter(([id]) => id !== myId);
     const centerCards = roomData?.centerCards || [];
     const originalRoles = {};
     Object.entries(players).forEach(([id, p]) => { originalRoles[id] = p.originalRole; });
+
+    let result = null;
+    let actionData = null;
 
     if (role === 'werewolf') {
       const werewolves = Object.entries(players)
@@ -637,62 +651,66 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
         .map(([, p]) => p.name);
 
       if (werewolves.length > 0) {
-        setNightResult({ type: 'werewolf_team', werewolves });
-        submitNightAction({ role: 'werewolf', saw: 'teammates' });
+        result = { type: 'werewolf_team', werewolves };
+        actionData = { role: 'werewolf', saw: 'teammates' };
       } else if (selectedTargets.length === 1) {
         const idx = selectedTargets[0];
         const card = centerCards[idx];
-        setNightResult({ type: 'center_card', index: idx, role: card });
-        submitNightAction({ role: 'werewolf', lookedAtCenter: true, centerIndex: idx, saw: card });
+        result = { type: 'center_card', index: idx, role: card };
+        actionData = { role: 'werewolf', lookedAtCenter: true, centerIndex: idx, saw: card };
       } else {
-        // Lone wolf - needs to pick center
-        return; // wait for selection
+        return; // lone wolf - needs to pick center first
       }
     } else if (role === 'minion') {
       const werewolves = Object.entries(players)
         .filter(([, p]) => p.originalRole === 'werewolf')
         .map(([, p]) => p.name);
-      setNightResult({ type: 'minion_see', werewolves });
-      submitNightAction({ role: 'minion', saw: 'werewolves' });
+      result = { type: 'minion_see', werewolves };
+      actionData = { role: 'minion', saw: 'werewolves' };
     } else if (role === 'seer') {
       if (seerMode === 'player' && selectedTargets.length === 1) {
         const targetId = selectedTargets[0];
-        const targetRole = originalRoles[targetId];
-        const targetName = players[targetId]?.name;
-        setNightResult({ type: 'seer_player', targetName, targetRole });
-        submitNightAction({ role: 'seer', mode: 'player', playerTarget: targetId });
+        const targetRole = originalRoles[targetId] || '';
+        const targetName = players[targetId]?.name || '?';
+        result = { type: 'seer_player', targetName, targetRole };
+        actionData = { role: 'seer', mode: 'player', playerTarget: targetId };
       } else if (seerMode === 'center' && selectedTargets.length === 2) {
-        const r1 = centerCards[selectedTargets[0]];
-        const r2 = centerCards[selectedTargets[1]];
-        setNightResult({ type: 'seer_center', indices: selectedTargets, roles: [r1, r2] });
-        submitNightAction({ role: 'seer', mode: 'center', center1: selectedTargets[0], center2: selectedTargets[1] });
+        const r1 = centerCards[selectedTargets[0]] || '';
+        const r2 = centerCards[selectedTargets[1]] || '';
+        result = { type: 'seer_center', indices: [...selectedTargets], roles: [r1, r2] };
+        actionData = { role: 'seer', mode: 'center', center1: selectedTargets[0], center2: selectedTargets[1] };
       } else return;
     } else if (role === 'robber') {
       if (selectedTargets.length === 1) {
         const targetId = selectedTargets[0];
-        const stolenRole = originalRoles[targetId];
-        const targetName = players[targetId]?.name;
-        setNightResult({ type: 'robber', targetName, newRole: stolenRole });
-        submitNightAction({ role: 'robber', actorId: myId, targetId });
+        const stolenRole = originalRoles[targetId] || '';
+        const targetName = players[targetId]?.name || '?';
+        result = { type: 'robber', targetName, newRole: stolenRole };
+        actionData = { role: 'robber', actorId: myId, targetId };
       } else return;
     } else if (role === 'troublemaker') {
       if (selectedTargets.length === 2) {
         const [t1, t2] = selectedTargets;
-        setNightResult({ type: 'troublemaker', name1: players[t1]?.name, name2: players[t2]?.name });
-        submitNightAction({ role: 'troublemaker', target1Id: t1, target2Id: t2 });
+        result = { type: 'troublemaker', name1: players[t1]?.name || '?', name2: players[t2]?.name || '?' };
+        actionData = { role: 'troublemaker', target1Id: t1, target2Id: t2 };
       } else return;
     } else if (role === 'drunk') {
       if (selectedTargets.length === 1) {
         const idx = selectedTargets[0];
-        setNightResult({ type: 'drunk', index: idx });
-        submitNightAction({ role: 'drunk', actorId: myId, centerIndex: idx });
+        result = { type: 'drunk', index: idx };
+        actionData = { role: 'drunk', actorId: myId, centerIndex: idx };
       } else return;
     } else if (role === 'insomniac') {
-      // Compute final role for insomniac
       const { finalRoles } = resolveNightActions(originalRoles, centerCards, roomData?.nightActions || {});
-      const myFinalRole = finalRoles[myId];
-      setNightResult({ type: 'insomniac', finalRole: myFinalRole });
-      submitNightAction({ role: 'insomniac', finalRole: myFinalRole });
+      const myFinalRole = finalRoles[myId] || myOriginalRole;
+      result = { type: 'insomniac', finalRole: myFinalRole };
+      actionData = { role: 'insomniac', finalRole: myFinalRole };
+    }
+
+    if (result && actionData) {
+      setNightResult(result);
+      setNightResultModal(result); // show full-screen reveal
+      submitNightAction(actionData);
     }
   }, [myOriginalRole, roomData, myId, selectedTargets, seerMode, submitNightAction]);
 
@@ -895,9 +913,23 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
         >
           <p className="text-white/60 mb-4">Your secret role</p>
 
-          <AnimatePresence>
-            {showRoleReveal && r ? (
+          <AnimatePresence mode="wait">
+            {roleHidden ? (
               <motion.div
+                key="hidden"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="mx-auto w-48 h-64 bg-gradient-to-br from-slate-800 to-slate-950 rounded-3xl border-4 border-white/20 flex flex-col items-center justify-center gap-3 shadow-2xl cursor-pointer"
+                onClick={() => setRoleHidden(false)}
+              >
+                <span className="text-5xl">🙈</span>
+                <p className="text-white/50 text-sm font-semibold">Role Hidden</p>
+                <p className="text-white/30 text-xs">Tap to reveal</p>
+              </motion.div>
+            ) : showRoleReveal && r ? (
+              <motion.div
+                key="revealed"
                 initial={{ rotateY: 90, opacity: 0 }}
                 animate={{ rotateY: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 200 }}
@@ -917,18 +949,29 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                 )}
               </motion.div>
             ) : (
-              <div className="mx-auto w-48 h-64 bg-gradient-to-br from-slate-700 to-slate-900 rounded-3xl border-4 border-white/20 flex items-center justify-center">
+              <motion.div
+                key="loading"
+                className="mx-auto w-48 h-64 bg-gradient-to-br from-slate-700 to-slate-900 rounded-3xl border-4 border-white/20 flex items-center justify-center"
+              >
                 <span className="text-white/20 font-black text-2xl">🌙</span>
-              </div>
+              </motion.div>
             )}
           </AnimatePresence>
 
           <p className="text-white/40 text-sm mt-6">Remember your role — don&apos;t show anyone!</p>
 
+          {/* Hide role toggle */}
+          <button
+            onClick={() => setRoleHidden(h => !h)}
+            className="mt-3 w-full bg-black/40 hover:bg-black/60 border border-white/20 text-white/70 hover:text-white font-semibold py-2 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
+          >
+            {roleHidden ? '👁️ Show My Role' : '🙈 Hide My Role'}
+          </button>
+
           {isHost && (
             <button
               onClick={beginNight}
-              className="mt-6 w-full bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-3 rounded-xl transition-all"
+              className="mt-4 w-full bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-3 rounded-xl transition-all"
             >
               🌙 Begin Night Phase
             </button>
@@ -940,6 +983,140 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       </div>
     );
   }
+
+  // ── Night result modal ────────────────────────────────────────────────────
+  const NightResultModal = () => {
+    if (!nightResultModal) return null;
+    const res = nightResultModal;
+
+    let title = '';
+    let content = null;
+
+    if (res.type === 'werewolf_team') {
+      title = '🐺 Your Pack';
+      content = res.werewolves.length > 0
+        ? <div className="space-y-2">{res.werewolves.map(n => <div key={n} className="px-4 py-3 bg-red-900/60 rounded-xl border border-red-500 text-red-200 font-bold text-lg">🐺 {n}</div>)}</div>
+        : <p className="text-red-300 text-lg">You are the lone wolf...</p>;
+    } else if (res.type === 'center_card') {
+      const cr = ROLES[res.role];
+      title = `Center Card ${res.index + 1}`;
+      content = cr ? (
+        <div className={`bg-gradient-to-br ${cr.bg} ${cr.border} border-2 rounded-2xl p-6 text-center`}>
+          <div className="text-5xl mb-2">{cr.icon}</div>
+          <p className="text-white font-black text-2xl">{cr.name}</p>
+          <p className={`${cr.text} text-sm mt-1`}>{ROLE_DESCRIPTIONS[cr.team]}</p>
+        </div>
+      ) : <p className="text-white/60">Unknown card</p>;
+    } else if (res.type === 'minion_see') {
+      title = '😈 The Werewolves Are...';
+      content = res.werewolves.length > 0
+        ? <div className="space-y-2">{res.werewolves.map(n => <div key={n} className="px-4 py-3 bg-red-900/60 rounded-xl border border-red-500 text-red-200 font-bold text-lg">🐺 {n}</div>)}</div>
+        : <p className="text-orange-300 text-lg">No werewolves! You are on your own!</p>;
+    } else if (res.type === 'seer_player') {
+      const sr = ROLES[res.targetRole];
+      title = `👁️ ${res.targetName}'s Card`;
+      content = sr ? (
+        <div className={`bg-gradient-to-br ${sr.bg} ${sr.border} border-2 rounded-2xl p-6 text-center`}>
+          <div className="text-5xl mb-2">{sr.icon}</div>
+          <p className="text-white font-black text-2xl">{sr.name}</p>
+          <p className={`${sr.text} text-sm mt-1`}>{ROLE_DESCRIPTIONS[sr.team]}</p>
+          <p className={`${sr.text} text-xs mt-2 opacity-70`}>{sr.description}</p>
+        </div>
+      ) : <p className="text-white/60">Card not found (role: {res.targetRole})</p>;
+    } else if (res.type === 'seer_center') {
+      title = '👁️ Center Cards';
+      content = (
+        <div className="flex gap-3 justify-center">
+          {res.roles.map((roleName, i) => {
+            const cr = ROLES[roleName];
+            return cr ? (
+              <div key={i} className={`bg-gradient-to-br ${cr.bg} ${cr.border} border-2 rounded-xl p-4 text-center flex-1`}>
+                <div className="text-3xl mb-1">{cr.icon}</div>
+                <p className="text-white font-bold text-sm">{cr.name}</p>
+                <p className="text-white/50 text-xs">Center {res.indices[i] + 1}</p>
+              </div>
+            ) : <div key={i} className="text-white/40 text-sm">Unknown</div>;
+          })}
+        </div>
+      );
+    } else if (res.type === 'robber') {
+      const rr = ROLES[res.newRole];
+      title = `🦹 You Stole from ${res.targetName}`;
+      content = rr ? (
+        <div>
+          <p className="text-white/60 text-sm mb-3 text-center">Your new role is:</p>
+          <div className={`bg-gradient-to-br ${rr.bg} ${rr.border} border-2 rounded-2xl p-6 text-center`}>
+            <div className="text-5xl mb-2">{rr.icon}</div>
+            <p className="text-white font-black text-2xl">{rr.name}</p>
+            <p className={`${rr.text} text-sm mt-1`}>{ROLE_DESCRIPTIONS[rr.team]}</p>
+            <p className={`${rr.text} text-xs mt-2 opacity-70`}>{rr.description}</p>
+          </div>
+        </div>
+      ) : <p className="text-white/60">New role: {res.newRole}</p>;
+    } else if (res.type === 'troublemaker') {
+      title = '🔀 Swap Complete';
+      content = (
+        <div className="text-center">
+          <p className="text-yellow-200 text-lg font-semibold">{res.name1}</p>
+          <p className="text-white/40 my-2 text-2xl">⇄</p>
+          <p className="text-yellow-200 text-lg font-semibold">{res.name2}</p>
+          <p className="text-white/50 text-sm mt-4">Their roles have been secretly swapped. You don&apos;t know what they got!</p>
+        </div>
+      );
+    } else if (res.type === 'drunk') {
+      title = '🍺 You Swapped!';
+      content = (
+        <div className="text-center">
+          <div className="text-6xl mb-4">🍺</div>
+          <p className="text-orange-200 text-lg">You drunkenly took <strong>Center Card {res.index + 1}</strong></p>
+          <p className="text-white/50 text-sm mt-3">You have no idea what role you now have... good luck!</p>
+        </div>
+      );
+    } else if (res.type === 'insomniac') {
+      const ir = ROLES[res.finalRole];
+      const changed = res.finalRole !== myOriginalRole;
+      title = '😴 Your Final Card';
+      content = ir ? (
+        <div>
+          {changed && <div className="bg-yellow-500/20 border border-yellow-400/40 rounded-xl p-2 mb-3 text-center"><p className="text-yellow-300 text-sm font-bold">⚠️ Your card was changed during the night!</p></div>}
+          <div className={`bg-gradient-to-br ${ir.bg} ${ir.border} border-2 rounded-2xl p-6 text-center`}>
+            <div className="text-5xl mb-2">{ir.icon}</div>
+            <p className="text-white font-black text-2xl">{ir.name}</p>
+            <p className={`${ir.text} text-sm mt-1`}>{ROLE_DESCRIPTIONS[ir.team]}</p>
+          </div>
+          {!changed && <p className="text-white/40 text-sm text-center mt-2">Your card was not changed.</p>}
+        </div>
+      ) : <p className="text-white/60">Role: {res.finalRole}</p>;
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        onClick={() => setNightResultModal(null)}
+      >
+        <motion.div
+          initial={{ scale: 0.8, y: 40 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.8, y: 40 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+          className="bg-slate-900 border border-white/20 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        >
+          <h3 className="text-xl font-black text-white text-center mb-4">{title}</h3>
+          {content}
+          <button
+            onClick={() => setNightResultModal(null)}
+            className="mt-5 w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-all"
+          >
+            Got it ✓
+          </button>
+        </motion.div>
+      </motion.div>
+    );
+  };
 
   // NIGHT PHASE
   if (screen === 'night') {
@@ -1245,6 +1422,14 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               )}
 
               <p className="text-white/50 text-xs mt-2">Close your eyes and wait for morning...</p>
+              {nightResult && (
+                <button
+                  onClick={() => setNightResultModal(nightResult)}
+                  className="mt-3 w-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-sm font-semibold py-2 rounded-xl border border-white/20 transition-all"
+                >
+                  👁️ Review What You Saw
+                </button>
+              )}
             </motion.div>
           ) : (
             <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center">
@@ -1261,6 +1446,11 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             </div>
           )}
         </div>
+
+        {/* Night result modal overlay */}
+        <AnimatePresence>
+          {nightResultModal && <NightResultModal />}
+        </AnimatePresence>
       </div>
     );
   }
@@ -1281,16 +1471,38 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           </div>
 
           {r && (
-            <div className={`bg-gradient-to-br ${r.bg} rounded-2xl p-4 border ${r.border}`}>
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">{r.icon}</span>
-                <div>
-                  <p className="text-xs text-white/60">Your original role</p>
-                  <h3 className="font-black text-lg text-white">{r.name}</h3>
-                  <p className={`text-sm ${r.text} opacity-80`}>{r.description}</p>
+            roleHidden ? (
+              <button
+                onClick={() => setRoleHidden(false)}
+                className="w-full bg-black/40 border border-white/20 rounded-2xl p-4 flex items-center justify-center gap-3 text-white/60 hover:text-white transition-all"
+              >
+                <span className="text-2xl">🙈</span>
+                <div className="text-left">
+                  <p className="font-bold text-sm">Role Hidden</p>
+                  <p className="text-xs text-white/40">Tap to reveal your role</p>
+                </div>
+              </button>
+            ) : (
+              <div className={`bg-gradient-to-br ${r.bg} rounded-2xl p-4 border ${r.border}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl">{r.icon}</span>
+                    <div>
+                      <p className="text-xs text-white/60">Your original role</p>
+                      <h3 className="font-black text-lg text-white">{r.name}</h3>
+                      <p className={`text-sm ${r.text} opacity-80`}>{r.description}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setRoleHidden(true)}
+                    className="ml-2 flex-shrink-0 bg-black/30 hover:bg-black/50 text-white/60 hover:text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all"
+                    title="Hide role from others"
+                  >
+                    🙈 Hide
+                  </button>
                 </div>
               </div>
-            </div>
+            )
           )}
 
           {nightResult && (
@@ -1519,12 +1731,14 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                   setScreen('lobby');
                   setMyOriginalRole(null);
                   setNightResult(null);
+                  setNightResultModal(null);
                   setNightActionDone(false);
                   setMyVote(null);
                   setGameResult(null);
                   setFinalRolesComputed(null);
                   setSelectedTargets([]);
                   setSeerMode(null);
+                  setRoleHidden(false);
                   const updates = {};
                   Object.keys(players).forEach(id => {
                     updates[`players/${id}/originalRole`] = '';
