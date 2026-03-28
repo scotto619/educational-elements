@@ -678,7 +678,19 @@ const QuizShowTab = ({
         <GameLobby
           roomCode={roomCode}
           gameData={gameData}
-          onStartGame={() => setView('playing')}
+          onStartGame={async () => {
+            try {
+              await update(ref(database, `gameRooms/${roomCode}`), {
+                status: 'playing',
+                questionPhase: 'showing',
+                currentQuestion: 0,
+                startedAt: Date.now()
+              });
+              setView('playing');
+            } catch (err) {
+              console.error('Failed to start game:', err);
+            }
+          }}
           onEndGame={backToDashboard}
           loading={false}
         />
