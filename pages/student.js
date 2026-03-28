@@ -1895,6 +1895,7 @@ const StudentPortal = () => {
 
       // Write player to game room
       await set(ref(database, `gameRooms/${roomCode}/players/${playerId}`), {
+        id: playerId,
         name: playerInfo.name,
         studentId: playerInfo.studentId || null,
         avatar: playerInfo.avatar,
