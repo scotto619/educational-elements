@@ -43,6 +43,15 @@ import {
 } from '../utils/gameHelpers';
 import { fetchGlobalShopItems, mergeShopInventories } from '../services/globalContent';
 
+// Quiz Show imports
+import { database } from '../utils/firebase';
+import { ref, set, onValue, off } from 'firebase/database';
+import { calculateFinalLeaderboard } from '../utils/quizShowHelpers';
+import JoinGame from '../components/quizshow/student/JoinGame';
+import StudentLobby from '../components/quizshow/student/StudentLobby';
+import StudentGameView from '../components/quizshow/student/StudentGameView';
+import StudentResults from '../components/quizshow/student/StudentResults';
+
 const isSameCalendarDay = (dateA, dateB) => (
   dateA.getFullYear() === dateB.getFullYear() &&
   dateA.getMonth() === dateB.getMonth() &&
@@ -104,6 +113,16 @@ const StudentPortal = () => {
   const [noticeBoardItems, setNoticeBoardItems] = useState(DEFAULT_NOTICE_ITEMS);
   const dailyMysteryBoxAutoOpenKeyRef = useRef(null);
   const loginEggGrantAttemptedRef = useRef(false);
+
+  // Quiz Show state
+  const [quizView, setQuizView] = useState('join'); // join, lobby, playing, results
+  const [quizRoomCode, setQuizRoomCode] = useState('');
+  const [quizGameData, setQuizGameData] = useState(null);
+  const [quizPlayerInfo, setQuizPlayerInfo] = useState(null);
+  const [quizResults, setQuizResults] = useState(null);
+  const [quizJoining, setQuizJoining] = useState(false);
+  const [quizError, setQuizError] = useState('');
+  const quizListenerRef = useRef(null);
 
   const baseShopInventory = useMemo(() => ({
     basicAvatars: [...BASE_SHOP_BASIC_AVATARS],
@@ -1848,6 +1867,152 @@ const StudentPortal = () => {
     }
   };
 
+  // ============================================================
+  // QUIZ SHOW HELPERS
+  // ============================================================
+
+  const handleQuizJoin = async (roomCode, playerInfo) => {
+    setQuizJoining(true);
+    setQuizError('');
+    try {
+      const gameRef = ref(database, `gameRooms/${roomCode}`);
+      const { get } = await import('firebase/database');
+      const snapshot = await get(gameRef);
+      if (!snapshot.exists()) {
+        setQuizError('Game room not found. Check the room code and try again.');
+        setQuizJoining(false);
+        return;
+      }
+      const data = snapshot.val();
+      if (data.status !== 'waiting') {
+        setQuizError('This game has already started. Ask your teacher for a new code.');
+        setQuizJoining(false);
+        return;
+      }
+
+      const playerId = playerInfo.studentId || `guest_${Date.now()}`;
+      const fullPlayerInfo = { ...playerInfo, playerId };
+
+      // Write player to game room
+      await set(ref(database, `gameRooms/${roomCode}/players/${playerId}`), {
+        name: playerInfo.name,
+        studentId: playerInfo.studentId || null,
+        avatar: playerInfo.avatar,
+        joinedAt: Date.now()
+      });
+
+      setQuizRoomCode(roomCode);
+      setQuizPlayerInfo(fullPlayerInfo);
+
+      // Subscribe to game updates
+      if (quizListenerRef.current) off(quizListenerRef.current);
+      quizListenerRef.current = gameRef;
+      onValue(gameRef, (snap) => {
+        if (snap.exists()) {
+          const gd = snap.val();
+          setQuizGameData(gd);
+          if (gd.status === 'finished' || gd.questionPhase === 'finished') {
+            setQuizResults(calculateFinalLeaderboard(gd));
+            setQuizView('results');
+          } else if (gd.status === 'playing') {
+            setQuizView(prev => prev === 'results' ? prev : 'playing');
+          }
+        }
+      });
+
+      setQuizView('lobby');
+    } catch (err) {
+      console.error('Quiz join error:', err);
+      setQuizError('Failed to join. Please try again.');
+    } finally {
+      setQuizJoining(false);
+    }
+  };
+
+  const handleQuizLeave = () => {
+    if (quizListenerRef.current) {
+      off(quizListenerRef.current);
+      quizListenerRef.current = null;
+    }
+    // Remove player from room
+    if (quizRoomCode && quizPlayerInfo?.playerId) {
+      import('firebase/database').then(({ remove }) => {
+        remove(ref(database, `gameRooms/${quizRoomCode}/players/${quizPlayerInfo.playerId}`)).catch(() => {});
+      });
+    }
+    setQuizView('join');
+    setQuizRoomCode('');
+    setQuizGameData(null);
+    setQuizPlayerInfo(null);
+    setQuizResults(null);
+    setQuizError('');
+  };
+
+  const renderQuizShow = () => {
+    // Results screen
+    if (quizView === 'results' && quizResults) {
+      return (
+        <StudentResults
+          results={quizResults}
+          playerInfo={quizPlayerInfo}
+          onPlayAgain={handleQuizLeave}
+          onLeaveGame={handleQuizLeave}
+          getAvatarImage={getAvatarImage}
+        />
+      );
+    }
+
+    // Playing screen
+    if (quizView === 'playing' && quizGameData && quizPlayerInfo) {
+      return (
+        <StudentGameView
+          roomCode={quizRoomCode}
+          gameData={quizGameData}
+          playerInfo={quizPlayerInfo}
+        />
+      );
+    }
+
+    // Lobby screen
+    if (quizView === 'lobby' && quizGameData) {
+      return (
+        <StudentLobby
+          roomCode={quizRoomCode}
+          gameData={quizGameData}
+          playerInfo={quizPlayerInfo}
+          onLeaveGame={handleQuizLeave}
+        />
+      );
+    }
+
+    // Join screen — build a student-like object from the logged-in student
+    const studentAsPlayer = studentData ? [{
+      id: studentData.id || studentData.studentId || `student_${Date.now()}`,
+      firstName: studentData.firstName || 'Student',
+      lastName: studentData.lastName || '',
+      totalPoints: studentData.totalPoints || 0,
+      avatarBase: studentData.avatarBase || 'Wizard F',
+    }] : [];
+
+    return (
+      <div className="max-w-2xl mx-auto">
+        {quizError && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm font-medium">
+            {quizError}
+          </div>
+        )}
+        <JoinGame
+          students={studentAsPlayer}
+          onJoinGame={handleQuizJoin}
+          onCancel={() => { setQuizError(''); }}
+          getAvatarImage={getAvatarImage}
+          calculateAvatarLevel={calculateAvatarLevel}
+          loading={quizJoining}
+        />
+      </div>
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -1979,16 +2144,7 @@ const StudentPortal = () => {
         );
 
       case 'quizshow':
-        return (
-          <div className="bg-white rounded-xl p-8 text-center shadow-lg border border-dashed border-purple-200">
-            <div className="text-5xl md:text-6xl mb-4">🎪</div>
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Quiz Show</h2>
-            <p className="text-gray-600 mb-4 text-sm md:text-base">A refreshed experience is on the way.</p>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 text-purple-700 font-semibold">
-              Coming Soon
-            </div>
-          </div>
-        );
+        return renderQuizShow();
 
       default:
         return <div>Tab not found</div>;

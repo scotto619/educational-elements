@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ref, set } from 'firebase/database';
 import { database } from '../../../utils/firebase';
-import { playQuizSound } from '../../../utils/quizShowHelpers';
+import { playQuizSound, calculateQuizScore } from '../../../utils/quizShowHelpers';
 
 // Helper function for shop avatars
 const getAvatarImage = (avatarBase, level) => {
@@ -70,6 +70,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   const timerRunningRef = useRef(false);
   const currentQuestionRef = useRef(-1);
   const currentPhaseRef = useRef('waiting');
+  const answeringStartTimeRef = useRef(null); // Track when answering phase started
 
   const currentQuestion = gameData?.quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = gameData?.quiz?.questions?.length || 0;
@@ -104,6 +105,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
         console.log(`⏰ STARTING TIMER: ${timeLimit} seconds`);
         setTimeLeft(timeLimit);
         timerRunningRef.current = true;
+        answeringStartTimeRef.current = Date.now(); // Record when answering started
       }
     }
 
@@ -181,8 +183,14 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
     console.log(`RESULT: ${isCorrect ? '✅ CORRECT' : '❌ INCORRECT'}`);
     console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     
-    const points = isCorrect ? 10 : -5;
-    
+    // Speed-based scoring: faster = more points (100-1000 range, 0 if wrong)
+    const timeLimit = currentQuestion?.timeLimit || 20;
+    const timeSpent = answeringStartTimeRef.current
+      ? Math.min(timeLimit, (Date.now() - answeringStartTimeRef.current) / 1000)
+      : timeLimit;
+    const basePoints = currentQuestion?.points || 1000;
+    const points = calculateQuizScore(timeSpent, timeLimit, basePoints, isCorrect);
+
     playQuizSound('answerSubmit');
 
     // Submit to Firebase
@@ -190,7 +198,7 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
       const responsePath = `gameRooms/${roomCode}/responses/${currentQuestionIndex}/${playerInfo.playerId}`;
       const responseData = {
         answer: submittedAnswerIndex,
-        timeSpent: 0,
+        timeSpent: Math.round(timeSpent * 10) / 10,
         isCorrect: isCorrect,
         points: points,
         submittedAt: Date.now()

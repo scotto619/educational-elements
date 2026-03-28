@@ -15,16 +15,22 @@ export const validateRoomCode = (code) => {
 };
 
 // ===============================================
-// SIMPLIFIED SCORE CALCULATION SYSTEM
+// SPEED-BASED SCORE CALCULATION SYSTEM
 // ===============================================
 export const calculateQuizScore = (timeSpent, timeLimit, basePoints = 1000, isCorrect = true) => {
-  // SIMPLIFIED: +10 for correct, -5 for incorrect
-  return isCorrect ? 10 : -5;
+  if (!isCorrect) return 0;
+  // Speed bonus: full marks for instant answer, minimum 30% at time limit
+  const safeTL = Math.max(1, timeLimit);
+  const safeTS = Math.min(Math.max(0, timeSpent), safeTL);
+  const minPoints = Math.round(basePoints * 0.3);
+  const timeRatio = safeTS / safeTL;
+  return Math.round(basePoints - (basePoints - minPoints) * timeRatio);
 };
 
 export const calculateStreakBonus = (streak) => {
-  // Simplified - no streak bonus for now
-  return 0;
+  // Streak bonus: 50 points per question in streak, max 200
+  if (streak <= 1) return 0;
+  return Math.min(50 * (streak - 1), 200);
 };
 
 // ===============================================
@@ -156,6 +162,18 @@ export const QUESTION_CATEGORIES = {
     icon: '🧠',
     color: '#6B7280',
     description: 'Mixed topics and trivia'
+  },
+  animals: {
+    name: 'Animals & Nature',
+    icon: '🦁',
+    color: '#059669',
+    description: 'Wildlife, ecosystems, and the natural world'
+  },
+  health: {
+    name: 'Health & Body',
+    icon: '🫀',
+    color: '#DC2626',
+    description: 'Human body, nutrition, and wellbeing'
   }
 };
 
@@ -164,163 +182,138 @@ export const QUESTION_CATEGORIES = {
 // ===============================================
 export const PRESET_QUESTIONS = {
   mathematics: [
-    {
-      id: 'math_1',
-      question: 'What is 7 + 8?',
-      type: 'multiple_choice',
-      options: ['14', '15', '16', '17'],
-      correctAnswer: 1,
-      timeLimit: 15,
-      difficulty: 'easy',
-      points: 10
-    },
-    {
-      id: 'math_2',
-      question: 'Which number comes next: 2, 4, 6, 8, __?',
-      type: 'multiple_choice',
-      options: ['9', '10', '11', '12'],
-      correctAnswer: 1,
-      timeLimit: 20,
-      difficulty: 'easy',
-      points: 10
-    },
-    {
-      id: 'math_3',
-      question: 'What is 12 × 5?',
-      type: 'multiple_choice',
-      options: ['50', '55', '60', '65'],
-      correctAnswer: 2,
-      timeLimit: 20,
-      difficulty: 'medium',
-      points: 10
-    },
-    {
-      id: 'math_4',
-      question: 'How many sides does a triangle have?',
-      type: 'multiple_choice',
-      options: ['2', '3', '4', '5'],
-      correctAnswer: 1,
-      timeLimit: 10,
-      difficulty: 'easy',
-      points: 10
-    },
-    {
-      id: 'math_5',
-      question: 'What is 100 ÷ 4?',
-      type: 'multiple_choice',
-      options: ['20', '25', '30', '35'],
-      correctAnswer: 1,
-      timeLimit: 20,
-      difficulty: 'medium',
-      points: 10
-    }
+    { id: 'math_1', question: 'What is 7 + 8?', type: 'multiple_choice', options: ['14', '15', '16', '17'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'math_2', question: 'Which number comes next: 2, 4, 6, 8, __?', type: 'multiple_choice', options: ['9', '10', '11', '12'], correctAnswer: 1, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'math_3', question: 'What is 12 × 5?', type: 'multiple_choice', options: ['50', '55', '60', '65'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'math_4', question: 'How many sides does a triangle have?', type: 'multiple_choice', options: ['2', '3', '4', '5'], correctAnswer: 1, timeLimit: 10, difficulty: 'easy', points: 1000 },
+    { id: 'math_5', question: 'What is 100 ÷ 4?', type: 'multiple_choice', options: ['20', '25', '30', '35'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'math_6', question: 'What is 9 × 8?', type: 'multiple_choice', options: ['63', '72', '81', '56'], correctAnswer: 1, timeLimit: 15, difficulty: 'medium', points: 1000 },
+    { id: 'math_7', question: 'What is 1/2 + 1/4?', type: 'multiple_choice', options: ['2/6', '3/4', '2/4', '1/6'], correctAnswer: 1, timeLimit: 25, difficulty: 'medium', points: 1000 },
+    { id: 'math_8', question: 'What is the perimeter of a square with side 5cm?', type: 'multiple_choice', options: ['10cm', '15cm', '20cm', '25cm'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'math_9', question: 'What is 256 ÷ 8?', type: 'multiple_choice', options: ['28', '30', '32', '36'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'math_10', question: 'What is 15% of 200?', type: 'multiple_choice', options: ['20', '25', '30', '35'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'math_11', question: 'What is the area of a rectangle 6m × 4m?', type: 'multiple_choice', options: ['20m²', '22m²', '24m²', '26m²'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'math_12', question: 'What is 7²?', type: 'multiple_choice', options: ['14', '42', '49', '56'], correctAnswer: 2, timeLimit: 15, difficulty: 'medium', points: 1000 },
+    { id: 'math_13', question: 'Which is the largest: 3/4, 2/3, 5/6?', type: 'multiple_choice', options: ['3/4', '2/3', '5/6', 'They\'re equal'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'math_14', question: 'What is 0.75 as a percentage?', type: 'multiple_choice', options: ['7.5%', '70%', '75%', '750%'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'math_15', question: 'What is the next prime number after 13?', type: 'multiple_choice', options: ['14', '15', '16', '17'], correctAnswer: 3, timeLimit: 25, difficulty: 'hard', points: 1000 },
   ],
-  
+
   science: [
-    {
-      id: 'sci_1',
-      question: 'How many planets are in our solar system?',
-      type: 'multiple_choice',
-      options: ['7', '8', '9', '10'],
-      correctAnswer: 1,
-      timeLimit: 15,
-      difficulty: 'easy',
-      points: 10
-    },
-    {
-      id: 'sci_2',
-      question: 'What gas do plants take in during photosynthesis?',
-      type: 'multiple_choice',
-      options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'],
-      correctAnswer: 1,
-      timeLimit: 20,
-      difficulty: 'medium',
-      points: 10
-    },
-    {
-      id: 'sci_3',
-      question: 'Which animal is known as the "King of the Jungle"?',
-      type: 'multiple_choice',
-      options: ['Tiger', 'Elephant', 'Lion', 'Gorilla'],
-      correctAnswer: 2,
-      timeLimit: 15,
-      difficulty: 'easy',
-      points: 10
-    },
-    {
-      id: 'sci_4',
-      question: 'What are the three states of matter?',
-      type: 'multiple_choice',
-      options: ['Hot, Cold, Warm', 'Solid, Liquid, Gas', 'Big, Medium, Small', 'Fast, Medium, Slow'],
-      correctAnswer: 1,
-      timeLimit: 20,
-      difficulty: 'medium',
-      points: 10
-    },
-    {
-      id: 'sci_5',
-      question: 'Which planet is closest to the Sun?',
-      type: 'multiple_choice',
-      options: ['Venus', 'Mercury', 'Earth', 'Mars'],
-      correctAnswer: 1,
-      timeLimit: 20,
-      difficulty: 'medium',
-      points: 10
-    }
+    { id: 'sci_1', question: 'How many planets are in our solar system?', type: 'multiple_choice', options: ['7', '8', '9', '10'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'sci_2', question: 'What gas do plants take in during photosynthesis?', type: 'multiple_choice', options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'sci_3', question: 'What are the three states of matter?', type: 'multiple_choice', options: ['Hot, Cold, Warm', 'Solid, Liquid, Gas', 'Big, Medium, Small', 'Fast, Medium, Slow'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'sci_4', question: 'Which planet is closest to the Sun?', type: 'multiple_choice', options: ['Venus', 'Mercury', 'Earth', 'Mars'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'sci_5', question: 'What is the chemical symbol for water?', type: 'multiple_choice', options: ['WA', 'H2O', 'HO2', 'OW'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'sci_6', question: 'Which is the largest planet in our solar system?', type: 'multiple_choice', options: ['Saturn', 'Neptune', 'Jupiter', 'Uranus'], correctAnswer: 2, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'sci_7', question: 'What do we call animals that eat only plants?', type: 'multiple_choice', options: ['Carnivores', 'Omnivores', 'Herbivores', 'Parasites'], correctAnswer: 2, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'sci_8', question: 'How many legs does an insect have?', type: 'multiple_choice', options: ['4', '6', '8', '10'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'sci_9', question: 'What force pulls objects toward Earth?', type: 'multiple_choice', options: ['Magnetism', 'Gravity', 'Friction', 'Wind'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'sci_10', question: 'What is the process plants use to make food from sunlight?', type: 'multiple_choice', options: ['Respiration', 'Digestion', 'Photosynthesis', 'Germination'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'sci_11', question: 'What is the powerhouse of the cell?', type: 'multiple_choice', options: ['Nucleus', 'Mitochondria', 'Ribosome', 'Cell wall'], correctAnswer: 1, timeLimit: 20, difficulty: 'hard', points: 1000 },
+    { id: 'sci_12', question: 'What type of energy does the Sun produce?', type: 'multiple_choice', options: ['Nuclear', 'Chemical', 'Light and Heat', 'Electrical'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'sci_13', question: 'Which gas makes up most of Earth\'s atmosphere?', type: 'multiple_choice', options: ['Oxygen', 'Carbon dioxide', 'Nitrogen', 'Argon'], correctAnswer: 2, timeLimit: 20, difficulty: 'hard', points: 1000 },
+    { id: 'sci_14', question: 'What do we call the remains of ancient organisms preserved in rock?', type: 'multiple_choice', options: ['Rocks', 'Fossils', 'Crystals', 'Minerals'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'sci_15', question: 'What is the speed of light approximately?', type: 'multiple_choice', options: ['300 km/s', '3,000 km/s', '300,000 km/s', '3,000,000 km/s'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
   ],
-  
+
   geography: [
-    {
-      id: 'geo_1',
-      question: 'What is the capital of Australia?',
-      type: 'multiple_choice',
-      options: ['Sydney', 'Melbourne', 'Canberra', 'Perth'],
-      correctAnswer: 2,
-      timeLimit: 20,
-      difficulty: 'medium',
-      points: 10
-    },
-    {
-      id: 'geo_2',
-      question: 'Which continent is the largest?',
-      type: 'multiple_choice',
-      options: ['Africa', 'Asia', 'North America', 'Europe'],
-      correctAnswer: 1,
-      timeLimit: 15,
-      difficulty: 'easy',
-      points: 10
-    },
-    {
-      id: 'geo_3',
-      question: 'How many continents are there?',
-      type: 'multiple_choice',
-      options: ['5', '6', '7', '8'],
-      correctAnswer: 2,
-      timeLimit: 15,
-      difficulty: 'easy',
-      points: 10
-    },
-    {
-      id: 'geo_4',
-      question: 'Which ocean is the largest?',
-      type: 'multiple_choice',
-      options: ['Atlantic', 'Indian', 'Arctic', 'Pacific'],
-      correctAnswer: 3,
-      timeLimit: 20,
-      difficulty: 'medium',
-      points: 10
-    },
-    {
-      id: 'geo_5',
-      question: 'What is the longest river in the world?',
-      type: 'multiple_choice',
-      options: ['Amazon', 'Nile', 'Mississippi', 'Yangtze'],
-      correctAnswer: 1,
-      timeLimit: 25,
-      difficulty: 'hard',
-      points: 10
-    }
-  ]
+    { id: 'geo_1', question: 'What is the capital of Australia?', type: 'multiple_choice', options: ['Sydney', 'Melbourne', 'Canberra', 'Perth'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'geo_2', question: 'Which continent is the largest?', type: 'multiple_choice', options: ['Africa', 'Asia', 'North America', 'Europe'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'geo_3', question: 'How many continents are there?', type: 'multiple_choice', options: ['5', '6', '7', '8'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'geo_4', question: 'Which ocean is the largest?', type: 'multiple_choice', options: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], correctAnswer: 3, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'geo_5', question: 'What is the longest river in the world?', type: 'multiple_choice', options: ['Amazon', 'Nile', 'Mississippi', 'Yangtze'], correctAnswer: 1, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'geo_6', question: 'Which country has the most people in the world?', type: 'multiple_choice', options: ['USA', 'India', 'Russia', 'China'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'geo_7', question: 'What is the capital of France?', type: 'multiple_choice', options: ['Lyon', 'Paris', 'Marseille', 'Nice'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'geo_8', question: 'Which is the smallest continent?', type: 'multiple_choice', options: ['Europe', 'Antarctica', 'Australia', 'South America'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'geo_9', question: 'In which country is the Amazon Rainforest mainly located?', type: 'multiple_choice', options: ['Colombia', 'Venezuela', 'Brazil', 'Peru'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'geo_10', question: 'What is the capital of Japan?', type: 'multiple_choice', options: ['Osaka', 'Kyoto', 'Tokyo', 'Hiroshima'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'geo_11', question: 'What is the highest mountain in the world?', type: 'multiple_choice', options: ['K2', 'Kangchenjunga', 'Mount Everest', 'Lhotse'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'geo_12', question: 'On which continent is Egypt located?', type: 'multiple_choice', options: ['Asia', 'Europe', 'Africa', 'Middle East'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'geo_13', question: 'What is the capital of Brazil?', type: 'multiple_choice', options: ['Rio de Janeiro', 'São Paulo', 'Brasília', 'Salvador'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'geo_14', question: 'Which country is home to the Eiffel Tower?', type: 'multiple_choice', options: ['Italy', 'Germany', 'France', 'Spain'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'geo_15', question: 'Which sea is between Europe and Africa?', type: 'multiple_choice', options: ['Red Sea', 'Caribbean Sea', 'Mediterranean Sea', 'Arabian Sea'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+  ],
+
+  history: [
+    { id: 'hist_1', question: 'Who was the first person to walk on the Moon?', type: 'multiple_choice', options: ['Buzz Aldrin', 'Yuri Gagarin', 'Neil Armstrong', 'Alan Shepard'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'hist_2', question: 'In which year did World War II end?', type: 'multiple_choice', options: ['1943', '1944', '1945', '1946'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'hist_3', question: 'Who invented the telephone?', type: 'multiple_choice', options: ['Thomas Edison', 'Nikola Tesla', 'Alexander Graham Bell', 'Marconi'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'hist_4', question: 'The ancient pyramids were built in which country?', type: 'multiple_choice', options: ['Iraq', 'Mexico', 'Egypt', 'Greece'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'hist_5', question: 'Who painted the Mona Lisa?', type: 'multiple_choice', options: ['Michelangelo', 'Raphael', 'Leonardo da Vinci', 'Picasso'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'hist_6', question: 'What year did Australia become a federation?', type: 'multiple_choice', options: ['1888', '1895', '1901', '1910'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'hist_7', question: 'Which empire was ruled by Julius Caesar?', type: 'multiple_choice', options: ['Greek', 'Roman', 'Byzantine', 'Ottoman'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'hist_8', question: 'Who developed the theory of relativity?', type: 'multiple_choice', options: ['Isaac Newton', 'Albert Einstein', 'Charles Darwin', 'Galileo'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'hist_9', question: 'In which year did the Berlin Wall fall?', type: 'multiple_choice', options: ['1985', '1987', '1989', '1991'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'hist_10', question: 'Who was the first Prime Minister of Australia?', type: 'multiple_choice', options: ['Alfred Deakin', 'Edmund Barton', 'John Curtin', 'Robert Menzies'], correctAnswer: 1, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'hist_11', question: 'What was the name of the ship Charles Darwin sailed on?', type: 'multiple_choice', options: ['HMS Victory', 'HMS Endeavour', 'HMS Beagle', 'HMS Challenger'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'hist_12', question: 'The Great Wall of China was mainly built to protect against which group?', type: 'multiple_choice', options: ['Mongols', 'Japanese', 'Romans', 'Persians'], correctAnswer: 0, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'hist_13', question: 'Who wrote the play "Romeo and Juliet"?', type: 'multiple_choice', options: ['Charles Dickens', 'Jane Austen', 'William Shakespeare', 'Geoffrey Chaucer'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'hist_14', question: 'What event started World War I?', type: 'multiple_choice', options: ['The bombing of Pearl Harbor', 'The assassination of Archduke Franz Ferdinand', 'Germany invading France', 'Russia declaring war'], correctAnswer: 1, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'hist_15', question: 'Which ancient wonder is still standing today?', type: 'multiple_choice', options: ['Hanging Gardens of Babylon', 'Colossus of Rhodes', 'Great Pyramid of Giza', 'Lighthouse of Alexandria'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+  ],
+
+  language: [
+    { id: 'lang_1', question: 'What is a word that describes a noun called?', type: 'multiple_choice', options: ['Verb', 'Adverb', 'Adjective', 'Pronoun'], correctAnswer: 2, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'lang_2', question: 'What punctuation ends a question?', type: 'multiple_choice', options: ['.', '!', '?', ','], correctAnswer: 2, timeLimit: 10, difficulty: 'easy', points: 1000 },
+    { id: 'lang_3', question: 'What is a synonym?', type: 'multiple_choice', options: ['A word with opposite meaning', 'A word with similar meaning', 'A word that sounds the same', 'A rhyming word'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'lang_4', question: 'What is the plural of "child"?', type: 'multiple_choice', options: ['Childs', 'Childes', 'Children', 'Childrens'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'lang_5', question: 'Which sentence is in PAST tense?', type: 'multiple_choice', options: ['I am running', 'I will run', 'I ran', 'I run'], correctAnswer: 2, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'lang_6', question: 'What word class is "quickly" in the sentence "She ran quickly"?', type: 'multiple_choice', options: ['Noun', 'Verb', 'Adjective', 'Adverb'], correctAnswer: 3, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'lang_7', question: 'What is an antonym?', type: 'multiple_choice', options: ['A word with similar meaning', 'A word with opposite meaning', 'A made-up word', 'A very long word'], correctAnswer: 1, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'lang_8', question: 'In the sentence "The cat sat on the mat", what is "on" an example of?', type: 'multiple_choice', options: ['Conjunction', 'Preposition', 'Pronoun', 'Adverb'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'lang_9', question: 'What is a metaphor?', type: 'multiple_choice', options: ['Comparing using "like" or "as"', 'A direct comparison without "like" or "as"', 'A type of poem', 'An exaggeration'], correctAnswer: 1, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'lang_10', question: 'Which word is spelled correctly?', type: 'multiple_choice', options: ['Recieve', 'Beleive', 'Achieve', 'Releive'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'lang_11', question: 'What is the collective noun for a group of wolves?', type: 'multiple_choice', options: ['A herd', 'A flock', 'A pack', 'A swarm'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'lang_12', question: 'What figure of speech is: "The thunder roared angrily"?', type: 'multiple_choice', options: ['Simile', 'Metaphor', 'Personification', 'Alliteration'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'lang_13', question: 'What is a homophone?', type: 'multiple_choice', options: ['A word with the same spelling but different meaning', 'A word that sounds the same but has different spelling/meaning', 'A word from another language', 'A very old word'], correctAnswer: 1, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'lang_14', question: 'What do we call the main idea of a text?', type: 'multiple_choice', options: ['Theme', 'Plot', 'Setting', 'Character'], correctAnswer: 0, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'lang_15', question: 'Which of these is NOT a conjunction?', type: 'multiple_choice', options: ['and', 'but', 'because', 'quickly'], correctAnswer: 3, timeLimit: 20, difficulty: 'medium', points: 1000 },
+  ],
+
+  general: [
+    { id: 'gen_1', question: 'How many colours are in a rainbow?', type: 'multiple_choice', options: ['5', '6', '7', '8'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_2', question: 'What is the hardest natural substance on Earth?', type: 'multiple_choice', options: ['Gold', 'Iron', 'Diamond', 'Quartz'], correctAnswer: 2, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'gen_3', question: 'How many hours are in a day?', type: 'multiple_choice', options: ['12', '20', '24', '36'], correctAnswer: 2, timeLimit: 10, difficulty: 'easy', points: 1000 },
+    { id: 'gen_4', question: 'Which sport uses a bat and a ball and has wickets?', type: 'multiple_choice', options: ['Baseball', 'Softball', 'Cricket', 'Rounders'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_5', question: 'What does "LOL" stand for in texting?', type: 'multiple_choice', options: ['Lots of Love', 'Laugh Out Loud', 'Lots of Luck', 'Loads of Laughs'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_6', question: 'How many sides does a hexagon have?', type: 'multiple_choice', options: ['5', '6', '7', '8'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_7', question: 'What is the most spoken language in the world?', type: 'multiple_choice', options: ['Spanish', 'English', 'Hindi', 'Mandarin Chinese'], correctAnswer: 3, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'gen_8', question: 'Which country invented pizza?', type: 'multiple_choice', options: ['Greece', 'Spain', 'Italy', 'France'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_9', question: 'How many Olympic rings are there?', type: 'multiple_choice', options: ['4', '5', '6', '7'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_10', question: 'Who wrote "Harry Potter"?', type: 'multiple_choice', options: ['Roald Dahl', 'J.K. Rowling', 'C.S. Lewis', 'Tolkien'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_11', question: 'What is the currency of the United Kingdom?', type: 'multiple_choice', options: ['Euro', 'Dollar', 'Pound', 'Franc'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'gen_12', question: 'In which city are the headquarters of the United Nations?', type: 'multiple_choice', options: ['Washington D.C.', 'Geneva', 'New York', 'London'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'gen_13', question: 'How many strings does a standard violin have?', type: 'multiple_choice', options: ['3', '4', '5', '6'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'gen_14', question: 'What is the name of the longest bone in the human body?', type: 'multiple_choice', options: ['Tibia', 'Spine', 'Femur', 'Humerus'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'gen_15', question: 'Which planet is known as the "Red Planet"?', type: 'multiple_choice', options: ['Venus', 'Jupiter', 'Mars', 'Saturn'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+  ],
+
+  animals: [
+    { id: 'anim_1', question: 'What is the largest land animal?', type: 'multiple_choice', options: ['Hippo', 'Rhino', 'African Elephant', 'Giraffe'], correctAnswer: 2, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'anim_2', question: 'How many legs does a spider have?', type: 'multiple_choice', options: ['6', '8', '10', '12'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'anim_3', question: 'What is a baby kangaroo called?', type: 'multiple_choice', options: ['Pup', 'Cub', 'Joey', 'Kitten'], correctAnswer: 2, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'anim_4', question: 'Which bird is the symbol of Australia?', type: 'multiple_choice', options: ['Parrot', 'Emu', 'Kookaburra', 'Cockatoo'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'anim_5', question: 'How many hearts does an octopus have?', type: 'multiple_choice', options: ['1', '2', '3', '4'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'anim_6', question: 'What is the fastest land animal?', type: 'multiple_choice', options: ['Lion', 'Cheetah', 'Greyhound', 'Horse'], correctAnswer: 1, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'anim_7', question: 'What is a group of fish called?', type: 'multiple_choice', options: ['A herd', 'A flock', 'A school', 'A pack'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'anim_8', question: 'Which mammal can fly?', type: 'multiple_choice', options: ['Flying squirrel', 'Bat', 'Sugar glider', 'Lemur'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'anim_9', question: 'How long is a crocodile\'s gestation (egg incubation) period?', type: 'multiple_choice', options: ['1 month', '3 months', '6 months', '9 months'], correctAnswer: 1, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'anim_10', question: 'What is the only continent with no native snakes?', type: 'multiple_choice', options: ['Antarctica', 'Greenland', 'Iceland', 'New Zealand'], correctAnswer: 0, timeLimit: 25, difficulty: 'hard', points: 1000 },
+  ],
+
+  health: [
+    { id: 'hlth_1', question: 'How many glasses of water should you drink per day?', type: 'multiple_choice', options: ['2-4', '4-6', '6-8', '10-12'], correctAnswer: 2, timeLimit: 20, difficulty: 'easy', points: 1000 },
+    { id: 'hlth_2', question: 'Which vitamin do we get from sunlight?', type: 'multiple_choice', options: ['Vitamin A', 'Vitamin B12', 'Vitamin C', 'Vitamin D'], correctAnswer: 3, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'hlth_3', question: 'How many chambers does the human heart have?', type: 'multiple_choice', options: ['2', '3', '4', '5'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'hlth_4', question: 'Which food group provides the most energy?', type: 'multiple_choice', options: ['Proteins', 'Fats', 'Carbohydrates', 'Vitamins'], correctAnswer: 2, timeLimit: 25, difficulty: 'medium', points: 1000 },
+    { id: 'hlth_5', question: 'How many bones are in the adult human body?', type: 'multiple_choice', options: ['106', '156', '206', '256'], correctAnswer: 2, timeLimit: 25, difficulty: 'hard', points: 1000 },
+    { id: 'hlth_6', question: 'What organ filters waste from the blood?', type: 'multiple_choice', options: ['Liver', 'Lungs', 'Kidneys', 'Spleen'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'hlth_7', question: 'How often should you brush your teeth?', type: 'multiple_choice', options: ['Once a day', 'Twice a day', 'Three times a day', 'Once a week'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'hlth_8', question: 'What does the skeleton do?', type: 'multiple_choice', options: ['Makes blood', 'Supports and protects the body', 'Digests food', 'Breathes oxygen'], correctAnswer: 1, timeLimit: 15, difficulty: 'easy', points: 1000 },
+    { id: 'hlth_9', question: 'Which nutrient builds and repairs muscles?', type: 'multiple_choice', options: ['Carbohydrates', 'Fat', 'Protein', 'Fibre'], correctAnswer: 2, timeLimit: 20, difficulty: 'medium', points: 1000 },
+    { id: 'hlth_10', question: 'What is the average resting heart rate for an adult?', type: 'multiple_choice', options: ['40-50 bpm', '60-100 bpm', '100-120 bpm', '120-140 bpm'], correctAnswer: 1, timeLimit: 25, difficulty: 'hard', points: 1000 },
+  ],
 };
 
 // ===============================================
