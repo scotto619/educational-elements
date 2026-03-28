@@ -46,11 +46,7 @@ const AIGeneratorModal = ({ onClose, onQuizGenerated }) => {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        if (data.setupRequired) {
-          setError('AI generator needs setup: add GEMINI_API_KEY to your .env.local file. Get a free key at aistudio.google.com');
-        } else {
-          setError(data.error || 'Failed to generate quiz. Try again.');
-        }
+        setError(data.error || 'Failed to generate quiz. Please try again.');
         return;
       }
       onQuizGenerated(data.quiz);
@@ -81,7 +77,7 @@ const AIGeneratorModal = ({ onClose, onQuizGenerated }) => {
                 <span className="text-3xl">✨</span>
                 <h2 className="text-2xl font-black">AI Quiz Generator</h2>
               </div>
-              <p className="text-violet-200 text-sm">Powered by Google Gemini (Free)</p>
+              <p className="text-violet-200 text-sm">Powered by AI — free, instant, no setup required</p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 text-xl font-bold">×</button>
           </div>
@@ -167,10 +163,7 @@ const AIGeneratorModal = ({ onClose, onQuizGenerated }) => {
           </button>
 
           <p className="text-center text-xs text-gray-400">
-            Uses Google Gemini AI. Get your free API key at{' '}
-            <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" className="text-violet-500 hover:underline">
-              aistudio.google.com
-            </a>
+            ✅ Completely free — no account or setup needed
           </p>
         </div>
       </div>
@@ -313,6 +306,10 @@ const QuizShowTab = ({
   const [showAIModal, setShowAIModal] = useState(false);
   const [showLibraryModal, setShowLibraryModal] = useState(false);
 
+  // ---- Error/status for start game ----
+  const [startError, setStartError] = useState('');
+  const [starting, setStarting] = useState(false);
+
   // ---- Load teacher's saved quizzes from Firestore ----
   const loadQuizzes = useCallback(async () => {
     if (!user?.uid) return;
@@ -384,9 +381,22 @@ const QuizShowTab = ({
 
   // ---- Start a game: create Firebase Realtime Database room ----
   const startGame = async (quiz) => {
-    if (!user?.uid) return;
+    setStartError('');
+    setStarting(true);
+
+    const hostId = user?.uid;
+    if (!hostId) {
+      setStartError('Not logged in. Please refresh the page and try again.');
+      setStarting(false);
+      return;
+    }
+
     const sanitized = sanitizeQuizForGame(quiz);
-    if (!sanitized) { alert('Quiz has no valid questions.'); return; }
+    if (!sanitized) {
+      setStartError('This quiz has no valid questions. Please edit it and try again.');
+      setStarting(false);
+      return;
+    }
 
     const code = generateRoomCode();
     const gameRoom = {
@@ -394,7 +404,7 @@ const QuizShowTab = ({
       status: 'waiting',
       questionPhase: 'waiting',
       currentQuestion: 0,
-      hostId: user.uid,
+      hostId,
       hostName: userData?.displayName || user?.email || 'Teacher',
       createdAt: Date.now(),
       players: {},
@@ -413,9 +423,7 @@ const QuizShowTab = ({
       setGameData(gameRoom);
 
       // Attach real-time listener
-      if (gameListenerRef.current) {
-        off(gameListenerRef.current);
-      }
+      if (gameListenerRef.current) off(gameListenerRef.current);
       const gameRef = ref(database, `gameRooms/${code}`);
       gameListenerRef.current = gameRef;
       onValue(gameRef, (snapshot) => {
@@ -423,17 +431,18 @@ const QuizShowTab = ({
           const data = snapshot.val();
           setGameData(data);
           if (data.status === 'finished' || data.questionPhase === 'finished') {
-            const results = calculateFinalLeaderboard(data);
-            setGameResults(results);
+            setGameResults(calculateFinalLeaderboard(data));
           }
         }
       });
 
+      setStarting(false);
       setView('lobby');
       playQuizSound('gameStart');
     } catch (err) {
       console.error('Error creating game room:', err);
-      alert('Failed to create game room. Please check your Firebase connection.');
+      setStartError(`Failed to create game: ${err.message || 'Check your Firebase connection.'}`);
+      setStarting(false);
     }
   };
 
@@ -527,7 +536,7 @@ const QuizShowTab = ({
       const preset = createQuizFromPreset(category, questionCount);
       startGame(preset);
     } catch (err) {
-      alert(err.message || 'Could not create preset quiz');
+      setStartError(err.message || 'Could not create preset quiz');
     }
   };
 
@@ -557,27 +566,44 @@ const QuizShowTab = ({
   if (view === 'dashboard') {
     return (
       <div className="space-y-6">
+        {/* Start error banner */}
+        {startError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-red-700 text-sm font-medium">⚠️ {startError}</span>
+            <button onClick={() => setStartError('')} className="text-red-400 hover:text-red-600 text-lg font-bold ml-4">×</button>
+          </div>
+        )}
+        {/* Starting overlay */}
+        {starting && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3">
+            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            <span className="text-blue-700 text-sm font-medium">Creating game room...</span>
+          </div>
+        )}
         {/* Action bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Library */}
-          <button onClick={() => setShowLibraryModal(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-400 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+          <button onClick={() => !starting && setShowLibraryModal(true)}
+            disabled={starting}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-400 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-60">
             <div className="text-4xl mb-2">📚</div>
             <div className="font-bold text-lg">Premade Library</div>
             <div className="text-sky-100 text-sm mt-1">{PREMADE_QUIZZES.length} ready-to-use quizzes</div>
           </button>
 
           {/* AI Generator */}
-          <button onClick={() => setShowAIModal(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+          <button onClick={() => !starting && setShowAIModal(true)}
+            disabled={starting}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-60">
             <div className="text-4xl mb-2">✨</div>
             <div className="font-bold text-lg">AI Generator</div>
-            <div className="text-violet-100 text-sm mt-1">Create quizzes with AI for any topic</div>
+            <div className="text-violet-100 text-sm mt-1">Free AI — any topic, no setup</div>
           </button>
 
           {/* Custom Quiz */}
-          <button onClick={() => { setEditingQuiz(null); setView('creating'); }}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+          <button onClick={() => !starting && (setEditingQuiz(null), setView('creating'))}
+            disabled={starting}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-60">
             <div className="text-4xl mb-2">🎨</div>
             <div className="font-bold text-lg">Build Custom Quiz</div>
             <div className="text-purple-100 text-sm mt-1">Design your own questions from scratch</div>
@@ -613,7 +639,7 @@ const QuizShowTab = ({
           <QuizLibraryModal
             onClose={() => setShowLibraryModal(false)}
             onSelectQuiz={handlePremadeSelect}
-            onStartQuiz={(quiz) => { setShowLibraryModal(false); startGame(quiz); }}
+            onStartQuiz={(quiz) => { setShowLibraryModal(false); setStartError(''); startGame(quiz); }}
           />
         )}
       </div>
