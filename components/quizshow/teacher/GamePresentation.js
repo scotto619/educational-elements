@@ -77,10 +77,11 @@ const GamePresentation = ({ roomCode, gameData, onEndGame, onAwardXP, onAwardCoi
     setTimeLeft(questionTimeLimit);
 
     const updates = {
+      status: 'playing',
       questionPhase: 'answering',
       currentQuestion: currentQuestionIndex
     };
-    
+
     await updateGameState(updates);
     playQuizSound('questionReveal');
   };

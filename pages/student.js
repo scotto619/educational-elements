@@ -1915,7 +1915,10 @@ const StudentPortal = () => {
           if (gd.status === 'finished' || gd.questionPhase === 'finished') {
             setQuizResults(calculateFinalLeaderboard(gd));
             setQuizView('results');
-          } else if (gd.status === 'playing') {
+          } else if (
+            gd.status === 'playing' ||
+            (gd.questionPhase && gd.questionPhase !== 'waiting')
+          ) {
             setQuizView(prev => prev === 'results' ? prev : 'playing');
           }
         }
