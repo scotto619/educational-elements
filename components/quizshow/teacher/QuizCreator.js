@@ -597,6 +597,50 @@ const QuizCreator = ({ quiz, onSave, onCancel }) => {
           </ul>
         </div>
       )}
+
+      {/* Quiz Preview */}
+      {showPreview && (
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Quiz Preview</h2>
+          <p className="text-gray-500 text-sm mb-6">This is how your questions will appear to students.</p>
+
+          {quizData.questions.length === 0 ? (
+            <div className="text-center py-10 text-gray-400">
+              <div className="text-5xl mb-3">👀</div>
+              <p>No questions yet — add some above to see a preview.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {quizData.questions.map((q, i) => {
+                const colors = ['bg-red-500', 'bg-blue-500', 'bg-yellow-400', 'bg-green-500'];
+                const shapes = ['▲', '◆', '●', '■'];
+                return (
+                  <div key={q.id || i} className="border-2 border-gray-100 rounded-2xl overflow-hidden">
+                    {/* Question header */}
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 text-white">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold uppercase tracking-wide opacity-75">Question {i + 1}</span>
+                        <span className="text-xs opacity-75">⏱ {q.timeLimit}s · 🎯 {q.points} pts</span>
+                      </div>
+                      <p className="text-lg font-bold">{q.question}</p>
+                    </div>
+                    {/* Answer options */}
+                    <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50">
+                      {q.options.map((opt, oi) => (
+                        <div key={oi} className={`flex items-center gap-3 px-4 py-3 rounded-xl text-white font-semibold text-sm shadow-sm ${colors[oi] || 'bg-gray-400'} ${oi === q.correctAnswer ? 'ring-4 ring-white ring-offset-2 ring-offset-gray-50' : 'opacity-80'}`}>
+                          <span className="text-lg">{shapes[oi]}</span>
+                          <span className="flex-1">{opt || <span className="opacity-50 italic">Empty option</span>}</span>
+                          {oi === q.correctAnswer && <span className="ml-auto text-white font-black">✓</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,29 +1,17 @@
 // components/quizshow/teacher/QuizDashboard.js - COMPLETE QUIZ MANAGEMENT DASHBOARD
-import React, { useState } from 'react';
-import { playQuizSound } from '../../../utils/quizShowHelpers';
+import React from 'react';
 
-const QuizDashboard = ({ 
-  quizzes = [], 
-  onCreateQuiz, 
-  onEditQuiz, 
+const QuizDashboard = ({
+  quizzes = [],
+  onCreateQuiz,
+  onEditQuiz,
   onDeleteQuiz,
   onDuplicateQuiz,
-  onStartGame, 
-  onCreatePreset,
+  onStartGame,
+  onOpenLibrary,
   loading = false,
   QUESTION_CATEGORIES = {}
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [showPresetModal, setShowPresetModal] = useState(false);
-
-  // ===============================================
-  // PRESET QUIZ CREATION
-  // ===============================================
-  const handleCreatePreset = (category, questionCount) => {
-    onCreatePreset(category, questionCount);
-    setShowPresetModal(false);
-    playQuizSound('gameStart');
-  };
 
   // ===============================================
   // QUIZ CARD COMPONENT
@@ -145,33 +133,6 @@ const QuizDashboard = ({
   };
 
   // ===============================================
-  // PRESET CATEGORY CARD
-  // ===============================================
-  const PresetCategoryCard = ({ category, categoryData }) => (
-    <div 
-      className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border-2 border-dashed border-gray-300 hover:border-purple-400 cursor-pointer group p-6"
-      onClick={() => {
-        setSelectedCategory(category);
-        setShowPresetModal(true);
-      }}
-    >
-      <div className="text-center">
-        <div 
-          className="w-16 h-16 rounded-full flex items-center justify-center text-3xl text-white mx-auto mb-4 group-hover:scale-110 transition-transform"
-          style={{ backgroundColor: categoryData.color }}
-        >
-          {categoryData.icon}
-        </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-2">{categoryData.name}</h3>
-        <p className="text-sm text-gray-600 mb-4">{categoryData.description}</p>
-        <div className="bg-purple-100 text-purple-600 px-3 py-1 rounded-full text-sm font-semibold">
-          Quick Start • 5 Questions
-        </div>
-      </div>
-    </div>
-  );
-
-  // ===============================================
   // MAIN RENDER
   // ===============================================
   if (loading) {
@@ -253,16 +214,16 @@ const QuizDashboard = ({
                   </button>
 
                   <button
-                    onClick={() => setShowPresetModal(true)}
+                    onClick={onOpenLibrary}
                     className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-500 px-5 py-4 text-left font-semibold text-white shadow-lg shadow-cyan-900/40 transition-all hover:-translate-y-0.5"
                   >
                     <div className="relative z-10">
                       <div className="flex items-center justify-between">
-                        <span className="text-3xl">🚀</span>
-                        <span className="rounded-full bg-white/20 px-3 py-1 text-xs tracking-widest">Instant</span>
+                        <span className="text-3xl">📚</span>
+                        <span className="rounded-full bg-white/20 px-3 py-1 text-xs tracking-widest">Library</span>
                       </div>
-                      <div className="mt-4 text-lg">Deploy Preset Quiz</div>
-                      <p className="mt-2 text-xs text-sky-100/80">Auto-generates balanced questions with one click.</p>
+                      <div className="mt-4 text-lg">Premade Library</div>
+                      <p className="mt-2 text-xs text-sky-100/80">15 ready-to-play quizzes across all subjects.</p>
                     </div>
                     <span className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100 bg-gradient-to-tr from-white/20 via-transparent to-white/10"></span>
                   </button>
@@ -346,10 +307,10 @@ const QuizDashboard = ({
                     ✨ Create Your First Quiz
                   </button>
                   <button
-                    onClick={() => setShowPresetModal(true)}
+                    onClick={onOpenLibrary}
                     className="rounded-full border border-sky-200/60 bg-sky-500/20 px-6 py-3 font-semibold text-sky-100 transition hover:bg-sky-500/30"
                   >
-                    🚀 Generate a Preset
+                    📚 Browse Library
                   </button>
                 </div>
               </div>
@@ -358,73 +319,6 @@ const QuizDashboard = ({
         </div>
       </div>
 
-      {/* Preset Selection Modal */}
-      {showPresetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">Choose a Preset Quiz</h2>
-                  <p className="text-blue-100 mt-1">Select a category to create an instant quiz</p>
-                </div>
-                <button
-                  onClick={() => setShowPresetModal(false)}
-                  className="text-white hover:text-blue-200 text-2xl font-bold"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Object.entries(QUESTION_CATEGORIES).map(([category, categoryData]) => (
-                  <PresetCategoryCard 
-                    key={category} 
-                    category={category} 
-                    categoryData={categoryData} 
-                  />
-                ))}
-              </div>
-              
-              {selectedCategory && (
-                <div className="mt-8 bg-gray-50 rounded-xl p-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">
-                    Create {QUESTION_CATEGORIES[selectedCategory]?.name} Quiz
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    How many questions would you like in your quiz?
-                  </p>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[5, 10, 15, 20].map((count) => (
-                      <button
-                        key={count}
-                        onClick={() => handleCreatePreset(selectedCategory, count)}
-                        className="bg-white border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 p-4 rounded-lg text-center transition-all duration-200"
-                      >
-                        <div className="text-2xl font-bold text-blue-600">{count}</div>
-                        <div className="text-sm text-gray-600">Questions</div>
-                        <div className="text-xs text-gray-500">~{Math.ceil(count * 20 / 60)} min</div>
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-4 flex justify-end">
-                    <button
-                      onClick={() => setSelectedCategory(null)}
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

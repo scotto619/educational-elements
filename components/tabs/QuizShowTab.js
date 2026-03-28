@@ -623,7 +623,7 @@ const QuizShowTab = ({
           }}
           onDuplicateQuiz={duplicateQuiz}
           onStartGame={startGame}
-          onCreatePreset={handleCreatePreset}
+          onOpenLibrary={() => setShowLibraryModal(true)}
           loading={loadingQuizzes}
           QUESTION_CATEGORIES={QUESTION_CATEGORIES}
         />
