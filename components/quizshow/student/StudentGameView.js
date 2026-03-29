@@ -1,61 +1,16 @@
-// components/quizshow/student/StudentGameView.js - FIXED TO MATCH WORKING MOBILE VERSION
+// components/quizshow/student/StudentGameView.js
 import React, { useState, useEffect, useRef } from 'react';
 import { ref, set } from 'firebase/database';
 import { database } from '../../../utils/firebase';
 import { playQuizSound, calculateQuizScore } from '../../../utils/quizShowHelpers';
 
-// Helper function for shop avatars
-const getAvatarImage = (avatarBase, level) => {
-  // Shop avatar mappings (Basic + Premium)
-  const SHOP_AVATARS = {
-    // Basic Avatars
-    'banana': '/shop/Basic/Banana.png',
-    'basketball': '/shop/Basic/Basketball.png',
-    'basketballgirl': '/shop/Basic/BasketballGirl.png',
-    'farmerboy': '/shop/Basic/FarmerBoy.png',
-    'farmergirl': '/shop/Basic/FarmerGirl.png',
-    'goblin1': '/shop/Basic/Goblin1.png',
-    'goblingirl1': '/shop/Basic/GoblinGirl1.png',
-    'guard1': '/shop/Basic/Guard1.png',
-    'guardgirl1': '/shop/Basic/GuardGirl1.png',
-    'pirateboy': '/shop/Basic/PirateBoy.png',
-    'pirategirl': '/shop/Basic/PirateGirl.png',
-    'roboknight': '/shop/Basic/RoboKnight.png',
-    'robotboy': '/shop/Basic/RobotBoy.png',
-    'robotgirl': '/shop/Basic/RobotGirl.png',
-    'soccerboy': '/shop/Basic/SoccerBoy.png',
-    'soccerboy2': '/shop/Basic/SoccerBoy2.png',
-    'soccergirl': '/shop/Basic/SoccerGirl.png',
-    'streetboy1': '/shop/Basic/Streetboy1.png',
-    'streetgirl1': '/shop/Basic/Streetgirl1.png',
-    'vampire1': '/shop/Basic/Vampire1.png',
-    // Premium Avatars
-    'dwarf': '/shop/Premium/Dwarf.png',
-    'dwarf2': '/shop/Premium/Dwarf2.png',
-    'farmerboy premium': '/shop/Premium/FarmerBoy.png',
-    'farmergirl premium': '/shop/Premium/FarmerGirl.png',
-    'goblin2': '/shop/Premium/Goblin2.png',
-    'goblingirl2': '/shop/Premium/GoblinGirl2.png',
-    'king': '/shop/Premium/King.png',
-    'mechanicgirl': '/shop/Premium/MechanicGirl.png',
-    'pirateboy premium': '/shop/Premium/PirateBoy.png',
-    'pirategirl premium': '/shop/Premium/PirateGirl.png',
-    'queen': '/shop/Premium/Queen.png',
-    'robotboy premium': '/shop/Premium/RobotBoy.png',
-    'robotgirl premium': '/shop/Premium/RobotGirl.png',
-    'vampire2': '/shop/Premium/Vampire2.png',
-    'vampiregirl2': '/shop/Premium/VampireGirl2.png'
-  };
+const ANSWER_COLORS = [
+  { bg: 'bg-red-500',    hover: 'hover:bg-red-600',    ring: 'ring-red-300',    shape: '▲', label: 'A' },
+  { bg: 'bg-blue-500',   hover: 'hover:bg-blue-600',   ring: 'ring-blue-300',   shape: '◆', label: 'B' },
+  { bg: 'bg-yellow-500', hover: 'hover:bg-yellow-600', ring: 'ring-yellow-300', shape: '●', label: 'C' },
+  { bg: 'bg-green-500',  hover: 'hover:bg-green-600',  ring: 'ring-green-300',  shape: '■', label: 'D' },
+];
 
-  // Check if it's a shop avatar first
-  const shopPath = SHOP_AVATARS[avatarBase?.toLowerCase()];
-  if (shopPath) {
-    return shopPath;
-  }
-
-  // Fall back to standard level-based avatars
-  return `/avatars/${avatarBase || 'Wizard F'}/Level ${Math.max(1, Math.min(level || 1, 4))}.png`;
-};
 
 const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -64,126 +19,94 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [questionPhase, setQuestionPhase] = useState('waiting');
   const [score, setScore] = useState(0);
-  
-  // Use refs to prevent state resets and timer issues - SAME AS MOBILE FIX
+  const [lastPoints, setLastPoints] = useState(null);
+  const [showPointsAnim, setShowPointsAnim] = useState(false);
+
   const answerSubmittedRef = useRef(false);
   const timerRunningRef = useRef(false);
   const currentQuestionRef = useRef(-1);
   const currentPhaseRef = useRef('waiting');
-  const answeringStartTimeRef = useRef(null); // Track when answering phase started
+  const answeringStartTimeRef = useRef(null);
 
   const currentQuestion = gameData?.quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = gameData?.quiz?.questions?.length || 0;
 
-  // Handle game data updates - SIMPLIFIED to prevent constant resets (SAME AS MOBILE)
   useEffect(() => {
     if (!gameData) return;
 
-    // Handle question changes - ONLY reset when question actually changes
     if (gameData.currentQuestion !== undefined && gameData.currentQuestion !== currentQuestionRef.current) {
-      console.log(`🔄 NEW QUESTION ${gameData.currentQuestion}: Complete reset`);
       currentQuestionRef.current = gameData.currentQuestion;
       setCurrentQuestionIndex(gameData.currentQuestion);
-      
-      // Reset ALL answer-related state for new question
       setSelectedAnswer(null);
       setHasAnswered(false);
+      setLastPoints(null);
       answerSubmittedRef.current = false;
       timerRunningRef.current = false;
       setTimeLeft(0);
     }
 
-    // Handle phase changes - ONLY update when phase actually changes
     if (gameData.questionPhase && gameData.questionPhase !== currentPhaseRef.current) {
-      console.log(`📋 PHASE CHANGE: ${currentPhaseRef.current} → ${gameData.questionPhase}`);
       currentPhaseRef.current = gameData.questionPhase;
       setQuestionPhase(gameData.questionPhase);
 
-      // Start timer ONLY when entering answering phase
       if (gameData.questionPhase === 'answering' && !timerRunningRef.current) {
         const timeLimit = currentQuestion?.timeLimit || gameData?.settings?.timePerQuestion || 20;
-        console.log(`⏰ STARTING TIMER: ${timeLimit} seconds`);
         setTimeLeft(timeLimit);
         timerRunningRef.current = true;
-        answeringStartTimeRef.current = Date.now(); // Record when answering started
+        answeringStartTimeRef.current = Date.now();
       }
     }
 
-    // Update score ONLY during results phase to prevent early reveals
     if (gameData.questionPhase === 'results' && gameData.responses && playerInfo?.playerId) {
       updateScoreFromFirebase(gameData);
     }
   }, [gameData, currentQuestion]);
 
-  // Timer countdown - PROTECTED and simplified (SAME AS MOBILE)
   useEffect(() => {
     if (timeLeft > 0 && timerRunningRef.current && questionPhase === 'answering') {
       const timer = setTimeout(() => {
         setTimeLeft(prev => {
-          const newTime = prev - 1;
-          if (newTime <= 0) {
-            timerRunningRef.current = false;
-            return 0;
-          }
-          return newTime;
+          const next = prev - 1;
+          if (next <= 0) { timerRunningRef.current = false; return 0; }
+          return next;
         });
       }, 1000);
       return () => clearTimeout(timer);
     }
   }, [timeLeft, questionPhase]);
 
-  // Update score only from Firebase responses during results phase
   const updateScoreFromFirebase = (data) => {
     let totalScore = 0;
-    Object.values(data.responses || {}).forEach(questionResponses => {
+    let latestPoints = null;
+    const qIdx = data.currentQuestion ?? currentQuestionIndex;
+    Object.entries(data.responses || {}).forEach(([qKey, questionResponses]) => {
       const playerResponse = questionResponses[playerInfo.playerId];
       if (playerResponse?.points !== undefined) {
         totalScore += playerResponse.points;
+        if (parseInt(qKey) === qIdx) latestPoints = playerResponse.points;
       }
     });
     setScore(totalScore);
+    if (latestPoints !== null) {
+      setLastPoints(latestPoints);
+      setShowPointsAnim(true);
+      setTimeout(() => setShowPointsAnim(false), 2500);
+    }
   };
 
   const submitAnswer = async (answerIndex) => {
-    // ABSOLUTE protection against multiple submissions (SAME AS MOBILE)
-    if (answerSubmittedRef.current || hasAnswered || questionPhase !== 'answering') {
-      console.log(`🚫 BLOCKED: submitted=${answerSubmittedRef.current}, hasAnswered=${hasAnswered}, phase=${questionPhase}`);
-      return;
-    }
+    if (answerSubmittedRef.current || hasAnswered || questionPhase !== 'answering') return;
 
-    console.log(`📝 SUBMITTING ANSWER ${answerIndex} for question ${currentQuestionIndex}`);
-    
-    // IMMEDIATELY block all further attempts
     answerSubmittedRef.current = true;
     setHasAnswered(true);
     setSelectedAnswer(answerIndex);
 
-    if (!currentQuestion || !currentQuestion.options) {
-      console.error('❌ No question data');
-      return;
-    }
-    
-    // FIXED: Convert both values to integers for accurate comparison (SAME AS MOBILE)
+    if (!currentQuestion?.options) return;
+
     const correctAnswerIndex = parseInt(currentQuestion.correctAnswer, 10);
     const submittedAnswerIndex = parseInt(answerIndex, 10);
     const isCorrect = submittedAnswerIndex === correctAnswerIndex;
-    
-    // MAXIMUM DEBUG OUTPUT
-    console.log(`🔍 ANSWER VALIDATION BREAKDOWN:`);
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    console.log(`Question: "${currentQuestion.question}"`);
-    console.log(`Options Array:`, currentQuestion.options);
-    console.log(`Raw correctAnswer from data: ${currentQuestion.correctAnswer} (type: ${typeof currentQuestion.correctAnswer})`);
-    console.log(`Raw submitted index: ${answerIndex} (type: ${typeof answerIndex})`);
-    console.log(`Converted correct: ${correctAnswerIndex} (type: ${typeof correctAnswerIndex})`);
-    console.log(`Converted submitted: ${submittedAnswerIndex} (type: ${typeof submittedAnswerIndex})`);
-    console.log(`Correct option text: "${currentQuestion.options[correctAnswerIndex]}"`);
-    console.log(`Submitted option text: "${currentQuestion.options[submittedAnswerIndex]}"`);
-    console.log(`Comparison: ${submittedAnswerIndex} === ${correctAnswerIndex} = ${isCorrect}`);
-    console.log(`RESULT: ${isCorrect ? '✅ CORRECT' : '❌ INCORRECT'}`);
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    
-    // Speed-based scoring: faster = more points (100-1000 range, 0 if wrong)
+
     const timeLimit = currentQuestion?.timeLimit || 20;
     const timeSpent = answeringStartTimeRef.current
       ? Math.min(timeLimit, (Date.now() - answeringStartTimeRef.current) / 1000)
@@ -193,81 +116,68 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
 
     playQuizSound('answerSubmit');
 
-    // Submit to Firebase
     try {
-      const responsePath = `gameRooms/${roomCode}/responses/${currentQuestionIndex}/${playerInfo.playerId}`;
-      const responseData = {
+      await set(ref(database, `gameRooms/${roomCode}/responses/${currentQuestionIndex}/${playerInfo.playerId}`), {
         answer: submittedAnswerIndex,
         timeSpent: Math.round(timeSpent * 10) / 10,
-        isCorrect: isCorrect,
-        points: points,
+        isCorrect,
+        points,
         submittedAt: Date.now()
-      };
-      
-      console.log(`📤 Firebase submission:`, responseData);
-      await set(ref(database, responsePath), responseData);
-      console.log(`✅ Successfully submitted to Firebase`);
-      
+      });
     } catch (error) {
-      console.error('❌ Firebase error:', error);
-      // Reset on error
       answerSubmittedRef.current = false;
       setHasAnswered(false);
       setSelectedAnswer(null);
     }
   };
 
-  const getAnswerButtonStyle = (index) => {
-    let style = `relative p-6 rounded-xl text-white font-bold text-lg transition-all duration-300 transform`;
-    
-    if (questionPhase === 'answering') {
-      if (hasAnswered && selectedAnswer === index) {
-        // Show selected - PERSISTENT blue styling, no correct/incorrect indication (SAME AS MOBILE)
-        style += ` bg-blue-600 ring-8 ring-blue-300 scale-110 shadow-2xl border-4 border-blue-400`;
-      } else if (hasAnswered) {
-        // Not selected - disabled
-        style += ' bg-gray-400 opacity-50 cursor-not-allowed';
-      } else {
-        // Available to click
-        const colors = ['bg-red-500 hover:bg-red-600', 'bg-blue-500 hover:bg-blue-600', 'bg-green-500 hover:bg-green-600', 'bg-yellow-500 hover:bg-yellow-600'];
-        style += ` ${colors[index % colors.length]} hover:scale-105 cursor-pointer shadow-lg`;
-      }
-    } else if (questionPhase === 'results') {
-      // Show correct/incorrect feedback only in results phase
-      if (index === selectedAnswer && index === currentQuestion.correctAnswer) {
-        style += ' bg-green-500 ring-4 ring-green-300 scale-105';
-      } else if (index === selectedAnswer && index !== currentQuestion.correctAnswer) {
-        style += ' bg-red-500 ring-4 ring-red-300 scale-105';
-      } else if (index === currentQuestion.correctAnswer) {
-        style += ' bg-green-400 ring-2 ring-green-300';
-      } else {
-        style += ' bg-gray-400';
-      }
-    } else {
-      style += ' bg-gray-400 cursor-not-allowed';
-    }
-
-    return style;
+  const getTimeProgress = () => {
+    const timeLimit = currentQuestion?.timeLimit || gameData?.settings?.timePerQuestion || 20;
+    return timeLeft / timeLimit;
   };
 
-  if (questionPhase === 'waiting' || questionPhase === 'finished') {
+  // ── WAITING / SHOWING screen ──────────────────────────────────────────────
+  if (questionPhase === 'waiting' || questionPhase === 'showing') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          {questionPhase === 'finished' ? (
-            <>
-              <div className="text-6xl mb-6">🏆</div>
-              <h1 className="text-3xl font-bold mb-4">Game Finished!</h1>
-              <p className="text-xl text-purple-200 mb-4">Final Score: {score} points</p>
-              <p className="text-lg text-purple-300 mb-8">Thanks for playing!</p>
-            </>
-          ) : (
-            <>
-              <div className="text-6xl mb-6">⏳</div>
-              <h1 className="text-3xl font-bold mb-4">Get Ready!</h1>
-              <p className="text-xl text-purple-200 mb-8">Question {currentQuestionIndex + 1} of {totalQuestions} is starting soon...</p>
-            </>
-          )}
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-8xl mb-6 animate-bounce">🎯</div>
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-3">Get Ready!</h1>
+          <p className="text-xl text-purple-200 mb-2">
+            Question {currentQuestionIndex + 1} of {totalQuestions}
+          </p>
+          <p className="text-purple-300 text-lg">Question starting soon…</p>
+
+          {/* Player info pill */}
+          <div className="mt-10 inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 border border-white/20">
+            <img
+              src={playerInfo?.avatar?.image || '/avatars/Wizard F/Level 1.png'}
+              alt="avatar"
+              className="w-10 h-10 rounded-full border-2 border-white/40"
+            />
+            <span className="text-white font-bold">{playerInfo?.name}</span>
+            <span className="bg-yellow-400 text-yellow-900 text-sm font-black px-3 py-1 rounded-full">
+              {score} pts
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FINISHED screen ───────────────────────────────────────────────────────
+  if (questionPhase === 'finished') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-orange-900 to-red-900 flex flex-col items-center justify-center p-6">
+        <div className="text-center">
+          <div className="text-8xl mb-6">🏆</div>
+          <h1 className="text-5xl font-black text-white mb-4">Game Over!</h1>
+          <div className="bg-white/10 backdrop-blur-sm rounded-3xl px-10 py-6 border border-white/20 mb-6">
+            <p className="text-yellow-300 text-lg font-semibold mb-1">Your Final Score</p>
+            <p className="text-6xl font-black text-white">{score.toLocaleString()}</p>
+            <p className="text-yellow-200 mt-2">points</p>
+          </div>
+          <p className="text-orange-200 text-lg">Thanks for playing! Check the leaderboard 🎉</p>
         </div>
       </div>
     );
@@ -275,192 +185,190 @@ const StudentGameView = ({ roomCode, gameData, playerInfo }) => {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen bg-red-500 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Loading Question...</h1>
-          <p>Question index: {currentQuestionIndex}</p>
-          <p>Phase: {questionPhase}</p>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl font-semibold">Loading question…</p>
         </div>
       </div>
     );
   }
 
+  const timeProgress = getTimeProgress();
+  const timerColor = timeLeft <= 5 ? 'text-red-400' : timeLeft <= 10 ? 'text-yellow-400' : 'text-white';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Header */}
-      <div className="bg-white shadow-lg p-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <img 
-              src={playerInfo?.avatar?.image || '/avatars/Wizard F/Level 1.png'} 
-              alt="Your avatar"
-              className="w-10 h-10 rounded-full border-2 border-purple-300"
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex flex-col">
+
+      {/* ── TOP BAR ──────────────────────────────────────────────────── */}
+      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          {/* Player */}
+          <div className="flex items-center gap-3">
+            <img
+              src={playerInfo?.avatar?.image || '/avatars/Wizard F/Level 1.png'}
+              alt="avatar"
+              className="w-9 h-9 rounded-full border-2 border-purple-400"
             />
             <div>
-              <h2 className="font-bold text-gray-800">{playerInfo?.name}</h2>
-              <p className="text-sm text-gray-600">Score: {score} points</p>
+              <p className="text-white font-bold text-sm leading-none">{playerInfo?.name}</p>
+              <p className="text-purple-300 text-xs">{score.toLocaleString()} pts</p>
             </div>
           </div>
-          
+
+          {/* Question counter */}
           <div className="text-center">
-            <div className="text-sm text-gray-600">Question</div>
-            <div className="font-bold text-gray-800">{currentQuestionIndex + 1} / {totalQuestions}</div>
+            <p className="text-purple-300 text-xs uppercase tracking-widest">Question</p>
+            <p className="text-white font-black text-lg leading-none">{currentQuestionIndex + 1}<span className="text-purple-400 font-normal text-sm">/{totalQuestions}</span></p>
           </div>
-          
-          {/* Timer - ONLY show during answering when actually running (SAME AS MOBILE) */}
-          {questionPhase === 'answering' && timeLeft > 0 && timerRunningRef.current && (
-            <div className={`text-3xl font-bold px-4 py-2 rounded-lg ${
-              timeLeft <= 5 ? 'bg-red-500 text-white animate-pulse' : 'bg-green-500 text-white'
-            }`}>
-              {timeLeft}s
-            </div>
-          )}
+
+          {/* Timer */}
+          <div className="text-right">
+            {questionPhase === 'answering' && timerRunningRef.current ? (
+              <div className={`font-black text-3xl leading-none ${timerColor} ${timeLeft <= 5 ? 'animate-pulse' : ''}`}>
+                {timeLeft}
+                <span className="text-sm font-normal text-purple-400 ml-1">s</span>
+              </div>
+            ) : (
+              <div className="w-14 h-8" />
+            )}
+          </div>
         </div>
+
+        {/* Timer bar */}
+        {questionPhase === 'answering' && (
+          <div className="h-1.5 bg-white/10">
+            <div
+              className={`h-full transition-all duration-1000 ease-linear rounded-full ${
+                timeLeft <= 5 ? 'bg-red-500' : timeLeft <= 10 ? 'bg-yellow-500' : 'bg-green-400'
+              }`}
+              style={{ width: `${Math.max(0, timeProgress * 100)}%` }}
+            />
+          </div>
+        )}
       </div>
 
-      <div className="max-w-4xl mx-auto p-6">
-        {/* Question Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 mb-8">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
-              {currentQuestion.question}
-            </h1>
-            
-            {questionPhase === 'showing' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-800 font-semibold">🎯 Get ready to answer!</p>
-              </div>
-            )}
+      {/* ── MAIN CONTENT ─────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col max-w-2xl mx-auto w-full px-4 py-6 gap-6">
 
-            {questionPhase === 'answering' && !hasAnswered && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-800 font-semibold">⏰ Choose your answer now!</p>
-              </div>
-            )}
+        {/* Question card */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-6 border border-white/20 shadow-2xl">
+          <p className="text-purple-300 text-xs font-semibold uppercase tracking-widest text-center mb-3">
+            {gameData?.quiz?.title || 'Quiz Show'}
+          </p>
+          <h1 className="text-white font-black text-2xl md:text-3xl text-center leading-snug">
+            {currentQuestion.question}
+          </h1>
+        </div>
 
-            {questionPhase === 'answering' && hasAnswered && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-700 font-semibold">✅ Answer locked in! Waiting for results...</p>
-              </div>
-            )}
+        {/* Answer buttons */}
+        <div className="grid grid-cols-1 gap-3">
+          {currentQuestion.options?.map((option, index) => {
+            const color = ANSWER_COLORS[index % ANSWER_COLORS.length];
+            const isSelected = selectedAnswer === index;
+            const correctIdx = parseInt(currentQuestion.correctAnswer, 10);
+            const isCorrect = index === correctIdx;
 
-            {questionPhase === 'results' && (
-              <div className={`border rounded-lg p-4 ${
-                selectedAnswer === currentQuestion.correctAnswer 
-                  ? 'bg-green-50 border-green-200' 
-                  : 'bg-red-50 border-red-200'
-              }`}>
-                <p className={`font-semibold ${
-                  selectedAnswer === currentQuestion.correctAnswer 
-                    ? 'text-green-800' 
-                    : 'text-red-800'
-                }`}>
-                  {selectedAnswer === currentQuestion.correctAnswer 
-                    ? '🎉 Correct! +10 points' 
-                    : '❌ Incorrect! -5 points'
-                  }
-                </p>
-                {selectedAnswer !== currentQuestion.correctAnswer && (
-                  <p className="text-sm text-gray-600 mt-2">
-                    Correct answer: {currentQuestion.options[currentQuestion.correctAnswer]}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+            let btnClass = `relative w-full rounded-2xl p-4 font-bold text-white text-lg transition-all duration-200 flex items-center gap-4 shadow-lg `;
 
-          {/* Answer Options */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {currentQuestion.options?.map((option, index) => (
+            if (questionPhase === 'answering') {
+              if (hasAnswered) {
+                if (isSelected) {
+                  btnClass += `${color.bg} ring-4 ${color.ring} scale-[1.02] shadow-2xl opacity-100`;
+                } else {
+                  btnClass += `bg-white/10 opacity-40 cursor-not-allowed`;
+                }
+              } else {
+                btnClass += `${color.bg} ${color.hover} hover:scale-[1.02] cursor-pointer active:scale-95`;
+              }
+            } else if (questionPhase === 'results') {
+              if (isCorrect) {
+                btnClass += 'bg-green-500 ring-4 ring-green-300 scale-[1.02]';
+              } else if (isSelected && !isCorrect) {
+                btnClass += 'bg-red-500 ring-4 ring-red-300 opacity-80';
+              } else {
+                btnClass += 'bg-white/10 opacity-30';
+              }
+            } else {
+              btnClass += 'bg-white/10 opacity-40 cursor-not-allowed';
+            }
+
+            return (
               <button
                 key={index}
                 onClick={() => submitAnswer(index)}
                 disabled={hasAnswered || questionPhase !== 'answering' || timeLeft <= 0}
-                className={getAnswerButtonStyle(index)}
+                className={btnClass}
               >
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold">
-                    {String.fromCharCode(65 + index)}
-                  </div>
-                  <span className="flex-1 text-left">{option}</span>
+                {/* Shape icon */}
+                <div className={`w-11 h-11 rounded-xl bg-black/20 flex items-center justify-center text-xl font-black shrink-0`}>
+                  {color.shape}
                 </div>
-                
-                {/* Selected indicator - PERSISTENT during answering phase (SAME AS MOBILE) */}
-                {selectedAnswer === index && questionPhase === 'answering' && (
-                  <>
-                    <div className="absolute top-2 right-2 bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-bold border-2 border-blue-600">
-                      ✓ SELECTED
-                    </div>
-                    <div className="absolute -top-2 -left-2 text-3xl animate-bounce">⭐</div>
-                  </>
+                <span className="flex-1 text-left leading-snug">{option}</span>
+
+                {/* Selected tick */}
+                {isSelected && questionPhase === 'answering' && (
+                  <div className="w-8 h-8 bg-white/30 rounded-full flex items-center justify-center text-white font-black text-sm shrink-0">✓</div>
                 )}
 
-                {/* Results phase indicators */}
-                {questionPhase === 'results' && (
-                  <div className="absolute top-3 right-3 text-2xl">
-                    {index === selectedAnswer && index === currentQuestion.correctAnswer && '✅'}
-                    {index === selectedAnswer && index !== currentQuestion.correctAnswer && '❌'}
-                    {index !== selectedAnswer && index === currentQuestion.correctAnswer && '✅'}
-                  </div>
+                {/* Results icons */}
+                {questionPhase === 'results' && isCorrect && (
+                  <div className="text-2xl shrink-0">✅</div>
+                )}
+                {questionPhase === 'results' && isSelected && !isCorrect && (
+                  <div className="text-2xl shrink-0">❌</div>
                 )}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Waiting Status */}
-        {hasAnswered && questionPhase === 'answering' && (
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6 text-center">
-            <div className="text-2xl mb-2">⏳</div>
-            <p className="text-gray-600 font-semibold">Waiting for other players and timer...</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Your answer: <strong>{currentQuestion.options[selectedAnswer]}</strong>
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Answer is locked in - no changes allowed!
-            </p>
+        {/* Status strip */}
+        {questionPhase === 'answering' && !hasAnswered && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl py-4 px-6 text-center border border-white/20">
+            <p className="text-white font-bold text-lg">⏰ Choose your answer!</p>
+            <p className="text-purple-300 text-sm mt-1">Faster answers earn more points</p>
           </div>
         )}
 
-        {/* Score Display - NO immediate updates during answering (SAME AS MOBILE) */}
-        <div className="mt-6 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl p-6 text-center">
-          <h3 className="text-lg font-bold mb-2">Your Total Score</h3>
-          <div className="text-3xl font-bold">{score} points</div>
-          <p className="text-sm opacity-90 mt-2">
-            {questionPhase === 'results' ? 'Updated with latest results!' : 'Updated after each question'}
-          </p>
-        </div>
+        {questionPhase === 'answering' && hasAnswered && (
+          <div className="bg-green-500/20 backdrop-blur-sm rounded-2xl py-4 px-6 text-center border border-green-400/40">
+            <p className="text-green-300 font-bold text-lg">✅ Answer locked in!</p>
+            <p className="text-green-200 text-sm mt-1">Waiting for other players…</p>
+          </div>
+        )}
 
-        {/* Debug Panel - COMPREHENSIVE (SAME AS MOBILE) */}
-        <div className="mt-6 bg-gray-900 text-white rounded-xl p-4 text-xs font-mono">
-          <h4 className="font-bold mb-2 text-yellow-400">🔧 DESKTOP DEBUG PANEL:</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p><span className="text-cyan-400">Question Index:</span> {currentQuestionIndex}</p>
-              <p><span className="text-cyan-400">Question Phase:</span> {questionPhase}</p>
-              <p><span className="text-cyan-400">Phase Ref:</span> {currentPhaseRef.current}</p>
-              <p><span className="text-cyan-400">Has Answered:</span> {hasAnswered ? 'YES' : 'NO'}</p>
-              <p><span className="text-cyan-400">Answer Submitted Ref:</span> {answerSubmittedRef.current ? 'YES' : 'NO'}</p>
-              <p><span className="text-cyan-400">Selected Answer:</span> {selectedAnswer !== null ? selectedAnswer : 'None'}</p>
-            </div>
-            <div>
-              <p><span className="text-cyan-400">Correct Answer:</span> {currentQuestion?.correctAnswer} ({typeof currentQuestion?.correctAnswer})</p>
-              <p><span className="text-cyan-400">Timer Running Ref:</span> {timerRunningRef.current ? 'YES' : 'NO'}</p>
-              <p><span className="text-cyan-400">Time Left:</span> {timeLeft}s</p>
-              <p><span className="text-cyan-400">Score:</span> {score}</p>
-              <p><span className="text-cyan-400">Question Ref:</span> {currentQuestionRef.current}</p>
-              <p><span className="text-cyan-400">Options Count:</span> {currentQuestion?.options?.length || 0}</p>
+        {questionPhase === 'results' && (
+          <div className={`rounded-2xl py-5 px-6 text-center border backdrop-blur-sm ${
+            selectedAnswer === null
+              ? 'bg-gray-500/20 border-gray-400/40'
+              : parseInt(selectedAnswer, 10) === parseInt(currentQuestion.correctAnswer, 10)
+              ? 'bg-green-500/20 border-green-400/40'
+              : 'bg-red-500/20 border-red-400/40'
+          }`}>
+            {selectedAnswer === null ? (
+              <p className="text-gray-300 font-bold text-xl">⏱️ Time's up!</p>
+            ) : parseInt(selectedAnswer, 10) === parseInt(currentQuestion.correctAnswer, 10) ? (
+              <>
+                <p className="text-green-300 font-black text-2xl">🎉 Correct!</p>
+                {showPointsAnim && lastPoints !== null && (
+                  <p className="text-yellow-300 font-black text-3xl mt-1 animate-bounce">+{lastPoints.toLocaleString()} pts</p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-red-300 font-black text-2xl">❌ Incorrect</p>
+                <p className="text-white/70 text-sm mt-1">
+                  Correct answer: <strong className="text-white">{currentQuestion.options[parseInt(currentQuestion.correctAnswer, 10)]}</strong>
+                </p>
+              </>
+            )}
+
+            <div className="mt-3 bg-white/10 rounded-xl px-4 py-2 inline-block">
+              <p className="text-white font-bold">Total: {score.toLocaleString()} pts</p>
             </div>
           </div>
-          {currentQuestion?.options && (
-            <div className="mt-2">
-              <p><span className="text-cyan-400">Options:</span> [{currentQuestion.options.map((opt, i) => `${i}:"${opt}"`).join(', ')}]</p>
-            </div>
-          )}
-          <div className="mt-2 text-yellow-400">
-            <p><strong>🖥️ DESKTOP VERSION</strong> - Should now match mobile behavior exactly!</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
