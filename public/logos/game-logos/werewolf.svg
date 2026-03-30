@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0533"/>
+      <stop offset="50%" style="stop-color:#2d1a4a"/>
+      <stop offset="100%" style="stop-color:#3d0e1e"/>
+    </linearGradient>
+    <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fffde7"/>
+      <stop offset="100%" style="stop-color:#f9c74f"/>
+    </linearGradient>
+    <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#f9c74f;stop-opacity:0.3"/>
+      <stop offset="100%" style="stop-color:#f9c74f;stop-opacity:0"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="360" height="200" fill="url(#bgGrad)" rx="12"/>
+
+  <!-- Stars -->
+  <circle cx="30" cy="20" r="1.2" fill="white" opacity="0.8"/>
+  <circle cx="75" cy="35" r="0.9" fill="white" opacity="0.6"/>
+  <circle cx="140" cy="15" r="1.0" fill="white" opacity="0.7"/>
+  <circle cx="200" cy="28" r="1.4" fill="white" opacity="0.9"/>
+  <circle cx="260" cy="12" r="1.0" fill="white" opacity="0.6"/>
+  <circle cx="310" cy="40" r="0.8" fill="white" opacity="0.7"/>
+  <circle cx="340" cy="22" r="1.2" fill="white" opacity="0.8"/>
+  <circle cx="50" cy="60" r="0.8" fill="white" opacity="0.5"/>
+  <circle cx="320" cy="65" r="1.0" fill="white" opacity="0.6"/>
+  <circle cx="170" cy="45" r="0.8" fill="white" opacity="0.5"/>
+
+  <!-- Moon glow -->
+  <circle cx="290" cy="55" r="50" fill="url(#moonGlow)"/>
+
+  <!-- Full Moon -->
+  <circle cx="290" cy="55" r="38" fill="url(#moonGrad)" filter="url(#glow)"/>
+  <!-- Moon craters -->
+  <circle cx="275" cy="42" r="6" fill="#e8c84a" opacity="0.4"/>
+  <circle cx="300" cy="60" r="4" fill="#e8c84a" opacity="0.3"/>
+  <circle cx="282" cy="67" r="3" fill="#e8c84a" opacity="0.35"/>
+
+  <!-- Silhouetted trees left -->
+  <rect x="0" y="130" width="8" height="70" fill="#0d0020"/>
+  <polygon points="4,100 -10,145 18,145" fill="#0d0020"/>
+  <polygon points="4,115 -8,152 16,152" fill="#0d0020"/>
+
+  <rect x="18" y="140" width="6" height="60" fill="#0d0020"/>
+  <polygon points="21,108 9,148 33,148" fill="#0d0020"/>
+
+  <!-- Silhouetted trees right -->
+  <rect x="338" y="128" width="8" height="72" fill="#0d0020"/>
+  <polygon points="342,98 328,143 356,143" fill="#0d0020"/>
+  <polygon points="342,113 330,150 354,150" fill="#0d0020"/>
+
+  <rect x="350" y="142" width="6" height="58" fill="#0d0020"/>
+  <polygon points="353,112 341,148 365,148" fill="#0d0020"/>
+
+  <!-- Werewolf silhouette body -->
+  <!-- Torso -->
+  <ellipse cx="160" cy="148" rx="28" ry="38" fill="#0d0020"/>
+  <!-- Head -->
+  <ellipse cx="160" cy="100" rx="22" ry="20" fill="#0d0020"/>
+  <!-- Snout -->
+  <path d="M148,105 Q160,122 172,105" fill="#0d0020"/>
+  <!-- Ears -->
+  <polygon points="143,88 138,65 158,85" fill="#0d0020"/>
+  <polygon points="177,88 182,65 162,85" fill="#0d0020"/>
+  <!-- Left arm raised up -->
+  <path d="M135,125 Q105,95 95,70" stroke="#0d0020" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Claws on left hand -->
+  <path d="M95,70 Q88,62 84,55" stroke="#0d0020" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M95,70 Q92,60 95,52" stroke="#0d0020" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M95,70 Q100,61 104,54" stroke="#0d0020" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- Right arm -->
+  <path d="M185,130 Q210,115 220,100" stroke="#0d0020" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <!-- Claws right -->
+  <path d="M220,100 Q228,93 232,86" stroke="#0d0020" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M220,100 Q225,91 228,84" stroke="#0d0020" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Legs -->
+  <path d="M148,180 Q140,195 132,200" stroke="#0d0020" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M172,180 Q178,195 185,200" stroke="#0d0020" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <!-- Tail -->
+  <path d="M185,155 Q210,145 215,160 Q220,175 205,178" stroke="#0d0020" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+  <!-- Glowing red eyes -->
+  <circle cx="152" cy="97" r="4" fill="#ff2222" filter="url(#glow)" opacity="0.9"/>
+  <circle cx="168" cy="97" r="4" fill="#ff2222" filter="url(#glow)" opacity="0.9"/>
+
+  <!-- Ground shadow -->
+  <ellipse cx="160" cy="198" rx="50" ry="8" fill="#0d0020" opacity="0.6"/>
+
+  <!-- Title text -->
+  <text x="180" y="168" font-family="Georgia, serif" font-size="15" font-weight="bold" fill="#c084fc" text-anchor="middle" letter-spacing="2">ONE NIGHT</text>
+  <text x="180" y="186" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="#f0abfc" text-anchor="middle" letter-spacing="3">WEREWOLF</text>
+</svg>

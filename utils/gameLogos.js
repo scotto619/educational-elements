@@ -98,6 +98,8 @@ const GAME_LOGO_MAP = {
   'hero-forge': createLogoCandidates('hero-forge', ['hero-forge.png', 'Hero Forge', 'Clicker']),
   'classroom-bingo': createLogoCandidates('classroom-bingo', ['classroom-bingo.png', 'Classroom Bingo', 'Classroom BINGO']),
   'math-race': createLogoCandidates('math-race', ['math-race.svg', 'Math Race Challenge', 'Math Race']),
+  'math-grid': createLogoCandidates('math-grid', ['mathsfacts.png', 'Math Facts Grid', 'Math Grid']),
+  'sin-miner-logo': createLogoCandidates('sin-miner', ['sin-miner.svg', 'Sin Miner']),
   crossword: createLogoCandidates('crossword', ['crossword.svg', 'Crossword']),
   'word-search': createLogoCandidates('word-search', ['word-search.svg', 'Word Search']),
   boggle: createLogoCandidates('boggle', ['boggle.svg', 'Boggle']),
@@ -106,7 +108,7 @@ const GAME_LOGO_MAP = {
   'type-defender': createLogoCandidates('type-defender', ['typedefender.png', 'Type Defender']),
   uno: createLogoCandidates('uno', ['/Logo/Game Logos/uno.png', 'uno.png', 'UNO']),
   chess: createLogoCandidates('chess', ['/Logo/Game Logos/chess.svg', 'chess.png', 'Chess']),
-  werewolf: createLogoCandidates('werewolf', ['werewolf.png', 'One Night Werewolf', 'Werewolf'])
+  werewolf: createLogoCandidates('werewolf', ['werewolf.svg', 'werewolf.png', 'One Night Werewolf', 'Werewolf'])
 };
 
 const GAME_LOGO_ALIASES = {
@@ -122,7 +124,10 @@ const GAME_LOGO_ALIASES = {
   clicker: 'hero-forge',
   'sin-miner': 'sin-miner-logo',
   'precision-timer-challenge': 'precision-timer',
-  'timer-challenge': 'precision-timer'
+  'timer-challenge': 'precision-timer',
+  'cell-arena': 'cell-battle',
+  'word-scramble': 'boggle',
+  'word-hunt': 'word-search'
 };
 
 const buildLogoSource = (candidates = []) => {

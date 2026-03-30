@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a0a00"/>
+      <stop offset="50%" style="stop-color:#1f0d2e"/>
+      <stop offset="100%" style="stop-color:#0d001a"/>
+    </linearGradient>
+    <linearGradient id="caveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a1a00"/>
+      <stop offset="100%" style="stop-color:#0a0005"/>
+    </linearGradient>
+    <linearGradient id="gemRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b6b"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+    <linearGradient id="gemPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#be4bdb"/>
+      <stop offset="100%" style="stop-color:#6741d9"/>
+    </linearGradient>
+    <linearGradient id="gemBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4fc3f7"/>
+      <stop offset="100%" style="stop-color:#0277bd"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd700"/>
+      <stop offset="100%" style="stop-color:#ff8c00"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowStrong">
+      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="360" height="200" fill="url(#bgGrad)" rx="12"/>
+
+  <!-- Cave walls - rough rock texture -->
+  <path d="M0,0 L0,200 L80,200 L70,170 L50,145 L60,120 L40,95 L55,70 L30,45 L50,20 L0,0 Z" fill="url(#caveGrad)" opacity="0.9"/>
+  <path d="M360,0 L360,200 L280,200 L290,170 L310,145 L300,120 L320,95 L305,70 L330,45 L310,20 L360,0 Z" fill="url(#caveGrad)" opacity="0.9"/>
+  <!-- Cave floor -->
+  <path d="M0,200 L360,200 L350,180 L330,175 L300,185 L270,170 L240,180 L200,168 L160,178 L120,165 L90,178 L60,170 L30,182 L10,175 L0,200 Z" fill="#1a0d00" opacity="0.85"/>
+  <!-- Cave ceiling stalactites -->
+  <polygon points="60,0 50,30 70,30" fill="#1a0d00"/>
+  <polygon points="110,0 98,40 122,40" fill="#1a0d00"/>
+  <polygon points="155,0 145,25 165,25" fill="#1a0d00"/>
+  <polygon points="220,0 210,35 230,35" fill="#1a0d00"/>
+  <polygon points="270,0 258,28 282,28" fill="#1a0d00"/>
+  <polygon points="320,0 310,38 330,38" fill="#1a0d00"/>
+
+  <!-- Glowing lava cracks in floor -->
+  <path d="M20,195 Q60,180 100,190 Q140,200 180,185 Q220,175 260,190 Q300,200 340,188" stroke="#ff4500" stroke-width="2" fill="none" opacity="0.6" filter="url(#glow)"/>
+  <path d="M80,200 Q95,185 110,192" stroke="#ff6600" stroke-width="1.5" fill="none" opacity="0.5" filter="url(#glow)"/>
+  <path d="M220,200 Q235,182 255,195" stroke="#ff4500" stroke-width="1.5" fill="none" opacity="0.5" filter="url(#glow)"/>
+
+  <!-- Skull icon (center-top) -->
+  <!-- Skull head -->
+  <ellipse cx="180" cy="55" rx="28" ry="25" fill="#d4d4d4" opacity="0.9"/>
+  <!-- Jaw -->
+  <rect x="160" y="72" width="40" height="16" rx="5" fill="#c0c0c0" opacity="0.9"/>
+  <!-- Teeth -->
+  <rect x="163" y="72" width="7" height="12" rx="2" fill="white" opacity="0.95"/>
+  <rect x="174" y="72" width="7" height="12" rx="2" fill="white" opacity="0.95"/>
+  <rect x="185" y="72" width="7" height="12" rx="2" fill="white" opacity="0.95"/>
+  <rect x="196" y="72" width="7" height="12" rx="2" fill="white" opacity="0.95"/>
+  <!-- Eye sockets -->
+  <ellipse cx="168" cy="50" rx="9" ry="10" fill="#1a0a00"/>
+  <ellipse cx="192" cy="50" rx="9" ry="10" fill="#1a0a00"/>
+  <!-- Glowing red eyes -->
+  <ellipse cx="168" cy="51" rx="5" ry="5.5" fill="#cc0000" filter="url(#glow)" opacity="0.9"/>
+  <ellipse cx="192" cy="51" rx="5" ry="5.5" fill="#cc0000" filter="url(#glow)" opacity="0.9"/>
+  <!-- Nose cavity -->
+  <path d="M178,60 L183,60 L180.5,65 Z" fill="#1a0a00"/>
+
+  <!-- Pickaxe -->
+  <!-- Handle -->
+  <line x1="130" y1="120" x2="210" y2="80" stroke="#8B4513" stroke-width="6" stroke-linecap="round"/>
+  <!-- Axe head -->
+  <path d="M195,72 L222,58 L215,80 L232,70 L210,88 Z" fill="#9e9e9e"/>
+  <path d="M195,72 L222,58 L215,80 Z" fill="#bdbdbd"/>
+  <!-- Pick point -->
+  <path d="M125,124 L112,138 L128,128 Z" fill="#9e9e9e"/>
+
+  <!-- Gems in walls and ground -->
+  <!-- Red gem -->
+  <polygon points="45,130 52,120 59,130 52,140" fill="url(#gemRed)" filter="url(#glow)"/>
+  <polygon points="52,120 59,130 52,130" fill="#ff9999" opacity="0.5"/>
+
+  <!-- Purple gem -->
+  <polygon points="300,115 308,103 316,115 308,127" fill="url(#gemPurple)" filter="url(#glow)"/>
+  <polygon points="308,103 316,115 308,115" fill="#df80ff" opacity="0.5"/>
+
+  <!-- Blue gem -->
+  <polygon points="85,162 91,153 97,162 91,171" fill="url(#gemBlue)" filter="url(#glow)"/>
+  <polygon points="91,153 97,162 91,162" fill="#b3e5fc" opacity="0.5"/>
+
+  <!-- Gold nugget -->
+  <circle cx="265" cy="168" r="8" fill="url(#goldGrad)" filter="url(#glow)"/>
+  <circle cx="262" cy="165" r="3" fill="#ffe082" opacity="0.6"/>
+
+  <!-- Small sparkles around gems -->
+  <text x="38" y="118" font-size="10" fill="#ff9999" opacity="0.7" filter="url(#glow)">✦</text>
+  <text x="294" y="102" font-size="10" fill="#df80ff" opacity="0.7" filter="url(#glow)">✦</text>
+  <text x="258" y="160" font-size="10" fill="#ffd700" opacity="0.8" filter="url(#glow)">✦</text>
+
+  <!-- Title -->
+  <text x="180" y="163" font-family="'Georgia', serif" font-size="22" font-weight="bold" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="3" filter="url(#glow)">SIN MINER</text>
+  <text x="180" y="182" font-family="'Georgia', serif" font-size="11" fill="#c084fc" text-anchor="middle" letter-spacing="2" opacity="0.9">ROGUELIKE CLICKER</text>
+</svg>
