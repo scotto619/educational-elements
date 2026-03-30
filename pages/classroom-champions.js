@@ -63,8 +63,7 @@ import PetRaceTab from '../components/tabs/PetRaceTab';
 import GamesTab from '../components/tabs/GamesTab';
 import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
-import CurriculumCornerTab from '../components/tabs/CurriculumCornerTab';
-import NewCurriculumCornerTab from '../components/tabs/NewCurriculumCornerTab';
+import ResourceHubTab from '../components/tabs/ResourceHubTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
 import LootWellTab from '../components/tabs/LootWellTab';
 
@@ -125,8 +124,7 @@ const CLASSROOM_CHAMPIONS_TABS = [
 
 const EDUCATIONAL_ELEMENTS_TABS = [
   { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games', mobileIcon: '🎮' },
-  { id: 'curriculum', name: 'Resource Hub', icon: '📖', shortName: 'Resources', mobileIcon: '📖' },
-  { id: 'new-curriculum', name: 'NEW Resource Hub', icon: '✨', shortName: 'New Resources', mobileIcon: '✨' },
+  { id: 'resource-hub', name: 'Resource Hub', icon: '📖', shortName: 'Resources', mobileIcon: '📖' },
   { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️', shortName: 'Toolkit', mobileIcon: '🛠️' },
   { id: 'settings', name: 'Settings', icon: '⚙️', shortName: 'Settings', mobileIcon: '⚙️' }
 ];
@@ -1124,18 +1122,11 @@ const ClassroomChampions = () => {
           />
         );
 
-      case 'curriculum':
-        return <CurriculumCornerTab
+      case 'resource-hub':
+        return <ResourceHubTab
           {...commonProps}
           saveData={saveClassData}
-          loadedData={currentClassData?.toolkitData || {}}
-        />;
-
-      case 'new-curriculum':
-        return <NewCurriculumCornerTab
-          {...commonProps}
-          saveData={saveClassData}
-          loadedData={currentClassData}
+          loadedData={currentClassData || {}}
         />;
 
       case 'toolkit':
