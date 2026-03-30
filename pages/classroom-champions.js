@@ -125,8 +125,8 @@ const CLASSROOM_CHAMPIONS_TABS = [
 
 const EDUCATIONAL_ELEMENTS_TABS = [
   { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games', mobileIcon: '🎮' },
-  { id: 'curriculum', name: 'Curriculum Corner', icon: '📖', shortName: 'Curriculum', mobileIcon: '📖' },
-  { id: 'new-curriculum', name: 'NEW Curriculum Corner', icon: '✨', shortName: 'New Curric', mobileIcon: '✨' },
+  { id: 'curriculum', name: 'Resource Hub', icon: '📖', shortName: 'Resources', mobileIcon: '📖' },
+  { id: 'new-curriculum', name: 'NEW Resource Hub', icon: '✨', shortName: 'New Resources', mobileIcon: '✨' },
   { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️', shortName: 'Toolkit', mobileIcon: '🛠️' },
   { id: 'settings', name: 'Settings', icon: '⚙️', shortName: 'Settings', mobileIcon: '⚙️' }
 ];

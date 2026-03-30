@@ -151,7 +151,7 @@ export default function MainMenu() {
                         </div>
                     </div>
 
-                    {/* Curriculum Corner */}
+                    {/* Resource Hub */}
                     <div
                         onClick={() => handleNavigation('/classroom-champions?tab=curriculum')}
                         className="group cursor-pointer relative"
@@ -161,13 +161,13 @@ export default function MainMenu() {
                             <div className="relative h-48 sm:h-64 overflow-hidden">
                                 <Image
                                     src="/Displays/Banners/CurriculumCorner.png"
-                                    alt="Curriculum Corner"
+                                    alt="Resource Hub"
                                     fill
                                     className="object-contain transform group-hover:scale-110 transition-transform duration-700"
                                 />
                             </div>
                             <div className="p-6 text-center">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Curriculum Corner</h2>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Resource Hub</h2>
                                 <p className="text-gray-600">Access resources, displays, and lesson plans.</p>
                             </div>
                         </div>

@@ -22,7 +22,7 @@ const StudyStudioSection = ({ onBack, showToast, students }) => {
             <div className="space-y-6">
                 <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-slate-600">
-                        <button onClick={onBack} className="hover:text-blue-600">Curriculum Corner</button>
+                        <button onClick={onBack} className="hover:text-blue-600">Resource Hub</button>
                         <span>→</span>
                         <button onClick={() => setActiveActivity(null)} className="hover:text-blue-600">Study Studio</button>
                         <span>→</span>

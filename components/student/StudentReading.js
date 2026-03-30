@@ -1068,7 +1068,7 @@ const StudentReading = ({
           </div>
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-6">
             <p className="text-purple-800 text-sm">
-              🎯 <strong>Ask your teacher</strong> to assign you to a reading group in the Curriculum Corner!
+              🎯 <strong>Ask your teacher</strong> to assign you to a reading group in the Resource Hub!
             </p>
           </div>
         </div>

@@ -254,7 +254,7 @@ export default function Home() {
               {/* Pillar 3 */}
               <div className="group bg-white rounded-3xl p-8 border border-green-100 hover:border-green-300 hover:shadow-2xl hover:shadow-green-100 transition-all duration-300 hover:-translate-y-1">
                 <div className="h-36 w-full relative mb-6">
-                  <Image src="/Displays/Banners/CurriculumCorner.png" alt="Curriculum Corner" fill className="object-contain group-hover:scale-105 transition-transform duration-300" />
+                  <Image src="/Displays/Banners/CurriculumCorner.png" alt="Resource Hub" fill className="object-contain group-hover:scale-105 transition-transform duration-300" />
                 </div>
                 <div className="text-center mb-4">
                   <span className="inline-block text-3xl mb-2">📚</span>
@@ -438,7 +438,7 @@ export default function Home() {
                 href="/signup"
                 className="inline-flex items-center gap-2 text-base font-bold text-purple-600 hover:text-purple-800 transition-colors group"
               >
-                Unlock 500+ more resources in Curriculum Corner
+                Unlock 500+ more resources in the Resource Hub
                 <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </Link>
             </div>

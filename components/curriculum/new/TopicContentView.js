@@ -271,6 +271,11 @@ const TopicContentView = ({ topic, subjectId, onBack, onToggleAssign, assignedTo
                                                             <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                                                         </div>
                                                     )}
+                                                    {resource.type === 'video' && !resource.thumbnail && (
+                                                        <div className="text-purple-500 group-hover:scale-110 transition-transform duration-500">
+                                                            <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        </div>
+                                                    )}
 
                                                     {/* Featured Badge Overlay */}
                                                     <div className="absolute top-2 right-2 bg-amber-400 text-amber-900 text-xs font-black tracking-wider px-2 py-1 rounded-md shadow-sm z-20 flex items-center gap-1">
@@ -293,7 +298,7 @@ const TopicContentView = ({ topic, subjectId, onBack, onToggleAssign, assignedTo
                                                     </div>
                                                     <div className="mt-4 flex items-center justify-between">
                                                         <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider bg-indigo-50 px-2 py-1 rounded-md">
-                                                            {resource.type === 'pdf' && resource.pptxSrc ? 'PDF & PPTX' : resource.type}
+                                                            {resource.type === 'pdf' && resource.pptxSrc ? 'PDF & PPTX' : resource.type === 'video' ? 'VIDEO' : resource.type}
                                                         </span>
                                                         <span className="text-indigo-600 bg-indigo-50 rounded-full p-2 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -335,6 +340,11 @@ const TopicContentView = ({ topic, subjectId, onBack, onToggleAssign, assignedTo
                                                     {resource.type === 'pptx' && !resource.thumbnail && (
                                                         <div className="text-slate-400 group-hover:scale-110 transition-transform duration-500">
                                                             <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                                        </div>
+                                                    )}
+                                                    {resource.type === 'video' && !resource.thumbnail && (
+                                                        <div className="text-slate-400 group-hover:scale-110 transition-transform duration-500">
+                                                            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                         </div>
                                                     )}
 

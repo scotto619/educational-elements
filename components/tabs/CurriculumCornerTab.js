@@ -725,7 +725,7 @@ const CurriculumCornerTab = ({
       <div className="text-center">
         <img
           src="/Displays/Banners/CurriculumCorner.png"
-          alt="Curriculum Corner"
+          alt="Resource Hub"
           className="h-24 md:h-32 mx-auto object-contain mb-4"
           onError={(e) => { e.target.style.display = 'none'; }}
         />

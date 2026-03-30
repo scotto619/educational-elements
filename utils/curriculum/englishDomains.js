@@ -27,6 +27,11 @@ export const englishDomains = [{
             pptxSrc: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Cover.png'
           }, {
+            type: 'video',
+            title: 'The Magical World Builder: Decoding Nouns',
+            src: '/Curriculum/New Literacy/Grammar/Nouns/Videos/The_Magical_World_Builder__Decoding_Nouns.mp4',
+            thumbnail: '/Curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png'
+          }, {
             type: "pdf",
             title: "The Noun Hunt",
             src: "/Unit Resources/Literacy/The_Noun_Hunt.pdf",
@@ -451,13 +456,58 @@ export const englishDomains = [{
     domain: 'Language (How English Works)',
     subtopics: [{
       id: 'capital_letters',
-      name: 'Capital letters'
+      name: 'Capital letters',
+      resources: {
+        display: [{
+          type: 'image',
+          title: 'Capital Letters Display',
+          src: '/Curriculum/New Literacy/Punctuation/Capital Letters/Display/Capitals.png'
+        }],
+        learn: [{
+          type: 'pdf',
+          title: 'Capital Letters Guide',
+          src: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/Capitals.pdf',
+          pptxSrc: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/Capitals.pptx',
+          thumbnail: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/cover.png'
+        }],
+        practice: []
+      }
     }, {
       id: 'full_stops',
-      name: 'Full stops'
+      name: 'Full stops',
+      resources: {
+        display: [{
+          type: 'image',
+          title: 'Full Stops Display',
+          src: '/Curriculum/New Literacy/Punctuation/Full Stops/Display/FullStops.png'
+        }],
+        learn: [{
+          type: 'pdf',
+          title: 'Full Stops Guide',
+          src: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullStops.pdf',
+          pptxSrc: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullStops.pptx',
+          thumbnail: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/cover.png'
+        }],
+        practice: []
+      }
     }, {
       id: 'question_marks',
-      name: 'Question marks'
+      name: 'Question marks',
+      resources: {
+        display: [{
+          type: 'image',
+          title: 'Question Marks Display',
+          src: '/Curriculum/New Literacy/Punctuation/Question Marks/Display/QuestionMarks.png'
+        }],
+        learn: [{
+          type: 'pdf',
+          title: 'Question Marks Guide',
+          src: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionMarks.pdf',
+          pptxSrc: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionMarks.pptx',
+          thumbnail: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/cover.png'
+        }],
+        practice: []
+      }
     }, {
       id: 'exclamation_marks',
       name: 'Exclamation marks'

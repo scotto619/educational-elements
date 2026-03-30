@@ -4,6 +4,7 @@ const ResourceViewer = ({ resource, onClose }) => {
     const isImage = resource.type === 'image';
     const isPdf = resource.type === 'pdf';
     const isPptx = resource.type === 'pptx';
+    const isVideo = resource.type === 'video';
 
     const handlePrint = () => {
         if (isImage || isPdf) {
@@ -50,6 +51,7 @@ const ResourceViewer = ({ resource, onClose }) => {
                             {isImage && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
                             {isPdf && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
                             {isPptx && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>}
+                            {isVideo && <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
                         </div>
                         <div>
                             <h3 className="font-bold text-slate-800 text-lg">{resource.title}</h3>
@@ -58,6 +60,7 @@ const ResourceViewer = ({ resource, onClose }) => {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {!isVideo && (
                         <button
                             onClick={handlePrint}
                             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 hover:text-indigo-600 transition-colors font-medium shadow-sm"
@@ -65,6 +68,7 @@ const ResourceViewer = ({ resource, onClose }) => {
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                             Print
                         </button>
+                        )}
                         {isPdf && resource.pptxSrc ? (
                             <div className="flex bg-indigo-600 rounded-xl shadow-sm text-white font-medium divide-x divide-indigo-500 overflow-hidden">
                                 <button
@@ -138,6 +142,17 @@ const ResourceViewer = ({ resource, onClose }) => {
                                 Download Presentation
                             </button>
                         </div>
+                    )}
+
+                    {isVideo && (
+                        <video
+                            src={resource.src}
+                            controls
+                            autoPlay
+                            className="max-w-full max-h-full rounded-lg shadow-md border border-slate-200 bg-black"
+                        >
+                            Your browser does not support the video tag.
+                        </video>
                     )}
                 </div>
             </div>

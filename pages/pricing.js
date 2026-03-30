@@ -166,7 +166,7 @@ export default function Pricing() {
                 <li className="flex items-center"><span className="text-green-300 mr-2">✓</span>Writing Prompts & Resources</li>
                 <li className="flex items-center"><span className="text-green-300 mr-2">✓</span>Math Warm-ups & Activities</li>
                 <li className="flex items-center"><span className="text-green-300 mr-2">✓</span>Interactive Learning Games</li>
-                <li className="flex items-center"><span className="text-green-300 mr-2">✓</span>Curriculum Corner Library</li>
+                <li className="flex items-center"><span className="text-green-300 mr-2">✓</span>Resource Hub Library</li>
               </ul>
             </div>
 

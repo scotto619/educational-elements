@@ -606,7 +606,7 @@ const StudentMathMentals = ({
         </p>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
           <p className="text-blue-800 text-sm">
-            Ask your teacher to assign you to a math group in the Curriculum Corner!
+            Ask your teacher to assign you to a math group in the Resource Hub!
           </p>
         </div>
       </div>

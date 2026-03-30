@@ -1556,7 +1556,7 @@ const StudentSpelling = ({
         </p>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
           <p className="text-blue-800 text-sm">
-            📣 <strong>Ask your teacher</strong> to assign you to a spelling group in the Curriculum Corner!
+            📣 <strong>Ask your teacher</strong> to assign you to a spelling group in the Resource Hub!
           </p>
         </div>
       </div>
