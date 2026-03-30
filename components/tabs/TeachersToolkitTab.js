@@ -1,6 +1,6 @@
 // components/tabs/TeachersToolkitTab.js - UPDATED TOOLKIT GRID
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { DEFAULT_NOTICE_ITEMS, saveNoticeBoard, subscribeToNoticeBoard } from '../../services/noticeBoard';
+import { DEFAULT_NOTICE_ITEMS } from '../../services/noticeBoard';
 
 // Import tool components from the tools folder
 import StudentHelpQueue from '../tools/StudentHelpQueue';
@@ -24,14 +24,27 @@ const NoticeBoardManager = ({ teacherId }) => {
   const [status, setStatus] = useState('');
   const [isDirty, setIsDirty] = useState(false);
 
+  // Load via API (Admin SDK) so Firestore rules don't block the read
   useEffect(() => {
     if (!teacherId) return undefined;
-    const unsubscribe = subscribeToNoticeBoard(teacherId, (board) => {
-      setItems(board.items || DEFAULT_NOTICE_ITEMS);
-      setStatus(board.updatedAt ? 'Live for students' : '');
-      setIsDirty(false);
-    });
-    return () => unsubscribe();
+    let cancelled = false;
+
+    const fetchBoard = async () => {
+      try {
+        const res = await fetch(`/api/get-notice-board?teacherId=${encodeURIComponent(teacherId)}`);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setItems(data.items?.length > 0 ? data.items : DEFAULT_NOTICE_ITEMS);
+          setStatus('Live for students');
+          setIsDirty(false);
+        }
+      } catch (err) {
+        console.error('❌ Error loading notice board:', err);
+      }
+    };
+
+    fetchBoard();
+    return () => { cancelled = true; };
   }, [teacherId]);
 
   const addItem = () => {
@@ -63,6 +76,7 @@ const NoticeBoardManager = ({ teacherId }) => {
     setIsDirty(true);
   };
 
+  // Save via API (Admin SDK) so Firestore rules don't block the write
   const saveChanges = useCallback(async () => {
     if (!teacherId) return;
     setSaving(true);
@@ -77,7 +91,13 @@ const NoticeBoardManager = ({ teacherId }) => {
           id: item.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         }))
         .filter((item) => item.title || item.content || item.link);
-      await saveNoticeBoard(teacherId, cleaned.length > 0 ? cleaned : DEFAULT_NOTICE_ITEMS);
+      const payload = cleaned.length > 0 ? cleaned : DEFAULT_NOTICE_ITEMS;
+      const res = await fetch('/api/save-notice-board', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacherId, items: payload })
+      });
+      if (!res.ok) throw new Error('Save failed');
       setStatus('Saved and live for students ✨');
       setIsDirty(false);
     } catch (error) {
