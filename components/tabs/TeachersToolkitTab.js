@@ -1,5 +1,6 @@
 // components/tabs/TeachersToolkitTab.js - UPDATED TOOLKIT GRID
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { DEFAULT_NOTICE_ITEMS, saveNoticeBoard, subscribeToNoticeBoard } from '../../services/noticeBoard';
 
 // Import tool components from the tools folder
 import StudentHelpQueue from '../tools/StudentHelpQueue';
@@ -13,6 +14,172 @@ import TimetableCreator from '../tools/TimetableCreator';
 import BrainBreaks from '../tools/BrainBreaks';
 import VisualChecklist from '../tools/VisualChecklist';
 import ReportCommentGenerator from '../tools/ReportCommentGenerator';
+
+// ===============================================
+// NOTICE BOARD MANAGER (inline — no page navigation)
+// ===============================================
+const NoticeBoardManager = ({ teacherId }) => {
+  const [items, setItems] = useState(DEFAULT_NOTICE_ITEMS);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    if (!teacherId) return undefined;
+    const unsubscribe = subscribeToNoticeBoard(teacherId, (board) => {
+      setItems(board.items || DEFAULT_NOTICE_ITEMS);
+      setStatus(board.updatedAt ? 'Live for students' : '');
+      setIsDirty(false);
+    });
+    return () => unsubscribe();
+  }, [teacherId]);
+
+  const addItem = () => {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        title: 'New notice',
+        content: '',
+        link: '',
+        createdAt: new Date().toISOString()
+      }
+    ]);
+    setIsDirty(true);
+  };
+
+  const updateItem = (id, field, value) => {
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+    setIsDirty(true);
+  };
+
+  const removeItem = (id) => {
+    setItems((prev) => {
+      const filtered = prev.filter((item) => item.id !== id);
+      return filtered.length === 0
+        ? [{ ...DEFAULT_NOTICE_ITEMS[0], id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` }]
+        : filtered;
+    });
+    setIsDirty(true);
+  };
+
+  const saveChanges = useCallback(async () => {
+    if (!teacherId) return;
+    setSaving(true);
+    setStatus('Saving...');
+    try {
+      const cleaned = items
+        .map((item) => ({
+          ...item,
+          title: item.title?.trim() || '',
+          content: item.content?.trim() || '',
+          link: item.link?.trim() || '',
+          id: item.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        }))
+        .filter((item) => item.title || item.content || item.link);
+      await saveNoticeBoard(teacherId, cleaned.length > 0 ? cleaned : DEFAULT_NOTICE_ITEMS);
+      setStatus('Saved and live for students ✨');
+      setIsDirty(false);
+    } catch (error) {
+      console.error('❌ Error saving notice board:', error);
+      setStatus('Error saving. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }, [items, teacherId]);
+
+  if (!teacherId) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center text-yellow-800">
+        Notice board unavailable — teacher ID not found. Please reload the page.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl p-6 shadow-lg">
+        <h2 className="text-3xl font-bold text-white flex items-center">
+          <span className="text-4xl mr-3">📌</span>
+          Notice Board Manager
+        </h2>
+        <p className="text-white opacity-90 mt-2">Create notes, reminders, and links that sync instantly to the student portal.</p>
+      </div>
+
+      <div className="bg-white border border-purple-100 rounded-xl shadow-sm p-4 sm:p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${isDirty ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
+            {isDirty ? 'Unsaved changes' : status || 'Live for students'}
+          </span>
+          <button
+            onClick={saveChanges}
+            disabled={saving || !isDirty}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-5 py-2 rounded-lg font-semibold shadow-md disabled:opacity-50"
+          >
+            {saving ? 'Saving...' : 'Save & Publish'}
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {items.map((item) => (
+            <div key={item.id} className="border border-purple-100 rounded-lg p-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Title</label>
+                    <input
+                      className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={item.title}
+                      onChange={(e) => updateItem(item.id, 'title', e.target.value)}
+                      placeholder="e.g., Excursion reminder"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Details</label>
+                    <textarea
+                      className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      rows="2"
+                      value={item.content}
+                      onChange={(e) => updateItem(item.id, 'content', e.target.value)}
+                      placeholder="Add notes, reminders, or instructions"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-700">Link (optional)</label>
+                    <input
+                      className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={item.link}
+                      onChange={(e) => updateItem(item.id, 'link', e.target.value)}
+                      placeholder="https://..."
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeItem(item.id)}
+                  className="self-start text-red-500 hover:text-red-700 text-sm font-semibold"
+                  type="button"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={addItem}
+            type="button"
+            className="bg-white border border-purple-300 text-purple-700 px-4 py-2 rounded-lg font-semibold hover:bg-purple-50"
+          >
+            + Add notice
+          </button>
+          <p className="text-xs text-gray-500">Changes appear for students once saved.</p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ===============================================
 // AUTO-DISMISSING NOTIFICATION COMPONENT
@@ -513,7 +680,8 @@ const TeachersToolkitTab = ({
   getAvatarImage,
   calculateAvatarLevel,
   saveGroupDataToFirebase,
-  groupData
+  groupData,
+  teacherId
 }) => {
   const [activeToolkitTab, setActiveToolkitTab] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -630,12 +798,15 @@ const TeachersToolkitTab = ({
             />
           )}
           {activeToolkitTab === 'classroom-designer' && (
-            <ClassroomDesigner 
-              students={students} 
+            <ClassroomDesigner
+              students={students}
               showToast={showNotification}
               saveClassroomDataToFirebase={saveClassroomDataToFirebase}
               currentClassId={currentClassId}
             />
+          )}
+          {activeToolkitTab === 'notice-board' && (
+            <NoticeBoardManager teacherId={teacherId} />
           )}
         </div>
       </div>
@@ -786,6 +957,15 @@ const TeachersToolkitTab = ({
           <div className="text-lg font-bold mb-1">Room Designer</div>
           <div className="text-sm opacity-90">Design classroom layout</div>
           <span className="absolute top-2 right-2 bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">Under Construction</span>
+        </button>
+
+        <button
+          onClick={() => setActiveToolkitTab('notice-board')}
+          className="bg-gradient-to-r from-purple-500 to-blue-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
+        >
+          <div className="text-4xl mb-3">📌</div>
+          <div className="text-lg font-bold mb-1">Notice Board</div>
+          <div className="text-sm opacity-90">Post messages to students</div>
         </button>
       </div>
     </div>

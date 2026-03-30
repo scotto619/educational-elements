@@ -20,7 +20,7 @@ import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritin
 import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 import HiddenPresent from '../components/student/HiddenPresent';
 import StudentAssignments from '../components/student/StudentAssignments';
-import { DEFAULT_NOTICE_ITEMS, subscribeToNoticeBoard } from '../services/noticeBoard';
+import { DEFAULT_NOTICE_ITEMS } from '../services/noticeBoard';
 import { CARD_EFFECTS } from '../constants/cardEffects';
 
 // Import from the correct gameHelpers file
@@ -158,11 +158,28 @@ const StudentPortal = () => {
       return undefined;
     }
 
-    const unsubscribe = subscribeToNoticeBoard(teacherUserId, (board) => {
-      setNoticeBoardItems(board.items || DEFAULT_NOTICE_ITEMS);
-    });
+    let cancelled = false;
 
-    return () => unsubscribe();
+    const fetchNoticeBoard = async () => {
+      try {
+        const res = await fetch(`/api/get-notice-board?teacherId=${encodeURIComponent(teacherUserId)}`);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setNoticeBoardItems(data.items?.length > 0 ? data.items : DEFAULT_NOTICE_ITEMS);
+        }
+      } catch (err) {
+        console.error('❌ Error fetching notice board:', err);
+      }
+    };
+
+    fetchNoticeBoard();
+    // Poll every 60 seconds so students see updates without requiring a page reload
+    const interval = setInterval(fetchNoticeBoard, 60000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [teacherUserId]);
 
   const closeLoginEggCelebration = useCallback(() => setLoginEggCelebration(null), []);

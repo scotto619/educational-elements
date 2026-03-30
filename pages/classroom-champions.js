@@ -1134,6 +1134,7 @@ const ClassroomChampions = () => {
           {...commonProps}
           onUpdateStudent={handleUpdateStudent}
           userData={userData}
+          teacherId={user?.uid}
           saveGroupDataToFirebase={(data) => saveClassData({ groupData: data })}
           saveClassroomDataToFirebase={(data) => {
             if (Array.isArray(data)) {
