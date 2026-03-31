@@ -163,12 +163,6 @@ export default function Login() {
         // Redirect to checkout if canceled OR no valid subscription
         if (isCanceled || (!hasActiveSubscription && !hasLegacySubscription)) {
           // User needs to subscribe/resubscribe
-            isCanceled,
-            hasActiveSubscription,
-            hasLegacySubscription,
-            accountStatus: resolvedUserData?.accountStatus,
-            subscriptionStatus: resolvedUserData?.subscriptionStatus
-          });
           router.push('/checkout');
           return;
         }
@@ -374,7 +368,7 @@ export default function Login() {
             {/* Signup Link */}
             <div className="text-center pt-4 border-t border-gray-200">
               <p className="text-gray-600">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link href="/signup">
                   <span className="text-blue-600 hover:text-blue-700 font-medium cursor-pointer">
                     Sign up here

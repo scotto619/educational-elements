@@ -31,12 +31,6 @@ export default function Checkout() {
               data.subscriptionStatus === 'canceled' ||
               (data.stripeCustomerId && data.subscription === 'cancelled');
             setIsReturningUser(isCanceledUser);
-
-              hasCustomerId: !!data.stripeCustomerId,
-              subscription: data.subscription,
-              status: data.subscriptionStatus,
-              isReturning: isCanceledUser
-            });
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -130,7 +124,7 @@ export default function Checkout() {
               <div>
                 <h3 className="font-bold text-blue-800 mb-2">Welcome back to Educational Elements!</h3>
                 <p className="text-blue-700 text-sm">
-                  We're excited to have you back. Your classes and student data are still here and will be
+                  We&apos;re excited to have you back. Your classes and student data are still here and will be
                   fully accessible once you resubscribe.
                 </p>
               </div>

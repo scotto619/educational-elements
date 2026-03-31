@@ -677,11 +677,6 @@ export default function Dashboard() {
 
   // DEBUGGING: Log access state in development
   if (process.env.NODE_ENV === 'development') {
-      accountStatus: userData?.accountStatus,
-      subscriptionStatus: userData?.subscriptionStatus,
-      subscription: userData?.subscription,
-      stripeCustomerId: userData?.stripeCustomerId
-    });
   }
 
   // Calculate total students for display

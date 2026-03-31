@@ -125,12 +125,6 @@ const MathMentals = ({
   saveData = () => {}, 
   loadedData = {} 
 }) => {
-    studentsCount: students?.length || 0,
-    hasShowToast: typeof showToast === 'function',
-    hasSaveData: typeof saveData === 'function',
-    hasLoadedData: !!loadedData
-  });
-  
   const [mathGroups, setMathGroups] = useState([]);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupName, setGroupName] = useState('');

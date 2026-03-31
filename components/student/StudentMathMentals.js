@@ -251,11 +251,6 @@ const StudentMathMentals = ({
       const combinedProgress = { ...groupProgress, ...studentMainProgress };
       const todayAttempt = combinedProgress[today];
       
-        today,
-        hasAttempt: !!todayAttempt,
-        studentName: studentInfo.firstName
-      });
-      
       setStudentAssignment({
         groupName: studentGroup.name,
         groupColor: studentGroup.color,
@@ -324,12 +319,6 @@ const StudentMathMentals = ({
           }
         }
       }
-      
-        hasCurrentLevel: !!cleanMathProgress.currentLevel,
-        hasProgress: !!cleanMathProgress.progress,
-        progressKeys: cleanMathProgress.progress ? Object.keys(cleanMathProgress.progress).length : 0,
-        streak: cleanMathProgress.streak
-      });
       
       if (architectureVersion === 'v2') {
         const studentRef = doc(firestore, 'students', studentData.id);

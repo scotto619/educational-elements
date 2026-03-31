@@ -4,6 +4,15 @@ import { normalizeImageSource } from './imageFallback';
 export const DEFAULT_PET_IMAGE = '/shop/BasicPets/Wizard.png';
 export const GAME_CONFIG = { MAX_LEVEL: 4, COINS_PER_XP: 5, PET_UNLOCK_XP: 50 };
 
+export const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
 const normalizeItemKey = (value) => {
   if (value === null || value === undefined) {
     return '';
