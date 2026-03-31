@@ -61,7 +61,6 @@ const BeginnerReaders = ({
     if (loadedData?.beginnerGroups && loadedData.beginnerGroups.length > 0) {
       setGroups(loadedData.beginnerGroups);
       setHasUnsavedChanges(false);
-      console.log('📖 Loaded beginner groups from Firebase:', loadedData.beginnerGroups);
     } else if (loadedData !== undefined && groups.length === 0) {
       const defaultGroups = [
         { id: 1, name: "Beginner Group 1", color: "bg-red-500", students: [], assignedSounds: [] },
@@ -70,7 +69,6 @@ const BeginnerReaders = ({
       ];
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
-      console.log('📖 Created default beginner groups');
     }
   }, [loadedData]);
 
@@ -82,7 +80,6 @@ const BeginnerReaders = ({
         JSON.stringify(loadedData.beginnerGroups) !== JSON.stringify(groups)) {
       setGroups(loadedData.beginnerGroups);
       setHasUnsavedChanges(false);
-      console.log('🔄 Updated beginner groups from Firebase data change');
     }
   }, [loadedData?.beginnerGroups]);
 
@@ -102,7 +99,6 @@ const BeginnerReaders = ({
       });
       
       if (hasChanges) {
-        console.log('🧹 Cleaned up removed students from beginner groups');
         setGroups(cleanedGroups);
         setHasUnsavedChanges(true);
       }
@@ -131,7 +127,6 @@ const BeginnerReaders = ({
       
       saveData({ toolkitData: updatedToolkitData });
       setHasUnsavedChanges(false);
-      console.log('💾 Beginner groups saved to Firebase successfully:', groups);
       
     } catch (error) {
       console.error('❌ Error saving beginner groups:', error);
@@ -146,7 +141,6 @@ const BeginnerReaders = ({
     }
     setGroups(updatedGroups);
     setHasUnsavedChanges(true);
-    console.log('📝 Groups updated locally, unsaved changes flagged');
   };
 
   const addGroup = () => {

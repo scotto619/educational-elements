@@ -354,7 +354,6 @@ const ReadersTheatre = ({
     if (loadedData?.theatreGroups && loadedData.theatreGroups.length > 0) {
       setGroups(loadedData.theatreGroups);
       setHasUnsavedChanges(false);
-      console.log('Theatre groups loaded from Firebase:', loadedData.theatreGroups);
     } else if (loadedData !== undefined && groups.length === 0) {
       const defaultGroups = [
         { id: 1, name: "Drama Group 1", color: "bg-purple-600", students: [], assignedScript: null, characterAssignments: {} },
@@ -363,7 +362,6 @@ const ReadersTheatre = ({
       ];
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
-      console.log('Created default theatre groups');
     }
   }, [loadedData]);
 
@@ -375,7 +373,6 @@ const ReadersTheatre = ({
         JSON.stringify(loadedData.theatreGroups) !== JSON.stringify(groups)) {
       setGroups(loadedData.theatreGroups);
       setHasUnsavedChanges(false);
-      console.log('Updated theatre groups from Firebase data change');
     }
   }, [loadedData?.theatreGroups]);
 
@@ -395,7 +392,6 @@ const ReadersTheatre = ({
       });
       
       if (hasChanges) {
-        console.log('Cleaned up removed students from theatre groups');
         setGroups(cleanedGroups);
         setHasUnsavedChanges(true);
       }
@@ -424,7 +420,6 @@ const ReadersTheatre = ({
       
       saveData({ toolkitData: updatedToolkitData });
       setHasUnsavedChanges(false);
-      console.log('Theatre groups saved to Firebase successfully:', groups);
       
     } catch (error) {
       console.error('Error saving theatre groups:', error);
@@ -439,7 +434,6 @@ const ReadersTheatre = ({
     }
     setGroups(updatedGroups);
     setHasUnsavedChanges(true);
-    console.log('Groups updated locally, unsaved changes flagged');
   };
 
   const addGroup = () => {

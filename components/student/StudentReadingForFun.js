@@ -140,7 +140,6 @@ const StudentReadingForFun = ({
     setReadingProgress(newProgress);
     
     // Could save to database here in real implementation
-    console.log(`Updated reading progress for ${textId}: ${status}`);
   };
 
   // Get reading time estimate

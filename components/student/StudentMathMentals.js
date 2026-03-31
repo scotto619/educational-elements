@@ -251,7 +251,6 @@ const StudentMathMentals = ({
       const combinedProgress = { ...groupProgress, ...studentMainProgress };
       const todayAttempt = combinedProgress[today];
       
-      console.log('📅 Date check:', {
         today,
         hasAttempt: !!todayAttempt,
         studentName: studentInfo.firstName
@@ -268,7 +267,6 @@ const StudentMathMentals = ({
 
       setHasAttemptedToday(!!todayAttempt);
     } else {
-      console.log('❌ Student not found in any math group');
       setStudentAssignment(null);
     }
   };
@@ -282,7 +280,6 @@ const StudentMathMentals = ({
     }
 
     try {
-      console.log('💾 DIRECT: Updating student math progress:', studentData.firstName);
       
       // CRITICAL FIX: Deep clean all data to prevent undefined values
       const cleanMathProgress = {};
@@ -328,7 +325,6 @@ const StudentMathMentals = ({
         }
       }
       
-      console.log('📦 Deeply cleaned data for Firestore:', {
         hasCurrentLevel: !!cleanMathProgress.currentLevel,
         hasProgress: !!cleanMathProgress.progress,
         progressKeys: cleanMathProgress.progress ? Object.keys(cleanMathProgress.progress).length : 0,
@@ -344,9 +340,7 @@ const StudentMathMentals = ({
           lastActivity: new Date().toISOString()
         };
         
-        console.log('🔥 Firestore V2 update');
         await updateDoc(studentRef, updates);
-        console.log('✅ V2 direct math progress saved');
         
       } else {
         const userRef = doc(firestore, 'users', teacherUserId);
@@ -373,9 +367,7 @@ const StudentMathMentals = ({
             return cls;
           });
           
-          console.log('🔥 Firestore V1 update');
           await updateDoc(userRef, { classes: updatedClasses });
-          console.log('✅ V1 direct math progress saved');
         }
       }
 
@@ -405,7 +397,6 @@ const StudentMathMentals = ({
 
   const startTest = () => {
     if (!studentAssignment || hasAttemptedToday) {
-      console.log('⚠️ Cannot start test:', { hasAssignment: !!studentAssignment, hasAttemptedToday });
       return;
     }
 
@@ -442,7 +433,6 @@ const StudentMathMentals = ({
       });
     }
 
-    console.log('🎯 Generated questions:', newQuestions.map(q => ({ question: q.question, answer: q.answer })));
 
     setQuestions(newQuestions);
     setCurrentQuestionIndex(0);
@@ -486,7 +476,6 @@ const StudentMathMentals = ({
     const score = finalAnswers.filter(a => a.isCorrect).length;
     const today = new Date().toISOString().split('T')[0];
 
-    console.log('🏆 Test completed:', { score, today, totalQuestions: finalAnswers.length });
 
     // CRITICAL FIX: Clean answers to remove any undefined values
     const cleanAnswers = finalAnswers.map(answer => ({
@@ -530,7 +519,6 @@ const StudentMathMentals = ({
     }
 
     try {
-      console.log('💾 Saving progress to database...');
       
       const success = await updateStudentDataDirect({
         mathMentalsProgress: {
@@ -542,7 +530,6 @@ const StudentMathMentals = ({
       });
 
       if (success) {
-        console.log('✅ Progress saved successfully');
         
         const newAssignment = {
           ...studentAssignment,

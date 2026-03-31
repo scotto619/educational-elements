@@ -254,7 +254,6 @@ const SpecialistCreator = ({
         setYearLevelGroups(normalisedGroups);
       }
 
-      console.log('📖 Loaded Specialist Timetable data from Firebase');
     }
   }, [loadedData]);
   

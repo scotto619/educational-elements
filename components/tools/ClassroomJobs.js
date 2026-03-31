@@ -287,7 +287,6 @@ const ClassroomJobs = ({
    * These functions ultimately lead to awardXPToStudent/awardCoinsToStudent in main component
    */
   const payJob = (job) => {
-    console.log(`💼 Paying job: ${job.title} (${job.payType}) to ${job.assignedStudents.length} students`);
     
     if (job.assignedStudents.length === 0) {
       showToast('No students assigned to this job!', 'error');
@@ -297,7 +296,6 @@ const ClassroomJobs = ({
     let paymentCount = 0;
     const newlyPaid = new Set();
     job.assignedStudents.forEach(student => {
-      console.log(`💰 Awarding ${job.payAmount} ${job.payType} to ${student.firstName} (ID: ${student.id})`);
       
       if (job.payType === 'xp') {
         // ⭐ CLEAR PATHWAY: Call onAwardXP → awardXPToStudent → updateAndSaveClass → Firestore
@@ -319,7 +317,6 @@ const ClassroomJobs = ({
    * Loops through all jobs and calls the appropriate award functions
    */
   const payAllJobs = () => {
-    console.log(`💼 Paying all jobs...`);
     
     let totalPayments = 0;
     let totalStudents = 0;
@@ -327,10 +324,8 @@ const ClassroomJobs = ({
     const newlyPaid = new Set();
     jobs.forEach(job => {
       if (job.assignedStudents.length > 0) {
-        console.log(`💼 Processing job: ${job.title} (${job.assignedStudents.length} students)`);
         
         job.assignedStudents.forEach(student => {
-          console.log(`💰 Awarding ${job.payAmount} ${job.payType} to ${student.firstName} for ${job.title}`);
           
           if (job.payType === 'xp') {
             // ⭐ CLEAR PATHWAY: Call onAwardXP → awardXPToStudent → updateAndSaveClass → Firestore
@@ -350,7 +345,6 @@ const ClassroomJobs = ({
     showToast(`Paid all jobs! ${totalStudents} students received payments for ${totalPayments} different jobs.`, 'success');
     setShowPayAllModal(false);
     
-    console.log(`✅ All jobs paid: ${totalStudents} students across ${totalPayments} jobs`);
   };
 
   // ===============================================

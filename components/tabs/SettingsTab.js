@@ -96,7 +96,6 @@ const SettingsTab = ({
     setIsUpdating(true);
 
     try {
-      console.log('🔑 Updating password directly (no API) for student:', studentId);
 
       // Use direct Firestore operations (like your XP system)
       const result = await updateStudentPasswordDirect(
@@ -111,7 +110,6 @@ const SettingsTab = ({
       }
 
       showToast('Password updated successfully!', 'success');
-      console.log('✅ Password updated successfully via direct method');
 
       // Update local state to reflect the change
       setStudents(prevStudents =>
@@ -151,7 +149,6 @@ const SettingsTab = ({
     setIsBulkUpdating(true);
 
     try {
-      console.log('🔐 Bulk updating passwords directly (no API)');
 
       let successCount = 0;
 
@@ -272,8 +269,6 @@ const SettingsTab = ({
   };
 
   const handleRemoveStudent = async (studentId) => {
-    console.log('🗑️ Attempting to remove student:', studentId);
-    console.log('Available student IDs:', students.map(s => s.id));
 
     const student = students.find(s => s.id === studentId);
     if (!student) {
@@ -283,21 +278,15 @@ const SettingsTab = ({
       return;
     }
 
-    console.log('✅ Student found:', student.firstName, student.lastName);
 
     try {
       if (architectureVersion === 'v2' && onRemoveStudent) {
-        console.log('📡 Using V2 architecture - calling onRemoveStudent');
         await onRemoveStudent(studentId);
-        console.log('✅ Student removed via V2');
       } else {
-        console.log('📝 Using V1 architecture - manual removal');
         const newStudents = students.filter(s => s.id !== studentId);
-        console.log('New students count:', newStudents.length, 'Previous:', students.length);
 
         setStudents(newStudents);
         await updateAndSaveClass(newStudents, xpCategories);
-        console.log('✅ Student removed via V1');
       }
 
       // Close dialog on success
@@ -612,7 +601,6 @@ Time: ${new Date().toISOString()}
                         </button>
                         <button
                           onClick={() => {
-                            console.log('Setting confirm dialog for student:', student.id);
                             setShowConfirmDialog(`remove_${student.id}`);
                           }}
                           className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
@@ -1375,7 +1363,6 @@ Time: ${new Date().toISOString()}
               </button>
               <button
                 onClick={() => {
-                  console.log('🎯 Confirm dialog action:', showConfirmDialog);
 
                   if (showConfirmDialog === 'resetAll') {
                     resetAllData();
@@ -1384,7 +1371,6 @@ Time: ${new Date().toISOString()}
                   } else if (showConfirmDialog?.startsWith('remove_')) {
                     // Extract student ID from the confirmation string
                     const studentId = showConfirmDialog.replace('remove_', '');
-                    console.log('📍 Extracted student ID:', studentId);
                     handleRemoveStudent(studentId);
                   } else {
                     console.warn('⚠️ Unknown confirmation action:', showConfirmDialog);

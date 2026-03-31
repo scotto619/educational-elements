@@ -638,7 +638,6 @@ const SpellingProgram = ({
     if (loadedData?.spellingGroups && loadedData.spellingGroups.length > 0) {
       setGroups(loadedData.spellingGroups);
       setHasUnsavedChanges(false);
-      console.log('📚 Loaded spelling groups from Firebase:', loadedData.spellingGroups);
     } else if (loadedData?.fluencyGroups && loadedData.fluencyGroups.length > 0) {
       const converted = loadedData.fluencyGroups.map(group => ({
         id: group.id,
@@ -650,7 +649,6 @@ const SpellingProgram = ({
       }));
       setGroups(converted);
       setHasUnsavedChanges(false);
-      console.log('🔄 Converted legacy fluency groups to new spelling groups format');
     } else if (loadedData !== undefined && groups.length === 0) {
       // Only create defaults if no groups exist in Firebase and local state is empty
       const defaultGroups = [
@@ -660,7 +658,6 @@ const SpellingProgram = ({
       ];
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
-      console.log('📚 Created default spelling groups');
     }
   }, [loadedData]);
 
@@ -672,7 +669,6 @@ const SpellingProgram = ({
         JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
       setGroups(loadedData.spellingGroups);
       setHasUnsavedChanges(false);
-      console.log('🔄 Updated spelling groups from Firebase data change');
     } else if (loadedData?.fluencyGroups &&
                Array.isArray(loadedData.fluencyGroups) &&
                loadedData.fluencyGroups.length > 0 &&
@@ -687,7 +683,6 @@ const SpellingProgram = ({
       }));
       setGroups(converted);
       setHasUnsavedChanges(false);
-      console.log('🔄 Updated groups from legacy fluency data change');
     }
   }, [loadedData?.spellingGroups, loadedData?.fluencyGroups]);
 
@@ -707,7 +702,6 @@ const SpellingProgram = ({
       });
       
       if (hasChanges) {
-        console.log('🧹 Cleaned up removed students from spelling groups');
         setGroups(cleanedGroups);
         setHasUnsavedChanges(true);
       }
@@ -738,7 +732,6 @@ const SpellingProgram = ({
       // Save to toolkitData to match loading location
       saveData({ toolkitData: updatedToolkitData });
       setHasUnsavedChanges(false);
-      console.log('📝 Spelling groups saved to Firebase successfully:', groups);
       
     } catch (error) {
       console.error('❌ Error saving spelling groups:', error);
@@ -753,7 +746,6 @@ const SpellingProgram = ({
     }
     setGroups(updatedGroups);
     setHasUnsavedChanges(true);
-    console.log('📝 Groups updated locally, unsaved changes flagged');
   };
 
   const addGroup = () => {

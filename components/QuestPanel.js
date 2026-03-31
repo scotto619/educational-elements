@@ -8,7 +8,6 @@ const QuestPanel = ({
   checkQuestCompletion, 
   markQuestComplete 
 }) => {
-  console.log('QuestPanel render:', { dailyQuests, weeklyQuests }); // Debug log
 
   return (
     <div className="space-y-6">

@@ -35,7 +35,6 @@ const getAvatarImage = (avatarBase, level) => {
   const validLevel = Math.max(1, Math.min(level || 1, 4));
   const imagePath = `/Avatars/${avatarBase}/Level ${validLevel}.png`;
   
-  console.log(`Loading avatar: ${avatarBase} Level ${validLevel} -> ${imagePath}`);
   return imagePath;
 };
 
@@ -625,7 +624,6 @@ export const useStudentManagement = (user, currentClassId) => {
       );
 
       if (needsFix) {
-        console.log('Fixing student data...');
         fixAllStudentData();
       }
     }

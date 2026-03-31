@@ -85,7 +85,6 @@ const ReadingForFun = ({
     if (loadedData?.funReadingGroups && loadedData.funReadingGroups.length > 0) {
       setGroups(loadedData.funReadingGroups);
       setHasUnsavedChanges(false);
-      console.log('🎉 Loaded fun reading groups from Firebase:', loadedData.funReadingGroups);
     } else if (loadedData !== undefined && groups.length === 0) {
       const defaultGroups = [
         { id: 1, name: "Advanced Readers", color: "bg-purple-600", students: [], assignedTexts: [], characterAssignments: {} },
@@ -94,7 +93,6 @@ const ReadingForFun = ({
       ];
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
-      console.log('🎉 Created default fun reading groups');
     }
   }, [loadedData]);
 
@@ -106,7 +104,6 @@ const ReadingForFun = ({
         JSON.stringify(loadedData.funReadingGroups) !== JSON.stringify(groups)) {
       setGroups(loadedData.funReadingGroups);
       setHasUnsavedChanges(false);
-      console.log('🔄 Updated fun reading groups from Firebase data change');
     }
   }, [loadedData?.funReadingGroups]);
 
@@ -126,7 +123,6 @@ const ReadingForFun = ({
       });
       
       if (hasChanges) {
-        console.log('🧹 Cleaned up removed students from fun reading groups');
         setGroups(cleanedGroups);
         setHasUnsavedChanges(true);
       }
@@ -155,7 +151,6 @@ const ReadingForFun = ({
       
       saveData({ toolkitData: updatedToolkitData });
       setHasUnsavedChanges(false);
-      console.log('💾 Fun reading groups saved to Firebase successfully:', groups);
       
     } catch (error) {
       console.error('⚠️ Error saving fun reading groups:', error);
@@ -170,7 +165,6 @@ const ReadingForFun = ({
     }
     setGroups(updatedGroups);
     setHasUnsavedChanges(true);
-    console.log('📝 Groups updated locally, unsaved changes flagged');
   };
 
   const addGroup = () => {

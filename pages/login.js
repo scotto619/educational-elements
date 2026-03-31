@@ -163,7 +163,6 @@ export default function Login() {
         // Redirect to checkout if canceled OR no valid subscription
         if (isCanceled || (!hasActiveSubscription && !hasLegacySubscription)) {
           // User needs to subscribe/resubscribe
-          console.log('⚠️ User needs subscription, redirecting to checkout', {
             isCanceled,
             hasActiveSubscription,
             hasLegacySubscription,
@@ -218,7 +217,6 @@ export default function Login() {
       // since the user isn't authenticated yet
       await sendPasswordResetEmail(auth, targetEmail);
 
-      console.log('✅ Password reset email sent to:', targetEmail);
 
       setResetStatus({
         type: 'success',

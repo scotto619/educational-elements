@@ -1645,7 +1645,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
         clickerAchievements: clickerAchievements
       });
 
-      console.log('? Enhanced clicker game saved successfully to Firebase');
       lastSaveRef.current = Date.now();
 
     } catch (error) {
@@ -1661,10 +1660,8 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     if (isLoaded) return;
 
     try {
-      console.log('?? Loading clicker game from Firebase...');
 
       if (!studentData?.clickerGameData) {
-        console.log('?? No existing game data found, starting new game for student');
         setIsLoaded(true);
         addToast('New adventure begins! Welcome to Hero Forge!', 'success');
         return;
@@ -1673,7 +1670,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
       const data = studentData.clickerGameData;
 
       if (data.version !== '4.0') {
-        console.log('?? Version upgrade to 4.0, resetting game state for new Hero Forge update');
         setIsLoaded(true);
         addToast('Hero Forge updated! Progress reset for the new update!', 'success');
         return; // Will keep the default initial state
@@ -1777,7 +1773,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
 
       setIsLoaded(true);
 
-      console.log('? Enhanced clicker game loaded successfully from Firebase');
 
     } catch (error) {
       console.error('?? Error loading clicker game from Firebase:', error);
@@ -1830,7 +1825,6 @@ const ClickerGame = ({ studentData, updateStudentData, showToast, classmates = [
     const interval = setInterval(() => {
       const now = Date.now();
       if (now - lastSaveRef.current > 25000) {
-        console.log('? Auto-saving enhanced clicker game...');
         saveToFirebase();
       }
     }, 30000);

@@ -125,7 +125,6 @@ const MathMentals = ({
   saveData = () => {}, 
   loadedData = {} 
 }) => {
-  console.log('🧮 MathMentals component loaded with:', {
     studentsCount: students?.length || 0,
     hasShowToast: typeof showToast === 'function',
     hasSaveData: typeof saveData === 'function',
@@ -149,9 +148,7 @@ const MathMentals = ({
       const mathData = loadedData?.mathMentalsGroups;
       if (mathData && Array.isArray(mathData)) {
         setMathGroups(mathData);
-        console.log('📖 Loaded Math Mentals data:', mathData.length, 'groups');
       } else {
-        console.log('📄 No existing Math Mentals data found');
         setMathGroups([]);
       }
     } catch (error) {
@@ -163,7 +160,6 @@ const MathMentals = ({
   // FIXED: Save data function using consistent structure
   const saveGroups = (groups) => {
     try {
-      console.log('💾 Saving Math Mentals groups to Firebase:', groups.length, 'groups');
       
       setMathGroups(groups);
       setHasUnsavedChanges(false);
@@ -180,7 +176,6 @@ const MathMentals = ({
         // Save to toolkitData to match loading location
         saveData({ toolkitData: updatedToolkitData });
         showToast('Math groups saved successfully!', 'success');
-        console.log('✅ Math Mentals data saved:', updatedToolkitData);
       } else {
         console.error('❌ saveData function not available or not a function');
         showToast('Error: Unable to save data - saveData function missing', 'error');
@@ -261,7 +256,6 @@ const MathMentals = ({
       resetModal();
       showToast(`Math group "${groupName}" created! Click Save to persist changes.`, 'success');
       
-      console.log('✅ Math group created successfully:', newGroup);
     } catch (error) {
       console.error('❌ Error creating math group:', error);
       showToast(`Error creating group: ${error.message}`, 'error');

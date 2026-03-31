@@ -59,7 +59,6 @@ export async function createUserDocument(userId, userData) {
   };
 
   await setDoc(userRef, cleanUserData);
-  console.log('✅ User document created/updated:', userId);
   return cleanUserData;
 }
 
@@ -106,7 +105,6 @@ export async function updateUserPreferences(userId, preferences) {
       updatedAt: new Date().toISOString()
     });
     
-    console.log('✅ User preferences updated:', userId);
     return true;
   } catch (error) {
     console.error('❌ Error updating user preferences:', error);
@@ -174,7 +172,6 @@ export async function createClass(teacherUserId, classData) {
     
     await batch.commit();
     
-    console.log('✅ Class created successfully:', classId);
     return { classId, ...newClassData };
   } catch (error) {
     console.error('❌ Error creating class:', error);
@@ -246,7 +243,6 @@ export async function updateClassData(classId, updates) {
     
     transaction.update(classRef, updatedData);
     
-    console.log('✅ Class data updated:', classId);
     return updatedData;
   });
 }
@@ -321,7 +317,6 @@ export async function createStudent(classId, studentData) {
     
     await batch.commit();
     
-    console.log('✅ Student created successfully:', studentId);
     return { studentId, ...newStudentData };
   } catch (error) {
     console.error('❌ Error creating student:', error);
@@ -422,7 +417,6 @@ export async function updateStudentData(studentId, updates, reason = 'Update') {
     
     transaction.update(studentRef, updatedData);
     
-    console.log(`✅ Student updated (${reason}):`, studentId, Object.keys(validatedUpdates));
     return { ...currentData, ...updatedData };
   });
 }
@@ -476,7 +470,6 @@ export async function removeStudentFromClass(classId, studentId) {
 
     transaction.delete(studentRef);
 
-    console.log('🗑️ Student removed from class:', { classId, studentId });
     return updatedStudents;
   });
 }
@@ -530,7 +523,6 @@ export async function bulkAwardStudents(studentIds, updates, reason = 'Bulk Awar
       await chunkBatch.commit();
     }
     
-    console.log(`✅ Bulk award completed (${reason}):`, results.length, 'students');
     return results;
   } catch (error) {
     console.error('❌ Error in bulk award:', error);

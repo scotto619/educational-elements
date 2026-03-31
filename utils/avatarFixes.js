@@ -17,7 +17,6 @@ export const getAvatarImage = (avatarBase, level) => {
   // Construct the path - this should match your folder structure exactly
   const imagePath = `/Avatars/${avatarBase}/Level ${validLevel}.png`;
   
-  console.log(`Loading avatar: ${avatarBase} Level ${validLevel} -> ${imagePath}`);
   
   return imagePath;
 };
@@ -85,7 +84,6 @@ export const migrateStudentData = (student) => {
 // ===============================================
 
 export const fixAllStudentLevels = (students, saveFunction) => {
-  console.log('🔧 Starting student data fixes...');
   
   const fixedStudents = students.map(student => {
     const totalXP = student.totalPoints || 0;
@@ -97,7 +95,6 @@ export const fixAllStudentLevels = (students, saveFunction) => {
       // Assign a random avatar if missing
       const AVAILABLE_AVATARS = ['Wizard F', 'Wizard M', 'Knight F', 'Knight M', 'Archer F', 'Archer M'];
       fixedAvatarBase = AVAILABLE_AVATARS[Math.floor(Math.random() * AVAILABLE_AVATARS.length)];
-      console.log(`🎭 Assigned random avatar to ${student.firstName}: ${fixedAvatarBase}`);
     }
     
     const updatedStudent = migrateStudentData({
@@ -109,7 +106,6 @@ export const fixAllStudentLevels = (students, saveFunction) => {
     
     // Log the fix
     if (student.avatarLevel !== correctLevel) {
-      console.log(`📊 Fixed ${student.firstName}: ${totalXP} XP -> Level ${correctLevel} (was Level ${student.avatarLevel || 'undefined'})`);
     }
     
     return updatedStudent;
@@ -120,6 +116,5 @@ export const fixAllStudentLevels = (students, saveFunction) => {
     saveFunction(fixedStudents);
   }
   
-  console.log('✅ Student data fixes complete!');
   return fixedStudents;
 };

@@ -255,4 +255,3 @@ resourcesToInject.forEach(r => {
 
 const output = generate(ast, {}, code);
 fs.writeFileSync(curriculumPath, output.code);
-console.log('Successfully injected extra resources via AST!');

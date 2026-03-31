@@ -303,7 +303,6 @@ const ClassroomChampions = () => {
 
   // FIXED: Read from old V1 structure: users/{uid}.classes[]
   async function loadV1ClassAndStudents(userUid) {
-    console.log('🔄 Loading V1 class and students for user:', userUid);
 
     const userSnap = await getDoc(doc(db, 'users', userUid));
     if (!userSnap.exists()) throw new Error('User not found (V1)');
@@ -323,7 +322,6 @@ const ClassroomChampions = () => {
     const initialOrder = Array.isArray(cls.studentOrder) ? cls.studentOrder : [];
     const orderedStudents = orderStudentsByPreference(students, initialOrder);
 
-    console.log('✅ V1 class loaded:', cls.name, 'with', students.length, 'students');
 
     // FIXED: normalize class data shape to match what UI expects
     const classData = {
@@ -360,13 +358,11 @@ const ClassroomChampions = () => {
     setError(null);
 
     try {
-      console.log('🔄 Loading user data for:', user.uid);
 
       // 1) Try to get basic user info (your existing helper)
       let userDataResult = null;
       try {
         userDataResult = await getUserData(user.uid);
-        console.log('✅ User data loaded via V2 helper');
       } catch (e) {
         console.warn('⚠️ getUserData failed, will try direct V1 access:', e?.message || e);
       }
@@ -376,7 +372,6 @@ const ClassroomChampions = () => {
         const userSnap = await getDoc(doc(db, 'users', user.uid));
         if (userSnap.exists()) {
           userDataResult = userSnap.data();
-          console.log('✅ User data loaded via direct V1 access');
         } else {
           throw new Error('User document not found');
         }
@@ -390,7 +385,6 @@ const ClassroomChampions = () => {
       try {
         teacherClasses = await getTeacherClasses(user.uid);
         if (teacherClasses && teacherClasses.length > 0) {
-          console.log('✅ V2 classes found:', teacherClasses.length);
           setArchitectureVersion('v2');
           const activeClassId = userDataResult.activeClassId || teacherClasses[0].id;
           await loadClassData(activeClassId); // your existing listener-based loader
@@ -402,7 +396,6 @@ const ClassroomChampions = () => {
       }
 
       // 3) V1 fallback - FIXED
-      console.log('🔄 No V2 classes found — using V1 user doc fallback');
       setArchitectureVersion('v1');
 
       const { classData, students } = await loadV1ClassAndStudents(user.uid);
@@ -415,7 +408,6 @@ const ClassroomChampions = () => {
         : students.map(student => student.id);
       setStudentOrder(initialOrderIds);
 
-      console.log('✅ V1 fallback completed successfully');
 
     } catch (error) {
       console.error('❌ Error loading user data:', error);
@@ -426,7 +418,6 @@ const ClassroomChampions = () => {
 
   const loadClassData = async (classId) => {
     try {
-      console.log('Loading class data:', classId);
 
       // Clean up existing listeners
       if (classDataUnsubscribe) classDataUnsubscribe();
@@ -437,7 +428,6 @@ const ClassroomChampions = () => {
         classId,
         (classData) => {
           if (classData) {
-            console.log('Class data updated:', classData.name);
             setCurrentClassData(classData);
             setCurrentClassId(classId);
             setXpCategories(classData.xpCategories || DEFAULT_XP_CATEGORIES);
@@ -455,7 +445,6 @@ const ClassroomChampions = () => {
       const studentsUnsubscribeFunc = listenToClassStudents(
         classId,
         (studentsData) => {
-          console.log('Students data updated:', studentsData.length, 'students');
           setStudents(orderStudentsByPreference(studentsData || [], studentOrderRef.current));
         },
         (error) => {
@@ -512,7 +501,6 @@ const ClassroomChampions = () => {
 
   const handleUpdateStudent = useCallback(async (studentId, updatedData, reason = 'Update') => {
     try {
-      console.log('📄 Updating student:', studentId, Object.keys(updatedData));
 
       // OPTIMISTIC UPDATE - Update local state immediately for instant UI feedback
       setStudents(prev => prev.map(s =>
@@ -522,13 +510,11 @@ const ClassroomChampions = () => {
       if (architectureVersion === 'v2') {
         // Use new architecture with Firebase update
         await updateStudentData(studentId, updatedData, 'Manual Update');
-        console.log('✅ V2 student update sent, optimistic update applied');
         // Real-time listener will sync any server-side changes
         return updatedData;
       } else {
         // V1 fallback - update in user document
         await updateV1StudentData(user.uid, currentClassId, studentId, updatedData);
-        console.log('✅ V1 student update completed with local state update');
         return { ...updatedData };
       }
 
@@ -537,7 +523,6 @@ const ClassroomChampions = () => {
       showToast('Error updating student data', 'error');
 
       // REVERT OPTIMISTIC UPDATE on error - restore previous state
-      console.log('🔄 Reverting optimistic update due to error');
       // The real-time listeners will restore correct state
 
       throw error;
@@ -635,7 +620,6 @@ const ClassroomChampions = () => {
   // FIXED: handleBulkAward - Direct Firestore Updates with Optimistic UI Updates
   const handleBulkAward = useCallback(async (studentIds, amount, type) => {
     try {
-      console.log('💰 DIRECT Bulk awarding (bypassing API):', { studentIds: studentIds.length, amount, type });
 
       // OPTIMISTIC UI UPDATE - Update local state immediately for instant feedback
       setStudents(prev => prev.map(student => {
@@ -643,10 +627,8 @@ const ClassroomChampions = () => {
           const updated = { ...student };
           if (type === 'xp') {
             updated.totalPoints = (updated.totalPoints || 0) + amount;
-            console.log(`🔄 Optimistic: ${student.firstName} XP ${student.totalPoints || 0} → ${updated.totalPoints}`);
           } else {
             updated.currency = (updated.currency || 0) + amount;
-            console.log(`🔄 Optimistic: ${student.firstName} coins ${student.currency || 0} → ${updated.currency}`);
           }
           return updated;
         }
@@ -682,7 +664,6 @@ const ClassroomChampions = () => {
         }
 
         await batch.commit();
-        console.log('✅ Direct V2 batch update completed');
 
         // Real-time listeners will eventually sync with Firestore
 
@@ -730,7 +711,6 @@ const ClassroomChampions = () => {
 
       // REVERT OPTIMISTIC UPDATE on error
       // The real-time listeners should restore the correct state
-      console.log('🔄 Reverting optimistic update due to error');
     }
   }, [students, handleUpdateStudent, architectureVersion, currentClassId, firestore, user, setStudents]);
 
@@ -743,7 +723,6 @@ const ClassroomChampions = () => {
         return;
       }
 
-      console.log(`⭐ DIRECT Awarding ${amount} XP to ${student.firstName} for ${reason}`);
 
       if (architectureVersion === 'v2') {
         // DIRECT V2 UPDATE - bypassing the broken API
@@ -754,7 +733,6 @@ const ClassroomChampions = () => {
           lastActivity: new Date().toISOString()
         });
 
-        console.log('✅ Direct V2 XP award completed');
         // Real-time listener will update local state automatically
 
       } else {
@@ -803,7 +781,6 @@ const ClassroomChampions = () => {
         return;
       }
 
-      console.log(`🪙 DIRECT Awarding ${amount} coins to ${student.firstName} for ${reason}`);
 
       if (architectureVersion === 'v2') {
         // DIRECT V2 UPDATE - bypassing the broken API
@@ -814,7 +791,6 @@ const ClassroomChampions = () => {
           lastActivity: new Date().toISOString()
         });
 
-        console.log('✅ Direct V2 coin award completed');
         // Real-time listener will update local state automatically
 
       } else {
@@ -840,7 +816,6 @@ const ClassroomChampions = () => {
     if (!newStudentFirstName.trim() || !currentClassId) return;
 
     try {
-      console.log('👨‍🎓 Creating new student:', newStudentFirstName, newStudentLastName);
       if (architectureVersion === 'v2') {
         // Use new architecture
         const result = await createStudent(currentClassId, {

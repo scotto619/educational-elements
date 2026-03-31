@@ -33,7 +33,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
   // FIXED: Better teacher detection
   const isTeacher = gameMode === 'teacher' && Array.isArray(students) && students.length > 0;
 
-  console.log('🎮 Battle Royale Debug:', {
     gameMode,
     studentsLength: students?.length,
     isTeacher,
@@ -94,7 +93,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
           if (mounted && snapshot.val()) {
             setFirebase({ database, ref, onValue, set, update, remove, off, push });
             setFirebaseReady(true);
-            console.log('✅ Firebase ready for Battle Royale');
           }
         });
         
@@ -271,7 +269,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
         });
         
         processedResponses.current.clear();
-        console.log('📤 Next question sent:', nextQuestion.question);
       } catch (error) {
         console.error('Error sending next question:', error);
       }
@@ -284,7 +281,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
     if (!firebase || !gameCode || !currentQuestion || isProcessingAnswer.current) return;
     
     if (processedResponses.current.has(responseId)) {
-      console.log('⚠️ Duplicate response ignored:', responseId);
       return;
     }
     
@@ -344,7 +340,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
           onAwardXP(winner.actualStudentId, 10, 'Battle Royale Winner');
         }
         
-        console.log('🏆 Game Over! Winner:', winner?.name || 'None');
       } else if (isCorrect) {
         sendNextQuestion();
       }
@@ -373,7 +368,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
       
       if (data.currentQuestion && 
           (!currentQuestion || data.currentQuestion.id !== currentQuestion.id)) {
-        console.log('📝 New question received:', data.currentQuestion.question);
         setCurrentQuestion(data.currentQuestion);
         setHasAnswered(false);
         setSelectedAnswer(null);
@@ -457,7 +451,6 @@ const BattleRoyaleGame = ({ gameMode, showToast, students = [], onAwardXP, onAwa
 
   // RENDER: Menu (Teacher - Create Game)
   if (isTeacher && gamePhase === 'menu') {
-    console.log('🎮 Rendering teacher menu');
     return (
       <div className="max-w-2xl mx-auto space-y-6 p-4">
         <div className="text-center">

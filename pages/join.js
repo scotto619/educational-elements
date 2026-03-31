@@ -116,7 +116,6 @@ const StudentJoinPage = () => {
           const activeClass = teacherData.classes.find(cls => cls.id === activeClassId);
           if (activeClass && activeClass.students) {
             setAvailableStudents(activeClass.students);
-            console.log(`✅ Loaded ${activeClass.students.length} students from class`);
           }
         }
       }
@@ -150,7 +149,6 @@ const StudentJoinPage = () => {
           
           // Handle question changes - ONLY reset when question actually changes
           if (data.currentQuestion !== undefined && data.currentQuestion !== currentQuestionRef.current) {
-            console.log(`🔄 NEW QUESTION: ${data.currentQuestion} (was ${currentQuestionRef.current})`);
             currentQuestionRef.current = data.currentQuestion;
             
             // Reset ALL answer-related state for new question
@@ -163,7 +161,6 @@ const StudentJoinPage = () => {
           
           // Handle phase changes - ONLY update timer when starting answering phase
           if (data.questionPhase !== phaseRef.current) {
-            console.log(`📋 PHASE CHANGE: ${phaseRef.current} → ${data.questionPhase}`);
             phaseRef.current = data.questionPhase;
             
             // Start timer ONLY when entering answering phase for current question
@@ -172,7 +169,6 @@ const StudentJoinPage = () => {
                 data.quiz?.questions?.[data.currentQuestion]?.timeLimit ||
                 data.settings?.timePerQuestion ||
                 20;
-              console.log(`⏰ STARTING TIMER: ${questionTimeLimit} seconds`);
               setTimeLeft(questionTimeLimit);
               timerRunningRef.current = true;
             }
@@ -330,7 +326,6 @@ const StudentJoinPage = () => {
   const submitAnswer = async (answerIndex) => {
     // ABSOLUTE protection against multiple submissions
     if (answerSubmittedRef.current || hasAnswered || gameData?.questionPhase !== 'answering') {
-      console.log(`🚫 Answer submission blocked: submitted=${answerSubmittedRef.current}, hasAnswered=${hasAnswered}, phase=${gameData?.questionPhase}`);
       return;
     }
 
@@ -340,7 +335,6 @@ const StudentJoinPage = () => {
       return;
     }
 
-    console.log(`📝 Submitting answer ${answerIndex} for question ${gameData.currentQuestion}`);
 
     // IMMEDIATELY block any further clicks
     answerSubmittedRef.current = true;
@@ -352,13 +346,6 @@ const StudentJoinPage = () => {
     const submittedAnswerIndex = parseInt(answerIndex, 10);
     const isCorrect = submittedAnswerIndex === correctAnswerIndex;
     
-    console.log(`🔍 ANSWER VALIDATION:`);
-    console.log(`   Question: "${currentQuestion.question}"`);
-    console.log(`   Correct Answer Index: ${correctAnswerIndex} (${typeof correctAnswerIndex})`);
-    console.log(`   Submitted Answer Index: ${submittedAnswerIndex} (${typeof submittedAnswerIndex})`);
-    console.log(`   Correct Answer Text: "${currentQuestion.options[correctAnswerIndex]}"`);
-    console.log(`   Submitted Answer Text: "${currentQuestion.options[submittedAnswerIndex]}"`);
-    console.log(`   Is Correct: ${isCorrect ? '✅ YES' : '❌ NO'}`);
     
     // Simple scoring: +10 for correct, -5 for incorrect
     const points = isCorrect ? 10 : -5;
@@ -377,9 +364,7 @@ const StudentJoinPage = () => {
         submittedAt: Date.now()
       };
       
-      console.log(`📤 Submitting to Firebase:`, responseData);
       await set(ref(database, responsePath), responseData);
-      console.log(`✅ Answer submitted successfully to Firebase`);
       
     } catch (error) {
       console.error('❌ Error submitting answer:', error);

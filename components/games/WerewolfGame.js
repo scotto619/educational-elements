@@ -492,25 +492,28 @@ const RoleGuide = ({ onClose, onSelectRole }) => {
   );
 };
 
-const NightRoleIndicator = ({ currentRole, nightStep }) => {
+const NightRoleIndicator = ({ currentRole, activeRoles }) => {
+  const activeIdx = activeRoles.indexOf(currentRole);
   return (
     <div className="flex gap-2 justify-center flex-wrap">
-      {NIGHT_ORDER.map((role, i) => {
+      {activeRoles.map((role, i) => {
         const r = ROLES[role];
-        const isActive = i === nightStep;
-        const isDone = i < nightStep;
+        const isActive = role === currentRole;
+        const isDone = i < activeIdx;
         return (
-          <div
+          <motion.div
             key={role}
+            animate={isActive ? { scale: [1, 1.08, 1] } : {}}
+            transition={{ repeat: isActive ? Infinity : 0, duration: 1.5 }}
             className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all
-              ${isActive ? `bg-gradient-to-r ${r.bg} text-white scale-110 shadow-lg` : ''}
-              ${isDone ? 'bg-white/10 text-white/40 line-through' : ''}
+              ${isActive ? `bg-gradient-to-r ${r.bg} text-white scale-110 shadow-lg ring-2 ring-white/30` : ''}
+              ${isDone ? 'bg-white/10 text-white/30 line-through' : ''}
               ${!isActive && !isDone ? 'bg-white/10 text-white/60' : ''}
             `}
           >
             <span>{r.icon}</span>
             <span>{r.name}</span>
-          </div>
+          </motion.div>
         );
       })}
     </div>
@@ -542,6 +545,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const [nightResultModal, setNightResultModal] = useState(null);
   const [roleInfoModal, setRoleInfoModal] = useState(null); // roleId to show info for
   const [showRoleGuide, setShowRoleGuide] = useState(false);
+  const [revealPhase, setRevealPhase] = useState('suspense'); // 'suspense' | 'eliminated' | 'roles' | 'done'
   // Multi-step night action state
   const [nightActionSubStep, setNightActionSubStep] = useState(null);
   const [witchPeekedCard, setWitchPeekedCard] = useState(null); // {index, role}
@@ -626,6 +630,16 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     return () => fb.off(rRef, 'value', unsub);
   }, [roomCode, screen, myId, myOriginalRole, fb]);
 
+  // ── Auto-advance reveal phases when results screen loads ─────────────────
+  useEffect(() => {
+    if (screen !== 'results') return;
+    setRevealPhase('suspense');
+    const t1 = setTimeout(() => setRevealPhase('eliminated'), 2200);
+    const t2 = setTimeout(() => setRevealPhase('roles'), 5200);
+    const t3 = setTimeout(() => setRevealPhase('done'), 8500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [screen]);
+
   // ── Host: drive night phase progression ──────────────────────────────────
   useEffect(() => {
     if (!isHost || !roomData || roomData.phase !== 'night' || !fb) return;
@@ -649,7 +663,9 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
         .filter(([, p]) => p.originalRole === currentRole)
         .map(([id]) => id);
 
-      const allDone = playersWithRole.length === 0 ||
+      // Instantly skip roles not in the role pool (no one has this role)
+      const roleInPool = (data.rolePool || []).includes(currentRole);
+      const allDone = !roleInPool || playersWithRole.length === 0 ||
         playersWithRole.every(id => data.nightActions?.[id]?.done);
 
       if (allDone || elapsed >= STEP_DURATION) {
@@ -667,7 +683,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           });
         }
       }
-    }, 2000);
+    }, 500);
 
     return () => clearInterval(hostIntervalRef.current);
   }, [isHost, roomData?.phase, roomData?.nightStep, roomCode, fb]);
@@ -827,6 +843,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     setNightActionSubStep(null);
     setWitchPeekedCard(null);
     setPiSeen([]);
+    setRevealPhase('suspense');
   }, [roomCode, myId]);
 
   // ── Night action logic ────────────────────────────────────────────────────
@@ -1007,6 +1024,10 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const isMyNightTurn = myOriginalRole === currentNightRole;
   const isLoneWerewolf = myOriginalRole === 'werewolf' &&
     !otherPlayers.some(p => p.originalRole === 'werewolf');
+  // Only show/iterate roles that are actually in the current game pool
+  const activeNightOrder = NIGHT_ORDER.filter(role =>
+    (roomData?.rolePool || hostRolePool || []).includes(role)
+  );
 
   // ─── SCREENS ──────────────────────────────────────────────────────────────
 
@@ -1535,7 +1556,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
 
           {/* Night order progress */}
           <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-            <NightRoleIndicator currentRole={currentNightRole} nightStep={nightStep} />
+            <NightRoleIndicator currentRole={currentNightRole} activeRoles={activeNightOrder} />
             <div className="text-center mt-3">
               <p className="text-white/60 text-sm">
                 {ROLES[currentNightRole]?.icon} <span className="font-bold text-white">{ROLES[currentNightRole]?.name}</span> is awake
@@ -1636,7 +1657,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                       <p className="text-white/80 text-sm">Choose what to look at:</p>
                       <div className="grid grid-cols-2 gap-2">
                         <button onClick={() => setSeerMode('player')} className="py-3 bg-blue-800/60 hover:bg-blue-700/60 border border-blue-500 rounded-xl text-sm font-bold text-blue-200 transition-all">
-                          👥 One Player's Card
+                          👥 One Player&apos;s Card
                         </button>
                         <button onClick={() => setSeerMode('center')} className="py-3 bg-blue-800/60 hover:bg-blue-700/60 border border-blue-500 rounded-xl text-sm font-bold text-blue-200 transition-all">
                           📚 Two Center Cards
@@ -2030,15 +2051,27 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             </motion.div>
           ) : (
             <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center">
-              <div className="text-5xl mb-3 animate-pulse">😴</div>
+              <motion.div
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="text-5xl mb-3"
+              >😴</motion.div>
               <p className="text-white/70 font-semibold">You are asleep...</p>
               <p className="text-white/40 text-sm mt-1">
-                {isMyNightTurn ? 'Your turn is next!' : `Waiting for the ${ROLES[currentNightRole]?.name}...`}
+                {`Waiting for the ${ROLES[currentNightRole]?.name}...`}
               </p>
-              {r && (
+              {r && !roleHidden && (
                 <div className={`inline-flex items-center gap-2 px-3 py-1 mt-3 rounded-full ${r.badge} text-xs text-white`}>
                   {r.icon} You are the {r.name}
                 </div>
+              )}
+              {roleHidden && (
+                <button
+                  onClick={() => setRoleHidden(false)}
+                  className="inline-flex items-center gap-2 px-3 py-1 mt-3 rounded-full bg-slate-700/60 border border-white/10 text-xs text-white/40 hover:text-white/70 transition-all"
+                >
+                  🙈 Role hidden — tap to reveal
+                </button>
               )}
             </div>
           )}
@@ -2244,52 +2277,286 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     const result = gameResult || { winner: 'villagers', eliminated: [] };
     const eliminated = result.eliminated || [];
     const centerCards = roomData?.centerCards || [];
+    const votes = roomData?.votes || {};
+
+    // Vote counts for visualization
+    const voteCounts = {};
+    playerList.forEach(p => { voteCounts[p.id] = 0; });
+    Object.entries(votes).forEach(([, targetId]) => {
+      if (voteCounts[targetId] !== undefined) voteCounts[targetId]++;
+    });
+    const maxVotes = Math.max(...Object.values(voteCounts), 1);
 
     const winnerConfig = {
       villagers: {
-        bg: 'from-green-800 to-emerald-900',
-        title: '🏘️ Villagers Win!',
-        text: 'The werewolf was found and eliminated!',
-        color: 'text-green-300'
+        bg: 'from-green-800 via-emerald-900 to-green-950',
+        glow: 'shadow-green-500/40',
+        border: 'border-green-500/50',
+        title: '🏘️ Village Wins!',
+        subtitle: 'The werewolf has been hunted down!',
+        color: 'text-green-300',
+        confetti: ['🎉', '✨', '🎊', '🏆'],
       },
       werewolves: {
-        bg: 'from-red-900 to-red-950',
+        bg: 'from-red-900 via-red-950 to-slate-950',
+        glow: 'shadow-red-600/40',
+        border: 'border-red-600/50',
         title: '🐺 Werewolves Win!',
-        text: 'The werewolves escaped justice!',
-        color: 'text-red-300'
+        subtitle: 'The wolves escaped into the night...',
+        color: 'text-red-300',
+        confetti: ['🐺', '🌕', '🩸', '💀'],
       },
       tanner: {
-        bg: 'from-gray-700 to-gray-900',
+        bg: 'from-gray-700 via-gray-800 to-gray-950',
+        glow: 'shadow-gray-400/20',
+        border: 'border-gray-500/50',
         title: '😅 Tanner Wins!',
-        text: 'The Tanner wanted to be eliminated — and they were!',
-        color: 'text-gray-300'
-      }
+        subtitle: 'They got exactly what they wanted!',
+        color: 'text-gray-200',
+        confetti: ['😅', '🎭', '💀', '😈'],
+      },
     };
-
     const wc = winnerConfig[result.winner] || winnerConfig.villagers;
 
+    const playAgain = async () => {
+      setScreen('lobby');
+      setMyOriginalRole(null);
+      setNightResult(null);
+      setNightResultModal(null);
+      setNightActionDone(false);
+      setMyVote(null);
+      setGameResult(null);
+      setFinalRolesComputed(null);
+      setSelectedTargets([]);
+      setSeerMode(null);
+      setRoleHidden(false);
+      setRevealPhase('suspense');
+      setNightActionSubStep(null);
+      setWitchPeekedCard(null);
+      setPiSeen([]);
+      const updates = {};
+      Object.keys(players).forEach(id => {
+        updates[`players/${id}/originalRole`] = '';
+        updates[`players/${id}/vote`] = null;
+        updates[`players/${id}/nightActionDone`] = false;
+      });
+      updates.phase = 'lobby';
+      updates.nightStep = 0;
+      updates.centerCards = [];
+      updates.nightActions = {};
+      updates.votes = {};
+      updates.dayEndTime = null;
+      updates.voteEndTime = null;
+      if (fb) await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), updates);
+    };
+
+    // ── Phase 1: Suspense ────────────────────────────────────────────────────
+    if (revealPhase === 'suspense') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 flex items-center justify-center p-4 text-white">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
+            <motion.div
+              animate={{ scale: [1, 1.15, 1], rotate: [0, -3, 3, 0] }}
+              transition={{ repeat: Infinity, duration: 1.8 }}
+              className="text-8xl mb-6"
+            >🗳️</motion.div>
+            <motion.h2
+              initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
+              className="text-4xl font-black text-white mb-3"
+            >The votes are in...</motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+              className="text-white/50 text-lg"
+            >The village has spoken.</motion.p>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+              className="flex gap-1 justify-center mt-6"
+            >
+              {[0, 1, 2].map(i => (
+                <motion.div key={i} animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.3 }}
+                  className="w-2 h-2 rounded-full bg-white/40"
+                />
+              ))}
+            </motion.div>
+            <motion.button
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
+              onClick={() => setRevealPhase('eliminated')}
+              className="mt-8 px-6 py-2 bg-white/10 hover:bg-white/20 text-white/50 hover:text-white text-sm rounded-xl border border-white/20 transition-all"
+            >Skip →</motion.button>
+          </motion.div>
+        </div>
+      );
+    }
+
+    // ── Phase 2: Eliminated ──────────────────────────────────────────────────
+    if (revealPhase === 'eliminated') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-red-950 to-slate-950 flex items-center justify-center p-4 text-white">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center max-w-md w-full">
+            <motion.div
+              initial={{ scale: 4, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 180, damping: 12 }}
+              className="text-8xl mb-4"
+            >{eliminated.length === 0 ? '🕊️' : '💀'}</motion.div>
+
+            <motion.h2
+              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, type: 'spring' }}
+              className="text-4xl font-black mb-2 tracking-wide uppercase"
+              style={{ color: eliminated.length === 0 ? '#86efac' : '#fca5a5' }}
+            >
+              {eliminated.length === 0 ? 'No One Eliminated!' : eliminated.length === 1 ? 'Eliminated!' : 'Eliminated!'}
+            </motion.h2>
+
+            {eliminated.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7 }}
+                className="mt-4 bg-white/10 rounded-3xl p-8 border border-white/20"
+              >
+                <p className="text-2xl font-bold text-white/80">All votes were tied.</p>
+                <p className="text-white/50 mt-2">No one could be eliminated!</p>
+              </motion.div>
+            ) : (
+              <div className="mt-4 space-y-4">
+                {eliminated.map((id, i) => (
+                  <motion.div
+                    key={id}
+                    initial={{ x: -120, opacity: 0, scale: 0.8 }}
+                    animate={{ x: 0, opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 + i * 0.5, type: 'spring', stiffness: 140, damping: 14 }}
+                    className="bg-gradient-to-r from-red-900/80 to-red-950/80 border-2 border-red-500 rounded-2xl p-6 shadow-2xl shadow-red-900/60"
+                  >
+                    <motion.div
+                      animate={{ rotate: [0, -5, 5, -5, 0] }}
+                      transition={{ delay: 0.8 + i * 0.5, duration: 0.5 }}
+                      className="text-5xl mb-2"
+                    >💀</motion.div>
+                    <p className="text-3xl font-black text-white">{players[id]?.name}</p>
+                    <p className="text-red-300/70 text-sm mt-1">has been eliminated</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            <motion.button
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: eliminated.length * 0.5 + 1 }}
+              onClick={() => setRevealPhase('roles')}
+              className="mt-8 px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/20 transition-all text-sm"
+            >🎭 Reveal All Roles →</motion.button>
+          </motion.div>
+        </div>
+      );
+    }
+
+    // ── Phase 3: Roles revealed ──────────────────────────────────────────────
+    if (revealPhase === 'roles') {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 p-4 text-white">
+          <div className="max-w-xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+              className="text-center py-6"
+            >
+              <div className="text-6xl mb-2">🎭</div>
+              <h2 className="text-3xl font-black text-white">The Truth Revealed</h2>
+              <p className="text-white/50 text-sm mt-1">All identities uncovered</p>
+            </motion.div>
+
+            <div className="space-y-2 mb-6">
+              {playerList.map((p, i) => {
+                const finalRole = fr[p.id] || p.originalRole;
+                const originalRole = p.originalRole;
+                const r = ROLES[finalRole];
+                const changed = finalRole !== originalRole;
+                const isElim = eliminated.includes(p.id);
+                return (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, x: -50, scale: 0.92 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ delay: i * 0.18, type: 'spring', stiffness: 220, damping: 20 }}
+                    className={`flex items-center justify-between px-4 py-3 rounded-2xl border-2
+                      ${isElim
+                        ? 'bg-red-900/50 border-red-600/60 shadow-lg shadow-red-900/40'
+                        : `bg-gradient-to-r ${r?.bg || 'from-slate-700 to-slate-800'} border-white/20 shadow-lg`}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center text-2xl border-2
+                        ${isElim ? 'bg-red-950 border-red-600' : 'bg-black/30 border-white/20'}`}>
+                        {isElim ? '💀' : (r?.icon || '?')}
+                      </div>
+                      <div>
+                        <p className="font-black text-white">{p.name}{p.id === myId ? ' (You)' : ''}</p>
+                        <p className={`text-xs font-semibold ${r?.text || 'text-white/60'}`}>
+                          {r?.name || finalRole}
+                          {changed && <span className="text-yellow-300 ml-1 opacity-80">(was {ROLES[originalRole]?.name})</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${r?.badge || 'bg-white/10'} text-white`}>
+                        {r?.team === 'werewolves' ? '🐺 Wolf' : r?.team === 'tanner' ? '😅 Solo' : '🏘️ Village'}
+                      </span>
+                      {isElim && <span className="text-xs text-red-400 font-bold tracking-wide">ELIMINATED</span>}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            <motion.button
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ delay: playerList.length * 0.18 + 0.4 }}
+              onClick={() => setRevealPhase('done')}
+              className="w-full py-4 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-white font-black text-xl rounded-2xl transition-all shadow-xl shadow-amber-900/40"
+            >🏆 Reveal Winner!</motion.button>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Phase 4: Full results (done) ─────────────────────────────────────────
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 p-4 text-white">
         <div className="max-w-xl mx-auto space-y-4">
+
           {/* Winner banner */}
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`bg-gradient-to-br ${wc.bg} rounded-3xl p-6 text-center border-2 border-white/20 shadow-2xl`}
+            initial={{ opacity: 0, scale: 0.8, y: -30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+            className={`bg-gradient-to-br ${wc.bg} rounded-3xl p-8 text-center border-2 ${wc.border} shadow-2xl ${wc.glow} shadow-xl`}
           >
-            <h2 className={`text-3xl font-black ${wc.color} mb-2`}>{wc.title}</h2>
-            <p className="text-white/70">{wc.text}</p>
+            {/* Floating confetti emoji */}
+            <div className="flex justify-center gap-3 mb-3">
+              {wc.confetti.map((emoji, i) => (
+                <motion.span key={i} className="text-2xl"
+                  animate={{ y: [0, -10, 0], rotate: [0, 15, -15, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5 + i * 0.3, delay: i * 0.2 }}
+                >{emoji}</motion.span>
+              ))}
+            </div>
+            <motion.h2
+              animate={{ scale: [1, 1.04, 1] }} transition={{ repeat: Infinity, duration: 2 }}
+              className={`text-4xl font-black ${wc.color} mb-2`}
+            >{wc.title}</motion.h2>
+            <p className="text-white/80 text-lg">{wc.subtitle}</p>
             {eliminated.length > 0 && (
-              <p className="mt-3 text-white/80 text-sm">
-                💀 Eliminated: <strong>{eliminated.map(id => players[id]?.name).join(', ')}</strong>
-              </p>
+              <div className="mt-4 bg-black/30 rounded-xl p-3">
+                <p className="text-white/40 text-xs uppercase tracking-wider mb-1">💀 Eliminated</p>
+                <p className="text-white font-black text-xl">{eliminated.map(id => players[id]?.name).join(' & ')}</p>
+                <p className="text-white/60 text-sm mt-1">
+                  {eliminated.map(id => `${ROLES[fr[id]]?.icon || ''} ${ROLES[fr[id]]?.name || 'Unknown'}`).join('  ·  ')}
+                </p>
+              </div>
             )}
-            {eliminated.length === 0 && <p className="mt-2 text-white/60 text-sm">No one was eliminated (all tied).</p>}
+            {eliminated.length === 0 && <p className="mt-3 text-white/50 text-sm">No one was eliminated.</p>}
           </motion.div>
 
-          {/* Player role reveals */}
+          {/* Final roles */}
           <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-            <h3 className="font-bold text-white/80 mb-3">🎭 Final Roles Revealed</h3>
+            <h3 className="font-bold text-white/80 mb-3">🎭 Final Roles</h3>
             <div className="space-y-2">
               {playerList.map((p, i) => {
                 const finalRole = fr[p.id] || p.originalRole;
@@ -2302,7 +2569,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                     key={p.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
+                    transition={{ delay: i * 0.07 }}
                     className={`flex items-center justify-between px-4 py-3 rounded-xl border
                       ${isElim ? 'bg-red-900/40 border-red-600/40' : `bg-gradient-to-r ${r?.bg || 'from-slate-700 to-slate-800'} border-white/20`}`}
                   >
@@ -2317,7 +2584,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                       </div>
                     </div>
                     <div className={`px-2 py-1 rounded-full text-xs font-bold ${r?.badge || 'bg-white/10'} text-white`}>
-                      {r?.team}
+                      {r?.team === 'werewolves' ? '🐺' : r?.team === 'tanner' ? '😅' : '🏘️'} {r?.team}
                     </div>
                   </motion.div>
                 );
@@ -2335,24 +2602,40 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                   <div key={i} className={`flex flex-col items-center gap-1 px-4 py-3 rounded-xl bg-gradient-to-br ${r?.bg || 'from-slate-700 to-slate-800'} border ${r?.border || 'border-white/20'}`}>
                     <span className="text-2xl">{r?.icon}</span>
                     <p className="text-xs font-bold text-white">{r?.name}</p>
-                    <p className="text-xs text-white/50">Center {i + 1}</p>
+                    <p className="text-xs text-white/40">Center {i + 1}</p>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Votes recap */}
+          {/* Vote tally with bars */}
           <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-            <h3 className="font-bold text-white/80 mb-3">🗳️ How People Voted</h3>
-            <div className="space-y-1">
-              {playerList.map(p => {
-                const votedForId = roomData?.votes?.[p.id];
-                const votedFor = votedForId ? players[votedForId]?.name : 'Did not vote';
+            <h3 className="font-bold text-white/80 mb-3">🗳️ Vote Tally</h3>
+            <div className="space-y-3">
+              {[...playerList].sort((a, b) => (voteCounts[b.id] || 0) - (voteCounts[a.id] || 0)).map((p, i) => {
+                const count = voteCounts[p.id] || 0;
+                const isElim = eliminated.includes(p.id);
+                const votedForName = votes[p.id] ? players[votes[p.id]]?.name : '—';
+                const pct = Math.round((count / Math.max(playerList.length, 1)) * 100);
                 return (
-                  <div key={p.id} className="flex items-center justify-between text-sm px-2 py-1">
-                    <span className="text-white/80">{p.name}</span>
-                    <span className="text-white/50">→ {votedFor}</span>
+                  <div key={p.id}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className={`font-semibold ${isElim ? 'text-red-300' : 'text-white/80'}`}>
+                        {isElim ? '💀 ' : ''}{p.name}{p.id === myId ? ' (You)' : ''}
+                      </span>
+                      <span className="text-white/40">
+                        {count} vote{count !== 1 ? 's' : ''} · voted for <span className="text-white/70">{votedForName}</span>
+                      </span>
+                    </div>
+                    <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${pct}%` }}
+                        transition={{ delay: 0.2 + i * 0.08, duration: 0.7 }}
+                        className={`h-full rounded-full ${isElim ? 'bg-gradient-to-r from-red-600 to-red-400' : 'bg-gradient-to-r from-purple-600 to-indigo-400'}`}
+                      />
+                    </div>
                   </div>
                 );
               })}
@@ -2360,47 +2643,17 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           </div>
 
           {/* Play again */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 pb-4">
             {isHost && (
               <button
-                onClick={async () => {
-                  setScreen('lobby');
-                  setMyOriginalRole(null);
-                  setNightResult(null);
-                  setNightResultModal(null);
-                  setNightActionDone(false);
-                  setMyVote(null);
-                  setGameResult(null);
-                  setFinalRolesComputed(null);
-                  setSelectedTargets([]);
-                  setSeerMode(null);
-                  setRoleHidden(false);
-                  const updates = {};
-                  Object.keys(players).forEach(id => {
-                    updates[`players/${id}/originalRole`] = '';
-                    updates[`players/${id}/vote`] = null;
-                    updates[`players/${id}/nightActionDone`] = false;
-                  });
-                  updates.phase = 'lobby';
-                  updates.nightStep = 0;
-                  updates.centerCards = [];
-                  updates.nightActions = {};
-                  updates.votes = {};
-                  updates.dayEndTime = null;
-                  updates.voteEndTime = null;
-                  if (fb) await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), updates);
-                }}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl transition-all"
-              >
-                🔄 Play Again
-              </button>
+                onClick={playAgain}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg"
+              >🔄 Play Again</button>
             )}
             <button
               onClick={leaveGame}
               className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl border border-white/20 transition-all"
-            >
-              Leave Game
-            </button>
+            >Leave Game</button>
           </div>
         </div>
       </div>

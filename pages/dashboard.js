@@ -115,7 +115,6 @@ export default function Dashboard() {
 
     if (needsWebhook) {
       // Webhook hasn't completed yet - poll for it
-      console.log('⏳ Waiting for Stripe webhook to complete...');
       setWaitingForWebhook(true);
 
       let pollCount = 0;
@@ -123,7 +122,6 @@ export default function Dashboard() {
 
       const pollInterval = setInterval(async () => {
         pollCount++;
-        console.log(`🔄 Polling for webhook completion (${pollCount}/${maxPolls})...`);
 
         try {
           const docRef = doc(firestore, 'users', user.uid);
@@ -131,7 +129,6 @@ export default function Dashboard() {
           const data = snap.data();
 
           if (['active', 'trialing', 'trial'].includes(data.subscriptionStatus)) {
-            console.log('✅ Webhook completed! Subscription status:', data.subscriptionStatus);
             setUserData(data);
             setWaitingForWebhook(false);
             clearInterval(pollInterval);
@@ -167,7 +164,6 @@ export default function Dashboard() {
   // V2 Architecture: Load classes from new collections
   async function loadV2Classes(userId) {
     try {
-      console.log('📚 Loading V2 classes for user:', userId);
 
       // Query classes collection where teacherId matches user
       const classesQuery = query(
@@ -177,7 +173,6 @@ export default function Dashboard() {
       );
 
       const classesSnapshot = await getDocs(classesQuery);
-      console.log('✅ Found V2 classes:', classesSnapshot.size);
 
       const classes = [];
       for (const classDoc of classesSnapshot.docs) {
@@ -231,7 +226,6 @@ export default function Dashboard() {
         classes.push(formattedClass);
       }
 
-      console.log('📊 V2 classes loaded:', classes.length);
       return classes;
 
     } catch (error) {
@@ -242,7 +236,6 @@ export default function Dashboard() {
 
   // V1 Architecture: Load classes from user document (fallback)
   function loadV1Classes(userData) {
-    console.log('📚 Loading V1 classes from user document');
     const classes = userData.classes || [];
 
     // Add student count for each class
@@ -253,7 +246,6 @@ export default function Dashboard() {
       isV2: false
     }));
 
-    console.log('📊 V1 classes loaded:', formattedClasses.length);
     return formattedClasses;
   }
 
@@ -264,11 +256,7 @@ export default function Dashboard() {
       } else {
         setUser(user);
 
-        console.log('=== CURRENT USER DEBUG ===');
-        console.log('User ID:', user.uid);
-        console.log('User Email:', user.email);
         console.log('User Display Name:', user.displayName);
-        console.log('========================');
 
         try {
           // Load user data
@@ -295,13 +283,11 @@ export default function Dashboard() {
           }
 
           // Determine architecture version and load classes
-          console.log('🔍 Determining architecture version...');
 
           // Check if user has been migrated to V2
           const hasV2Marker = userData.version === '2.0' || userData.migratedAt;
 
           if (hasV2Marker) {
-            console.log('✅ User is on V2 architecture');
             setArchitectureVersion('v2');
 
             try {
@@ -314,7 +300,6 @@ export default function Dashboard() {
               setSavedClasses(v1Classes);
             }
           } else {
-            console.log('🔍 User is on V1 architecture');
             setArchitectureVersion('v1');
             const v1Classes = loadV1Classes(userData);
             setSavedClasses(v1Classes);
@@ -692,15 +677,11 @@ export default function Dashboard() {
 
   // DEBUGGING: Log access state in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('=== ACCESS CHECK DEBUG ===');
-    console.log('User Data:', {
       accountStatus: userData?.accountStatus,
       subscriptionStatus: userData?.subscriptionStatus,
       subscription: userData?.subscription,
       stripeCustomerId: userData?.stripeCustomerId
     });
-    console.log('Access Result:', accessResult);
-    console.log('========================');
   }
 
   // Calculate total students for display

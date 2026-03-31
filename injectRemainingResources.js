@@ -150,4 +150,3 @@ missingFiles.forEach(f => {
 
 const output = generate(ast, {}, code);
 fs.writeFileSync(curriculumPath, output.code);
-console.log('Successfully injected the remaining ' + missingFiles.length + ' extra resources!');

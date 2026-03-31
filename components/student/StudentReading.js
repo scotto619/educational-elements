@@ -210,7 +210,6 @@ const StudentReading = ({
   const findStudentAssignments = () => {
     try {
       if (!classData?.toolkitData?.fluencyGroups || !Array.isArray(classData.toolkitData.fluencyGroups)) {
-        console.log('No fluency groups found');
         setStudentAssignments(null);
         return;
       }

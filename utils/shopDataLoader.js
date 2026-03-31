@@ -19,7 +19,6 @@ export async function fetchShopAvatars() {
     const basic = avatars.filter(a => a.type === 'basic');
     const premium = avatars.filter(a => a.type === 'premium');
 
-    console.log(`✅ Loaded ${avatars.length} avatars from admin shop (${basic.length} basic, ${premium.length} premium)`);
     
     return {
       basic,
@@ -55,7 +54,6 @@ export async function fetchShopPets() {
     const basic = pets.filter(p => p.type === 'basic');
     const premium = pets.filter(p => p.type === 'premium');
 
-    console.log(`✅ Loaded ${pets.length} pets from admin shop (${basic.length} basic, ${premium.length} premium)`);
     
     return {
       basic,
@@ -90,7 +88,6 @@ export async function fetchDashboardUpdates(limit = 10) {
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, limit);
 
-    console.log(`✅ Loaded ${updates.length} dashboard updates`);
     
     return updates;
   } catch (error) {
@@ -109,7 +106,6 @@ export async function getFeaturedItems() {
     const featuredDoc = await getDoc(featuredRef);
     
     if (featuredDoc.exists()) {
-      console.log('✅ Loaded featured items for today');
       return featuredDoc.data();
     }
     

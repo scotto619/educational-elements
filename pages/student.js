@@ -530,13 +530,11 @@ const StudentPortal = () => {
     setError('');
 
     try {
-      console.log('🔍 Searching for class code:', classCode.trim());
 
       // Try V2 architecture first, then V1 fallback
       let classResult = await searchV2Architecture(classCode.trim());
 
       if (!classResult) {
-        console.log('🔄 V2 search failed, trying V1 fallback...');
         classResult = await searchV1Architecture(classCode.trim());
       }
 
@@ -546,7 +544,6 @@ const StudentPortal = () => {
         return;
       }
 
-      console.log('✅ Class found:', classResult.classData.name, 'Architecture:', classResult.architectureVersion);
 
       if (!classResult.students || classResult.students.length === 0) {
         setError('This class has no students yet. Please check with your teacher.');
@@ -573,7 +570,6 @@ const StudentPortal = () => {
   // V2 Architecture Search
   const searchV2Architecture = async (classCodeInput) => {
     try {
-      console.log('🔍 V2 Search: Querying classes collection...');
 
       const classesQuery = query(
         collection(firestore, 'classes'),
@@ -631,7 +627,6 @@ const StudentPortal = () => {
   // V1 Architecture Search
   const searchV1Architecture = async (classCodeInput) => {
     try {
-      console.log('🔄 V1 Fallback: Scanning user documents...');
 
       const usersRef = collection(firestore, 'users');
       const usersSnapshot = await getDocs(usersRef);
@@ -676,7 +671,6 @@ const StudentPortal = () => {
   // ===============================================
 
   const handleStudentSelect = (student) => {
-    console.log('👤 Student selected:', student.firstName);
     setSelectedStudent(student);
     setStudentPassword('');
     setPasswordError('');
@@ -698,7 +692,6 @@ const StudentPortal = () => {
     setPasswordError('');
 
     try {
-      console.log('🔐 Verifying password directly (no API) for:', selectedStudent.firstName);
 
       // Use direct password verification (bypasses problematic APIs)
       const result = await verifyStudentPasswordDirect(
@@ -718,7 +711,6 @@ const StudentPortal = () => {
         return;
       }
 
-      console.log('✅ Password verified successfully via direct method');
 
       const classDataWithStudents = classData?.students ? classData : { ...classData, students: availableStudents };
 
@@ -764,7 +756,6 @@ const StudentPortal = () => {
     }
 
     try {
-      console.log('💾 Updating student data directly (no API):', studentData.firstName);
 
       if (architectureVersion === 'v2') {
         // Direct V2 update
@@ -776,7 +767,6 @@ const StudentPortal = () => {
         };
 
         await updateDoc(studentRef, updates);
-        console.log('✅ V2 direct student update completed');
 
       } else {
         // Direct V1 update
@@ -805,7 +795,6 @@ const StudentPortal = () => {
           });
 
           await updateDoc(userRef, { classes: updatedClasses });
-          console.log('✅ V1 direct student update completed');
         }
       }
 

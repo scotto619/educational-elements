@@ -47,7 +47,6 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
           if (mounted && snapshot.val()) {
             setFirebase({ database, ref, onValue, set, update, remove, off });
             setFirebaseReady(true);
-            console.log('✅ Firebase ready for student Battle Royale');
           }
         });
         
@@ -90,7 +89,6 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     const code = gameCode.trim().toUpperCase();
     
     try {
-      console.log('🔍 Trying to join battle royale:', code);
       
       gameRef.current = firebase.ref(firebase.database, `battle_royale/${code}`);
       
@@ -109,7 +107,6 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
       }
 
       const gameData = gameSnapshot.val();
-      console.log('🎯 Battle royale found:', gameData.phase);
       
       if (gameData.phase === 'finished') {
         showToast('This battle has already finished!', 'error');
@@ -166,7 +163,6 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     const unsubscribe = firebase.onValue(gameRef.current, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        console.log('🔄 Battle update received:', data.phase);
         
         setGameData(data);
         setAllPlayers(data.players || {});
@@ -183,7 +179,6 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
         
         // Handle new questions
         if (data.currentQuestion && (!currentQuestion || data.currentQuestion.id !== currentQuestion.id)) {
-          console.log('❓ New question:', data.currentQuestion.question, '=', data.currentQuestion.correctAnswer);
           setCurrentQuestion(data.currentQuestion);
           setHasAnswered(false);
           setSelectedAnswer(null);
@@ -223,7 +218,6 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
     setSelectedAnswer(answer);
 
     try {
-      console.log('📤 Submitting answer:', answer, 'for question:', currentQuestion.question);
       
       const responseData = {
         answer: answer,
@@ -238,16 +232,13 @@ const StudentBattleRoyale = ({ studentData, classData, showToast }) => {
         responseData
       );
 
-      console.log('✅ Answer submitted successfully');
 
       // Show immediate feedback
       const isCorrect = answer === currentQuestion.correctAnswer;
       if (isCorrect) {
         showToast('🎯 CORRECT! You are safe!', 'success');
-        console.log('✅ Correct answer submitted');
       } else {
         showToast('❌ Wrong answer! You lose a life...', 'error');
-        console.log('❌ Wrong answer submitted');
       }
 
     } catch (error) {

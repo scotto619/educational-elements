@@ -383,7 +383,6 @@ const StudentsTab = ({
 
     // Auto-refresh when tab becomes visible
     useEffect(() => {
-        console.log('📊 Students tab refreshed - student data updated');
         setRefreshKey(prev => prev + 1);
     }, [students]);
 

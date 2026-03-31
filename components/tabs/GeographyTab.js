@@ -326,7 +326,6 @@ const GeographyTab = ({
       setLoading(true);
       setApiError(null);
       
-      console.log('🌍 Attempting to fetch countries from API...');
       
       const response = await fetch('https://restcountries.com/v3.1/all', {
         method: 'GET',
@@ -340,7 +339,6 @@ const GeographyTab = ({
       }
       
       const data = await response.json();
-      console.log('✅ Successfully fetched countries from API:', data.length);
       
       // Sort countries alphabetically and add some useful computed properties
       const processedCountries = data
@@ -364,7 +362,6 @@ const GeographyTab = ({
       setApiError(error.message);
       
       // Use fallback data
-      console.log('🔄 Using fallback country data...');
       const processedFallback = FALLBACK_COUNTRIES
         .map(country => ({
           ...country,

@@ -62,7 +62,6 @@ try {
   
   // Log database URL for debugging (only in development)
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔗 Database URL:', firebaseConfig.databaseURL || 'NOT SET');
   }
   
 } catch (error) {

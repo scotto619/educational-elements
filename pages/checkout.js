@@ -32,7 +32,6 @@ export default function Checkout() {
               (data.stripeCustomerId && data.subscription === 'cancelled');
             setIsReturningUser(isCanceledUser);
 
-            console.log('User subscription status:', {
               hasCustomerId: !!data.stripeCustomerId,
               subscription: data.subscription,
               status: data.subscriptionStatus,

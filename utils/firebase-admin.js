@@ -340,7 +340,6 @@ export async function resetMathMentalsProgress(teacherUserId, classId, studentId
     
     await teacherRef.update({ classes: updatedClasses });
     
-    console.log('Math Mentals progress reset for student:', studentId);
     return { success: true, message: 'Math Mentals progress reset successfully' };
   } catch (error) {
     console.error('Error resetting Math Mentals progress:', error);

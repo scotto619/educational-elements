@@ -32,7 +32,6 @@ export function getDefaultPassword(firstName) {
 // Direct password verification (bypassing APIs completely)
 export async function verifyStudentPasswordDirect(studentId, password, classCode) {
   try {
-    console.log('🔐 Direct password verification for student:', studentId.substring(0, 10) + '...');
     
     // Try V2 architecture first
     try {
@@ -41,7 +40,6 @@ export async function verifyStudentPasswordDirect(studentId, password, classCode
       
       if (studentDoc.exists()) {
         const studentData = studentDoc.data();
-        console.log('✅ Found student in V2:', studentData.firstName);
         
         // Verify class code
         if (studentData.classId) {
@@ -65,7 +63,6 @@ export async function verifyStudentPasswordDirect(studentId, password, classCode
                   });
                 }
                 
-                console.log('✅ V2 password verified successfully');
                 return { success: true, student: studentData, architecture: 'v2' };
               }
             }
@@ -77,7 +74,6 @@ export async function verifyStudentPasswordDirect(studentId, password, classCode
     }
     
     // V1 fallback - scan user documents
-    console.log('🔄 Trying V1 architecture...');
     const usersSnapshot = await getDocs(collection(firestore, 'users'));
     
     for (const userDoc of usersSnapshot.docs) {
@@ -90,7 +86,6 @@ export async function verifyStudentPasswordDirect(studentId, password, classCode
             
             const student = classData.students.find(s => s.id === studentId);
             if (student) {
-              console.log('✅ Found student in V1:', student.firstName);
               
               const defaultPassword = getDefaultPassword(student.firstName);
               const passwordMatch = verifyPassword(password, student.simplePasswordHash, defaultPassword);
@@ -121,7 +116,6 @@ export async function verifyStudentPasswordDirect(studentId, password, classCode
                   await updateDoc(doc(firestore, 'users', userDoc.id), { classes: updatedClasses });
                 }
                 
-                console.log('✅ V1 password verified successfully');
                 return { success: true, student: student, architecture: 'v1' };
               }
             }
@@ -149,7 +143,6 @@ export async function verifyStudentPasswordDirect(studentId, password, classCode
 // Direct password update (bypassing APIs)
 export async function updateStudentPasswordDirect(studentId, newPassword, classCode, architectureVersion) {
   try {
-    console.log('🔑 Direct password update for student:', studentId.substring(0, 10) + '...');
     
     const passwordHash = simpleHash(newPassword);
     const updateData = {
@@ -174,7 +167,6 @@ export async function updateStudentPasswordDirect(studentId, newPassword, classC
           const classData = classDoc.data();
           if (classData.classCode?.toUpperCase() === classCode.toUpperCase()) {
             await updateDoc(studentRef, updateData);
-            console.log('✅ V2 password updated successfully');
             return { success: true, architecture: 'v2' };
           }
         }
@@ -205,7 +197,6 @@ export async function updateStudentPasswordDirect(studentId, newPassword, classC
           
           if (JSON.stringify(updatedClasses) !== JSON.stringify(userData.classes)) {
             await updateDoc(doc(firestore, 'users', userDoc.id), { classes: updatedClasses });
-            console.log('✅ V1 password updated successfully');
             return { success: true, architecture: 'v1' };
           }
         }

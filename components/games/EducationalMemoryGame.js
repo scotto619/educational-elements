@@ -132,7 +132,6 @@ const EducationalMemoryGame = ({
     
     const initFirebase = async () => {
       try {
-        console.log('🔄 Initializing Firebase for Memory Game coordination...');
         
         const [
           { database }, 
@@ -153,7 +152,6 @@ const EducationalMemoryGame = ({
             if (connected && !firebaseReady) {
               setFirebase({ database, ref, onValue, set, update, remove, off });
               setFirebaseReady(true);
-              console.log('✅ Firebase ready for Memory Game coordination');
             }
           }
         });
@@ -255,7 +253,6 @@ const EducationalMemoryGame = ({
           await updateStudentData({
             totalPoints: (studentData.totalPoints || 0) + amount
           });
-          console.log(`✅ Awarded ${amount} XP to ${studentData.firstName} for ${reason}`);
         } catch (error) {
           console.error('Error awarding XP:', error);
         }
@@ -263,7 +260,6 @@ const EducationalMemoryGame = ({
     } else if (gameMode === 'multiplayer' && onAwardXP) {
       try {
         await onAwardXP(studentId, amount, reason);
-        console.log(`✅ Awarded ${amount} XP to student ${studentId} for ${reason}`);
       } catch (error) {
         console.error('Error awarding XP in multiplayer:', error);
       }

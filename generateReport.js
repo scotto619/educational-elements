@@ -91,4 +91,3 @@ for (const [location, resources] of Object.entries(report)) {
 }
 
 fs.writeFileSync('C:/Users/USER/.gemini/antigravity/brain/0fee85b4-67ef-4847-b399-8b99e1468426/mapped_resources_list.md', md);
-console.log('Markdown report generated successfully.');
