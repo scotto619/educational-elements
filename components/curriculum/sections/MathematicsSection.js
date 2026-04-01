@@ -11,6 +11,7 @@ import MathMentals from '../mathematics/MathMentals';
 import MathWarmup from '../mathematics/MathWarmup';
 import WorksheetGenerator from '../mathematics/WorksheetGenerator';
 import AreaPerimeterTool from '../mathematics/AreaPerimeterTool';
+import FractionVisualiser from '../mathematics/FractionVisualiser';
 
 // Coming Soon placeholder
 const ComingSoon = ({ toolName }) => (
@@ -58,9 +59,9 @@ const mathActivities = [
         component: ComingSoon
     },
     {
-        id: 'fractions', name: 'Fractions', icon: '½',
-        description: 'Visual fraction learning tools',
-        component: ComingSoon
+        id: 'fractions', name: 'Fraction Visualiser', icon: '½',
+        description: 'Bar, circle, grid & number line fraction models with compare and quiz modes',
+        component: FractionVisualiser, isNew: true
     },
     {
         id: 'worksheet-generator', name: 'Worksheet Generator', icon: '📄',
