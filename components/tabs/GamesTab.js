@@ -33,6 +33,7 @@ const PrecisionTimerGame = dynamic(() => import('../games/PrecisionTimerGame'), 
 const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading: GameLoadingSpinner, ssr: false });
 const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
 const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
+const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -150,6 +151,20 @@ const GamesTab = ({
       category: 'fun',
       logo: getGameLogo('dodgeball-frenzy'),
       storageKeySuffix: 'teacher-dodgeball'
+    },
+    {
+      id: 'whack-a-mole',
+      name: 'Whack-a-Mole',
+      icon: '🔨',
+      description: 'Tap moles before they hide! Build combos, dodge bombs, and top the high score in 60 action-packed seconds.',
+      component: WhackAMoleGame,
+      color: 'from-purple-500 to-violet-700',
+      difficulty: 'All Levels',
+      time: '1-5 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('whack-a-mole')
     },
     {
       id: 'maze',

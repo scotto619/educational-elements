@@ -32,6 +32,7 @@ const PrecisionTimerGame = dynamic(() => import('../games/PrecisionTimerGame'), 
 const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading: GameLoadingSpinner, ssr: false });
 const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
 const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
+const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
 const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoadingSpinner, ssr: false });
 const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
 const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -163,6 +164,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'fun',
       logo: getGameLogo('dodgeball-frenzy'),
       storageKeySuffix: 'student-dodgeball'
+    },
+    {
+      id: 'whack-a-mole',
+      name: 'Whack-a-Mole',
+      icon: '🔨',
+      description: 'Hit the moles before they hide! Build crazy combos, dodge sneaky bombs, and beat your high score in 60 seconds!',
+      component: WhackAMoleGame,
+      color: 'from-purple-500 to-violet-700',
+      difficulty: 'All Levels',
+      time: '1-5 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('whack-a-mole')
     },
     {
       id: 'maze',
