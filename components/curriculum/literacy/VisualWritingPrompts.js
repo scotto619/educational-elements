@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 // ===============================================
 // VISUAL WRITING PROMPTS DATA
 // ===============================================
-const TOTAL_PROMPTS = 20; // 20 image prompts for each type
+const TOTAL_PROMPTS = 21; // 21 image prompts for each type
 
 // Generate the list of prompts with their corresponding word lists
 const generatePrompts = (type) => {
