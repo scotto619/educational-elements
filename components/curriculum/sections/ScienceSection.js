@@ -4,13 +4,14 @@ import React, { useState } from 'react';
 
 // Import science components
 import SolarSystemExplorer from '../science/SolarSystemExplorer';
+import FoodChainBuilder from '../science/FoodChainBuilder';
 
 // Coming Soon placeholder
 const ComingSoon = ({ toolName }) => (
     <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 text-center border border-amber-200">
         <div className="text-6xl mb-4">🚧</div>
         <h3 className="text-2xl font-bold text-amber-800 mb-2">{toolName || 'Feature'} Coming Soon!</h3>
-        <p className="text-amber-600">We're working hard to bring you this tool. Check back soon!</p>
+        <p className="text-amber-600">We&apos;re working hard to bring you this tool. Check back soon!</p>
     </div>
 );
 
@@ -21,9 +22,9 @@ const scienceActivities = [
         component: SolarSystemExplorer, isNew: true
     },
     {
-        id: 'virtual-experiments', name: 'Virtual Experiments', icon: '⚗️',
-        description: 'Safe virtual science experiments',
-        component: ComingSoon
+        id: 'food-chain', name: 'Food Chain Builder', icon: '🦁',
+        description: 'Build food chains across 4 ecosystems',
+        component: FoodChainBuilder, isNew: true
     },
     {
         id: 'body-systems', name: 'Body Systems', icon: '🫀',
