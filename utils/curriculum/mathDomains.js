@@ -113,6 +113,25 @@ export const mathDomains = [{
       }
     }]
   }, {
+    id: 'prime_numbers',
+    name: 'Prime Numbers',
+    icon: '🔢',
+    domain: 'Number & Algebra',
+    subtopics: [{
+      id: 'prime_numbers',
+      name: 'General',
+      resources: {
+        display: [],
+        learn: [{
+          type: 'game',
+          title: 'Prime Numbers Slide Deck',
+          src: 'PrimeNumbers',
+          description: 'Interactive classroom slide deck — definition, divisibility, the Sieve of Eratosthenes, and real-world uses. Grade 6.'
+        }],
+        practice: []
+      }
+    }]
+  }, {
     id: 'patterns_algebra',
     name: 'Patterns & Algebra',
     icon: '📐',

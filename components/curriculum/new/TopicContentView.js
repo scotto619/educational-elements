@@ -37,6 +37,8 @@ const COMPONENTS = {
     InterjectionEmotionMatch: dynamic(() => import('../../games/InterjectionEmotionMatch'), { loading: GameLoadingSpinner, ssr: false }),
     InterjectionPopGame: dynamic(() => import('../../games/InterjectionPopGame'), { loading: GameLoadingSpinner, ssr: false }),
     InterjectionComicStrip: dynamic(() => import('../../games/InterjectionComicStrip'), { loading: GameLoadingSpinner, ssr: false }),
+    // Mathematics interactive tools
+    PrimeNumbers: dynamic(() => import('../mathematics/PrimeNumbers'), { loading: GameLoadingSpinner, ssr: false }),
 };
 
 const TopicContentView = ({ topic, subjectId, onBack, onToggleAssign, assignedTopics = [], isStudentView = false }) => {
