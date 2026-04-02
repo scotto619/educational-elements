@@ -36,6 +36,7 @@ const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loadin
 const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoadingSpinner, ssr: false });
 const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
 const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: GameLoadingSpinner, ssr: false });
+const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -178,6 +179,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('whack-a-mole')
+    },
+    {
+      id: '2048-puzzle',
+      name: '2048 Puzzle',
+      icon: '🎮',
+      description: 'Merge tiles strategically to reach 2048! Train your logic and see how high you can score.',
+      component: Game2048,
+      color: 'from-yellow-500 to-purple-600',
+      difficulty: 'Easy - Medium',
+      time: '5-15 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('2048-puzzle')
     },
     {
       id: 'maze',

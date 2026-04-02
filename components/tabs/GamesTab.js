@@ -34,6 +34,7 @@ const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading:
 const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
 const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
 const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
+const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -165,6 +166,20 @@ const GamesTab = ({
       new: true,
       category: 'fun',
       logo: getGameLogo('whack-a-mole')
+    },
+    {
+      id: '2048-puzzle',
+      name: '2048 Puzzle',
+      icon: '🎮',
+      description: 'Merge tiles strategically to reach the 2048 tile! A classic puzzle game that trains strategy and math skills.',
+      component: Game2048,
+      color: 'from-yellow-500 to-purple-600',
+      difficulty: 'Easy - Medium',
+      time: '5-15 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('2048-puzzle')
     },
     {
       id: 'maze',
