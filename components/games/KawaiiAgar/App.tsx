@@ -162,7 +162,9 @@ export default function KawaiiAgarApp(props: FirebaseProps) {
     ];
     const player = makeCell(name || studentData?.firstName || 'Me', color);
 
-    const bots = mp ? [] : Array.from({ length: 15 }, (_, i) =>
+    // Always include bots — fewer in multiplayer to leave room for real players
+    const botCount = mp ? 6 : 15;
+    const bots = Array.from({ length: botCount }, (_, i) =>
       Object.assign(makeCell(BOT_NAMES[i % BOT_NAMES.length]), { isBot: true })
     );
 
@@ -177,7 +179,7 @@ export default function KawaiiAgarApp(props: FirebaseProps) {
       killFeed:    [],
       camera:      { x: player.x, y: player.y },
       zoom:        1,
-      mouse:       { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+      mouse:       { x: (canvasRef.current?.width ?? 800) / 2, y: (canvasRef.current?.height ?? 500) / 2 },
       splitTimers: {},
       score:       INITIAL_RADIUS,
       remotePlayers: {},
@@ -342,10 +344,25 @@ export default function KawaiiAgarApp(props: FirebaseProps) {
 
   // ─── Input handlers ───────────────────────────────────────────────────────────
   useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => { G.current.mouse = { x: e.clientX, y: e.clientY }; };
+    const toCanvasCoords = (clientX: number, clientY: number) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: clientX, y: clientY };
+      const rect = canvas.getBoundingClientRect();
+      // Scale from CSS pixels → canvas pixel space (canvas may be stretched by CSS)
+      const scaleX = canvas.width  / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top)  * scaleY,
+      };
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      G.current.mouse = toCanvasCoords(e.clientX, e.clientY);
+    };
     const onTouchMove = (e: TouchEvent) => {
       const t = e.touches[0];
-      G.current.mouse = { x: t.clientX, y: t.clientY };
+      G.current.mouse = toCanvasCoords(t.clientX, t.clientY);
     };
 
     const onKey = (e: KeyboardEvent) => {
@@ -522,14 +539,14 @@ export default function KawaiiAgarApp(props: FirebaseProps) {
           }
         }
       }
-      // Lerp bot velocity (same smooth treatment)
+      // Lerp bot velocity — capped at 60% of player speed so bots feel fair
       const bdx = target.x - bot.x, bdy = target.y - bot.y;
       const bdist = Math.sqrt(bdx ** 2 + bdy ** 2);
       if (bdist > 1) {
-        const bs = getSpeed(bot.radius);
+        const bs = getSpeed(bot.radius) * 0.60;
         const tvx = (bdx / bdist) * bs, tvy = (bdy / bdist) * bs;
-        bot.vx += (tvx - bot.vx) * 0.1;
-        bot.vy += (tvy - bot.vy) * 0.1;
+        bot.vx += (tvx - bot.vx) * LERP_FACTOR;
+        bot.vy += (tvy - bot.vy) * LERP_FACTOR;
       }
       bot.x = clamp(bot.x + bot.vx * dt, bot.radius, WORLD_SIZE - bot.radius);
       bot.y = clamp(bot.y + bot.vy * dt, bot.radius, WORLD_SIZE - bot.radius);
@@ -676,7 +693,8 @@ export default function KawaiiAgarApp(props: FirebaseProps) {
     state.bots = state.bots.filter(c => !cellsToRemove.has(c.id));
     state.score = Math.floor(state.playerCells.reduce((a, c) => a + c.radius, 0));
 
-    while (state.bots.length < 15 && !state.isMultiplayer) {
+    const targetBotCount = state.isMultiplayer ? 6 : 15;
+    while (state.bots.length < targetBotCount) {
       state.bots.push(Object.assign(makeCell(BOT_NAMES[Math.floor(rnd(BOT_NAMES.length))]), { isBot: true }));
     }
 
