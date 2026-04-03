@@ -36,6 +36,7 @@ const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: G
 const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
+const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -379,6 +380,20 @@ const GamesTab = ({
       category: 'fun',
       new: true,
       logo: getGameLogo('sprout-bloom')
+    },
+    {
+      id: 'kawaii-agar',
+      name: 'Kawaii Agar',
+      icon: '🫧',
+      description: 'Cute multiplayer cell battle! Grow your kawaii blob by eating food and other players. Play solo vs bots or against your whole class!',
+      component: KawaiiAgarGame,
+      color: 'from-pink-400 to-rose-500',
+      difficulty: 'Easy - Medium',
+      time: '5-15 minutes',
+      multiplayer: true,
+      category: 'multiplayer',
+      new: true,
+      logo: getGameLogo('kawaii-agar')
     }
   ];
 
