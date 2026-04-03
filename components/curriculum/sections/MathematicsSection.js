@@ -12,13 +12,14 @@ import MathWarmup from '../mathematics/MathWarmup';
 import WorksheetGenerator from '../mathematics/WorksheetGenerator';
 import AreaPerimeterTool from '../mathematics/AreaPerimeterTool';
 import FractionVisualiser from '../mathematics/FractionVisualiser';
+import TimesTablesMaster from '../mathematics/TimesTablesMaster';
 
 // Coming Soon placeholder
 const ComingSoon = ({ toolName }) => (
     <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-8 text-center border border-amber-200">
         <div className="text-6xl mb-4">🚧</div>
         <h3 className="text-2xl font-bold text-amber-800 mb-2">{toolName || 'Feature'} Coming Soon!</h3>
-        <p className="text-amber-600">We're working hard to bring you this tool. Check back soon!</p>
+        <p className="text-amber-600">We&apos;re working hard to bring you this tool. Check back soon!</p>
     </div>
 );
 
@@ -49,9 +50,9 @@ const mathActivities = [
         component: MathMentals
     },
     {
-        id: 'times-tables', name: 'Times Tables', icon: '✖️',
-        description: 'Multiplication practice games',
-        component: ComingSoon
+        id: 'times-tables', name: 'Times Tables Master', icon: '✖️',
+        description: 'Explore, visualise, and quiz all 12 times tables',
+        component: TimesTablesMaster, isNew: true
     },
     {
         id: 'problem-solving', name: 'Problem Solving', icon: '🧮',
