@@ -35,6 +35,7 @@ const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoa
 const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
 const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
+const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -365,6 +366,19 @@ const GamesTab = ({
       category: 'fun',
       new: true,
       logo: getGameLogo('sin-miner')
+    },
+    {
+      id: 'sprout-bloom',
+      name: 'Sprout & Bloom',
+      icon: '🌱',
+      description: 'A cozy farming simulator! Plant seeds, water crops, fill orders, upgrade your tools, and build the ultimate farm.',
+      component: SproutBloomGame,
+      color: 'from-green-500 to-emerald-600',
+      difficulty: 'Easy - Medium',
+      time: '10-30 minutes',
+      category: 'fun',
+      new: true,
+      logo: getGameLogo('sprout-bloom')
     }
   ];
 

@@ -37,6 +37,7 @@ const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoading
 const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
 const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
+const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -365,6 +366,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'fun',
       new: true,
       logo: getGameLogo('sin-miner')
+    },
+    {
+      id: 'sprout-bloom',
+      name: 'Sprout & Bloom',
+      icon: '🌱',
+      description: 'Build your own cozy farm! Plant seeds, water crops, unlock new plants as you level up, and fulfil daily orders for rewards.',
+      component: SproutBloomGame,
+      color: 'from-green-500 to-emerald-600',
+      difficulty: 'Easy - Medium',
+      time: '10-30 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('sprout-bloom')
     }
   ];
 

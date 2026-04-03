@@ -108,7 +108,8 @@ const GAME_LOGO_MAP = {
   'type-defender': createLogoCandidates('type-defender', ['typedefender.png', 'Type Defender']),
   uno: createLogoCandidates('uno', ['/Logo/Game Logos/uno.png', 'uno.png', 'UNO']),
   chess: createLogoCandidates('chess', ['/Logo/Game Logos/chess.svg', 'chess.png', 'Chess']),
-  werewolf: createLogoCandidates('werewolf', ['werewolf.svg', 'werewolf.png', 'One Night Werewolf', 'Werewolf'])
+  werewolf: createLogoCandidates('werewolf', ['werewolf.svg', 'werewolf.png', 'One Night Werewolf', 'Werewolf']),
+  'sprout-bloom': createLogoCandidates('sprout-bloom', ['sprout-bloom.png', 'Sprout & Bloom', 'Sprout and Bloom', 'Farm Sim', 'farm-sim'])
 };
 
 const GAME_LOGO_ALIASES = {
@@ -127,7 +128,9 @@ const GAME_LOGO_ALIASES = {
   'timer-challenge': 'precision-timer',
   'cell-arena': 'cell-battle',
   'word-scramble': 'boggle',
-  'word-hunt': 'word-search'
+  'word-hunt': 'word-search',
+  'sprout-and-bloom': 'sprout-bloom',
+  'farm-sim': 'sprout-bloom'
 };
 
 const buildLogoSource = (candidates = []) => {
