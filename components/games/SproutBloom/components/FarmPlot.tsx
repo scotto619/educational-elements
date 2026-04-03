@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { Droplets, Sprout, Leaf, Flower2, Wheat, Carrot, Citrus, Trash2, Sparkles, Radio } from 'lucide-react';
+import { Droplets, Sprout, Leaf, Flower2, Wheat, Carrot, Citrus, Trash2, Sparkles, Radio, Heart, Circle } from 'lucide-react';
 import { PlotState, CropType, SprinklerType } from '../types';
 import { CROPS, SPRINKLERS } from '../constants';
 
@@ -19,11 +19,13 @@ const CropIcon = ({ type, stage, maxStages }: { type: CropType; stage: number; m
   
   const IconComponent = () => {
     switch (type) {
-      case CropType.WHEAT: return <Wheat size={size} style={{ color }} />;
-      case CropType.CARROT: return <Carrot size={size} style={{ color }} />;
-      case CropType.TOMATO: return <Leaf size={size} style={{ color }} />;
-      case CropType.PUMPKIN: return <Citrus size={size} style={{ color }} />;
-      case CropType.SUNFLOWER: return <Flower2 size={size} style={{ color }} />;
+      case CropType.WHEAT:      return <Wheat  size={size} style={{ color }} />;
+      case CropType.CARROT:     return <Carrot size={size} style={{ color }} />;
+      case CropType.TOMATO:     return <Leaf   size={size} style={{ color }} />;
+      case CropType.STRAWBERRY: return <Heart  size={size} style={{ color }} />;
+      case CropType.PUMPKIN:    return <Citrus size={size} style={{ color }} />;
+      case CropType.BLUEBERRY:  return <Circle size={size} style={{ color }} />;
+      case CropType.SUNFLOWER:  return <Flower2 size={size} style={{ color }} />;
       default: return <Sprout size={size} className="text-green-500" />;
     }
   };

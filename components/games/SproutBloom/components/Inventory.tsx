@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from "framer-motion";
-import { Package, Coins, Wheat, Carrot, Leaf, Flower2, Citrus, Sparkles } from 'lucide-react';
+import { Package, Coins, Wheat, Carrot, Leaf, Flower2, Citrus, Sparkles, Heart, Circle } from 'lucide-react';
 import { GameState, CropType } from '../types';
 import { CROPS } from '../constants';
 
@@ -12,14 +12,16 @@ interface InventoryProps {
 }
 
 export const Inventory: React.FC<InventoryProps> = ({ inventory, onSell, onSelectSeed, selectedTool }) => {
-  const getIcon = (type: CropType) => {
+  const getIcon = (type: CropType, size = 20) => {
     switch (type) {
-      case CropType.WHEAT: return <Wheat size={20} />;
-      case CropType.CARROT: return <Carrot size={20} />;
-      case CropType.TOMATO: return <Leaf size={20} />;
-      case CropType.PUMPKIN: return <Citrus size={20} />;
-      case CropType.SUNFLOWER: return <Flower2 size={20} />;
-      default: return null;
+      case CropType.WHEAT:      return <Wheat      size={size} />;
+      case CropType.CARROT:     return <Carrot     size={size} />;
+      case CropType.TOMATO:     return <Leaf       size={size} />;
+      case CropType.STRAWBERRY: return <Heart      size={size} />;
+      case CropType.PUMPKIN:    return <Citrus     size={size} />;
+      case CropType.BLUEBERRY:  return <Circle     size={size} />;
+      case CropType.SUNFLOWER:  return <Flower2    size={size} />;
+      default:                   return null;
     }
   };
 
@@ -34,50 +36,70 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, onSell, onSelec
         {/* Seeds & Items Section */}
         <div>
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">Seeds & Items</h3>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {Object.values(CropType).map((type) => {
               const count = inventory[type]?.seeds || 0;
               const isSelected = selectedTool === type;
+              const crop = CROPS[type];
+              const locked = count === 0;
+
               return (
                 <motion.button
                   key={`seed-${type}`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => onSelectSeed(type)}
+                  title={`${crop.name} seed${locked ? ` (unlock at Lv.${crop.minLevel})` : ''}`}
                   className={`
-                    relative aspect-square rounded-xl flex items-center justify-center transition-all
-                    ${count > 0 ? 'bg-blue-50 border-2 border-blue-200' : 'bg-gray-50 border-2 border-gray-100 opacity-40'}
-                    ${isSelected ? 'ring-4 ring-blue-400 ring-offset-2' : ''}
+                    relative flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all
+                    ${!locked ? 'bg-blue-50 border-2 border-blue-200 hover:border-blue-400' : 'bg-gray-50 border-2 border-gray-100 opacity-40'}
+                    ${isSelected ? 'ring-3 ring-blue-400 ring-offset-1 border-blue-400 bg-blue-100' : ''}
                   `}
                 >
-                  <div style={{ color: CROPS[type].color }}>
-                    {getIcon(type)}
+                  {/* Icon */}
+                  <div style={{ color: crop.color }} className="flex items-center justify-center h-7">
+                    {getIcon(type, 22)}
                   </div>
-                  {count > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {/* Name */}
+                  <span className={`text-[10px] font-bold leading-none text-center truncate w-full px-1 ${isSelected ? 'text-blue-700' : 'text-gray-600'}`}>
+                    {crop.name}
+                  </span>
+                  {/* Count badge or lock level */}
+                  {count > 0 ? (
+                    <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none">
                       {count}
                     </span>
+                  ) : (
+                    <span className="text-[9px] font-bold text-gray-400 leading-none">Lv.{crop.minLevel}</span>
                   )}
                 </motion.button>
               );
             })}
-            
-            {/* Fertilizer in Inventory */}
+
+            {/* Fertilizer slot */}
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => onSelectSeed('FERTILIZER')}
+              title="Fertilizer — speeds up growth by 50%"
               className={`
-                relative aspect-square rounded-xl flex items-center justify-center transition-all
-                ${(inventory as any).fertilizer > 0 ? 'bg-purple-50 border-2 border-purple-200' : 'bg-gray-50 border-2 border-gray-100 opacity-40'}
-                ${selectedTool === 'FERTILIZER' ? 'ring-4 ring-purple-400 ring-offset-2' : ''}
+                relative flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all
+                ${(inventory as any).fertilizer > 0 ? 'bg-purple-50 border-2 border-purple-200 hover:border-purple-400' : 'bg-gray-50 border-2 border-gray-100 opacity-40'}
+                ${selectedTool === 'FERTILIZER' ? 'ring-3 ring-purple-400 ring-offset-1 border-purple-400 bg-purple-100' : ''}
               `}
             >
-              <Sparkles className="text-purple-500" size={20} />
-              {(inventory as any).fertilizer > 0 && (
-                <span className="absolute -top-2 -right-2 bg-purple-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+              <div className="flex items-center justify-center h-7">
+                <Sparkles className="text-purple-500" size={22} />
+              </div>
+              <span className={`text-[10px] font-bold leading-none text-center ${selectedTool === 'FERTILIZER' ? 'text-purple-700' : 'text-gray-600'}`}>
+                Fertilizer
+              </span>
+              {(inventory as any).fertilizer > 0 ? (
+                <span className="absolute -top-1.5 -right-1.5 bg-purple-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full leading-none">
                   {(inventory as any).fertilizer}
                 </span>
+              ) : (
+                <span className="text-[9px] font-bold text-gray-400 leading-none">Buy</span>
               )}
             </motion.button>
           </div>
@@ -93,7 +115,7 @@ export const Inventory: React.FC<InventoryProps> = ({ inventory, onSell, onSelec
               return (
                 <div key={`harvest-${type}`} className="flex items-center justify-between p-3 bg-orange-50 rounded-2xl border-2 border-orange-100">
                   <div className="flex items-center gap-3">
-                    <div style={{ color: CROPS[type].color }}>{getIcon(type)}</div>
+                    <div style={{ color: CROPS[type].color }}>{getIcon(type, 20)}</div>
                     <span className="font-bold text-gray-700">{CROPS[type].name} x{count}</span>
                   </div>
                   <motion.button

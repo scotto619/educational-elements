@@ -557,11 +557,6 @@ export default function App({ studentData, updateStudentData, showToast: _showTo
         </div>
       )}
 
-      <div className="fixed inset-0 pointer-events-none opacity-10">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-green-400 rounded-full blur-3xl" />
-        <div className="absolute bottom-40 right-20 w-64 h-64 bg-yellow-200 rounded-full blur-3xl" />
-      </div>
-
       <HUD
         money={gameState.money}
         day={gameState.day}
@@ -576,7 +571,7 @@ export default function App({ studentData, updateStudentData, showToast: _showTo
         onSleep={handleSleep}
       />
 
-      <main className="max-w-7xl mx-auto pt-48 pb-20 px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto pt-6 pb-20 px-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Farm & Orders */}
         <div className="lg:col-span-7 space-y-8">
           <div className="bg-[#A1887F] p-8 rounded-[3rem] shadow-2xl border-8 border-[#795548] relative">
