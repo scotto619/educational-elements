@@ -21,7 +21,7 @@ const RECOMBINE_MS   = 15000; // ms before split cells can merge
 const EJECT_SIZE     = 14;
 const SPLIT_SPEED    = 1100;
 const NETWORK_RATE   = 100; // ms between Firebase syncs
-const LERP_FACTOR    = 0.14; // how fast velocity lerps to target (0=instant, 1=never)
+const LERP_FACTOR    = 0.22; // per-frame lerp rate at 60 fps (corrected for dt below)
 
 const PASTEL_COLORS = [
   '#FFB7B2','#FFDAC1','#E2F0CB','#B5EAD7',
@@ -477,17 +477,18 @@ export default function KawaiiAgarApp(props: FirebaseProps) {
         cell.vx *= 0.93;
         cell.vy *= 0.93;
       } else {
-        // Normal movement — LERP velocity toward target velocity (fixes jerkiness)
+        // Normal movement — dt-corrected LERP so speed is consistent at any frame rate
+        const lerpF = 1 - Math.pow(1 - LERP_FACTOR, dt * 60);
         if (mouseDist > 10) {
           const speedMult = cell.powerUps?.[PowerUpType.SPEED] && cell.powerUps[PowerUpType.SPEED] > now ? 2 : 1;
           const speed = getSpeed(cell.radius) * speedMult;
           const targetVx = Math.cos(mouseAngle) * speed;
           const targetVy = Math.sin(mouseAngle) * speed;
-          cell.vx += (targetVx - cell.vx) * LERP_FACTOR;
-          cell.vy += (targetVy - cell.vy) * LERP_FACTOR;
+          cell.vx += (targetVx - cell.vx) * lerpF;
+          cell.vy += (targetVy - cell.vy) * lerpF;
         } else {
-          cell.vx += (0 - cell.vx) * LERP_FACTOR;
-          cell.vy += (0 - cell.vy) * LERP_FACTOR;
+          cell.vx += (0 - cell.vx) * lerpF;
+          cell.vy += (0 - cell.vy) * lerpF;
         }
         cell.x += cell.vx * dt;
         cell.y += cell.vy * dt;
@@ -539,14 +540,15 @@ export default function KawaiiAgarApp(props: FirebaseProps) {
           }
         }
       }
-      // Lerp bot velocity — capped at 60% of player speed so bots feel fair
+      // Lerp bot velocity — dt-corrected, same speed as the player
       const bdx = target.x - bot.x, bdy = target.y - bot.y;
       const bdist = Math.sqrt(bdx ** 2 + bdy ** 2);
       if (bdist > 1) {
-        const bs = getSpeed(bot.radius) * 0.60;
+        const botLerpF = 1 - Math.pow(1 - LERP_FACTOR, dt * 60);
+        const bs = getSpeed(bot.radius);
         const tvx = (bdx / bdist) * bs, tvy = (bdy / bdist) * bs;
-        bot.vx += (tvx - bot.vx) * LERP_FACTOR;
-        bot.vy += (tvy - bot.vy) * LERP_FACTOR;
+        bot.vx += (tvx - bot.vx) * botLerpF;
+        bot.vy += (tvy - bot.vy) * botLerpF;
       }
       bot.x = clamp(bot.x + bot.vx * dt, bot.radius, WORLD_SIZE - bot.radius);
       bot.y = clamp(bot.y + bot.vy * dt, bot.radius, WORLD_SIZE - bot.radius);
