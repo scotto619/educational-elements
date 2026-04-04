@@ -39,6 +39,7 @@ const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: G
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loading: GameLoadingSpinner, ssr: false });
+const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -195,6 +196,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('2048-puzzle')
+    },
+    {
+      id: 'neon-tetris',
+      name: 'Neon Tetris',
+      icon: '🧩',
+      description: 'Classic Tetris with a premium neon arcade feel! Clear lines, level up, and chase your high score in this stunning puzzle game.',
+      component: NeonTetrisGame,
+      color: 'from-cyan-500 to-purple-600',
+      difficulty: 'Easy - Expert',
+      time: '5-20 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('neon-tetris')
     },
     {
       id: 'maze',
