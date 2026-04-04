@@ -40,6 +40,7 @@ const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadi
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
+const EndlessRunnerGame = dynamic(() => import('../games/EndlessRunnerGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -412,6 +413,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'multiplayer',
       logo: getGameLogo('kawaii-agar')
+    },
+    {
+      id: 'endless-runner',
+      name: 'Endless Runner',
+      icon: '🏃',
+      description: 'Sprint through an endless world! Jump over obstacles, collect coins, grab power-ups, and chase the high score.',
+      component: EndlessRunnerGame,
+      color: 'from-emerald-500 to-teal-600',
+      difficulty: 'Easy - Hard',
+      time: '2-5 minutes',
+      featured: false,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('endless-runner')
     }
   ];
 
