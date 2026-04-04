@@ -37,6 +37,7 @@ const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loadin
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loading: GameLoadingSpinner, ssr: false });
+const EndlessRunnerGame = dynamic(() => import('../games/EndlessRunnerGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -394,6 +395,19 @@ const GamesTab = ({
       category: 'multiplayer',
       new: true,
       logo: getGameLogo('kawaii-agar')
+    },
+    {
+      id: 'endless-runner',
+      name: 'Endless Runner',
+      icon: '🏃',
+      description: 'A fast-paced side-scroller! Students jump obstacles, collect coins, and chase high scores. Great for a quick brain break.',
+      component: EndlessRunnerGame,
+      color: 'from-emerald-500 to-teal-600',
+      difficulty: 'Easy - Hard',
+      time: '2-5 minutes',
+      category: 'fun',
+      new: true,
+      logo: getGameLogo('endless-runner')
     }
   ];
 
