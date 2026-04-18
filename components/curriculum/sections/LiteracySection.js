@@ -15,6 +15,7 @@ import VisualWritingPrompts from '../literacy/VisualWritingPrompts';
 import VocabularyCorner from '../literacy/VocabularyCorner';
 import GrammarWorkshop from '../literacy/GrammarWorkshop';
 import PoetryCorner from '../literacy/PoetryCorner';
+import PartnerReadingPassages from '../literacy/PartnerReadingPassages';
 
 // Coming Soon placeholder
 const ComingSoon = ({ toolName }) => (
@@ -94,6 +95,11 @@ const literacyActivities = [
         id: 'poetry-corner', name: 'Poetry Corner', icon: '🎭',
         description: 'Poetry writing forms',
         component: PoetryCorner, category: ['writing', 'speaking'], isNew: true
+    },
+    {
+        id: 'partner-reading', name: 'Partner Reading Passages', icon: '🤝',
+        description: 'Printable passages with ⭐/🌙 partner turns',
+        component: PartnerReadingPassages, category: ['reading', 'speaking'], isNew: true
     },
     {
         id: 'handwriting-practice', name: 'Handwriting Practice', icon: '✏️',
