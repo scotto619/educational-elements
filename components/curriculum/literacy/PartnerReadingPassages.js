@@ -550,6 +550,396 @@ const passages = [
     ],
   },
   {
+    id: 'bees',
+    title: 'Bees: Nature\'s Most Valuable Workers',
+    icon: '🐝',
+    subject: 'Animal Science',
+    palette: {
+      bg: 'from-yellow-400 to-amber-600',
+      light: 'bg-yellow-50',
+      border: 'border-yellow-200',
+      badge: 'bg-yellow-100 text-yellow-900',
+      accent: 'text-yellow-700',
+      star: '#92400e',
+      moon: '#78350f',
+      headerText: 'text-white',
+    },
+    illustration: '🌻',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'If you have ever eaten an apple, a strawberry, or a slice of watermelon, you have a bee to thank. Bees are among the most important creatures on Earth, responsible for pollinating roughly one third of all the food that humans eat. As they travel from flower to flower collecting nectar to make honey, tiny grains of pollen stick to their fuzzy bodies and get transferred between plants, allowing those plants to reproduce and bear fruit.',
+      },
+      {
+        partner: 'moon',
+        text: 'A honeybee hive is one of nature\'s most extraordinary communities. A single hive can contain up to 80,000 bees, all working together with remarkable organisation. At the centre is the queen, whose sole job is to lay eggs — sometimes more than 1,500 per day. Worker bees, all female, do everything else: foraging for nectar, making honey, building and repairing the wax honeycomb, guarding the entrance, and caring for the young.',
+      },
+      {
+        partner: 'star',
+        text: 'Bees have a remarkable way of sharing information with each other. When a worker bee finds a good source of nectar, she returns to the hive and performs what scientists call a "waggle dance" — a figure-eight movement that tells other bees exactly where the flowers are, how far away they are, and how good the nectar is. This dance language, decoded by scientists in the 1940s, is one of the most sophisticated communication systems in the entire animal kingdom.',
+      },
+      {
+        partner: 'moon',
+        text: 'Making honey is a complex process that takes enormous effort. Worker bees collect nectar from flowers and carry it back to the hive in a special honey stomach. Back at the hive, they pass the nectar between each other, adding enzymes that begin breaking it down. The bees then fan the nectar with their wings to evaporate the water until it thickens into honey. It takes the entire lifetime\'s work of twelve bees to produce just one teaspoon of honey.',
+      },
+      {
+        partner: 'star',
+        text: 'Bee populations around the world are declining at an alarming rate due to habitat loss, pesticides, disease, and climate change. Scientists have described this as a global crisis, because without bees, entire food systems would collapse. Gardeners and farmers can help by planting wildflowers, reducing chemical use, and providing small bee hotels for solitary bee species. Even a single pot of lavender on a balcony can provide a vital food source for these irreplaceable insects.',
+      },
+    ],
+  },
+  {
+    id: 'trains',
+    title: 'Full Steam Ahead: The History of the Train',
+    icon: '🚂',
+    subject: 'History & Technology',
+    palette: {
+      bg: 'from-zinc-600 to-slate-800',
+      light: 'bg-zinc-50',
+      border: 'border-zinc-200',
+      badge: 'bg-zinc-100 text-zinc-800',
+      accent: 'text-zinc-700',
+      star: '#27272a',
+      moon: '#1e293b',
+      headerText: 'text-white',
+    },
+    illustration: '🛤️',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'Before trains existed, travelling long distances was slow, exhausting, and often dangerous. A journey from one city to another might take days or even weeks by horse and carriage. Then, in 1804, a British engineer named Richard Trevithick built the world\'s first steam-powered locomotive — a machine that used boiling water to create steam, which pushed pistons to turn wheels. The age of the train had begun, and the world would never be the same.',
+      },
+      {
+        partner: 'moon',
+        text: 'The railway revolution transformed societies across the globe. Goods that once took weeks to transport could now reach distant markets in days. Fresh food, coal, and manufactured products moved across countries with ease. Towns and cities that were connected by rail grew rapidly, while those that were bypassed often declined. In many countries, the railway literally determined which towns would flourish and which would fade away.',
+      },
+      {
+        partner: 'star',
+        text: 'One of the greatest railway achievements was the completion of the transcontinental railroad in the United States in 1869, which connected the east and west coasts of the country for the first time. Built by thousands of workers — many of them Irish immigrants and Chinese labourers — the railroad spanned nearly 3,000 kilometres across deserts, plains, and mountain ranges. When the final spike was driven in, the nation celebrated with the ringing of church bells from coast to coast.',
+      },
+      {
+        partner: 'moon',
+        text: 'Modern trains are extraordinary feats of engineering. Japan\'s Shinkansen — known as the bullet train — first launched in 1964 and now carries passengers at speeds of up to 320 kilometres per hour. France\'s TGV network and China\'s high-speed rail system are among the busiest and fastest in the world. Maglev trains, which use powerful magnets to float above the track entirely, have reached experimental speeds of over 600 kilometres per hour.',
+      },
+      {
+        partner: 'star',
+        text: 'As concerns about climate change grow, trains are increasingly seen as a vital part of a sustainable future. A high-speed train produces up to 90 percent less carbon emissions per passenger than an equivalent aeroplane journey. Many countries are now investing billions of dollars in expanding their rail networks, electrifying existing lines, and developing the next generation of hydrogen-powered and hyperloop transport systems that could one day carry passengers at near-aircraft speeds in vacuum tubes.',
+      },
+    ],
+  },
+  {
+    id: 'blue-whale',
+    title: 'Blue Whales: Giants of the Ocean',
+    icon: '🐋',
+    subject: 'Ocean Science',
+    palette: {
+      bg: 'from-blue-500 to-cyan-700',
+      light: 'bg-blue-50',
+      border: 'border-blue-200',
+      badge: 'bg-blue-100 text-blue-900',
+      accent: 'text-blue-700',
+      star: '#1d4ed8',
+      moon: '#0e7490',
+      headerText: 'text-white',
+    },
+    illustration: '🌊',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'The blue whale is the largest animal that has ever lived on Earth — bigger than any dinosaur, bigger than any creature that has roamed the land or swum the seas in all of known history. An adult blue whale can grow up to 33 metres long and weigh as much as 200 tonnes. Its heart alone is the size of a small car, and its blood vessels are wide enough for a child to crawl through.',
+      },
+      {
+        partner: 'moon',
+        text: 'Despite their immense size, blue whales feed almost exclusively on some of the smallest creatures in the ocean — tiny shrimp-like animals called krill. A single blue whale consumes up to four tonnes of krill every day during the feeding season. To do this, it lunges through dense krill swarms with its enormous mouth wide open, taking in up to 90 tonnes of water and krill at once, then pushing the water out through sieve-like plates called baleen while trapping the krill inside.',
+      },
+      {
+        partner: 'star',
+        text: 'Blue whales are among the loudest animals on Earth. Their deep, rumbling calls — far below what humans can hear — can travel hundreds or even thousands of kilometres through the ocean. Scientists believe these calls help whales communicate with each other across vast stretches of ocean and may also play a role in finding mates. Each population of blue whales has its own distinct dialect — a unique song pattern that differs from other populations around the world.',
+      },
+      {
+        partner: 'moon',
+        text: 'Blue whales were once found in every ocean on Earth, but commercial whaling in the nineteenth and twentieth centuries brought them to the brink of extinction. By the mid-twentieth century, hunters using explosive harpoons had reduced the global population from an estimated 350,000 to just a few hundred individuals. An international ban on hunting blue whales was introduced in 1966, and populations have slowly begun to recover — but they remain endangered today.',
+      },
+      {
+        partner: 'star',
+        text: 'Scientists study blue whales using a range of remarkable techniques: attaching satellite tags to track their migrations, recording their calls with underwater microphones, and identifying individuals from aerial photographs of their unique tail markings. We now know that blue whales migrate thousands of kilometres between cold, krill-rich feeding grounds and warmer tropical waters where they breed. Much about their lives — including where they give birth — remains a mystery, waiting to be discovered.',
+      },
+    ],
+  },
+  {
+    id: 'moon',
+    title: 'Our Moon: Earth\'s Closest Neighbour',
+    icon: '🌕',
+    subject: 'Space Science',
+    palette: {
+      bg: 'from-violet-700 to-slate-800',
+      light: 'bg-violet-50',
+      border: 'border-violet-200',
+      badge: 'bg-violet-100 text-violet-900',
+      accent: 'text-violet-700',
+      star: '#4c1d95',
+      moon: '#1e1b4b',
+      headerText: 'text-white',
+    },
+    illustration: '🌌',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'On a clear night, the Moon is the brightest object in the sky — and the only place beyond Earth that human beings have ever walked. Our Moon is about 384,000 kilometres away, which sounds enormous, but in cosmic terms it is our closest neighbour. It is roughly one quarter the size of Earth, making it unusually large compared to the moons of other planets in our solar system, and scientists believe it was formed around 4.5 billion years ago.',
+      },
+      {
+        partner: 'moon',
+        text: 'The most widely accepted theory of how the Moon formed is called the Giant Impact Hypothesis. According to this theory, early in Earth\'s history, a planet roughly the size of Mars — nicknamed Theia — smashed into the young Earth at an angle. The collision blasted an enormous cloud of molten rock and debris into orbit around Earth. Over millions of years, gravity pulled this material together, and it slowly formed into the Moon we see today.',
+      },
+      {
+        partner: 'star',
+        text: 'The Moon has a powerful effect on Earth even from its great distance. Its gravitational pull is the main cause of the ocean tides — the daily rise and fall of sea levels around the world. The Moon also helps stabilise the tilt of Earth\'s axis, which gives us our seasons. Without the Moon, scientists believe Earth\'s axis would wobble unpredictably over thousands of years, causing chaotic swings in climate that might have made complex life impossible.',
+      },
+      {
+        partner: 'moon',
+        text: 'The surface of the Moon is covered in craters, mountains, and vast flat plains called maria — a Latin word meaning "seas," named by early astronomers who mistakenly thought they were bodies of water. Because the Moon has no atmosphere, there is no wind or rain to wear these features away. Some of the craters you can see through a telescope were formed billions of years ago and look almost exactly as they did when they were first created.',
+      },
+      {
+        partner: 'star',
+        text: 'Twelve human beings have walked on the Moon, all of them American astronauts between 1969 and 1972. They brought back 382 kilograms of Moon rock and soil, which scientists are still studying today. Now, more than 50 years later, several nations — including the United States, China, and India — have ambitious plans to return humans to the Moon, build permanent bases there, and use it as a launching point for future missions to Mars and beyond.',
+      },
+    ],
+  },
+  {
+    id: 'lions',
+    title: 'Lions: Pride, Power, and Survival',
+    icon: '🦁',
+    subject: 'Animal Science',
+    palette: {
+      bg: 'from-orange-500 to-yellow-600',
+      light: 'bg-orange-50',
+      border: 'border-orange-200',
+      badge: 'bg-orange-100 text-orange-900',
+      accent: 'text-orange-700',
+      star: '#7c2d12',
+      moon: '#713f12',
+      headerText: 'text-white',
+    },
+    illustration: '🌅',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'Known as the "king of the jungle," the lion is one of the most iconic animals on Earth — though it actually lives on grasslands and open savannas, not in jungles at all. Lions are the only truly social members of the cat family. They live in family groups called prides, which typically consist of several related females, their cubs, and a small number of males. This social lifestyle gives them a crucial advantage when it comes to hunting and defending territory.',
+      },
+      {
+        partner: 'moon',
+        text: 'Contrary to popular belief, it is the female lions — called lionesses — who do most of the hunting for the pride. Working together in coordinated groups, they fan out to surround prey and cut off escape routes before launching their attack. Lions hunt at night and at dawn when their excellent low-light vision gives them an advantage. Their favourite prey includes zebras, wildebeest, and buffalo, though they will eat almost anything they can catch, including baby elephants.',
+      },
+      {
+        partner: 'star',
+        text: 'A lion\'s roar is one of the most powerful sounds in nature. It can be heard from up to eight kilometres away and serves as a warning to rival prides to stay out of the territory. Lions have the loudest roar of any big cat, and their roars are so individual that researchers can identify specific lions just by listening to recordings. Cubs are born without any roaring ability and take up to a year to develop their first proper roar.',
+      },
+      {
+        partner: 'moon',
+        text: 'Lion cubs are born with spotted fur that gradually fades as they grow, possibly a camouflage adaptation from an ancestor that lived in a more forested environment. Cubs are raised communally — all the lionesses in a pride will nurse and care for each other\'s young. Life as a cub is risky, however. Up to 80 percent of lion cubs die before reaching adulthood, from predators like hyenas and leopards, or from starvation when prey is scarce.',
+      },
+      {
+        partner: 'star',
+        text: 'Lion numbers have fallen by around 40 percent in just the last three generations. Habitat loss, conflict with farmers protecting their livestock, and trophy hunting have all taken a heavy toll. A century ago, lions roamed across Africa and even parts of Europe and Asia. Today they are largely confined to protected reserves in sub-Saharan Africa, with a small, endangered population — fewer than 700 individuals — surviving in the Gir Forest of India. Conservation efforts are crucial to their survival.',
+      },
+    ],
+  },
+  {
+    id: 'cave-art',
+    title: 'Cave Paintings: Messages from the First Artists',
+    icon: '🎨',
+    subject: 'History & Art',
+    palette: {
+      bg: 'from-stone-600 to-amber-800',
+      light: 'bg-stone-50',
+      border: 'border-stone-200',
+      badge: 'bg-stone-100 text-stone-800',
+      accent: 'text-stone-700',
+      star: '#57534e',
+      moon: '#78350f',
+      headerText: 'text-white',
+    },
+    illustration: '🦬',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'Deep inside caves across Europe, Africa, Asia, and Australia, some of humanity\'s earliest art has survived for tens of thousands of years. Painted onto cave walls by the light of flickering torches, these ancient images of animals, human hands, and mysterious symbols are a direct message from our prehistoric ancestors. The oldest known cave paintings were discovered in Indonesia and are estimated to be at least 45,500 years old.',
+      },
+      {
+        partner: 'moon',
+        text: 'The caves of Lascaux in France, discovered in 1940, contain some of the most spectacular prehistoric art ever found. Painted roughly 17,000 years ago, the walls are covered with more than 600 images of horses, bison, deer, bears, and rhinoceroses rendered in vivid ochre, black, and red. The artists used natural pigments mixed with animal fat, and applied paint by blowing through hollow bones — making them some of the world\'s earliest airbrush artists.',
+      },
+      {
+        partner: 'star',
+        text: 'One of the most common images in prehistoric cave art around the world is the outline of a human hand. Artists pressed their hands against the wall and blew pigment around them to leave a stencil, or dipped their hands in paint and pressed them directly onto the rock. These handprints have been found on every continent except Antarctica, and some of them — based on finger length — were made by women and children, suggesting that cave painting was not just a male activity.',
+      },
+      {
+        partner: 'moon',
+        text: 'Why did prehistoric people make cave art? Archaeologists have debated this question for over a century. Some believe the paintings were part of hunting rituals — that by depicting prey animals, hunters hoped to ensure a successful hunt. Others think the caves were sacred spaces used for ceremonies or storytelling. Some researchers have even suggested that people entered deep, dark caves specifically to experience the strange visual effects that occur when humans are deprived of light for long periods.',
+      },
+      {
+        partner: 'star',
+        text: 'Cave art tells us something profound: that tens of thousands of years ago, humans were not so different from us. They observed the world around them carefully, developed skills to express what they saw, and felt a deep desire to create and communicate. The presence of art — whether scratched into a cave wall or displayed in a modern gallery — is one of the defining characteristics of what it means to be human, and it stretches back further than we ever imagined.',
+      },
+    ],
+  },
+  {
+    id: 'tornadoes',
+    title: 'Tornadoes: Nature\'s Most Violent Storms',
+    icon: '🌪️',
+    subject: 'Earth Science',
+    palette: {
+      bg: 'from-gray-600 to-slate-700',
+      light: 'bg-gray-50',
+      border: 'border-gray-200',
+      badge: 'bg-gray-100 text-gray-800',
+      accent: 'text-gray-700',
+      star: '#374151',
+      moon: '#1e293b',
+      headerText: 'text-white',
+    },
+    illustration: '⚡',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'A tornado is one of the most terrifying and destructive forces in nature — a rapidly rotating column of air extending from a thunderstorm cloud down to the ground. Tornadoes can form in minutes and travel across the landscape at speeds of up to 100 kilometres per hour, with the winds inside spinning at over 480 kilometres per hour in the most powerful examples. They can uproot trees, demolish buildings, and toss cars hundreds of metres through the air.',
+      },
+      {
+        partner: 'moon',
+        text: 'Tornadoes form under very specific conditions. When warm, humid air near the ground meets cold, dry air higher in the atmosphere, the warm air is forced rapidly upward. If there are also horizontal winds blowing at different speeds and directions at different altitudes, this can cause the rising air to begin rotating. Under the right conditions, this rotating column of air can extend downward from a thunderstorm to create a tornado. The process can unfold with terrifying speed.',
+      },
+      {
+        partner: 'star',
+        text: 'The United States experiences more tornadoes than any other country on Earth — around 1,200 per year. Most occur in a region of the central United States nicknamed "Tornado Alley," stretching from Texas north through Oklahoma, Kansas, and Nebraska, where the flat landscape and clash of air masses from the Rocky Mountains and the Gulf of Mexico create ideal tornado conditions. In April and May each spring, communities in this region live on constant alert.',
+      },
+      {
+        partner: 'moon',
+        text: 'Scientists called storm chasers deliberately drive towards tornadoes to study them up close. Using specialised vehicles fitted with instruments and cameras, they try to collect data that helps improve tornado warnings and our understanding of how these storms work. It is extremely dangerous work. Modern Doppler radar technology can detect the rotating winds inside a thunderstorm and issue warnings several minutes before a tornado touches down — enough time for people to take shelter.',
+      },
+      {
+        partner: 'star',
+        text: 'Australia experiences more tornadoes than most people realise — though they are generally smaller and less frequent than those in the United States. They can occur in any state and at any time of year, most commonly along the coast and in the southwest. If you are ever caught in a tornado warning, the safest place is underground in a basement or storm shelter. If indoors, move to the smallest interior room on the lowest floor, away from windows, and protect your head.',
+      },
+    ],
+  },
+  {
+    id: 'castles',
+    title: 'Medieval Castles: Life Behind the Walls',
+    icon: '🏰',
+    subject: 'History',
+    palette: {
+      bg: 'from-purple-700 to-indigo-800',
+      light: 'bg-purple-50',
+      border: 'border-purple-200',
+      badge: 'bg-purple-100 text-purple-900',
+      accent: 'text-purple-700',
+      star: '#4c1d95',
+      moon: '#312e81',
+      headerText: 'text-white',
+    },
+    illustration: '⚔️',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'For much of the Middle Ages — roughly from the ninth to the fifteenth century — castles were the most important buildings in Europe. Part fortress, part palace, and part community hub, a castle served as the home and headquarters of a powerful lord or king, and the centre of political and military power for the surrounding region. More than 25,000 medieval castles have been identified across Europe, many of which still stand today as some of the continent\'s most visited landmarks.',
+      },
+      {
+        partner: 'moon',
+        text: 'Early castles were simple wooden structures built on raised mounds of earth called mottes, surrounded by enclosed courtyards called baileys. Over time, builders began constructing in stone, creating far stronger and more elaborate fortifications. They added tall towers for watching the countryside, thick outer walls called curtain walls, and deep water-filled ditches called moats to prevent attackers from reaching the walls. Some castles took decades and thousands of workers to complete.',
+      },
+      {
+        partner: 'star',
+        text: 'Life inside a medieval castle was very different for different people. The lord and his family lived in relative comfort in a grand hall and private chambers, eating elaborate feasts and hosting tournaments in the courtyard below. Servants, soldiers, and craftspeople also lived within the castle walls in much more cramped conditions. For the peasants who worked the farmland surrounding the castle, the drawbridge and portcullis offered safety in times of attack — in exchange for loyalty and rent paid in crops.',
+      },
+      {
+        partner: 'moon',
+        text: 'Attacking a well-built castle was an enormous challenge. Sieges — where an army surrounded a castle and cut off its food and water supply — could last for months or even years. Attackers used giant war machines called trebuchets to hurl boulders at the walls, tunnelled beneath foundations to make them collapse, and sometimes catapulted diseased animal carcasses over the walls to spread sickness. Defenders poured boiling water or oil from the battlements and fired arrows through narrow slits called arrow loops.',
+      },
+      {
+        partner: 'star',
+        text: 'The invention of gunpowder and cannons gradually made stone castle walls obsolete — no walls could withstand repeated cannon fire for long. By the sixteenth century, most new military fortifications were being built differently, with low, angled earthen walls that absorbed cannon fire rather than shattering. Many castles were abandoned, fell into ruin, or were converted into stately homes. Today they stand as dramatic reminders of a world built on courage, conflict, and the constant search for power.',
+      },
+    ],
+  },
+  {
+    id: 'electricity',
+    title: 'Electricity: The Power That Changed Everything',
+    icon: '⚡',
+    subject: 'Science & Technology',
+    palette: {
+      bg: 'from-yellow-500 to-orange-500',
+      light: 'bg-yellow-50',
+      border: 'border-yellow-200',
+      badge: 'bg-yellow-100 text-yellow-900',
+      accent: 'text-yellow-700',
+      star: '#92400e',
+      moon: '#c2410c',
+      headerText: 'text-white',
+    },
+    illustration: '💡',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'Look around any room and you will find electricity at work. The lights, the screens, the sounds — almost everything in modern life depends on it. Electricity is a form of energy created by the movement of tiny particles called electrons. When electrons flow through a material like a copper wire, they create an electric current. That current can be used to power everything from a humble torch bulb to an entire city\'s train network.',
+      },
+      {
+        partner: 'moon',
+        text: 'Humans have known about electricity in nature for thousands of years — lightning strikes were terrifying and mysterious to ancient peoples. But it was not until the eighteenth century that scientists began to understand and harness it. American inventor Benjamin Franklin famously flew a kite in a thunderstorm to prove that lightning was electrical in nature. A metal key attached to the kite string conducted electricity down into a jar, demonstrating that lightning and static electricity were the same phenomenon.',
+      },
+      {
+        partner: 'star',
+        text: 'The person who truly transformed electricity from a scientific curiosity into a practical power source was Thomas Edison. In 1879, after more than a thousand failed experiments, Edison successfully demonstrated the world\'s first practical incandescent light bulb. Within just a few years, he had designed and built one of the world\'s first electrical power stations in New York City, which supplied electricity to 59 customers. By the early twentieth century, electric lighting had begun to transform cities across the world.',
+      },
+      {
+        partner: 'moon',
+        text: 'Electricity can be generated in many different ways. Traditional power stations burn coal or gas to boil water, creating steam that spins giant turbines connected to generators. Hydroelectric dams use the power of falling water. Nuclear power stations use the heat produced by splitting atoms. Increasingly, solar panels convert sunlight directly into electricity, and wind turbines harness the power of the moving air. Each method has advantages and disadvantages, and the world is transitioning rapidly towards cleaner sources.',
+      },
+      {
+        partner: 'star',
+        text: 'Today, around 770 million people around the world still lack access to reliable electricity, living without the light, refrigeration, and communication technology that most of us take for granted. Providing clean, affordable electricity to every person on Earth is one of the great challenges of our century. Remarkably, the falling cost of solar panels means that for the first time in history, the answer may not lie in enormous centralised power stations, but in small, affordable solar panels installed on individual homes and communities.',
+      },
+    ],
+  },
+  {
+    id: 'amazon-river',
+    title: 'The Amazon River: Lifeline of a Continent',
+    icon: '🌿',
+    subject: 'Geography & Nature',
+    palette: {
+      bg: 'from-green-700 to-teal-700',
+      light: 'bg-green-50',
+      border: 'border-green-200',
+      badge: 'bg-green-100 text-green-900',
+      accent: 'text-green-700',
+      star: '#14532d',
+      moon: '#134e4a',
+      headerText: 'text-white',
+    },
+    illustration: '🐊',
+    paragraphs: [
+      {
+        partner: 'star',
+        text: 'Winding nearly 7,000 kilometres across South America, the Amazon River is one of the most extraordinary rivers on Earth. By volume of water, it is by far the largest river in the world — carrying more water to the ocean than the next seven largest rivers combined. During the wet season, the Amazon can stretch up to 50 kilometres wide in some places, flooding vast areas of surrounding rainforest and creating a vast, shallow inland sea teeming with life.',
+      },
+      {
+        partner: 'moon',
+        text: 'The Amazon is home to an astonishing variety of wildlife found nowhere else on Earth. More than 3,000 species of fish swim its waters, including the fearsome piranha, the enormous arapaima fish which can grow up to three metres long, and the remarkable electric eel, which can generate a shock powerful enough to stun a horse. River dolphins — pink in colour and known as boto — navigate the murky waters using echolocation, just like their ocean-dwelling cousins.',
+      },
+      {
+        partner: 'star',
+        text: 'The Amazon floods its surrounding forests so reliably each year that the trees and animals that live there have evolved extraordinary adaptations to life partly underwater. Some trees can survive being submerged for six months at a time. Fish swim through the flooded forest eating fruit that falls from the trees above them, and in doing so they help spread seeds across vast distances — making fish one of the most important seed dispersers in the entire Amazon ecosystem.',
+      },
+      {
+        partner: 'moon',
+        text: 'For thousands of years, Indigenous peoples have called the Amazon home, developing deep knowledge of its plants, animals, and waterways. Today, around one million Indigenous people from hundreds of different nations still live in or near the Amazon. They are among the most effective guardians of the forest — studies consistently show that rainforest areas managed by Indigenous communities experience far lower rates of deforestation than areas outside their territories.',
+      },
+      {
+        partner: 'star',
+        text: 'The Amazon is under enormous pressure. Deforestation for cattle farming, soy plantations, and illegal gold mining has destroyed vast areas of rainforest in recent decades. Scientists warn that if too much forest is lost, the Amazon could reach a "tipping point" — where it can no longer generate enough rainfall to sustain itself and begins to dry out and die. Protecting the Amazon is not just a local issue — it affects the climate, the water cycle, and biodiversity for the entire planet.',
+      },
+    ],
+  },
+  {
     id: 'olympics',
     title: 'The Ancient Olympics: Glory, Sweat & Olive Wreaths',
     icon: '🏅',
@@ -717,7 +1107,7 @@ const PrintView = ({ passage, onClose }) => {
         <div
           style={{
             background: `linear-gradient(135deg, ${gradientStart}, ${gradientEnd})`,
-            padding: '18px 28px 16px',
+            padding: '14px 28px 12px',
             display: 'flex',
             flexDirection: 'column',
             gap: '8px',
@@ -764,10 +1154,10 @@ const PrintView = ({ passage, onClose }) => {
         {/* Passages */}
         <div style={{
           flex: 1,
-          padding: '16px 28px 14px',
+          padding: '12px 28px 10px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '11px',
+          gap: '9px',
           background: accentLight,
         }}>
           {passage.paragraphs.map((para, index) => {
@@ -781,7 +1171,7 @@ const PrintView = ({ passage, onClose }) => {
                   alignItems: 'flex-start',
                   background: 'white',
                   borderRadius: '10px',
-                  padding: '10px 14px',
+                  padding: '9px 13px',
                   border: `1.5px solid ${borderColor}`,
                   boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
                 }}
@@ -814,8 +1204,8 @@ const PrintView = ({ passage, onClose }) => {
                 {/* Text */}
                 <p style={{
                   margin: 0,
-                  fontSize: '11.5px',
-                  lineHeight: 1.65,
+                  fontSize: '13px',
+                  lineHeight: 1.6,
                   color: '#1e293b',
                   textAlign: 'justify',
                   fontFamily: 'Georgia, serif',
@@ -829,7 +1219,7 @@ const PrintView = ({ passage, onClose }) => {
 
         {/* Footer */}
         <div style={{
-          padding: '8px 28px',
+          padding: '6px 28px',
           background: `linear-gradient(135deg, ${gradientStart}, ${gradientEnd})`,
           display: 'flex',
           justifyContent: 'space-between',
@@ -940,7 +1330,7 @@ const PartnerReadingPassages = ({ showToast }) => {
           {[
             { icon: '🖨️', label: 'Print-ready — fits one A4 page' },
             { icon: '📄', label: 'Save as PDF from print dialog' },
-            { icon: '🤝', label: '15 engaging topics included' },
+            { icon: '🤝', label: '25 engaging topics included' },
           ].map(item => (
             <div key={item.label} className="flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/25 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
               <span>{item.icon}</span>
