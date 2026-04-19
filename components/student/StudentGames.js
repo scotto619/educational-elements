@@ -41,6 +41,7 @@ const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { load
 const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
 const EndlessRunnerGame = dynamic(() => import('../games/EndlessRunnerGame'), { loading: GameLoadingSpinner, ssr: false });
+const CozyCottageGame = dynamic(() => import('../games/CozyCottage/App'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
