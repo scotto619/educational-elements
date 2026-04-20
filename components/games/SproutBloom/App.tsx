@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback, ReactNode, useRef, CSSProperties } from 'react';
-import PlayerSprite from './PlayerSprite';
-import SkillTree from './SkillTree';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, 
@@ -30,12 +28,9 @@ import {
   Droplets,
   Maximize,
   ArrowLeftRight,
-  Waves,
   Fish as FishIcon,
   Sparkles,
   Zap,
-  TrendingUp,
-  Dumbbell,
   Trees,
   Axe,
   HelpCircle,
@@ -93,10 +88,6 @@ import {
   MUSHROOM_COUNT_MIN,
   MUSHROOM_COUNT_MAX,
   BUSH_COUNT,
-  HUNGER_MAX,
-  THIRST_MAX,
-  HUNGER_DRAIN_RATE,
-  THIRST_DRAIN_RATE,
   WEATHER_CHANGE_MIN,
   WEATHER_CHANGE_MAX,
   WEATHER_WEIGHTS,
@@ -461,8 +452,8 @@ function createInitialState(sprite: 'man' | 'woman'): GameState {
     attributes: { agility: 0, endurance: 0, intelligence: 0, perception: 0 },
     weather: 'sunny' as WeatherType,
     weatherTimer: WEATHER_CHANGE_MAX,
-    hunger: HUNGER_MAX,
-    thirst: THIRST_MAX,
+    hunger: 100,
+    thirst: 100,
     exploredAreas: ['inside'],
   };
 }
@@ -535,7 +526,6 @@ export default function App() {
   const [confirmExpand, setConfirmExpand] = useState<{ type: 'house' | 'garden', cost: number } | null>(null);
   const [sleepHours, setSleepHours] = useState(8);
   const [showGuide, setShowGuide] = useState(false);
-  const [showSkillTree, setShowSkillTree] = useState(false);
   // shopColorChoices: furnitureId → chosen CSS filter (undefined = Default)
   const [shopColorChoices, setShopColorChoices] = useState<Record<string, string | undefined>>({});
   // color carried from inventory slot into the placement ghost
@@ -1113,17 +1103,6 @@ export default function App() {
           ? WEATHER_CHANGE_MIN + Math.floor(Math.random() * (WEATHER_CHANGE_MAX - WEATHER_CHANGE_MIN))
           : nextWeatherTimer;
 
-        // ── Hunger & Thirst tick ──────────────────────────────────────────────
-        const nextHunger = Math.max(0, (prev.hunger ?? HUNGER_MAX) - HUNGER_DRAIN_RATE);
-        const nextThirst = Math.max(0, (prev.thirst ?? THIRST_MAX) - THIRST_DRAIN_RATE);
-
-        // ── Attribute passive XP tick ─────────────────────────────────────────
-        // Endurance: trickles up just by playing
-        const nextAttributes = {
-          ...prev.attributes,
-          endurance: (prev.attributes?.endurance ?? 0) + 0.005,
-        };
-
         // Pet AI
         let nextPets = prev.pets.map(pet => {
           let { x, y, hunger, thirst, health, lastMove } = pet;
@@ -1457,9 +1436,6 @@ export default function App() {
           // New systems
           weather: nextWeather,
           weatherTimer: resetWeatherTimer,
-          hunger: nextHunger,
-          thirst: nextThirst,
-          attributes: nextAttributes,
         };
       });
     }, 1000);
@@ -2153,70 +2129,50 @@ export default function App() {
         style={{ backgroundColor: getTimeColor() }} 
       />
 
-      {/* HUD */}
-      <div className="fixed top-6 left-6 right-6 z-[70] flex justify-between items-start pointer-events-none">
-        <div className="flex flex-col gap-2 pointer-events-auto">
-          <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-cozy-accent/20 flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Coins className="text-yellow-500 w-5 h-5" />
-              <span className="font-bold text-cozy-text">{state.currency}</span>
+      {/* HUD — compact strip for mobile/iPad */}
+      <div className="fixed top-2 left-2 right-2 z-[70] flex justify-between items-start pointer-events-none">
+        <div className="flex flex-col gap-1.5 pointer-events-auto">
+          {/* Main stats pill */}
+          <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-lg border border-cozy-accent/20 flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Coins className="text-yellow-500 w-4 h-4" />
+              <span className="font-bold text-cozy-text text-sm">{state.currency}</span>
             </div>
-            <div className="w-px h-4 bg-cozy-text/10" />
-            <div className="flex items-center gap-2">
-              <Trees className="text-amber-700 w-5 h-5" />
-              <span className="font-bold text-cozy-text">{state.wood}</span>
+            <div className="w-px h-3 bg-cozy-text/10" />
+            <div className="flex items-center gap-1.5">
+              <Trees className="text-amber-700 w-4 h-4" />
+              <span className="font-bold text-cozy-text text-sm">{state.wood}</span>
             </div>
-            <div className="w-px h-4 bg-cozy-text/10" />
-            <div className="flex items-center gap-2">
-              <Backpack className="text-orange-600 w-5 h-5" />
-              <span className="font-bold text-cozy-text">{state.rations}</span>
+            <div className="w-px h-3 bg-cozy-text/10" />
+            <div className="flex items-center gap-1.5">
+              <Backpack className="text-orange-600 w-4 h-4" />
+              <span className="font-bold text-cozy-text text-sm">{state.rations}</span>
             </div>
-            <div className="w-px h-4 bg-cozy-text/10" />
-            <div className="flex items-center gap-2 text-cozy-text/60">
-              {state.timeOfDay > 2000 || state.timeOfDay < 600 ? <Moon size={16} /> : <Sun size={16} />}
-              <span className="font-mono text-sm font-bold">{formatTime(state.timeOfDay)}</span>
+            <div className="w-px h-3 bg-cozy-text/10" />
+            <div className="flex items-center gap-1.5 text-cozy-text/60">
+              {state.timeOfDay > 2000 || state.timeOfDay < 600 ? <Moon size={14} /> : <Sun size={14} />}
+              <span className="font-mono text-xs font-bold">{formatTime(state.timeOfDay)}</span>
             </div>
-            <div className="w-px h-4 bg-cozy-text/10" />
-            <div className="flex items-center gap-2 text-cozy-accent">
-              <Plus size={16} />
-              <span className="font-bold text-sm">Lv.{calculateLevel(state.xp)}</span>
+            <div className="w-px h-3 bg-cozy-text/10" />
+            <div className="flex items-center gap-1 text-cozy-accent">
+              <Plus size={13} />
+              <span className="font-bold text-xs">Lv.{calculateLevel(state.xp)}</span>
             </div>
-          </div>
-
-          {/* Stamina bar */}
-          <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg border border-cozy-accent/20 flex items-center gap-3">
-            <Zap className="text-blue-500 w-4 h-4" />
-            <div className="w-32 h-2 bg-cozy-text/10 rounded-full overflow-hidden">
+            {/* Stamina inline */}
+            <div className="w-px h-3 bg-cozy-text/10" />
+            <Zap className="text-blue-500 w-3.5 h-3.5" />
+            <div className="w-20 h-1.5 bg-cozy-text/10 rounded-full overflow-hidden">
               <motion.div
                 animate={{ width: `${(state.stamina / state.maxStamina) * 100}%` }}
-                className={`h-full ${state.stamina < 20 ? 'bg-red-500' : 'bg-blue-500'}`}
+                className={`h-full ${state.stamina < 20 ? 'bg-red-500' : 'bg-blue-400'}`}
               />
             </div>
-            <span className="text-xs font-bold text-cozy-text">{Math.floor(state.stamina)}</span>
             {comfortLevel > 0 && (
-              <div className="flex items-center gap-1 ml-2 text-pink-500" title="Comfort Level">
-                <Sparkles size={14} />
+              <div className="flex items-center gap-1 text-pink-500" title="Comfort Level">
+                <Sparkles size={12} />
                 <span className="text-xs font-bold">{comfortLevel}</span>
               </div>
             )}
-          </div>
-
-          {/* Hunger & Thirst bars */}
-          <div className="bg-white/90 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-cozy-accent/20 flex items-center gap-3">
-            <span className="text-sm" title="Hunger">🍖</span>
-            <div className="w-20 h-2 bg-cozy-text/10 rounded-full overflow-hidden" title={`Hunger: ${Math.floor(state.hunger ?? 100)}`}>
-              <div
-                className={`h-full rounded-full transition-all duration-1000 ${(state.hunger ?? 100) < 20 ? 'bg-red-400' : 'bg-orange-400'}`}
-                style={{ width: `${state.hunger ?? 100}%` }}
-              />
-            </div>
-            <span className="text-sm" title="Thirst">💧</span>
-            <div className="w-20 h-2 bg-cozy-text/10 rounded-full overflow-hidden" title={`Thirst: ${Math.floor(state.thirst ?? 100)}`}>
-              <div
-                className={`h-full rounded-full transition-all duration-1000 ${(state.thirst ?? 100) < 20 ? 'bg-red-400' : 'bg-cyan-400'}`}
-                style={{ width: `${state.thirst ?? 100}%` }}
-              />
-            </div>
           </div>
 
           {/* Weather indicator */}
@@ -2274,14 +2230,6 @@ export default function App() {
             </motion.div>
           )}
 
-
-          <div className="mt-4 flex flex-col gap-2">
-            <SkillBadge icon={<Dumbbell   size={14} />} label="Strength"     xp={state.skills.strength}               color="bg-purple-500" />
-            <SkillBadge icon={<Zap        size={14} />} label="Agility"      xp={state.attributes?.agility     ?? 0}  color="bg-yellow-500" />
-            <SkillBadge icon={<Waves      size={14} />} label="Endurance"    xp={state.attributes?.endurance   ?? 0}  color="bg-red-400"    />
-            <SkillBadge icon={<Sparkles   size={14} />} label="Intelligence" xp={state.attributes?.intelligence ?? 0} color="bg-blue-500"   />
-            <SkillBadge icon={<Compass    size={14} />} label="Perception"   xp={state.attributes?.perception  ?? 0}  color="bg-teal-500"   />
-          </div>
 
           {state.pets.length > 0 && (
             <div className="mt-6 flex flex-col gap-3 pt-6 border-t border-cozy-text/5">
@@ -2344,32 +2292,61 @@ export default function App() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom-left buttons: Guide + Skills */}
-      <div className="fixed bottom-6 left-6 z-[70] flex gap-3">
+      {/* Touch D-Pad — only visible in walk mode, bottom-right */}
+      {mode === 'walk' && (
+        <div className="fixed bottom-24 right-3 z-[70] select-none touch-none" style={{ userSelect: 'none' }}>
+          <div className="relative w-32 h-32">
+            {/* Up */}
+            <button
+              onPointerDown={() => pressedKeys.current.add('ArrowUp')}
+              onPointerUp={() => pressedKeys.current.delete('ArrowUp')}
+              onPointerLeave={() => pressedKeys.current.delete('ArrowUp')}
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-10 bg-white/85 backdrop-blur-md rounded-xl shadow-lg border border-cozy-accent/20 flex items-center justify-center text-cozy-text active:bg-cozy-accent active:text-white transition-colors"
+              aria-label="Move up"
+            >▲</button>
+            {/* Down */}
+            <button
+              onPointerDown={() => pressedKeys.current.add('ArrowDown')}
+              onPointerUp={() => pressedKeys.current.delete('ArrowDown')}
+              onPointerLeave={() => pressedKeys.current.delete('ArrowDown')}
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-10 bg-white/85 backdrop-blur-md rounded-xl shadow-lg border border-cozy-accent/20 flex items-center justify-center text-cozy-text active:bg-cozy-accent active:text-white transition-colors"
+              aria-label="Move down"
+            >▼</button>
+            {/* Left */}
+            <button
+              onPointerDown={() => pressedKeys.current.add('ArrowLeft')}
+              onPointerUp={() => pressedKeys.current.delete('ArrowLeft')}
+              onPointerLeave={() => pressedKeys.current.delete('ArrowLeft')}
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/85 backdrop-blur-md rounded-xl shadow-lg border border-cozy-accent/20 flex items-center justify-center text-cozy-text active:bg-cozy-accent active:text-white transition-colors"
+              aria-label="Move left"
+            >◀</button>
+            {/* Right */}
+            <button
+              onPointerDown={() => pressedKeys.current.add('ArrowRight')}
+              onPointerUp={() => pressedKeys.current.delete('ArrowRight')}
+              onPointerLeave={() => pressedKeys.current.delete('ArrowRight')}
+              className="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/85 backdrop-blur-md rounded-xl shadow-lg border border-cozy-accent/20 flex items-center justify-center text-cozy-text active:bg-cozy-accent active:text-white transition-colors"
+              aria-label="Move right"
+            >▶</button>
+            {/* Centre dot */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white/40 backdrop-blur-md rounded-xl border border-cozy-accent/10" />
+          </div>
+        </div>
+      )}
+
+      {/* Bottom-left: Guide button */}
+      <div className="fixed bottom-6 left-3 z-[70]">
         <button
           onClick={() => setShowGuide(true)}
-          className="bg-white/90 backdrop-blur-md p-4 rounded-full shadow-xl border-2 border-cozy-accent/20 transition-all active:scale-90 hover:bg-cozy-accent hover:text-white group"
+          className="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-xl border-2 border-cozy-accent/20 transition-all active:scale-90 hover:bg-cozy-accent hover:text-white group"
           title="Guide"
         >
-          <HelpCircle size={24} className="group-hover:rotate-12 transition-transform" />
-        </button>
-        <button
-          onClick={() => setShowSkillTree(true)}
-          className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-full shadow-xl border-2 border-violet-300/60 transition-all active:scale-90 hover:bg-violet-500 hover:text-white group flex items-center gap-2 text-sm font-bold text-violet-700"
-          title="Character Skills"
-        >
-          <span className="text-base group-hover:scale-110 transition-transform">📖</span>
-          Skills
+          <HelpCircle size={22} className="group-hover:rotate-12 transition-transform" />
         </button>
       </div>
 
-      {/* Skill Tree overlay */}
-      {showSkillTree && (
-        <SkillTree state={state} onClose={() => setShowSkillTree(false)} />
-      )}
-
       {/* Main Game Area */}
-      <div className="flex-1 flex items-center justify-center p-8 overflow-auto" style={{ background: 'radial-gradient(ellipse at center, #f0e6d3 0%, #dfd0b8 100%)' }}>
+      <div className="flex-1 flex items-center justify-center p-1 overflow-auto" style={{ background: 'radial-gradient(ellipse at center, #f0e6d3 0%, #dfd0b8 100%)' }}>
         {/* Isometric world container — isolation:isolate keeps all internal
             z-indices scoped here so they never bleed over fixed-position modals */}
         <div
@@ -3040,11 +3017,16 @@ export default function App() {
                           zIndex: 2,
                         }}
                       >
-                        <PlayerSprite
-                          facing={playerFacing}
-                          sprite={state.playerSprite}
-                          size={playerW}
-                          isRelaxing={state.isRelaxing}
+                        <img
+                          src={`/games/cozy-cottage/Player/${state.playerSprite}.svg`}
+                          width={playerW}
+                          height={playerW}
+                          draggable={false}
+                          className="object-contain drop-shadow"
+                          style={{
+                            transform: playerFacing === 'left' ? 'scaleX(-1)' : undefined,
+                            filter: state.isRelaxing ? 'brightness(0.88) saturate(0.9)' : undefined,
+                          }}
                         />
                       </div>
                       {state.fishingTimer !== null && (
@@ -3067,11 +3049,16 @@ export default function App() {
                   );
                 })() : (
                   <div ref={playerSpriteRef} className="flex flex-col items-center mb-2 relative">
-                    <PlayerSprite
-                      facing={playerFacing}
-                      sprite={state.playerSprite}
-                      size={ISO_TILE_W * 0.9}
-                      isRelaxing={state.isRelaxing}
+                    <img
+                      src={`/games/cozy-cottage/Player/${state.playerSprite}.svg`}
+                      width={ISO_TILE_W * 0.9}
+                      height={ISO_TILE_W * 0.9}
+                      draggable={false}
+                      className="object-contain drop-shadow"
+                      style={{
+                        transform: playerFacing === 'left' ? 'scaleX(-1)' : undefined,
+                        filter: state.isRelaxing ? 'brightness(0.88) saturate(0.9)' : undefined,
+                      }}
                     />
                     {state.isRelaxing && (
                       <motion.div animate={{ y: [-5, -15], opacity: [0, 1, 0] }} transition={{ duration: 2, repeat: Infinity }}
@@ -3157,96 +3144,96 @@ export default function App() {
         </div>
       )}
 
-      {/* Bottom Navigation Bars */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-3 pointer-events-auto">
+      {/* Bottom Navigation Bars — two scrollable rows, touch-friendly */}
+      <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-auto max-w-[98vw]">
 
         {/* Action Bar */}
-        <div className="bg-white/90 backdrop-blur-xl px-6 py-3 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-5">
+        <div className="bg-white/90 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-3 overflow-x-auto">
           <NavButton
             active={mode === 'decorate'}
             onClick={mode === 'decorate' ? () => { setMode('walk'); setSelectedFurniture(null); } : () => setMode('decorate')}
-            icon={<img src="/games/cozy-cottage/Menu/decorate.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/decorate.svg" width={22} height={22} draggable={false} />}
             label={mode === 'decorate' ? 'Done ✓' : 'Decorate'}
           />
           <NavButton
             active={false}
             onClick={() => setConfirmExpand({ type: state.playerLocation === 'inside' ? 'house' : 'garden', cost: state.playerLocation === 'inside' ? HOUSE_EXPAND_COST : GARDEN_EXPAND_COST })}
-            icon={<img src="/games/cozy-cottage/Menu/expand.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/expand.svg" width={22} height={22} draggable={false} />}
             label="Expand"
           />
           <NavButton
             active={mode === 'cook'}
             onClick={startCooking}
-            icon={<img src="/games/cozy-cottage/Menu/cooking.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/cooking.svg" width={22} height={22} draggable={false} />}
             label="Cook"
           />
           <NavButton
             active={state.workTimer !== null}
             onClick={goToWork}
             disabled={state.workTimer !== null}
-            icon={<Briefcase size={24} />}
+            icon={<Briefcase size={22} />}
             label={state.workTimer !== null ? `${state.workTimer}s` : 'Work'}
           />
           <NavButton
             active={state.isRelaxing}
             onClick={state.isRelaxing ? skipToMorning : checkRelax}
-            icon={<img src="/games/cozy-cottage/Menu/relax.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/relax.svg" width={22} height={22} draggable={false} />}
             label={state.isRelaxing ? 'Sleep' : 'Relax'}
           />
           <NavButton
             active={mode === 'explore' || state.explorationTimer !== null}
             onClick={() => setMode('explore')}
             disabled={state.explorationTimer !== null && mode !== 'explore'}
-            icon={<Compass size={24} />}
+            icon={<Compass size={22} />}
             label={state.explorationTimer !== null ? `${state.explorationTimer}s` : 'Explore'}
           />
         </div>
 
         {/* Location + Commerce Bar */}
-        <div className="bg-white/80 backdrop-blur-xl px-6 py-4 rounded-3xl shadow-2xl border border-white/50 flex items-center gap-7">
+        <div className="bg-white/80 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-3 overflow-x-auto">
           <NavButton
             active={state.playerLocation === 'inside'}
             onClick={() => goToLocation('inside')}
-            icon={<img src="/games/cozy-cottage/Menu/house.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/house.svg" width={22} height={22} draggable={false} />}
             label="Home"
           />
           <NavButton
             active={state.playerLocation === 'outside'}
             onClick={() => goToLocation('outside')}
-            icon={<img src="/games/cozy-cottage/Farm/sprout.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Farm/sprout.svg" width={22} height={22} draggable={false} />}
             label="Garden"
           />
           <NavButton
             active={state.playerLocation === 'pond'}
             onClick={() => goToLocation('pond')}
-            icon={<img src="/games/cozy-cottage/Menu/pond.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/pond.svg" width={22} height={22} draggable={false} />}
             label="Pond"
           />
           <NavButton
             active={state.playerLocation === 'forest'}
             onClick={() => goToLocation('forest')}
-            icon={<img src="/games/cozy-cottage/Menu/forest.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/forest.svg" width={22} height={22} draggable={false} />}
             label="Forest"
           />
 
-          <div className="w-px h-8 bg-cozy-text/10 mx-1" />
+          <div className="w-px h-6 bg-cozy-text/10 mx-0.5 shrink-0" />
 
           <NavButton
             active={mode === 'shop'}
             onClick={() => setMode('shop')}
-            icon={<img src="/games/cozy-cottage/Menu/shop.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/shop.svg" width={22} height={22} draggable={false} />}
             label="Shop"
           />
           <NavButton
             active={mode === 'market'}
             onClick={() => setMode('market')}
-            icon={<img src="/games/cozy-cottage/Farm/market.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Farm/market.svg" width={22} height={22} draggable={false} />}
             label="Market"
           />
           <NavButton
             active={mode === 'inventory'}
             onClick={() => setMode('inventory')}
-            icon={<img src="/games/cozy-cottage/Menu/inventory.svg" width={24} height={24} draggable={false} />}
+            icon={<img src="/games/cozy-cottage/Menu/inventory.svg" width={22} height={22} draggable={false} />}
             label="Inventory"
           />
         </div>
@@ -4361,7 +4348,7 @@ export default function App() {
                     <Home size={18} /> Getting Started
                   </h3>
                   <p className="text-cozy-text/70 leading-relaxed">
-                    Welcome to your new cottage! Use <b>WASD</b> or <b>Arrow Keys</b> to move around. 
+                    Welcome to your new cottage! Use the <b>D-pad</b> (bottom-right) or <b>WASD / Arrow Keys</b> to move around.
                     Your goal is to grow your garden, decorate your home, and expand your property.
                   </p>
                 </section>
