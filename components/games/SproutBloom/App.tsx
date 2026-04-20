@@ -458,25 +458,37 @@ function createInitialState(sprite: 'man' | 'woman'): GameState {
   };
 }
 const SAVE_KEY = 'cozyCottageSave';
+const FIREBASE_SAVE_KEY = 'cozyCottageGameData'; // key inside studentData document
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function App() {
+interface AppProps {
+  studentData?: Record<string, any>;
+  updateStudentData?: (data: Record<string, any>) => Promise<void>;
+  showToast?: (message: string, type?: string) => void;
+}
+
+export default function App({ studentData, updateStudentData, showToast }: AppProps = {}) {
   // ── Screen / menu state ───────────────────────────────────────────────────
   const [screen, setScreen] = useState<'menu' | 'character-select' | 'game'>('menu');
-  const [hasSave, setHasSave] = useState(() => !!localStorage.getItem(SAVE_KEY));
+
+  // Detect existing save: Firebase first, localStorage as fallback
+  const [hasSave, setHasSave] = useState(() => {
+    if (studentData?.[FIREBASE_SAVE_KEY]) return true;
+    return !!localStorage.getItem(SAVE_KEY);
+  });
 
   const startNewGame = (sprite: 'man' | 'woman') => {
     localStorage.removeItem(SAVE_KEY);
+    // Also wipe the Firebase save so Continue doesn't reload old data
+    if (updateStudentData) {
+      updateStudentData({ [FIREBASE_SAVE_KEY]: null }).catch(() => {});
+    }
     setState(createInitialState(sprite));
     setScreen('game');
     setMessage("Welcome to your cozy cottage!");
   };
 
-  const continueGame = () => {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return;
-    try {
-      const saved = JSON.parse(raw) as GameState;
+  const migrateAndLoad = (saved: GameState) => {
       // Migrate old saves: inventory was string[] — convert to InventorySlot[]
       if (saved.inventory.length > 0 && typeof (saved.inventory[0] as unknown) === 'string') {
         (saved as GameState).inventory = (saved.inventory as unknown as string[]).map(id => ({ id }));
@@ -488,7 +500,6 @@ export default function App() {
       if (saved.foragingTimer === undefined) (saved as GameState).foragingTimer = null;
       if (saved.foragingTarget === undefined) (saved as GameState).foragingTarget = null;
       if (!saved.harvestedTreeFruits) (saved as GameState).harvestedTreeFruits = [];
-      // Migrate new skill/attribute/weather/survival fields
       if (!saved.skills.firecraft)        (saved as GameState).skills = { ...saved.skills, firecraft: 0, crafting: 0, building: 0, engineering: 0, navigation: 0, weatherResistance: 0 };
       if (!saved.attributes)              (saved as GameState).attributes = { agility: 0, endurance: 0, intelligence: 0, perception: 0 };
       if (!saved.weather)                 (saved as GameState).weather = 'sunny';
@@ -499,6 +510,25 @@ export default function App() {
       setState(saved);
       setScreen('game');
       setMessage("Welcome back!");
+  };
+
+  const continueGame = () => {
+    // ── Firebase save (cross-device) ──────────────────────────────────────
+    if (studentData?.[FIREBASE_SAVE_KEY]) {
+      try {
+        migrateAndLoad(studentData[FIREBASE_SAVE_KEY] as GameState);
+        return;
+      } catch {
+        // fall through to localStorage
+      }
+    }
+
+    // ── localStorage fallback (teacher preview / offline) ─────────────────
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw) as GameState;
+      migrateAndLoad(saved);
     } catch {
       setMessage("Save file corrupted — start a new game.");
     }
@@ -1442,12 +1472,28 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-save whenever game state changes (only while in-game)
+  // Auto-save: Firebase (debounced 5 s) with localStorage as fallback
   useEffect(() => {
     if (screen !== 'game') return;
+
+    // Always keep a local copy as an offline/teacher-preview fallback
     localStorage.setItem(SAVE_KEY, JSON.stringify(state));
     setHasSave(true);
-  }, [state, screen]);
+
+    // Firebase save — debounce so we don't write on every keypress
+    if (!updateStudentData) return;
+    const timer = setTimeout(async () => {
+      try {
+        await updateStudentData({
+          [FIREBASE_SAVE_KEY]: state,
+          cozyCottageLastPlayed: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.error('[CozyCottage] Firebase save failed:', err);
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [state, screen, updateStudentData]);
 
   useEffect(() => {
     if (state.workTimer === 0) {
