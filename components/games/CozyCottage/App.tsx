@@ -756,11 +756,10 @@ export default function CozyCottageApp({ showToast }: AppProps) {
             {(['woman', 'man'] as const).map(sprite => (
               <button key={sprite} onClick={() => startNew(sprite)} style={{
                 background: 'white', border: '3px solid #e8d5c4', borderRadius: 20,
-                padding: '20px 32px', cursor: 'pointer', transition: 'all 0.2s',
+                padding: '20px 32px', cursor: 'pointer',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-              }}
-                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
-                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+              } as React.CSSProperties}
               >
                 <img
                   src={`/games/cozy-cottage/Player/${sprite}.svg`}
@@ -788,18 +787,18 @@ export default function CozyCottageApp({ showToast }: AppProps) {
       <div style={{
         background: isDaytime ? 'rgba(255,248,235,0.97)' : 'rgba(30,20,60,0.97)',
         borderBottom: `2px solid ${isDaytime ? '#f0d5a0' : '#3d2d6e'}`,
-        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 16,
+        padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8,
         flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 100,
       }}>
-        <span style={{ fontSize: 22 }}>🏡</span>
-        <span style={{ fontWeight: 800, fontSize: 16, color: isDaytime ? '#4a3728' : '#c9b8e8' }}>Cozy Cottage</span>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginLeft: 'auto', alignItems: 'center' }}>
+        <span style={{ fontSize: 20 }}>🏡</span>
+        <span style={{ fontWeight: 800, fontSize: 14, color: isDaytime ? '#4a3728' : '#c9b8e8' }}>Cozy Cottage</span>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginLeft: 'auto', alignItems: 'center' }}>
           <Chip icon="🪙" label={state.currency.toLocaleString()} />
           <Chip icon="🌾" label={totalIngredientCount.toString()} title="Ingredients" />
           <Chip icon="🪵" label={state.wood.toString()} title="Wood" />
-          <Chip icon="📖" label={`${discoveredCount}/70`} title="Recipes discovered" />
-          <Chip icon={timeIcon} label={`Day ${state.day} · ${formatTime(state.timeOfDay)}`} />
-          <button onClick={() => setScreen('menu')} style={{ fontSize: 11, background: '#f5f0e8', border: '1px solid #ddd', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', color: '#888' }}>
+          <Chip icon="📖" label={`${discoveredCount}/70`} title="Recipes" />
+          <Chip icon={timeIcon} label={`Day ${state.day}`} />
+          <button onClick={() => setScreen('menu')} style={{ fontSize: 12, background: '#f5f0e8', border: '1px solid #ddd', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: '#888', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}>
             Menu
           </button>
         </div>
@@ -819,11 +818,11 @@ export default function CozyCottageApp({ showToast }: AppProps) {
       )}
 
       {/* Nav */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: `2px solid ${isDaytime ? '#f0d5a0' : '#3d2d6e'}`, background: isDaytime ? '#fff9ef' : '#16103a', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: `2px solid ${isDaytime ? '#f0d5a0' : '#3d2d6e'}`, background: isDaytime ? '#fff9ef' : '#16103a', overflowX: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         {NAV_TABS.map(tab => (
           <button key={tab.id} onClick={() => goTo(tab.id as any)} style={{
-            flex: '0 0 auto',
-            padding: '10px 18px', border: 'none', cursor: 'pointer',
+            flex: '1 0 auto',
+            padding: '13px 14px', border: 'none', cursor: 'pointer',
             fontWeight: state.currentArea === tab.id ? 800 : 500,
             fontSize: 13,
             background: state.currentArea === tab.id
@@ -835,14 +834,17 @@ export default function CozyCottageApp({ showToast }: AppProps) {
             borderBottom: state.currentArea === tab.id ? `3px solid ${isDaytime ? '#ff9800' : '#9c6fff'}` : '3px solid transparent',
             transition: 'all 0.15s',
             whiteSpace: 'nowrap',
-          }}>
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent',
+            minHeight: 48,
+          } as React.CSSProperties}>
             {tab.icon} {tab.label}
           </button>
         ))}
       </div>
 
       {/* Area content */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '16px 12px' }}>
         {state.currentArea === 'home'    && <HomeArea    state={state} onPlace={placeFurniture} onRemove={removeFurniture} notify={notify} setState={setState} />}
         {state.currentArea === 'garden'  && <GardenArea  state={state} onPlant={plantSeed} onWater={waterPlant} onHarvest={harvestPlant} onRemove={removePlant} />}
         {state.currentArea === 'forest'  && <ForestArea  state={state} onChop={chopTree} onHarvestFruit={harvestFruit} onForage={forageItem} onHunt={huntDeer} />}
@@ -857,9 +859,11 @@ export default function CozyCottageApp({ showToast }: AppProps) {
 // ── Shared style helpers ───────────────────────────────────────────────────────
 const btnStyle = (bg: string): React.CSSProperties => ({
   background: bg, color: 'white', border: 'none', borderRadius: 14,
-  padding: '14px 28px', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-  transition: 'transform 0.15s, box-shadow 0.15s',
+  padding: '16px 32px', fontSize: 16, fontWeight: 700, cursor: 'pointer',
   boxShadow: `0 4px 16px ${bg}88`,
+  touchAction: 'manipulation',
+  WebkitTapHighlightColor: 'transparent' as any,
+  minHeight: 52,
 });
 
 const NAV_TABS = [
@@ -873,7 +877,7 @@ const NAV_TABS = [
 
 function Chip({ icon, label, title }: { icon: string; label: string; title?: string }) {
   return (
-    <div title={title} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 20, padding: '3px 10px', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+    <div title={title} style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'rgba(0,0,0,0.06)', borderRadius: 20, padding: '4px 10px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
       <span>{icon}</span><span>{label}</span>
     </div>
   );
@@ -925,12 +929,14 @@ function HomeArea({ state, onPlace, onRemove, notify, setState }: {
         <div style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${COLS}, 1fr)`,
-          gap: 4,
+          gap: 5,
           background: '#e8cfa0',
           borderRadius: 12,
           padding: 8,
+          width: '100%',
           maxWidth: 420,
-        }}>
+          boxSizing: 'border-box',
+        } as React.CSSProperties}>
           {Array.from({ length: ROWS }).map((_, y) =>
             Array.from({ length: COLS }).map((_, x) => {
               const placed = placedInside.find(p => p.x === x && p.y === y);
@@ -947,8 +953,10 @@ function HomeArea({ state, onPlace, onRemove, notify, setState }: {
                     cursor: isEmpty && isSelecting ? 'crosshair' : (placed ? 'pointer' : 'default'),
                     fontSize: 20, transition: 'background 0.2s',
                     position: 'relative',
-                    minWidth: 40, minHeight: 40,
-                  }}
+                    minWidth: 48, minHeight: 48,
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                  } as React.CSSProperties}
                 >
                   {placed && (
                     <div onClick={() => onRemove(placed.id)} title={`Remove ${getFurnitureName(placed.furnitureId)}`}
@@ -1009,10 +1017,12 @@ function HomeArea({ state, onPlace, onRemove, notify, setState }: {
                     style={{
                       background: isSelected ? '#e8f5e9' : '#fafafa',
                       border: `2px solid ${isSelected ? '#4caf50' : '#ddd'}`,
-                      borderRadius: 10, padding: '8px 12px', cursor: 'pointer',
+                      borderRadius: 10, padding: '10px 14px', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', gap: 8, fontSize: 13,
                       fontWeight: isSelected ? 700 : 400,
-                    }}
+                      touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                      minHeight: 48,
+                    } as React.CSSProperties}
                   >
                     <img src={def.icon} alt="" style={{ width: 28, height: 28, objectFit: 'contain', filter: inv.colorFilter }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                     {def.name}
@@ -1078,9 +1088,11 @@ function GardenArea({ state, onPlant, onWater, onHarvest, onRemove }: {
                   style={{
                     background: selectedSeed === s.type ? '#c5e1a5' : 'white',
                     border: `2px solid ${selectedSeed === s.type ? '#7cb342' : '#ddd'}`,
-                    borderRadius: 10, padding: '6px 12px', cursor: 'pointer', fontSize: 13,
+                    borderRadius: 10, padding: '10px 14px', cursor: 'pointer', fontSize: 13,
                     display: 'flex', alignItems: 'center', gap: 6, fontWeight: selectedSeed === s.type ? 700 : 400,
-                  }}
+                    touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                    minHeight: 44,
+                  } as React.CSSProperties}
                 >
                   {s.seedEmoji} {s.name} <span style={{ color: '#888', fontSize: 11 }}>({state.seeds[s.type] ?? 0})</span>
                 </button>
@@ -1091,7 +1103,7 @@ function GardenArea({ state, onPlant, onWater, onHarvest, onRemove }: {
       </div>
 
       {/* Plot grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxWidth: 560 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12 }}>
         {state.gardenPlots.map(plot => {
           const plant = getPlant(plot.id);
           const dead = getDeadPlant(plot.id);
@@ -1109,12 +1121,10 @@ function GardenArea({ state, onPlant, onWater, onHarvest, onRemove }: {
                       : (selectedSeed ? '#f1f8e9' : '#efebe9'),
                 border: `2px dashed ${dead ? '#ef9a9a' : isReady ? '#a5d6a7' : plant ? '#fff176' : '#bcaaa4'}`,
                 borderRadius: 14, padding: 16, cursor: 'pointer', textAlign: 'center',
-                transition: 'transform 0.15s, box-shadow 0.15s',
-                minHeight: 90,
+                minHeight: 100,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.03)'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'scale(1)'; }}
+                touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+              } as React.CSSProperties}
             >
               {dead && <>
                 <div style={{ fontSize: 28 }}>💀</div>
@@ -1191,7 +1201,7 @@ function ForestArea({ state, onChop, onHarvestFruit, onForage, onHunt }: {
       {/* Trees grid */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontWeight: 700, color: '#4a3728', marginBottom: 10 }}>🌳 Trees</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10 }}>
           {state.forestTrees.map(tree => {
             const isFruitTree = tree.type !== 'normal';
             const harvested = state.harvestedTreeFruits.includes(tree.id);
@@ -1291,7 +1301,7 @@ function ForestArea({ state, onChop, onHarvestFruit, onForage, onHunt }: {
             { type: 'rose_hip', emoji: '🌹', label: 'Rose Hip' },
           ].map(item => (
             <button key={item.type} onClick={() => onForage(item.type)}
-              style={{ background: '#f9fbe7', border: '1px solid #c5e1a5', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
+              style={{ background: '#f9fbe7', border: '1px solid #c5e1a5', borderRadius: 10, padding: '11px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent', minHeight: 44 } as React.CSSProperties}
             >
               <span style={{ fontSize: 20 }}>{item.emoji}</span> {item.label}
             </button>
@@ -1370,7 +1380,7 @@ function PondArea({ state, onCast, onCancel }: {
           </div>
         ) : (
           <button onClick={onCast} disabled={!state.tools.fishingRod}
-            style={{ background: state.tools.fishingRod ? '#0288d1' : '#bbb', color: 'white', border: 'none', borderRadius: 14, padding: '12px 28px', cursor: state.tools.fishingRod ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 16 }}>
+            style={{ background: state.tools.fishingRod ? '#0288d1' : '#bbb', color: 'white', border: 'none', borderRadius: 14, padding: '14px 32px', cursor: state.tools.fishingRod ? 'pointer' : 'not-allowed', fontWeight: 700, fontSize: 16, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } as React.CSSProperties}>
             🎣 Cast Line
           </button>
         )}
@@ -1397,7 +1407,7 @@ function PondArea({ state, onCast, onCancel }: {
       {/* Fish guide */}
       <div style={{ background: '#fafafa', borderRadius: 12, padding: 16, border: '1px solid #eee' }}>
         <div style={{ fontWeight: 700, color: '#555', marginBottom: 10 }}>🗺️ Fish Guide</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8 }}>
           {fish.map(f => (
             <div key={f.type} style={{ background: 'white', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #eee' }}>
               <img src={f.icon} alt={f.name} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
@@ -1441,14 +1451,16 @@ function KitchenArea({ state, onAdd, onRemove, onCook, onSellDish, onSellIngredi
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 12, overflow: 'hidden', border: '2px solid #eee' }}>
         {[
           { id: 'stove', label: '🔥 Stove', bg: '#fff3e0' },
-          { id: 'recipes', label: `📖 Recipes (${discoveredRecipes.length}/${totalRecipes})`, bg: '#e8f5e9' },
-          { id: 'pantry', label: '🧺 Sell Pantry', bg: '#f3e5f5' },
+          { id: 'recipes', label: `📖 (${discoveredRecipes.length}/${totalRecipes})`, bg: '#e8f5e9' },
+          { id: 'pantry', label: '🧺 Sell', bg: '#f3e5f5' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)} style={{
-            flex: 1, padding: '10px 4px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
+            flex: 1, padding: '12px 6px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
             background: tab === t.id ? t.bg : 'white',
             borderBottom: tab === t.id ? '3px solid #ff9800' : '3px solid transparent',
-          }}>
+            touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+            minHeight: 48,
+          } as React.CSSProperties}>
             {t.label}
           </button>
         ))}
@@ -1468,17 +1480,18 @@ function KitchenArea({ state, onAdd, onRemove, onCook, onSellDish, onSellIngredi
             </div>
 
             {/* Slots */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
               {[0, 1, 2, 3].map(i => {
                 const ing = state.stoveSlots[i];
                 return (
                   <div key={i} onClick={() => ing && onRemove(i)} style={{
-                    width: 72, height: 72, background: ing ? '#fff9ef' : '#f5f5f5',
+                    width: 80, height: 80, background: ing ? '#fff9ef' : '#f5f5f5',
                     border: `2px dashed ${ing ? '#ff9800' : '#ddd'}`,
                     borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: ing ? 'pointer' : 'default', fontSize: 30,
+                    cursor: ing ? 'pointer' : 'default', fontSize: 32,
                     flexShrink: 0,
-                  }} title={ing ? `Click to remove ${pluralLabel(ing)}` : 'Empty slot'}>
+                    touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                  } as React.CSSProperties} title={ing ? `Tap to remove ${pluralLabel(ing)}` : 'Empty slot'}>
                     {ing ? (INGREDIENT_EMOJI[ing] ?? '🍽️') : (
                       <span style={{ fontSize: 24, color: '#ccc' }}>+</span>
                     )}
@@ -1488,13 +1501,15 @@ function KitchenArea({ state, onAdd, onRemove, onCook, onSellDish, onSellIngredi
               <button onClick={onCook} style={{
                 background: state.stoveSlots.length > 0 ? '#ff7043' : '#ddd',
                 color: 'white', border: 'none', borderRadius: 14,
-                padding: '12px 20px', cursor: state.stoveSlots.length > 0 ? 'pointer' : 'not-allowed',
-                fontWeight: 700, fontSize: 15, alignSelf: 'center',
-              }}>
+                padding: '16px 24px', cursor: state.stoveSlots.length > 0 ? 'pointer' : 'not-allowed',
+                fontWeight: 700, fontSize: 16, alignSelf: 'center',
+                touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                minHeight: 52,
+              } as React.CSSProperties}>
                 🍳 Cook!
               </button>
             </div>
-            <p style={{ fontSize: 12, color: '#bbb' }}>Click a slot to remove the ingredient · Click Cook to try the combination</p>
+            <p style={{ fontSize: 12, color: '#bbb' }}>Tap a slot to remove · Tap Cook to try the combo</p>
           </div>
 
           {/* Ingredients available */}
@@ -1506,11 +1521,10 @@ function KitchenArea({ state, onAdd, onRemove, onCook, onSellDish, onSellIngredi
                 {allIngredients.map(([key, qty]) => (
                   <button key={key} onClick={() => onAdd(key)} style={{
                     background: '#fafafa', border: '2px solid #eee', borderRadius: 10,
-                    padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13,
-                    transition: 'border-color 0.15s',
-                  }}
-                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#ff9800')}
-                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#eee')}
+                    padding: '10px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13,
+                    touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                    minHeight: 48,
+                  } as React.CSSProperties}
                   >
                     <span style={{ fontSize: 20 }}>{INGREDIENT_EMOJI[key] ?? '🍽️'}</span>
                     <span>{pluralLabel(key)}</span>
@@ -1540,7 +1554,7 @@ function KitchenArea({ state, onAdd, onRemove, onCook, onSellDish, onSellIngredi
               </div>
             )
             : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
                 {discoveredRecipes.map(recipe => {
                   const has = (state.cookedFood[recipe.id] ?? 0) > 0;
                   return (
@@ -1584,7 +1598,7 @@ function KitchenArea({ state, onAdd, onRemove, onCook, onSellDish, onSellIngredi
           {allIngredients.length === 0
             ? <p style={{ color: '#bbb', fontSize: 14 }}>Nothing to sell yet!</p>
             : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
                 {allIngredients.map(([key, qty]) => {
                   const price = INGREDIENT_SELL_PRICES[key] ?? 5;
                   return (
@@ -1648,14 +1662,16 @@ function ShopArea({ state, onBuySeed, onBuyTool, onBuyFurniture, onBuyPet, onSel
         {[
           { id: 'seeds', label: '🌱 Seeds' },
           { id: 'tools', label: '🛠️ Tools' },
-          { id: 'furniture', label: '🛋️ Furniture' },
+          { id: 'furniture', label: '🛋️ Decor' },
           { id: 'pets', label: '🐾 Pets' },
         ].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)} style={{
-            flex: 1, padding: '10px 4px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
+            flex: 1, padding: '12px 4px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
             background: tab === t.id ? '#fff9ef' : 'white',
             borderBottom: tab === t.id ? '3px solid #ff9800' : '3px solid transparent',
-          }}>
+            touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+            minHeight: 48,
+          } as React.CSSProperties}>
             {t.label}
           </button>
         ))}
@@ -1663,18 +1679,20 @@ function ShopArea({ state, onBuySeed, onBuyTool, onBuyFurniture, onBuyPet, onSel
 
       {/* Sell wood banner */}
       {state.wood > 0 && (
-        <div style={{ background: '#efebe9', borderRadius: 10, padding: 12, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ background: '#efebe9', borderRadius: 10, padding: 12, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <img src="/games/cozy-cottage/Forest/wood.svg" alt="wood" style={{ width: 32, height: 32, objectFit: 'contain' }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
-          <span style={{ fontWeight: 600, color: '#5d4037' }}>Wood: {state.wood} — sell at 8🪙 each</span>
-          <button onClick={() => onSellWood(1)} style={smallBtnStyle('#795548')}>Sell 1</button>
-          <button onClick={() => onSellWood(Math.min(10, state.wood))} style={smallBtnStyle('#5d4037')}>Sell 10</button>
-          <button onClick={() => onSellWood(state.wood)} style={smallBtnStyle('#4e342e')}>Sell All</button>
+          <span style={{ fontWeight: 600, color: '#5d4037', flex: '1 1 auto', minWidth: 120 }}>Wood: {state.wood} — 8🪙 each</span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={() => onSellWood(1)} style={smallBtnStyle('#795548')}>Sell 1</button>
+            <button onClick={() => onSellWood(Math.min(10, state.wood))} style={smallBtnStyle('#5d4037')}>Sell 10</button>
+            <button onClick={() => onSellWood(state.wood)} style={smallBtnStyle('#4e342e')}>Sell All</button>
+          </div>
         </div>
       )}
 
       {/* ── SEEDS ── */}
       {tab === 'seeds' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
           {SEEDS.map(seed => {
             const inInventory = state.seeds[seed.type] ?? 0;
             const canAfford = state.currency >= seed.price;
@@ -1699,7 +1717,7 @@ function ShopArea({ state, onBuySeed, onBuyTool, onBuyFurniture, onBuyPet, onSel
 
       {/* ── TOOLS ── */}
       {tab === 'tools' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
           {[
             { key: 'fishingRod' as const, name: 'Fishing Rod', emoji: '🎣', price: 150, desc: 'Catch fish at the Pond!' },
             { key: 'axe' as const,        name: 'Axe',          emoji: '🪓', price: 200, desc: 'Chop trees in the Forest.' },
@@ -1743,18 +1761,17 @@ function ShopArea({ state, onBuySeed, onBuyTool, onBuyFurniture, onBuyPet, onSel
                 <button key={cp.name} onClick={() => setSelectedColor(cp.filter)}
                   title={cp.name}
                   style={{
-                    width: 28, height: 28, borderRadius: '50%', background: cp.swatch,
+                    width: 36, height: 36, borderRadius: '50%', background: cp.swatch,
                     border: selectedColor === cp.filter ? '3px solid #333' : '3px solid transparent',
-                    cursor: 'pointer', transition: 'transform 0.15s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.2)')}
-                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                    cursor: 'pointer',
+                    touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent',
+                  } as React.CSSProperties}
                 />
               ))}
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
             {FURNITURE_CATALOG.map(item => {
               const canAfford = state.currency >= item.price;
               return (
@@ -1790,7 +1807,7 @@ function ShopArea({ state, onBuySeed, onBuyTool, onBuyFurniture, onBuyPet, onSel
               You have 3 pets already! That&apos;s the maximum.
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
             {PET_CATALOG.map(pet => {
               const owned = state.pets.some(p => p.type === pet.type);
               const canAfford = state.currency >= pet.price;
@@ -1830,6 +1847,9 @@ function SectionHeader({ icon, title, subtitle }: { icon: string; title: string;
 
 const smallBtnStyle = (bg: string): React.CSSProperties => ({
   background: bg, color: 'white', border: 'none', borderRadius: 8,
-  padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+  padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
   whiteSpace: 'nowrap',
+  touchAction: 'manipulation',
+  WebkitTapHighlightColor: 'transparent' as any,
+  minHeight: 40,
 });
