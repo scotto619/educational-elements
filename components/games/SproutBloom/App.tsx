@@ -493,8 +493,8 @@ export default function App() {
       if (!saved.attributes)              (saved as GameState).attributes = { agility: 0, endurance: 0, intelligence: 0, perception: 0 };
       if (!saved.weather)                 (saved as GameState).weather = 'sunny';
       if (saved.weatherTimer === undefined)(saved as GameState).weatherTimer = WEATHER_CHANGE_MAX;
-      if (saved.hunger === undefined)     (saved as GameState).hunger = HUNGER_MAX;
-      if (saved.thirst === undefined)     (saved as GameState).thirst = THIRST_MAX;
+      if (saved.hunger === undefined)     (saved as GameState).hunger = 100;
+      if (saved.thirst === undefined)     (saved as GameState).thirst = 100;
       if (!saved.exploredAreas)           (saved as GameState).exploredAreas = ['inside'];
       setState(saved);
       setScreen('game');
