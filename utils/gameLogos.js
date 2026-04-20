@@ -111,7 +111,8 @@ const GAME_LOGO_MAP = {
   werewolf: createLogoCandidates('werewolf', ['werewolf.svg', 'werewolf.png', 'One Night Werewolf', 'Werewolf']),
   'sprout-bloom': createLogoCandidates('sprout-bloom', ['sprout-bloom.png', 'Sprout & Bloom', 'Sprout and Bloom', 'Farm Sim', 'farm-sim']),
   'kawaii-agar': createLogoCandidates('kawaii-agar', ['kawaii-agar.png', 'Kawaii Agar', 'kawaii agar', 'kawaii-agar-logo']),
-  'endless-runner': createLogoCandidates('endless-runner', ['endless-runner.png', 'Endless Runner', 'endless-runner-logo'])
+  'endless-runner': createLogoCandidates('endless-runner', ['endless-runner.png', 'Endless Runner', 'endless-runner-logo']),
+  'cozy-cottage': createLogoCandidates('cozy-cottage', ['cozy-cottage.png', 'Cozy Cottage', 'cozy-cottage-logo'])
 };
 
 const GAME_LOGO_ALIASES = {

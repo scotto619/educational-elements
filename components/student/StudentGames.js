@@ -428,6 +428,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('endless-runner')
+    },
+    {
+      id: 'cozy-cottage',
+      name: 'Cozy Cottage',
+      icon: '🏡',
+      description: 'Decorate your cottage, grow a garden, fish at the river, forage in the forest, and discover new recipes at the stove!',
+      component: CozyCottageGame,
+      color: 'from-amber-400 to-orange-500',
+      difficulty: 'Easy',
+      time: '10-30 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('cozy-cottage')
     }
   ];
 
