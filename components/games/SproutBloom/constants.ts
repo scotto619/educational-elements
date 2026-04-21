@@ -80,10 +80,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
 ];
 
 export const PET_CATALOG = [
-  { id: 'p1', type: 'cat', name: 'Calico Cat', price: 1000, icon: '/games/cozy-cottage/Pets/cat.svg' },
-  { id: 'p2', type: 'dog', name: 'Golden Pup', price: 1500, icon: '/games/cozy-cottage/Pets/corgi.svg' },
-  { id: 'p3', type: 'rabbit', name: 'Lop Rabbit', price: 800, icon: '/games/cozy-cottage/Pets/pug.svg' },
-  { id: 'p4', type: 'kintamani', name: 'Kintamani Dog', price: 1200, icon: '/games/cozy-cottage/Pets/kintamani.svg' },
+  { id: 'p2', type: 'dog', name: 'Dog', price: 1500, icon: '/games/cozy-cottage/Pets/dog1.png' },
 ];
 
 export const SEEDS = [

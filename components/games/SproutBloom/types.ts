@@ -28,6 +28,7 @@ export interface PlacedFurniture {
   flipped?: boolean;
   location: 'inside' | 'outside';
   colorFilter?: string; // CSS filter applied when rendering
+  isOn?: boolean; // For togglable items like lamps
 }
 
 export interface GardenPlant {
@@ -103,6 +104,7 @@ export interface Pet {
   thirst: number;
   health: number;
   lastMove: number;
+  facing: 'up' | 'down' | 'left' | 'right';
 }
 
 export interface Deer {

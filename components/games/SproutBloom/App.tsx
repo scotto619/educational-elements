@@ -152,39 +152,55 @@ const TREE_SVG_MAP: Record<string, string> = {
 };
 
 // SVG asset paths for pets (keyed by pet type)
-const PET_SVG_MAP: Record<string, string> = {
-  cat: '/games/cozy-cottage/Pets/cat.svg',
-  dog: '/games/cozy-cottage/Pets/corgi.svg',
-  rabbit: '/games/cozy-cottage/Pets/pug.svg',
+/** Returns the correct src for a pet sprite given its type and facing direction.
+ *  The dog uses directional PNGs (dog1 = front/SW, dog2 = back/NW) identical to
+ *  the player system.  Other pets fall back to their original SVG. */
+function getPetSrc(type: string, facing: 'up' | 'down' | 'left' | 'right' = 'down'): string {
+  if (type === 'dog') {
+    const isBack = facing === 'up' || facing === 'left';
+    return isBack ? '/games/cozy-cottage/Pets/dog2.png' : '/games/cozy-cottage/Pets/dog1.png';
+  }
+  const fallback: Record<string, string> = {
+    cat: '/games/cozy-cottage/Pets/cat.svg',
+    rabbit: '/games/cozy-cottage/Pets/pug.svg',
+    kintamani: '/games/cozy-cottage/Pets/kintamani.svg',
+  };
+  return fallback[type] ?? '';
+}
+
+function getPetFlip(type: string, facing: 'up' | 'down' | 'left' | 'right' = 'down'): boolean {
+  if (type === 'dog') return facing === 'right' || facing === 'up';
+  return false;
+}
+
+// Legacy map kept for the small HUD icon (always uses front-facing image)
+const PET_ICON_MAP: Record<string, string> = {
+  dog:       '/games/cozy-cottage/Pets/dog1.png',
+  cat:       '/games/cozy-cottage/Pets/cat.svg',
+  rabbit:    '/games/cozy-cottage/Pets/pug.svg',
   kintamani: '/games/cozy-cottage/Pets/kintamani.svg',
 };
 
 // ─── Player sprite helpers ───────────────────────────────────────────────────
 /**
  * Returns the correct image src for the player sprite.
- * For the woman character, woman1.png = front/SW and woman2.png = back/NW.
+ * Both man and woman use two PNGs: *1 = front/SW view, *2 = back/NW view.
  * Isometric direction mapping:
  *   down  → SW (front, no flip)
  *   right → SE (front, flipped)
- *   up    → NE (back, flipped)
  *   left  → NW (back, no flip)
+ *   up    → NE (back, flipped)
  */
 function getPlayerSrc(sprite: 'man' | 'woman', facing: 'up' | 'down' | 'left' | 'right'): string {
-  if (sprite === 'woman') {
-    const isBack = facing === 'up' || facing === 'left';
-    return isBack
-      ? '/games/cozy-cottage/Player/woman2.png'
-      : '/games/cozy-cottage/Player/woman1.png';
-  }
-  return `/games/cozy-cottage/Player/${sprite}.svg`;
+  const isBack = facing === 'up' || facing === 'left';
+  return isBack
+    ? `/games/cozy-cottage/Player/${sprite}2.png`
+    : `/games/cozy-cottage/Player/${sprite}1.png`;
 }
 
 function getPlayerFlip(sprite: 'man' | 'woman', facing: 'up' | 'down' | 'left' | 'right'): boolean {
-  if (sprite === 'woman') {
-    // Flip for SE (right) and NE (up) directions
-    return facing === 'right' || facing === 'up';
-  }
-  return facing === 'left';
+  // Flip for SE (right) and NE (up) — mirrors the base SW/NW images
+  return facing === 'right' || facing === 'up';
 }
 
 // ─── Isometric projection ────────────────────────────────────────────────────
@@ -1058,9 +1074,19 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
       setMessage("Not enough coins!");
     }
   };
+  const anyLampOn = state.placedFurniture.some(f =>
+    f.location === 'inside' &&
+    (FURNITURE_CATALOG.find(c => c.id === f.furnitureId)?.type === 'lamp') &&
+    f.isOn
+  );
   const getTimeColor = () => {
     const time = state.timeOfDay;
-    if (time > 1900 || time < 600) return 'rgba(10, 10, 40, 0.4)'; // Night
+    const isNight = time > 1900 || time < 600;
+    if (isNight) {
+      // If player is inside and a lamp is on, warm glow replaces heavy darkness
+      if (state.playerLocation === 'inside' && anyLampOn) return 'rgba(255, 160, 40, 0.08)';
+      return 'rgba(10, 10, 40, 0.4)';
+    }
     if (time > 1700) return 'rgba(255, 100, 0, 0.2)'; // Sunset
     if (time < 800) return 'rgba(255, 200, 100, 0.1)'; // Sunrise
     return 'transparent';
@@ -1176,12 +1202,19 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
           }
 
           // Move randomly
+          let facing: 'up' | 'down' | 'left' | 'right' = pet.facing ?? 'down';
           if (Date.now() - lastMove > 5000 && prev.playerLocation === 'inside') {
             const dx = Math.floor(Math.random() * 3) - 1;
             const dy = Math.floor(Math.random() * 3) - 1;
             x = Math.max(0, Math.min(prev.houseSize.width - 1, x + dx));
             y = Math.max(0, Math.min(prev.houseSize.height - 1, y + dy));
             lastMove = Date.now();
+            // Update facing direction (horizontal dominates, same as player)
+            if (Math.abs(dx) >= Math.abs(dy)) {
+              facing = dx > 0 ? 'right' : dx < 0 ? 'left' : facing;
+            } else {
+              facing = dy > 0 ? 'down' : 'up';
+            }
           }
 
           // Check for bowls
@@ -1200,7 +1233,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             }
           }
 
-          return { ...pet, x, y, hunger, thirst, health, lastMove };
+          return { ...pet, x, y, hunger, thirst, health, lastMove, facing };
         });
 
         // Update bowl amounts if pets ate/drank
@@ -1563,7 +1596,8 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
         hunger: 100,
         thirst: 100,
         health: 100,
-        lastMove: Date.now()
+        lastMove: Date.now(),
+        facing: 'down' as const,
       };
       setState(prev => ({
         ...prev,
@@ -2150,7 +2184,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
   // ── Character Select ──────────────────────────────────────────────────────
   if (screen === 'character-select') {
     const characters = [
-      { id: 'man',   label: 'He / Him',   src: '/games/cozy-cottage/Player/man.svg' },
+      { id: 'man',   label: 'He / Him',   src: '/games/cozy-cottage/Player/man1.png' },
       { id: 'woman', label: 'She / Her',  src: '/games/cozy-cottage/Player/woman1.png' },
     ] as const;
     return (
@@ -2198,10 +2232,17 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
   return (
     <div className="relative flex flex-col font-sans overflow-hidden" style={{ height: 680 }}>
       {/* Time Overlay */}
-      <div 
-        className="absolute inset-0 z-[60] time-overlay pointer-events-none" 
-        style={{ backgroundColor: getTimeColor() }} 
+      <div
+        className="absolute inset-0 z-[60] time-overlay pointer-events-none"
+        style={{ backgroundColor: getTimeColor() }}
       />
+      {/* Warm lamp glow overlay — inside at night with lamp on */}
+      {state.playerLocation === 'inside' && anyLampOn && (state.timeOfDay > 1900 || state.timeOfDay < 600) && (
+        <div
+          className="absolute inset-0 z-[59] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 50% 40%, rgba(255,200,80,0.18) 0%, rgba(255,150,30,0.10) 50%, transparent 100%)' }}
+        />
+      )}
 
       {/* HUD — compact strip for mobile/iPad */}
       <div className="absolute top-2 left-2 right-2 z-[70] flex justify-between items-start pointer-events-none">
@@ -2314,8 +2355,8 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-lg bg-cozy-accent/10 flex items-center justify-center">
-                          {PET_SVG_MAP[pet.type]
-                            ? <img src={PET_SVG_MAP[pet.type]} width={14} height={14} draggable={false} className="object-contain" />
+                          {PET_ICON_MAP[pet.type]
+                            ? <img src={PET_ICON_MAP[pet.type]} width={14} height={14} draggable={false} className="object-contain" />
                             : <PawPrint size={12} className="text-cozy-accent" />
                           }
                         </div>
@@ -2866,32 +2907,58 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
               if (!item) return null;
               const s = isoItemStyle(f.x, f.y, item.width, item.height, curGridH, isoRise(item.type));
               const isNight = state.timeOfDay > 1900 || state.timeOfDay < 600;
+              // Footprint height = the flat tile area only (no sprite rise).
+              // Restricting pointer-events to this zone means clicks register on
+              // the visual base of the item, not the empty air above tall sprites.
+              const footprintH = (item.width + item.height) * (ISO_TILE_H / 2);
               return (
                 <div
                   key={f.id}
-                  onMouseEnter={() => {
-                    if (mode !== 'walk') return;
-                    tooltipTimer.current = setTimeout(() => setWorldTooltip({ name: item.name, x: f.x, y: f.y }), 1000);
-                  }}
-                  onMouseLeave={() => { if (tooltipTimer.current) clearTimeout(tooltipTimer.current); setWorldTooltip(null); }}
-                  className={`absolute flex items-end justify-center cursor-pointer group ${mode === 'decorate' ? 'ring-2 ring-white ring-dashed animate-pulse' : ''}`}
-                  style={{ ...s, zIndex: (f.x + f.y) * 10 + 2, backgroundColor: item.icon.startsWith('/') ? 'transparent' : item.color }}
-                  onPointerDown={e => { if (mode === 'decorate') { e.stopPropagation(); removeFurniture(f.id); } }}
-                  onClick={() => {
-                    if (mode === 'decorate') return;
-                    if (item.type === 'garden_patch') {
-                      const plant = state.gardenPlants.find(p => p.furnitureId === f.id);
-                      if (plant) {
-                        if (plant.isDead) { setState(prev => ({ ...prev, gardenPlants: prev.gardenPlants.filter(p => p.id !== plant.id) })); setMessage("Removed the dead plant."); }
-                        else if (plant.growthStage === 3) harvestPlant(plant.id);
-                        else if (!plant.isWatered) waterPlant(plant.id);
-                      } else { setSelectedGardenPatch(f.id); setMode('garden'); }
-                    } else if (item.type === 'bed') { setMode('sleep'); }
-                    else if (item.type === 'stove') { setMode('cook'); }
-                    else if (item.type === 'box') { setSelectedBox(f.id); setMode('box'); }
-                    else if (item.type === 'pet_bowl' || item.type === 'water_bowl') fillBowl(f.id);
-                  }}
+                  className={`absolute flex items-end justify-center group ${mode === 'decorate' ? 'ring-2 ring-white ring-dashed animate-pulse' : ''}`}
+                  style={{ ...s, zIndex: (f.x + f.y) * 10 + 2, backgroundColor: item.icon.startsWith('/') ? 'transparent' : item.color, pointerEvents: 'none' }}
                 >
+                  {/* Clickable footprint overlay — sits at the bottom of the sprite div,
+                      covering only the actual floor tile. Tall sprites can still visually
+                      extend upward through the parent's overflow:visible. */}
+                  <div
+                    style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      height: footprintH,
+                      pointerEvents: 'auto',
+                      cursor: 'pointer',
+                      zIndex: 1,
+                    }}
+                    onMouseEnter={() => {
+                      if (mode !== 'walk') return;
+                      tooltipTimer.current = setTimeout(() => setWorldTooltip({ name: item.name, x: f.x, y: f.y }), 1000);
+                    }}
+                    onMouseLeave={() => { if (tooltipTimer.current) clearTimeout(tooltipTimer.current); setWorldTooltip(null); }}
+                    onPointerDown={e => { if (mode === 'decorate') { e.stopPropagation(); removeFurniture(f.id); } }}
+                    onClick={() => {
+                      if (mode === 'decorate') return;
+                      if (item.type === 'garden_patch') {
+                        const plant = state.gardenPlants.find(p => p.furnitureId === f.id);
+                        if (plant) {
+                          if (plant.isDead) { setState(prev => ({ ...prev, gardenPlants: prev.gardenPlants.filter(p => p.id !== plant.id) })); setMessage("Removed the dead plant."); }
+                          else if (plant.growthStage === 3) harvestPlant(plant.id);
+                          else if (!plant.isWatered) waterPlant(plant.id);
+                        } else { setSelectedGardenPatch(f.id); setMode('garden'); }
+                      } else if (item.type === 'bed') { setMode('sleep'); }
+                      else if (item.type === 'stove') { setMode('cook'); }
+                      else if (item.type === 'box') { setSelectedBox(f.id); setMode('box'); }
+                      else if (item.type === 'pet_bowl' || item.type === 'water_bowl') fillBowl(f.id);
+                      else if (item.type === 'lamp') {
+                        setState(prev => ({
+                          ...prev,
+                          placedFurniture: prev.placedFurniture.map(pf =>
+                            pf.id === f.id ? { ...pf, isOn: !(pf.isOn ?? false) } : pf
+                          )
+                        }));
+                        setMessage(f.isOn ? "Lamp turned off." : "Lamp turned on.");
+                      }
+                    }}
+                  />
+
                   {/* Flat ground items fill the tile edge-to-edge; tall items keep padding */}
                   <GameIcon icon={item.icon} className={`z-10 ${FLAT_ITEM_TYPES.has(item.type) ? 'absolute inset-0 w-full h-full object-fill' : 'w-full h-full object-contain object-bottom p-0.5'}`} style={(() => {
                     const rot = f.rotation ?? 0;
@@ -2904,9 +2971,21 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                     return { ...(t ? { transform: t } : {}), ...(f.colorFilter ? { filter: f.colorFilter } : {}) };
                   })()} />
 
-                  {item.type === 'lamp' && isNight && (
-                    <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }} transition={{ duration: 3, repeat: Infinity }}
-                      className="absolute inset-0 bg-yellow-200/50 blur-2xl rounded-full" />
+                  {item.type === 'lamp' && f.isOn && (
+                    <motion.div
+                      animate={isNight
+                        ? { scale: [1, 1.35, 1], opacity: [0.7, 1.0, 0.7] }
+                        : { scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }
+                      }
+                      transition={{ duration: 2.5, repeat: Infinity }}
+                      className="absolute inset-0 bg-yellow-200/70 blur-2xl rounded-full pointer-events-none"
+                    />
+                  )}
+                  {item.type === 'lamp' && (
+                    <div
+                      className="absolute top-0 right-0 w-3 h-3 rounded-full border border-white/60 pointer-events-none z-20"
+                      style={{ backgroundColor: f.isOn ? '#fde047' : '#555', boxShadow: f.isOn ? '0 0 6px 2px rgba(253,224,71,0.7)' : 'none', transform: 'translate(30%, -30%)' }}
+                    />
                   )}
 
                   {item.type === 'garden_patch' && (() => {
@@ -3024,7 +3103,9 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
 
           {/* ── Pets (depth-sorted) ── */}
           {state.playerLocation === 'inside' && state.pets.map(pet => {
-            const petSvg = PET_SVG_MAP[pet.type];
+            const facing = pet.facing ?? 'down';
+            const petSrc = getPetSrc(pet.type, facing);
+            const petFlip = getPetFlip(pet.type, facing);
             const ps = isoItemStyle(pet.x, pet.y, 1, 1, curGridH);
             return (
               <motion.div
@@ -3034,8 +3115,15 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                 transition={{ type: 'spring', stiffness: 100, damping: 20 }}
                 style={{ width: ps.width, height: ps.height, zIndex: (pet.x + pet.y) * 10 + 5 }}
               >
-                {petSvg
-                  ? <img src={petSvg} width={ISO_TILE_W * 0.8} height={ISO_TILE_W * 0.8} draggable={false} className="drop-shadow-sm object-contain mb-1" />
+                {petSrc
+                  ? <img
+                      src={petSrc}
+                      width={ISO_TILE_W * 0.8}
+                      height={ISO_TILE_W * 0.8}
+                      draggable={false}
+                      className="drop-shadow-sm object-contain mb-1"
+                      style={{ transform: petFlip ? 'scaleX(-1)' : undefined }}
+                    />
                   : <PawPrint size={ISO_TILE_W * 0.6} className="text-cozy-text drop-shadow-sm mb-1" />
                 }
               </motion.div>
