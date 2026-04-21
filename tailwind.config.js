@@ -11,6 +11,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Cozy Cottage / SproutBloom game palette
+        cozy: {
+          accent: '#c47c40',   // warm amber-brown (buttons, highlights)
+          text:   '#4a3728',   // dark brown (body text)
+          bg:     '#fdf8f0',   // light cream (panel backgrounds)
+        },
         // Custom colors for Classroom Champions
         primary: {
           50: '#eff6ff',

@@ -2090,8 +2090,8 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
   // ── Start Menu ───────────────────────────────────────────────────────────
   if (screen === 'menu') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center font-sans relative overflow-hidden"
-        style={{ background: 'radial-gradient(ellipse at 60% 40%, #d4eac8 0%, #b8d4a0 40%, #8ab878 100%)' }}>
+      <div className="flex flex-col items-center justify-center font-sans relative overflow-hidden"
+        style={{ height: 680, background: 'radial-gradient(ellipse at 60% 40%, #d4eac8 0%, #b8d4a0 40%, #8ab878 100%)' }}>
         {/* Decorative trees */}
         <div className="absolute inset-0 pointer-events-none select-none">
           <img src="/games/cozy-cottage/Forest/tree.svg" className="absolute opacity-30" style={{ width: 180, bottom: 0, left: '5%' }} draggable={false} />
@@ -2154,8 +2154,8 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
       { id: 'woman', label: 'She / Her',  src: '/games/cozy-cottage/Player/woman1.png' },
     ] as const;
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center font-sans relative overflow-hidden"
-        style={{ background: 'radial-gradient(ellipse at 60% 40%, #d4eac8 0%, #b8d4a0 40%, #8ab878 100%)' }}>
+      <div className="flex flex-col items-center justify-center font-sans relative overflow-hidden"
+        style={{ height: 680, background: 'radial-gradient(ellipse at 60% 40%, #d4eac8 0%, #b8d4a0 40%, #8ab878 100%)' }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -2196,15 +2196,15 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex flex-col font-sans relative">
+    <div className="relative flex flex-col font-sans overflow-hidden" style={{ height: 680 }}>
       {/* Time Overlay */}
       <div 
-        className="fixed inset-0 z-[60] time-overlay pointer-events-none" 
+        className="absolute inset-0 z-[60] time-overlay pointer-events-none" 
         style={{ backgroundColor: getTimeColor() }} 
       />
 
       {/* HUD — compact strip for mobile/iPad */}
-      <div className="fixed top-2 left-2 right-2 z-[70] flex justify-between items-start pointer-events-none">
+      <div className="absolute top-2 left-2 right-2 z-[70] flex justify-between items-start pointer-events-none">
         <div className="flex flex-col gap-1.5 pointer-events-auto">
           {/* Main stats pill */}
           <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-lg border border-cozy-accent/20 flex items-center gap-3 flex-wrap">
@@ -2350,7 +2350,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
       </div>
 
       {/* Toast Notifications - Top Middle */}
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
         <AnimatePresence>
           {message && (
             <motion.div 
@@ -2368,7 +2368,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
 
       {/* Touch D-Pad — only visible in walk mode, bottom-right */}
       {mode === 'walk' && (
-        <div className="fixed bottom-24 right-3 z-[70] select-none touch-none" style={{ userSelect: 'none' }}>
+        <div className="absolute bottom-24 right-3 z-[70] select-none touch-none" style={{ userSelect: 'none' }}>
           <div className="relative w-32 h-32">
             {/* Up */}
             <button
@@ -2409,7 +2409,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
       )}
 
       {/* Bottom-left: Guide button */}
-      <div className="fixed bottom-6 left-3 z-[70]">
+      <div className="absolute bottom-6 left-3 z-[70]">
         <button
           onClick={() => setShowGuide(true)}
           className="bg-white/90 backdrop-blur-md p-3 rounded-full shadow-xl border-2 border-cozy-accent/20 transition-all active:scale-90 hover:bg-cozy-accent hover:text-white group"
@@ -3153,7 +3153,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
               initial={{ opacity: 0, y: -20, x: '-50%' }}
               animate={{ opacity: 1, y: 0, x: '-50%' }}
               exit={{ opacity: 0, y: -20, x: '-50%' }}
-              className="fixed top-8 left-1/2 z-[100] bg-white/90 backdrop-blur-md text-cozy-text text-xs font-bold px-4 py-2 rounded-full shadow-2xl border border-cozy-accent/20 flex items-center gap-2"
+              className="absolute top-8 left-1/2 z-[100] bg-white/90 backdrop-blur-md text-cozy-text text-xs font-bold px-4 py-2 rounded-full shadow-2xl border border-cozy-accent/20 flex items-center gap-2"
             >
               <Info size={14} className="text-cozy-accent" />
               {worldTooltip.name}
@@ -3164,7 +3164,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
 
       {/* Controls Overlay for Decorate Mode */}
       {mode === 'decorate' && (
-        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 flex gap-4 z-[80]">
+        <div className="absolute bottom-32 left-1/2 -translate-x-1/2 flex gap-4 z-[80]">
           <div className="bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-cozy-accent/20 flex gap-2">
             <button 
               onClick={() => setPlacementPos(p => ({ ...p, x: Math.max(0, p.x - 1) }))}
@@ -3220,7 +3220,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
       )}
 
       {/* Bottom Navigation Bars — two scrollable rows, touch-friendly */}
-      <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-auto max-w-[98vw]">
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 pointer-events-auto max-w-[98vw]">
 
         {/* Action Bar */}
         <div className="bg-white/90 backdrop-blur-xl px-3 py-2 rounded-2xl shadow-2xl border border-white/50 flex items-center gap-3 overflow-x-auto">
@@ -3323,7 +3323,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-cozy-text/40 backdrop-blur-md"
+            className="absolute inset-0 z-[110] flex items-center justify-center p-6 bg-cozy-text/40 backdrop-blur-md"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -3364,7 +3364,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
+            className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -3564,7 +3564,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
+            className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -3721,7 +3721,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
+            className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -3772,7 +3772,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-cozy-text/60 backdrop-blur-md"
+            className="absolute inset-0 z-[120] flex items-center justify-center p-6 bg-cozy-text/60 backdrop-blur-md"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -3822,7 +3822,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
+            className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -3966,7 +3966,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
+            className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
@@ -4081,7 +4081,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
+              className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
             >
               <motion.div
                 initial={{ scale: 0.9, y: 20 }}
@@ -4149,7 +4149,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
+            className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-cozy-text/20 backdrop-blur-sm"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -4369,7 +4369,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ y: 100 }}
             animate={{ y: 0 }}
             exit={{ y: 100 }}
-            className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[80] w-full max-w-2xl px-6"
+            className="absolute bottom-32 left-1/2 -translate-x-1/2 z-[80] w-full max-w-2xl px-6"
           >
             <div className="bg-white/90 backdrop-blur-xl p-6 rounded-[32px] shadow-2xl border border-white/50">
               <h3 className="text-sm font-bold uppercase tracking-wider text-cozy-text/40 mb-4 px-2">Your Inventory</h3>
@@ -4401,7 +4401,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-cozy-text/40 backdrop-blur-md"
+            className="absolute inset-0 z-[150] flex items-center justify-center p-6 bg-cozy-text/40 backdrop-blur-md"
           >
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
