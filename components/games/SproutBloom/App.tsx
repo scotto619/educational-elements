@@ -3067,9 +3067,10 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                 {atPond ? (() => {
                   const boatW  = ISO_TILE_W * 1.45;
                   const boatH  = ISO_TILE_W * 0.60;
-                  const playerW = ISO_TILE_W * 0.60;
-                  const overlap = playerW * 0.45;
-                  const containerH = playerW + boatH - overlap;
+                  const playerW = ISO_TILE_W * 0.45;
+                  const playerH = ISO_TILE_W * 0.95;
+                  const overlap = playerH * 0.45;
+                  const containerH = playerH + boatH - overlap;
                   const containerW = boatW;
                   const facingTransform = playerFacing === 'left' ? 'translateX(-50%) scaleX(-1)' : 'translateX(-50%)';
                   return (
@@ -3094,7 +3095,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                         <img
                           src={getPlayerSrc(state.playerSprite, playerFacing)}
                           width={playerW}
-                          height={playerW}
+                          height={playerH}
                           draggable={false}
                           className="object-contain drop-shadow"
                           style={{
@@ -3125,8 +3126,8 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                   <div ref={playerSpriteRef} className="flex flex-col items-center mb-2 relative">
                     <img
                       src={getPlayerSrc(state.playerSprite, playerFacing)}
-                      width={ISO_TILE_W * 0.9}
-                      height={ISO_TILE_W * 0.9}
+                      width={ISO_TILE_W * 0.45}
+                      height={ISO_TILE_W * 0.95}
                       draggable={false}
                       className="object-contain drop-shadow"
                       style={{
