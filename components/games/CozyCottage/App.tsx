@@ -762,7 +762,7 @@ export default function CozyCottageApp({ showToast }: AppProps) {
               } as React.CSSProperties}
               >
                 <img
-                  src={`/games/cozy-cottage/Player/${sprite}.svg`}
+                  src={sprite === 'woman' ? '/games/cozy-cottage/Player/woman1.png' : `/games/cozy-cottage/Player/${sprite}.svg`}
                   alt={sprite}
                   style={{ width: 80, height: 80, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
                 />

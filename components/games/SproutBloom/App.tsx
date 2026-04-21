@@ -159,6 +159,34 @@ const PET_SVG_MAP: Record<string, string> = {
   kintamani: '/games/cozy-cottage/Pets/kintamani.svg',
 };
 
+// ─── Player sprite helpers ───────────────────────────────────────────────────
+/**
+ * Returns the correct image src for the player sprite.
+ * For the woman character, woman1.png = front/SW and woman2.png = back/NW.
+ * Isometric direction mapping:
+ *   down  → SW (front, no flip)
+ *   right → SE (front, flipped)
+ *   up    → NE (back, flipped)
+ *   left  → NW (back, no flip)
+ */
+function getPlayerSrc(sprite: 'man' | 'woman', facing: 'up' | 'down' | 'left' | 'right'): string {
+  if (sprite === 'woman') {
+    const isBack = facing === 'up' || facing === 'left';
+    return isBack
+      ? '/games/cozy-cottage/Player/woman2.png'
+      : '/games/cozy-cottage/Player/woman1.png';
+  }
+  return `/games/cozy-cottage/Player/${sprite}.svg`;
+}
+
+function getPlayerFlip(sprite: 'man' | 'woman', facing: 'up' | 'down' | 'left' | 'right'): boolean {
+  if (sprite === 'woman') {
+    // Flip for SE (right) and NE (up) directions
+    return facing === 'right' || facing === 'up';
+  }
+  return facing === 'left';
+}
+
 // ─── Isometric projection ────────────────────────────────────────────────────
 const ISO_TILE_W = GRID_SIZE * 2;        // 80px – diamond width
 const ISO_TILE_H = GRID_SIZE;            // 40px – diamond height (2:1 ratio)
@@ -2123,7 +2151,7 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
   if (screen === 'character-select') {
     const characters = [
       { id: 'man',   label: 'He / Him',   src: '/games/cozy-cottage/Player/man.svg' },
-      { id: 'woman', label: 'She / Her',  src: '/games/cozy-cottage/Player/woman.svg' },
+      { id: 'woman', label: 'She / Her',  src: '/games/cozy-cottage/Player/woman1.png' },
     ] as const;
     return (
       <div className="min-h-screen flex flex-col items-center justify-center font-sans relative overflow-hidden"
@@ -3064,13 +3092,13 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                         }}
                       >
                         <img
-                          src={`/games/cozy-cottage/Player/${state.playerSprite}.svg`}
+                          src={getPlayerSrc(state.playerSprite, playerFacing)}
                           width={playerW}
                           height={playerW}
                           draggable={false}
                           className="object-contain drop-shadow"
                           style={{
-                            transform: playerFacing === 'left' ? 'scaleX(-1)' : undefined,
+                            transform: getPlayerFlip(state.playerSprite, playerFacing) ? 'scaleX(-1)' : undefined,
                             filter: state.isRelaxing ? 'brightness(0.88) saturate(0.9)' : undefined,
                           }}
                         />
@@ -3096,13 +3124,13 @@ export default function App({ studentData, updateStudentData, showToast }: AppPr
                 })() : (
                   <div ref={playerSpriteRef} className="flex flex-col items-center mb-2 relative">
                     <img
-                      src={`/games/cozy-cottage/Player/${state.playerSprite}.svg`}
+                      src={getPlayerSrc(state.playerSprite, playerFacing)}
                       width={ISO_TILE_W * 0.9}
                       height={ISO_TILE_W * 0.9}
                       draggable={false}
                       className="object-contain drop-shadow"
                       style={{
-                        transform: playerFacing === 'left' ? 'scaleX(-1)' : undefined,
+                        transform: getPlayerFlip(state.playerSprite, playerFacing) ? 'scaleX(-1)' : undefined,
                         filter: state.isRelaxing ? 'brightness(0.88) saturate(0.9)' : undefined,
                       }}
                     />
