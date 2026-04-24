@@ -27,6 +27,10 @@ export const englishDomains = [{
             pptxSrc: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Cover.png'
           }, {
+            type: 'image',
+            title: 'Nouns Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Nouns/Learning/NounWorksheet.png'
+          }, {
             type: 'video',
             title: 'The Magical World Builder: Decoding Nouns',
             src: '/Curriculum/New Literacy/Grammar/Nouns/Videos/The_Magical_World_Builder__Decoding_Nouns.mp4',
@@ -69,6 +73,10 @@ export const englishDomains = [{
             src: '/Curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pdf',
             pptxSrc: '/Curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Verbs/Learning/cover.png'
+          }, {
+            type: 'image',
+            title: 'Verbs Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Verbs/Learning/VerbsWorksheet.png'
           }],
           practice: [{
             type: 'game',
@@ -102,6 +110,10 @@ export const englishDomains = [{
             src: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pdf',
             pptxSrc: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/cover.png'
+          }, {
+            type: 'image',
+            title: 'Adjectives Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/AdjectivesWorksheet.png'
           }],
           practice: [{
             type: 'game',
@@ -135,6 +147,10 @@ export const englishDomains = [{
             src: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pdf',
             pptxSrc: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/cover.png'
+          }, {
+            type: 'image',
+            title: 'Adverbs Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs Worksheet.png'
           }],
           practice: [{
             type: 'game',
@@ -168,6 +184,10 @@ export const englishDomains = [{
             src: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pdf',
             pptxSrc: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/cover.png'
+          }, {
+            type: 'image',
+            title: 'Pronouns Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/PronounsWorksheet.png'
           }],
           practice: [{
             type: 'game',
@@ -201,6 +221,10 @@ export const englishDomains = [{
             src: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pdf',
             pptxSrc: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/cover.png'
+          }, {
+            type: 'image',
+            title: 'Prepositions Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/PrepositionsWorksheet.png'
           }],
           practice: [{
             type: 'game',
@@ -234,6 +258,10 @@ export const englishDomains = [{
             src: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pdf',
             pptxSrc: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/cover.png'
+          }, {
+            type: 'image',
+            title: 'Conjunctions Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/ConjunctionsWorksheet.png'
           }, {
             type: "pdf",
             title: "FANBOYS The Super Squad of Sentences",
@@ -272,6 +300,10 @@ export const englishDomains = [{
             src: '/Curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pdf',
             pptxSrc: '/Curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pptx',
             thumbnail: '/Curriculum/New Literacy/Grammar/Interjections/Learning/cover.png'
+          }, {
+            type: 'image',
+            title: 'Interjections Worksheet',
+            src: '/Curriculum/New Literacy/Grammar/Interjections/Learning/InterjectionsWorksheet.png'
           }],
           practice: [{
             type: 'game',
@@ -469,6 +501,10 @@ export const englishDomains = [{
           src: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/Capitals.pdf',
           pptxSrc: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/Capitals.pptx',
           thumbnail: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/cover.png'
+        }, {
+          type: 'image',
+          title: 'Capital Letters Worksheet',
+          src: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/CapitallettersWorksheet.png'
         }],
         practice: []
       }
@@ -487,6 +523,10 @@ export const englishDomains = [{
           src: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullStops.pdf',
           pptxSrc: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullStops.pptx',
           thumbnail: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/cover.png'
+        }, {
+          type: 'image',
+          title: 'Full Stops Worksheet',
+          src: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullstopsWorksheet.png'
         }],
         practice: []
       }
@@ -505,15 +545,47 @@ export const englishDomains = [{
           src: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionMarks.pdf',
           pptxSrc: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionMarks.pptx',
           thumbnail: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/cover.png'
+        }, {
+          type: 'image',
+          title: 'Question Marks Worksheet',
+          src: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionmarksWorksheet.png'
         }],
         practice: []
       }
     }, {
       id: 'exclamation_marks',
-      name: 'Exclamation marks'
+      name: 'Exclamation marks',
+      resources: {
+        display: [{
+          type: 'image',
+          title: 'Exclamation Marks Display',
+          src: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Display/ExclamationMarks.png'
+        }],
+        learn: [{
+          type: 'pdf',
+          title: 'Exclamation Marks Guide',
+          src: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Learning/ExclamationMarks.pdf',
+          pptxSrc: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Learning/ExclamationMarks.pptx',
+          thumbnail: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Learning/cover.png'
+        }, {
+          type: 'image',
+          title: 'Exclamation Marks Worksheet',
+          src: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Learning/ExclamationmarksWorksheet.png'
+        }],
+        practice: []
+      }
     }, {
       id: 'commas',
-      name: 'Commas (lists, clauses, dialogue)'
+      name: 'Commas (lists, clauses, dialogue)',
+      resources: {
+        display: [],
+        learn: [{
+          type: 'image',
+          title: 'Commas Worksheet',
+          src: '/Curriculum/New Literacy/Punctuation/Commas/Learning/CommasWorksheet.png'
+        }],
+        practice: []
+      }
     }, {
       id: 'apostrophes',
       name: 'Apostrophes (contractions/possession)'
@@ -886,6 +958,13 @@ export const englishDomains = [{
           title: "SoundItOut",
           src: "/Displays/English/Spelling/SoundItOut.png",
           extra: true
+        }],
+        learn: [{
+          type: 'pdf',
+          title: 'Phonics Superpowers Guide',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf',
+          pptxSrc: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pptx',
+          thumbnail: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/cover.png'
         }]
       }
     }, {
