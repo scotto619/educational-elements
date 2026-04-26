@@ -624,7 +624,14 @@ const StudentCard = ({
     } else if (hasClickerData) {
         cardBg = isDark ? themeColors.darkBg : themeColors.bg;
     } else if (cardEffect) {
-        cardBg = isDark ? 'bg-slate-800' : 'bg-white';
+        // Use the effect's custom bg if it has one, otherwise default
+        if (isDark && cardEffect.preview?.darkBgClass) {
+            cardBg = cardEffect.preview.darkBgClass;
+        } else if (!isDark && cardEffect.preview?.bgClass) {
+            cardBg = cardEffect.preview.bgClass;
+        } else {
+            cardBg = isDark ? 'bg-slate-800' : 'bg-white';
+        }
     } else {
         cardBg = isDark ? 'bg-slate-800' : 'bg-white';
     }
@@ -634,9 +641,13 @@ const StudentCard = ({
     if (isSelected) {
         borderCls = 'border-2 border-purple-500';
     } else if (cardEffect) {
-        // Effect provides its own glow ring — use a subtler border derived from effect rarity
-        const rarityBorderMap = { rare: 'border-2 border-blue-400', epic: 'border-2 border-purple-500', legendary: 'border-2 border-amber-400' };
-        borderCls = rarityBorderMap[cardEffect.rarity] || 'border-2 border-blue-400';
+        // Use the effect's custom border if it has one, otherwise derive from rarity
+        if (cardEffect.preview?.borderClass) {
+            borderCls = cardEffect.preview.borderClass;
+        } else {
+            const rarityBorderMap = { rare: 'border-2 border-blue-400', epic: 'border-2 border-purple-500', legendary: 'border-2 border-amber-400' };
+            borderCls = rarityBorderMap[cardEffect.rarity] || 'border-2 border-blue-400';
+        }
     } else if (hasClickerData) {
         borderCls = `border-4 ${isDark ? themeColors.darkBorder : themeColors.border} shadow-lg ${themeColors.glow} ${prestigeEffects}`;
     } else {

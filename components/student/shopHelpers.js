@@ -38,6 +38,11 @@ export const RARITY_WEIGHTS = {
 // Eggs are slightly easier to find than other items at their rarity tier
 export const EGG_RARITY_WEIGHT_BOOST = 3;
 
+// Card effects are premium cosmetics — each individual effect has only a small
+// chance of appearing in any given loot pool, making them genuinely rare finds.
+// Value: 0.0 (never) – 1.0 (always).  0.1 ≈ ~3 effects per spin pool on average.
+export const CARD_EFFECT_POOL_INCLUSION_CHANCE = 0.1;
+
 export const MYSTERY_REWARDS = {
   xp: {
     common: [3, 5, 8],
@@ -187,15 +192,19 @@ export const getMysteryBoxPrizes = (
     });
   });
 
+  // Card effects are VERY rare in loot — each effect has only a small chance
+  // of even appearing in the prize pool for any given spin.
   (CARD_EFFECTS_POOL || []).forEach(effect => {
-    prizes.push({
-      type: 'card_effect',
-      effectId: effect.id,
-      rarity: effect.rarity,
-      name: effect.name,
-      displayName: effect.name,
-      icon: '✨'
-    });
+    if (Math.random() < CARD_EFFECT_POOL_INCLUSION_CHANCE) {
+      prizes.push({
+        type: 'card_effect',
+        effectId: effect.id,
+        rarity: 'legendary', // always treated as legendary weight so they stay scarce
+        name: effect.name,
+        displayName: effect.name,
+        icon: '✨'
+      });
+    }
   });
 
   return prizes;

@@ -1922,6 +1922,18 @@ const StudentShop = ({
         showToast(`You bought a ${pack.name}!`, 'success');
         break;
       }
+      case 'card_effect': {
+        const effectId = purchaseModal.item.id;
+        const ownedEffects = new Set(studentData.ownedCardEffects || []);
+        ownedEffects.add(effectId);
+        updates.ownedCardEffects = [...ownedEffects];
+        // Auto-equip if the student has no effect currently
+        if (!studentData.equippedCardEffect) {
+          updates.equippedCardEffect = effectId;
+        }
+        showToast(`You unlocked the ${purchaseModal.item.name} effect!`, 'success');
+        break;
+      }
     }
 
     const success = await updateStudentData(updates);
@@ -1956,11 +1968,143 @@ const StudentShop = ({
     { id: 'avatars', name: '👤 Avatars', shortName: '👤', count: allAvatars.length },
     { id: 'pets', name: '🐾 Pets', shortName: '🐾', count: allPets.length },
     { id: 'card_packs', name: '🃏 Cards', shortName: '🃏' },
+    { id: 'card_effects', name: '✨ Effects', shortName: '✨', count: CARD_EFFECTS.length },
     { id: 'mysterybox', name: '🎁 Mystery Box', shortName: '🎁' },
     { id: 'loot_well', name: '💠 Loot Well', shortName: '💠' },
     { id: 'rewards', name: '🏆 Rewards', shortName: '🏆' },
     { id: 'inventory', name: '🎒 My Stuff', shortName: '🎒' }
   ];
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // CARD EFFECTS SHOP
+  // ───────────────────────────────────────────────────────────────────────────
+  const renderCardEffectsShop = () => {
+    const RARITY_ORDER = ['rare', 'epic', 'legendary'];
+    const CATEGORY_LABELS = {
+      border: '🖼️ Coloured Borders',
+      glow: '💡 Glowing Effects',
+      fire: '🔥 Fire Effects',
+      lightning: '⚡ Lightning Effects',
+      golden: '🌟 Golden Effects',
+      background: '🌌 Backgrounds',
+      special: '💎 Special Effects',
+    };
+
+    const RARITY_BADGE = {
+      rare: 'bg-blue-100 text-blue-700',
+      epic: 'bg-purple-100 text-purple-700',
+      legendary: 'bg-amber-100 text-amber-700',
+    };
+
+    const ownedIds = new Set(studentData?.ownedCardEffects || []);
+
+    // Group by category, preserving category order
+    const grouped = {};
+    CARD_EFFECTS.forEach(effect => {
+      if (!grouped[effect.category]) grouped[effect.category] = [];
+      grouped[effect.category].push(effect);
+    });
+
+    // Sort each group cheapest first, then by name
+    Object.values(grouped).forEach(group =>
+      group.sort((a, b) => a.price - b.price || a.name.localeCompare(b.name))
+    );
+
+    const categoryOrder = ['border', 'glow', 'fire', 'lightning', 'golden', 'background', 'special'];
+
+    return (
+      <div className="space-y-8">
+        <p className="text-sm text-gray-500">
+          {ownedIds.size} of {CARD_EFFECTS.length} effects owned. Equip them from <strong>My Stuff → Card Effects</strong>.
+        </p>
+
+        {categoryOrder.filter(cat => grouped[cat]).map(cat => (
+          <div key={cat}>
+            <h3 className="font-bold text-base md:text-lg mb-3 text-gray-700">{CATEGORY_LABELS[cat] || cat}</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              {grouped[cat].map(effect => {
+                const owned = ownedIds.has(effect.id);
+                const equipped = studentData?.equippedCardEffect === effect.id;
+                const canAfford = currentCoins >= effect.price;
+
+                return (
+                  <div
+                    key={effect.id}
+                    className={`relative rounded-xl border-2 overflow-hidden transition-all ${
+                      owned
+                        ? equipped
+                          ? 'border-fuchsia-400 bg-fuchsia-50'
+                          : 'border-green-400 bg-green-50/30'
+                        : 'border-gray-200 bg-white hover:border-fuchsia-300 hover:shadow-md'
+                    }`}
+                  >
+                    {/* Live preview strip */}
+                    <div className={`relative h-14 overflow-hidden ${effect.preview?.bgClass || 'bg-gradient-to-br from-gray-100 to-white'}`}>
+                      {/* Aura layer */}
+                      <div
+                        className={`absolute inset-0 blur-md bg-gradient-to-br ${effect.preview?.auraClass || ''}`}
+                        style={{ opacity: 0.8 }}
+                      />
+                      {/* Ring / glow */}
+                      <div
+                        className={`absolute inset-0 ${effect.preview?.ringClass || ''} ${effect.preview?.animationClass || ''}`}
+                      />
+                      {/* Border swatch */}
+                      {effect.preview?.borderClass && (
+                        <div className={`absolute inset-1 rounded-lg ${effect.preview.borderClass} opacity-80`} />
+                      )}
+                      {/* Rarity badge */}
+                      <span className={`absolute top-1.5 right-1.5 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full ${RARITY_BADGE[effect.rarity] || 'bg-gray-100 text-gray-600'}`}>
+                        {effect.rarity}
+                      </span>
+                    </div>
+
+                    {/* Info */}
+                    <div className="p-3">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="font-semibold text-sm text-gray-900 leading-snug">{effect.name}</p>
+                        {owned ? (
+                          equipped ? (
+                            <span className="flex-shrink-0 text-[10px] font-bold bg-fuchsia-500 text-white px-2 py-0.5 rounded-full">Equipped</span>
+                          ) : (
+                            <span className="flex-shrink-0 text-[10px] font-bold bg-green-500 text-white px-2 py-0.5 rounded-full">Owned</span>
+                          )
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-gray-500 mb-2 leading-snug">{effect.description}</p>
+
+                      {owned ? (
+                        !equipped && (
+                          <button
+                            onClick={() => handleEquip('card_effect', effect.id)}
+                            className="w-full py-1.5 text-xs font-bold rounded-lg bg-fuchsia-600 text-white hover:bg-fuchsia-700 active:scale-95 transition-all"
+                          >
+                            Equip
+                          </button>
+                        )
+                      ) : (
+                        <button
+                          onClick={() => setPurchaseModal({ visible: true, item: effect, type: 'card_effect' })}
+                          disabled={!canAfford}
+                          className={`w-full py-1.5 text-xs font-bold rounded-lg transition-all ${
+                            canAfford
+                              ? 'bg-fuchsia-600 text-white hover:bg-fuchsia-700 active:scale-95'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          💰 {effect.price} coins{!canAfford ? ` (need ${effect.price - currentCoins} more)` : ''}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   const renderMysteryBox = () => {
     return (
@@ -2561,6 +2705,13 @@ const StudentShop = ({
     }
 
     // ===============================================
+    // CARD EFFECTS - Full shop
+    // ===============================================
+    if (activeCategory === 'card_effects') {
+      return renderCardEffectsShop();
+    }
+
+    // ===============================================
     // MYSTERY BOX - Direct access
     // ===============================================
     if (activeCategory === 'mysterybox') {
@@ -2931,6 +3082,7 @@ const StudentShop = ({
               avatars: { active: 'bg-blue-500 text-white shadow-blue-200', hover: 'hover:bg-blue-50 hover:text-blue-700' },
               pets: { active: 'bg-purple-500 text-white shadow-purple-200', hover: 'hover:bg-purple-50 hover:text-purple-700' },
               card_packs: { active: 'bg-indigo-500 text-white shadow-indigo-200', hover: 'hover:bg-indigo-50 hover:text-indigo-700' },
+              card_effects: { active: 'bg-fuchsia-500 text-white shadow-fuchsia-200', hover: 'hover:bg-fuchsia-50 hover:text-fuchsia-700' },
               mysterybox: { active: 'bg-pink-500 text-white shadow-pink-200', hover: 'hover:bg-pink-50 hover:text-pink-700' },
               loot_well: { active: 'bg-sky-500 text-white shadow-sky-200', hover: 'hover:bg-sky-50 hover:text-sky-700' },
               rewards: { active: 'bg-amber-500 text-white shadow-amber-200', hover: 'hover:bg-amber-50 hover:text-amber-700' },
@@ -2992,6 +3144,18 @@ const StudentShop = ({
               <div>
                 <h3 className="text-base md:text-lg font-bold text-amber-800">Class Rewards</h3>
                 <p className="text-amber-600 text-xs md:text-sm">Special privileges set by your teacher!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeCategory === 'card_effects' && (
+          <div className="mx-4 mt-4 p-3 md:p-4 bg-gradient-to-r from-fuchsia-100 via-purple-50 to-indigo-100 rounded-xl border border-fuchsia-200">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl md:text-3xl">✨</div>
+              <div>
+                <h3 className="text-base md:text-lg font-bold text-fuchsia-800">Card Effects</h3>
+                <p className="text-fuchsia-600 text-xs md:text-sm">Buy special effects to decorate your avatar card — borders, glows, fire, lightning &amp; more! Also drop (very rarely) from the Mystery Box &amp; Loot Well.</p>
               </div>
             </div>
           </div>
