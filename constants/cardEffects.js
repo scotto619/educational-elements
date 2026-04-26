@@ -1,22 +1,20 @@
 // constants/cardEffects.js
 // All purchasable & loot-able special effects for student avatar cards.
-// Each effect has:
-//   price         – coin cost to buy from the Effects shop (100-200)
-//   rarity        – 'rare' | 'epic' | 'legendary'
-//   category      – 'border' | 'glow' | 'fire' | 'lightning' | 'golden' | 'background' | 'special'
-//   preview       – CSS classes applied to the card in StudentsTab
-//     .borderClass  – overrides the default rarity border (optional)
-//     .bgClass      – card background in light mode (optional)
-//     .darkBgClass  – card background in dark mode (optional)
-//     .auraClass    – blurred gradient layer behind content
-//     .ringClass    – shadow/glow ring layer
-//     .animationClass – Tailwind animation applied to the ring layer
+//
+// preview fields:
+//   borderClass    – Tailwind border applied to the card div itself
+//   bgClass        – card background (light mode)
+//   darkBgClass    – card background (dark mode)
+//   auraClass      – Tailwind gradient stops for the inner colour-wash div
+//   glowStyle      – Raw CSS box-shadow for the outer glow wrapper (bright state)
+//   glowStyleDim   – Raw CSS box-shadow for the outer glow wrapper (dim state, used in pulse keyframe)
+//   animDuration   – Duration of the glow pulse animation (default '2.5s')
+//   spinGradient   – conic-gradient() string for the spinning inner overlay (optional)
+//   spinSpeed      – duration of the spin (default '5s')
 
 export const CARD_EFFECTS = [
 
-  // ────────────────────────────────────────────────────────────────
-  // CLASSIC EFFECTS  (kept for backwards compatibility)
-  // ────────────────────────────────────────────────────────────────
+  // ─── CLASSIC EFFECTS ─────────────────────────────────────────────────────────
   {
     id: 'frost-glow',
     name: 'Frost Glow',
@@ -26,9 +24,10 @@ export const CARD_EFFECTS = [
     description: 'An icy shimmer dances around your student card.',
     colors: ['#a5f3fc', '#38bdf8'],
     preview: {
-      auraClass: 'from-cyan-100/60 via-white/40 to-blue-200/40',
-      ringClass: 'shadow-[0_0_18px_rgba(56,189,248,0.55)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-cyan-200/50 via-sky-100/40 to-blue-200/50',
+      glowStyle: '0 0 18px rgba(56,189,248,0.75), 0 0 40px rgba(56,189,248,0.35)',
+      glowStyleDim: '0 0 8px rgba(56,189,248,0.25)',
+      animDuration: '2s',
     }
   },
   {
@@ -41,8 +40,11 @@ export const CARD_EFFECTS = [
     colors: ['#fb923c', '#f97316', '#facc15'],
     preview: {
       auraClass: 'from-amber-200/50 via-orange-200/40 to-yellow-200/40',
-      ringClass: 'shadow-[0_0_22px_rgba(251,146,60,0.6)]',
-      animationClass: 'animate-[spin_12s_linear_infinite]'
+      glowStyle: '0 0 22px rgba(251,146,60,0.85), 0 0 50px rgba(249,115,22,0.4)',
+      glowStyleDim: '0 0 10px rgba(251,146,60,0.3)',
+      animDuration: '1.8s',
+      spinGradient: 'conic-gradient(from 0deg, #ef4444, #f97316, #facc15, #f97316, #ef4444, #f97316, #facc15)',
+      spinSpeed: '4s',
     }
   },
   {
@@ -55,8 +57,9 @@ export const CARD_EFFECTS = [
     colors: ['#c4b5fd', '#f5d0fe', '#e0f2fe'],
     preview: {
       auraClass: 'from-indigo-200/50 via-fuchsia-100/50 to-blue-200/50',
-      ringClass: 'shadow-[0_0_26px_rgba(129,140,248,0.5)]',
-      animationClass: 'animate-bounce'
+      glowStyle: '0 0 25px rgba(129,140,248,0.75), 0 0 55px rgba(196,181,253,0.3)',
+      glowStyleDim: '0 0 10px rgba(129,140,248,0.25)',
+      animDuration: '3s',
     }
   },
   {
@@ -69,8 +72,11 @@ export const CARD_EFFECTS = [
     colors: ['#a855f7', '#22d3ee', '#34d399'],
     preview: {
       auraClass: 'from-purple-300/50 via-cyan-200/50 to-emerald-200/50',
-      ringClass: 'shadow-[0_0_30px_rgba(168,85,247,0.55)]',
-      animationClass: 'animate-[spin_16s_linear_infinite]'
+      glowStyle: '0 0 28px rgba(168,85,247,0.8), 0 0 60px rgba(34,211,238,0.35)',
+      glowStyleDim: '0 0 12px rgba(168,85,247,0.3)',
+      animDuration: '3s',
+      spinGradient: 'conic-gradient(from 0deg, #a855f7, #22d3ee, #34d399, #f0abfc, #a855f7)',
+      spinSpeed: '6s',
     }
   },
   {
@@ -82,15 +88,14 @@ export const CARD_EFFECTS = [
     description: 'Electric lines pulse around your profile.',
     colors: ['#22d3ee', '#a855f7'],
     preview: {
-      auraClass: 'from-cyan-200/60 via-white/40 to-fuchsia-200/60',
-      ringClass: 'shadow-[0_0_24px_rgba(34,211,238,0.6)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-cyan-200/60 via-white/30 to-fuchsia-200/60',
+      glowStyle: '0 0 22px rgba(34,211,238,0.8), 0 0 50px rgba(168,85,247,0.3)',
+      glowStyleDim: '0 0 10px rgba(34,211,238,0.25)',
+      animDuration: '2s',
     }
   },
 
-  // ────────────────────────────────────────────────────────────────
-  // COLOURED BORDERS  (epic, 100–110 coins)
-  // ────────────────────────────────────────────────────────────────
+  // ─── COLOURED BORDERS ────────────────────────────────────────────────────────
   {
     id: 'crimson-border',
     name: 'Crimson Border',
@@ -101,9 +106,10 @@ export const CARD_EFFECTS = [
     colors: ['#ef4444', '#dc2626'],
     preview: {
       borderClass: 'border-4 border-red-500',
-      auraClass: 'from-red-200/30 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(239,68,68,0.5)]',
-      animationClass: ''
+      auraClass: 'from-red-200/35 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(239,68,68,0.65), 0 0 35px rgba(239,68,68,0.25)',
+      glowStyleDim: '0 0 6px rgba(239,68,68,0.2)',
+      animDuration: '2.5s',
     }
   },
   {
@@ -116,9 +122,10 @@ export const CARD_EFFECTS = [
     colors: ['#3b82f6', '#2563eb'],
     preview: {
       borderClass: 'border-4 border-blue-500',
-      auraClass: 'from-blue-200/30 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(59,130,246,0.5)]',
-      animationClass: ''
+      auraClass: 'from-blue-200/35 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(59,130,246,0.65), 0 0 35px rgba(59,130,246,0.25)',
+      glowStyleDim: '0 0 6px rgba(59,130,246,0.2)',
+      animDuration: '2.5s',
     }
   },
   {
@@ -131,9 +138,10 @@ export const CARD_EFFECTS = [
     colors: ['#10b981', '#059669'],
     preview: {
       borderClass: 'border-4 border-emerald-500',
-      auraClass: 'from-emerald-200/30 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(16,185,129,0.5)]',
-      animationClass: ''
+      auraClass: 'from-emerald-200/35 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(16,185,129,0.65), 0 0 35px rgba(16,185,129,0.25)',
+      glowStyleDim: '0 0 6px rgba(16,185,129,0.2)',
+      animDuration: '2.5s',
     }
   },
   {
@@ -146,9 +154,10 @@ export const CARD_EFFECTS = [
     colors: ['#8b5cf6', '#7c3aed'],
     preview: {
       borderClass: 'border-4 border-violet-500',
-      auraClass: 'from-violet-200/30 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(139,92,246,0.5)]',
-      animationClass: ''
+      auraClass: 'from-violet-200/35 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(139,92,246,0.65), 0 0 35px rgba(139,92,246,0.25)',
+      glowStyleDim: '0 0 6px rgba(139,92,246,0.2)',
+      animDuration: '2.5s',
     }
   },
   {
@@ -161,9 +170,10 @@ export const CARD_EFFECTS = [
     colors: ['#374151', '#1f2937'],
     preview: {
       borderClass: 'border-4 border-gray-700',
-      auraClass: 'from-gray-400/20 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(55,65,81,0.7)]',
-      animationClass: ''
+      auraClass: 'from-gray-400/25 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(75,85,99,0.7), 0 0 35px rgba(55,65,81,0.35)',
+      glowStyleDim: '0 0 6px rgba(75,85,99,0.2)',
+      animDuration: '3s',
     }
   },
   {
@@ -176,9 +186,10 @@ export const CARD_EFFECTS = [
     colors: ['#f43f5e', '#e11d48'],
     preview: {
       borderClass: 'border-4 border-rose-500',
-      auraClass: 'from-rose-200/30 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(244,63,94,0.5)]',
-      animationClass: ''
+      auraClass: 'from-rose-200/35 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(244,63,94,0.65), 0 0 35px rgba(244,63,94,0.25)',
+      glowStyleDim: '0 0 6px rgba(244,63,94,0.2)',
+      animDuration: '2.5s',
     }
   },
   {
@@ -191,9 +202,10 @@ export const CARD_EFFECTS = [
     colors: ['#14b8a6', '#0d9488'],
     preview: {
       borderClass: 'border-4 border-teal-500',
-      auraClass: 'from-teal-200/30 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(20,184,166,0.5)]',
-      animationClass: ''
+      auraClass: 'from-teal-200/35 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(20,184,166,0.65), 0 0 35px rgba(20,184,166,0.25)',
+      glowStyleDim: '0 0 6px rgba(20,184,166,0.2)',
+      animDuration: '2.5s',
     }
   },
   {
@@ -206,15 +218,14 @@ export const CARD_EFFECTS = [
     colors: ['#f97316', '#ea580c'],
     preview: {
       borderClass: 'border-4 border-orange-500',
-      auraClass: 'from-orange-200/30 via-transparent to-transparent',
-      ringClass: 'shadow-[0_0_18px_rgba(249,115,22,0.5)]',
-      animationClass: ''
+      auraClass: 'from-orange-200/35 via-transparent to-transparent',
+      glowStyle: '0 0 16px rgba(249,115,22,0.65), 0 0 35px rgba(249,115,22,0.25)',
+      glowStyleDim: '0 0 6px rgba(249,115,22,0.2)',
+      animDuration: '2.5s',
     }
   },
 
-  // ────────────────────────────────────────────────────────────────
-  // GLOW EFFECTS  (epic, 120–140 coins)
-  // ────────────────────────────────────────────────────────────────
+  // ─── GLOW EFFECTS ────────────────────────────────────────────────────────────
   {
     id: 'azure-glow',
     name: 'Azure Glow',
@@ -224,9 +235,10 @@ export const CARD_EFFECTS = [
     description: 'A pulsating azure aura brightens your card like a beacon.',
     colors: ['#38bdf8', '#0ea5e9'],
     preview: {
-      auraClass: 'from-sky-300/60 via-sky-100/40 to-blue-200/50',
-      ringClass: 'shadow-[0_0_28px_rgba(56,189,248,0.7)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-sky-300/55 via-sky-100/35 to-blue-200/45',
+      glowStyle: '0 0 25px rgba(56,189,248,0.85), 0 0 55px rgba(14,165,233,0.4)',
+      glowStyleDim: '0 0 10px rgba(56,189,248,0.25)',
+      animDuration: '2s',
     }
   },
   {
@@ -238,9 +250,10 @@ export const CARD_EFFECTS = [
     description: 'A vibrant magenta aura pulses with pop-art energy.',
     colors: ['#ec4899', '#d946ef'],
     preview: {
-      auraClass: 'from-pink-300/60 via-fuchsia-100/40 to-rose-200/50',
-      ringClass: 'shadow-[0_0_28px_rgba(236,72,153,0.7)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-pink-300/55 via-fuchsia-100/35 to-rose-200/45',
+      glowStyle: '0 0 25px rgba(236,72,153,0.85), 0 0 55px rgba(217,70,239,0.4)',
+      glowStyleDim: '0 0 10px rgba(236,72,153,0.25)',
+      animDuration: '2s',
     }
   },
   {
@@ -252,9 +265,10 @@ export const CARD_EFFECTS = [
     description: 'A mystical jade glow emanates ancient forest energy.',
     colors: ['#22c55e', '#16a34a'],
     preview: {
-      auraClass: 'from-green-300/60 via-emerald-100/40 to-teal-200/50',
-      ringClass: 'shadow-[0_0_28px_rgba(34,197,94,0.7)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-green-300/55 via-emerald-100/35 to-teal-200/45',
+      glowStyle: '0 0 25px rgba(34,197,94,0.85), 0 0 55px rgba(22,163,74,0.4)',
+      glowStyleDim: '0 0 10px rgba(34,197,94,0.25)',
+      animDuration: '2s',
     }
   },
   {
@@ -266,15 +280,14 @@ export const CARD_EFFECTS = [
     description: 'A blazing solar aura shines like a miniature sun.',
     colors: ['#facc15', '#f59e0b'],
     preview: {
-      auraClass: 'from-yellow-300/60 via-amber-100/40 to-orange-200/50',
-      ringClass: 'shadow-[0_0_30px_rgba(250,204,21,0.75)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-yellow-300/55 via-amber-100/35 to-orange-200/45',
+      glowStyle: '0 0 28px rgba(250,204,21,0.9), 0 0 60px rgba(245,158,11,0.4)',
+      glowStyleDim: '0 0 12px rgba(250,204,21,0.25)',
+      animDuration: '1.8s',
     }
   },
 
-  // ────────────────────────────────────────────────────────────────
-  // BACKGROUND EFFECTS  (epic / legendary, 140–175 coins)
-  // ────────────────────────────────────────────────────────────────
+  // ─── BACKGROUND EFFECTS ───────────────────────────────────────────────────────
   {
     id: 'starfield-bg',
     name: 'Starfield',
@@ -286,9 +299,10 @@ export const CARD_EFFECTS = [
     preview: {
       bgClass: 'bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950',
       darkBgClass: 'bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950',
-      auraClass: 'from-indigo-400/20 via-purple-300/10 to-blue-400/20',
-      ringClass: 'shadow-[0_0_25px_rgba(99,102,241,0.5)]',
-      animationClass: ''
+      auraClass: 'from-indigo-400/25 via-purple-300/15 to-blue-400/25',
+      glowStyle: '0 0 28px rgba(99,102,241,0.7), 0 0 60px rgba(99,102,241,0.25)',
+      glowStyleDim: '0 0 12px rgba(99,102,241,0.25)',
+      animDuration: '3s',
     }
   },
   {
@@ -302,9 +316,10 @@ export const CARD_EFFECTS = [
     preview: {
       bgClass: 'bg-gradient-to-br from-sky-100 via-blue-50 to-cyan-100',
       darkBgClass: 'bg-gradient-to-br from-sky-900 via-blue-900 to-cyan-900',
-      auraClass: 'from-sky-200/50 via-blue-100/40 to-cyan-200/50',
-      ringClass: 'shadow-[0_0_20px_rgba(125,211,252,0.5)]',
-      animationClass: ''
+      auraClass: 'from-sky-200/45 via-blue-100/35 to-cyan-200/45',
+      glowStyle: '0 0 22px rgba(125,211,252,0.7), 0 0 50px rgba(125,211,252,0.3)',
+      glowStyleDim: '0 0 10px rgba(125,211,252,0.2)',
+      animDuration: '3s',
     }
   },
   {
@@ -318,9 +333,10 @@ export const CARD_EFFECTS = [
     preview: {
       bgClass: 'bg-gradient-to-br from-violet-100 via-pink-50 to-orange-100',
       darkBgClass: 'bg-gradient-to-br from-violet-900 via-pink-900 to-orange-900',
-      auraClass: 'from-violet-300/40 via-pink-200/40 to-orange-200/40',
-      ringClass: 'shadow-[0_0_22px_rgba(124,58,237,0.5)]',
-      animationClass: ''
+      auraClass: 'from-violet-300/40 via-pink-200/35 to-orange-200/40',
+      glowStyle: '0 0 22px rgba(124,58,237,0.7), 0 0 50px rgba(219,39,119,0.3)',
+      glowStyleDim: '0 0 10px rgba(124,58,237,0.2)',
+      animDuration: '3s',
     }
   },
   {
@@ -334,15 +350,16 @@ export const CARD_EFFECTS = [
     preview: {
       bgClass: 'bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100',
       darkBgClass: 'bg-gradient-to-br from-pink-900 via-purple-900 to-indigo-900',
-      auraClass: 'from-pink-200/50 via-yellow-100/40 to-blue-200/50',
-      ringClass: 'shadow-[0_0_28px_rgba(168,85,247,0.5)]',
-      animationClass: 'animate-[spin_20s_linear_infinite]'
+      auraClass: 'from-pink-200/45 via-yellow-100/30 to-blue-200/45',
+      glowStyle: '0 0 28px rgba(168,85,247,0.7), 0 0 60px rgba(244,63,94,0.3)',
+      glowStyleDim: '0 0 12px rgba(168,85,247,0.2)',
+      animDuration: '2.5s',
+      spinGradient: 'conic-gradient(from 0deg, #f43f5e, #f97316, #facc15, #22c55e, #3b82f6, #8b5cf6, #f43f5e)',
+      spinSpeed: '6s',
     }
   },
 
-  // ────────────────────────────────────────────────────────────────
-  // GOLDEN EFFECTS  (legendary, 175 coins)
-  // ────────────────────────────────────────────────────────────────
+  // ─── GOLDEN EFFECTS ───────────────────────────────────────────────────────────
   {
     id: 'golden-frame',
     name: 'Golden Frame',
@@ -353,9 +370,10 @@ export const CARD_EFFECTS = [
     colors: ['#f59e0b', '#d97706', '#fbbf24'],
     preview: {
       borderClass: 'border-4 border-amber-400',
-      auraClass: 'from-amber-200/60 via-yellow-100/50 to-amber-300/60',
-      ringClass: 'shadow-[0_0_32px_rgba(245,158,11,0.75)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-amber-200/55 via-yellow-100/40 to-amber-300/55',
+      glowStyle: '0 0 28px rgba(245,158,11,0.85), 0 0 60px rgba(251,191,36,0.4)',
+      glowStyleDim: '0 0 12px rgba(245,158,11,0.3)',
+      animDuration: '2.5s',
     }
   },
   {
@@ -368,15 +386,16 @@ export const CARD_EFFECTS = [
     colors: ['#f97316', '#facc15', '#fbbf24'],
     preview: {
       borderClass: 'border-4 border-yellow-500',
-      auraClass: 'from-orange-300/60 via-yellow-200/50 to-amber-200/60',
-      ringClass: 'shadow-[0_0_45px_rgba(249,115,22,0.8)]',
-      animationClass: 'animate-[spin_8s_linear_infinite]'
+      auraClass: 'from-orange-300/55 via-yellow-200/40 to-amber-200/55',
+      glowStyle: '0 0 35px rgba(249,115,22,0.9), 0 0 70px rgba(250,204,21,0.4)',
+      glowStyleDim: '0 0 14px rgba(249,115,22,0.3)',
+      animDuration: '1.5s',
+      spinGradient: 'conic-gradient(from 0deg, #ef4444, #f97316, #facc15, #fbbf24, #f97316, #ef4444)',
+      spinSpeed: '3s',
     }
   },
 
-  // ────────────────────────────────────────────────────────────────
-  // FIRE EFFECTS  (legendary, 175 coins)
-  // ────────────────────────────────────────────────────────────────
+  // ─── FIRE EFFECTS ─────────────────────────────────────────────────────────────
   {
     id: 'inferno-aura',
     name: 'Inferno Aura',
@@ -387,9 +406,12 @@ export const CARD_EFFECTS = [
     colors: ['#ef4444', '#f97316', '#facc15'],
     preview: {
       borderClass: 'border-4 border-orange-500',
-      auraClass: 'from-red-300/60 via-orange-200/50 to-yellow-200/40',
-      ringClass: 'shadow-[0_0_35px_rgba(239,68,68,0.7)]',
-      animationClass: 'animate-[spin_8s_linear_infinite]'
+      auraClass: 'from-red-300/55 via-orange-200/45 to-yellow-200/40',
+      glowStyle: '0 0 35px rgba(239,68,68,0.9), 0 0 70px rgba(249,115,22,0.4)',
+      glowStyleDim: '0 0 14px rgba(239,68,68,0.3)',
+      animDuration: '1.2s',
+      spinGradient: 'conic-gradient(from 0deg, #dc2626, #f97316, #facc15, #f97316, #dc2626, #f97316, #facc15)',
+      spinSpeed: '2.5s',
     }
   },
   {
@@ -404,15 +426,16 @@ export const CARD_EFFECTS = [
       borderClass: 'border-4 border-red-600',
       bgClass: 'bg-gradient-to-br from-red-100 via-orange-50 to-yellow-100',
       darkBgClass: 'bg-gradient-to-br from-red-950 via-orange-950 to-yellow-950',
-      auraClass: 'from-red-400/50 via-orange-300/40 to-red-300/50',
-      ringClass: 'shadow-[0_0_40px_rgba(220,38,38,0.75)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-red-400/50 via-orange-300/35 to-red-300/45',
+      glowStyle: '0 0 30px rgba(220,38,38,0.85), 0 0 65px rgba(249,115,22,0.35)',
+      glowStyleDim: '0 0 12px rgba(220,38,38,0.3)',
+      animDuration: '1.5s',
+      spinGradient: 'conic-gradient(from 0deg, #7f1d1d, #dc2626, #f97316, #dc2626, #7f1d1d)',
+      spinSpeed: '3s',
     }
   },
 
-  // ────────────────────────────────────────────────────────────────
-  // LIGHTNING EFFECTS  (legendary, 175 coins)
-  // ────────────────────────────────────────────────────────────────
+  // ─── LIGHTNING EFFECTS ────────────────────────────────────────────────────────
   {
     id: 'thunder-strike',
     name: 'Thunder Strike',
@@ -423,9 +446,12 @@ export const CARD_EFFECTS = [
     colors: ['#facc15', '#a3e635', '#38bdf8'],
     preview: {
       borderClass: 'border-4 border-yellow-400',
-      auraClass: 'from-yellow-200/60 via-white/50 to-blue-200/50',
-      ringClass: 'shadow-[0_0_40px_rgba(250,204,21,0.8)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-yellow-200/55 via-white/35 to-blue-200/45',
+      glowStyle: '0 0 35px rgba(250,204,21,0.95), 0 0 70px rgba(163,230,53,0.4)',
+      glowStyleDim: '0 0 8px rgba(250,204,21,0.2)',
+      animDuration: '0.8s',
+      spinGradient: 'conic-gradient(from 0deg, #facc15, #ffffff, #a3e635, #ffffff, #38bdf8, #ffffff, #facc15)',
+      spinSpeed: '1.5s',
     }
   },
   {
@@ -438,15 +464,16 @@ export const CARD_EFFECTS = [
     colors: ['#c084fc', '#818cf8', '#67e8f9'],
     preview: {
       borderClass: 'border-4 border-purple-400',
-      auraClass: 'from-purple-200/60 via-blue-200/40 to-cyan-200/50',
-      ringClass: 'shadow-[0_0_40px_rgba(192,132,252,0.75)]',
-      animationClass: 'animate-[spin_6s_linear_infinite]'
+      auraClass: 'from-purple-200/55 via-blue-200/35 to-cyan-200/45',
+      glowStyle: '0 0 35px rgba(192,132,252,0.9), 0 0 70px rgba(129,140,248,0.4)',
+      glowStyleDim: '0 0 12px rgba(192,132,252,0.25)',
+      animDuration: '1s',
+      spinGradient: 'conic-gradient(from 0deg, #c084fc, #818cf8, #67e8f9, #818cf8, #c084fc)',
+      spinSpeed: '2s',
     }
   },
 
-  // ────────────────────────────────────────────────────────────────
-  // LEGENDARY SPECIALS  (legendary, 175–200 coins)
-  // ────────────────────────────────────────────────────────────────
+  // ─── LEGENDARY SPECIALS ───────────────────────────────────────────────────────
   {
     id: 'diamond-edge',
     name: 'Diamond Edge',
@@ -457,9 +484,12 @@ export const CARD_EFFECTS = [
     colors: ['#e2e8f0', '#cbd5e1', '#94a3b8'],
     preview: {
       borderClass: 'border-4 border-slate-300',
-      auraClass: 'from-white/70 via-slate-100/60 to-blue-100/50',
-      ringClass: 'shadow-[0_0_35px_rgba(148,163,184,0.8)]',
-      animationClass: 'animate-[spin_20s_linear_infinite]'
+      auraClass: 'from-white/65 via-slate-100/50 to-blue-100/45',
+      glowStyle: '0 0 30px rgba(226,232,240,0.95), 0 0 65px rgba(148,163,184,0.5)',
+      glowStyleDim: '0 0 12px rgba(226,232,240,0.35)',
+      animDuration: '3s',
+      spinGradient: 'conic-gradient(from 0deg, #e2e8f0, #94a3b8, #ffffff, #94a3b8, #e2e8f0)',
+      spinSpeed: '8s',
     }
   },
   {
@@ -472,9 +502,12 @@ export const CARD_EFFECTS = [
     colors: ['#f43f5e', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#8b5cf6'],
     preview: {
       borderClass: 'border-4 border-pink-400',
-      auraClass: 'from-pink-200/50 via-yellow-100/40 to-blue-200/50',
-      ringClass: 'shadow-[0_0_40px_rgba(244,63,94,0.6)]',
-      animationClass: 'animate-[spin_10s_linear_infinite]'
+      auraClass: 'from-pink-200/45 via-yellow-100/35 to-blue-200/45',
+      glowStyle: '0 0 35px rgba(244,63,94,0.7), 0 0 70px rgba(99,102,241,0.35)',
+      glowStyleDim: '0 0 12px rgba(244,63,94,0.2)',
+      animDuration: '2s',
+      spinGradient: 'conic-gradient(from 0deg, #f43f5e, #f97316, #facc15, #22c55e, #3b82f6, #8b5cf6, #f43f5e)',
+      spinSpeed: '4s',
     }
   },
   {
@@ -489,9 +522,12 @@ export const CARD_EFFECTS = [
       borderClass: 'border-4 border-indigo-900',
       bgClass: 'bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900',
       darkBgClass: 'bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950',
-      auraClass: 'from-indigo-600/40 via-purple-900/30 to-slate-900/50',
-      ringClass: 'shadow-[0_0_35px_rgba(79,70,229,0.7)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-indigo-600/40 via-purple-900/25 to-slate-900/45',
+      glowStyle: '0 0 30px rgba(79,70,229,0.8), 0 0 65px rgba(79,70,229,0.3)',
+      glowStyleDim: '0 0 10px rgba(79,70,229,0.2)',
+      animDuration: '3s',
+      spinGradient: 'conic-gradient(from 0deg, #1e1b4b, #4f46e5, #312e81, #4f46e5, #1e1b4b)',
+      spinSpeed: '7s',
     }
   },
   {
@@ -506,9 +542,12 @@ export const CARD_EFFECTS = [
       borderClass: 'border-4 border-cyan-300',
       bgClass: 'bg-gradient-to-br from-cyan-50 via-sky-50 to-blue-100',
       darkBgClass: 'bg-gradient-to-br from-cyan-900 via-sky-900 to-blue-900',
-      auraClass: 'from-cyan-200/60 via-sky-100/50 to-blue-200/50',
-      ringClass: 'shadow-[0_0_35px_rgba(125,211,252,0.75)]',
-      animationClass: 'animate-[spin_18s_linear_infinite]'
+      auraClass: 'from-cyan-200/55 via-sky-100/40 to-blue-200/50',
+      glowStyle: '0 0 30px rgba(125,211,252,0.85), 0 0 65px rgba(56,189,248,0.35)',
+      glowStyleDim: '0 0 12px rgba(125,211,252,0.25)',
+      animDuration: '2.5s',
+      spinGradient: 'conic-gradient(from 0deg, #e0f2fe, #38bdf8, #bae6fd, #7dd3fc, #e0f2fe)',
+      spinSpeed: '8s',
     }
   },
   {
@@ -523,9 +562,10 @@ export const CARD_EFFECTS = [
       borderClass: 'border-4 border-gray-600',
       bgClass: 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900',
       darkBgClass: 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950',
-      auraClass: 'from-gray-500/30 via-gray-700/20 to-gray-900/40',
-      ringClass: 'shadow-[0_0_30px_rgba(107,114,128,0.6)]',
-      animationClass: 'animate-pulse'
+      auraClass: 'from-gray-500/30 via-gray-700/20 to-gray-900/35',
+      glowStyle: '0 0 25px rgba(107,114,128,0.7), 0 0 55px rgba(55,65,81,0.3)',
+      glowStyleDim: '0 0 8px rgba(107,114,128,0.2)',
+      animDuration: '3.5s',
     }
   },
 ];

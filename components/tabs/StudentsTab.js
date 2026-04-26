@@ -1,5 +1,5 @@
 // components/tabs/StudentsTab.js - UPGRADED: Dark Mode, Card Effects, Fun Design
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DEFAULT_PET_IMAGE, getAvatarImage as resolveAvatarImage, getPetImage as resolvePetImage } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
@@ -304,6 +304,39 @@ const StudentsTab = ({
         return groupData.groupsToSave;
     }, [groupData]);
 
+    // Generate CSS keyframe rules for every card effect currently equipped by a student.
+    // These go into a <style> tag at the parent level so they can animate box-shadow on
+    // an outer wrapper div — avoiding the overflow-hidden clipping problem on the card itself.
+    const effectKeyframesCSS = useMemo(() => {
+        const seenEffects = new Set();
+        let css = `
+@keyframes spin_ceg_inner {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
+}
+`;
+        students.forEach(student => {
+            const effectId = student.equippedCardEffect;
+            if (!effectId || seenEffects.has(effectId)) return;
+            seenEffects.add(effectId);
+            const effect = CARD_EFFECT_MAP[effectId];
+            if (!effect?.preview?.glowStyle) return;
+            const bright   = effect.preview.glowStyle;
+            const dim      = effect.preview.glowStyleDim || '0 0 4px rgba(0,0,0,0.1)';
+            const duration = effect.preview.animDuration  || '2s';
+            css += `
+@keyframes ceg_anim_${effectId} {
+  0%, 100% { box-shadow: ${bright}; }
+  50%       { box-shadow: ${dim}; }
+}
+.ceg_wrap_${effectId} {
+  animation: ceg_anim_${effectId} ${duration} ease-in-out infinite;
+}
+`;
+        });
+        return css;
+    }, [students]);
+
     const toggleFullscreen = () => {
         if (typeof document === 'undefined') return;
         if (document.fullscreenElement) {
@@ -504,6 +537,11 @@ const StudentsTab = ({
                 </div>
             )}
 
+            {/* ── CARD EFFECT KEYFRAMES ─────────────────────────────────── */}
+            {effectKeyframesCSS && (
+                <style suppressHydrationWarning>{effectKeyframesCSS}</style>
+            )}
+
             {/* ── STUDENT GRID ──────────────────────────────────────────── */}
             <div className={`grid ${getGridClasses(filteredStudents.length)} gap-2 sm:gap-3`} key={refreshKey}>
                 {filteredStudents.map((student) => (
@@ -658,32 +696,60 @@ const StudentCard = ({
     const handleCoinClick   = (e) => { e.stopPropagation(); onQuickAward(student, 'coins'); };
     const handleCardClick   = (e) => { if (e.shiftKey) { e.preventDefault(); onToggleSelection(student.id); } else { onClick(e); } };
 
+    // Outer wrapper class — carries the animated box-shadow glow via injected @keyframes.
+    // This div has NO overflow-hidden so box-shadow is never clipped.
+    const glowWrapperClass = cardEffect?.preview?.glowStyle ? `ceg_wrap_${equippedEffectId}` : '';
+    const hasSpinGradient  = Boolean(cardEffect?.preview?.spinGradient);
+    const spinSpeed        = cardEffect?.preview?.spinSpeed || '4s';
+
     return (
+        // Outer wrapper: no overflow-hidden, so the animated box-shadow glow is never clipped
+        <div
+            className={`relative rounded-xl sm:rounded-2xl transition-all duration-300
+                ${glowWrapperClass}
+                ${isSelected ? 'scale-105' : 'hover:scale-[1.03]'}
+                ${isDragged ? 'opacity-30' : ''}
+            `}
+        >
+        {/* Inner card: overflow-hidden clips the spinning gradient overlay cleanly */}
         <div
             draggable="true"
             onDragStart={onDragStart}
             onDragOver={onDragOver}
             onDrop={onDrop}
             onClick={handleCardClick}
-            className={`relative overflow-hidden p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl hover:scale-[1.03]
+            className={`relative overflow-hidden p-2 sm:p-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 cursor-pointer hover:shadow-xl
                 ${cardBg} ${borderCls}
-                ${isSelected ? 'scale-105' : ''}
-                ${isDragged ? 'opacity-30 ring-2 ring-blue-500' : ''}
+                ${isDragged ? 'ring-2 ring-blue-500' : ''}
             `}
         >
             {/* ── CARD EFFECT LAYERS ─────────────────────────────────────── */}
             {cardEffect && (
                 <>
-                    {/* Aura background */}
-                    <div
-                        className={`absolute inset-0 rounded-xl pointer-events-none blur-md bg-gradient-to-br ${cardEffect.preview?.auraClass || ''}`}
-                        style={{ opacity: 0.7, zIndex: 0 }}
-                    />
-                    {/* Ring glow */}
-                    <div
-                        className={`absolute inset-0 rounded-xl pointer-events-none ${cardEffect.preview?.ringClass || ''} ${cardEffect.preview?.animationClass || ''}`}
-                        style={{ zIndex: 0 }}
-                    />
+                    {/* Soft colour wash — gradient from centre outward */}
+                    {cardEffect.preview?.auraClass && (
+                        <div
+                            className={`absolute inset-0 rounded-xl pointer-events-none bg-gradient-to-br ${cardEffect.preview.auraClass}`}
+                            style={{ opacity: 0.55, zIndex: 0 }}
+                        />
+                    )}
+                    {/* Spinning conic-gradient overlay (fire / lightning / aurora / rainbow) */}
+                    {hasSpinGradient && (
+                        <div
+                            className="absolute pointer-events-none"
+                            style={{
+                                top: '50%',
+                                left: '50%',
+                                width: '220%',
+                                height: '220%',
+                                background: cardEffect.preview.spinGradient,
+                                animation: `spin_ceg_inner ${spinSpeed} linear infinite`,
+                                opacity: 0.22,
+                                zIndex: 0,
+                                borderRadius: '50%',
+                            }}
+                        />
+                    )}
                 </>
             )}
 
@@ -811,7 +877,8 @@ const StudentCard = ({
                     </div>
                 )}
             </div>
-        </div>
+        </div>{/* end inner card */}
+        </div>{/* end outer glow wrapper */}
     );
 };
 
