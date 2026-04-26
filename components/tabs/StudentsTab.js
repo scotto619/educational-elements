@@ -877,8 +877,8 @@ const StudentCard = ({
                     </div>
                 )}
             </div>
-        </div>{/* end inner card */}
-        </div>{/* end outer glow wrapper */}
+        </div>
+        </div>
     );
 };
 
