@@ -393,9 +393,10 @@ const PhaseTimer = ({ endTime, paused, pausedRemaining, onExpire }) => {
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <p className={`text-3xl font-black tabular-nums ${paused ? 'text-yellow-400' : urgent ? 'text-red-400 animate-pulse' : 'text-white'}`}>
-        {paused ? '⏸' : ''}{remaining}s
+      <p className={`text-4xl font-black tabular-nums tracking-tight ${paused ? 'text-amber-400' : urgent ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+        {remaining}s
       </p>
+      {paused && <p className="text-xs text-amber-400/60 tracking-widest uppercase">Paused</p>}
     </div>
   );
 };
@@ -460,12 +461,12 @@ const RoleGuide = ({ onClose, onSelectRole }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm overflow-y-auto p-4"
+      className="fixed inset-0 z-50 bg-[#0d1117] overflow-y-auto p-4"
     >
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6 sticky top-0 bg-black/80 py-3 -mx-4 px-4 backdrop-blur-sm">
-          <h2 className="text-2xl font-black text-white">📖 Role Guide</h2>
-          <button onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl font-bold transition-all">✕ Close</button>
+        <div className="flex items-center justify-between mb-6 sticky top-0 bg-[#0d1117] py-3 -mx-4 px-4 border-b border-white/[0.06]">
+          <h2 className="text-lg font-black text-white">Role Guide</h2>
+          <button onClick={onClose} className="bg-white/[0.06] hover:bg-white/10 text-white/60 hover:text-white px-4 py-2 rounded-xl font-bold transition-all text-sm">Close</button>
         </div>
         {expansions.map(exp => (
           <div key={exp} className="mb-6">
@@ -503,12 +504,12 @@ const NightRoleIndicator = ({ currentRole, activeRoles }) => {
         return (
           <motion.div
             key={role}
-            animate={isActive ? { scale: [1, 1.08, 1] } : {}}
-            transition={{ repeat: isActive ? Infinity : 0, duration: 1.5 }}
-            className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition-all
-              ${isActive ? `bg-gradient-to-r ${r.bg} text-white scale-110 shadow-lg ring-2 ring-white/30` : ''}
-              ${isDone ? 'bg-white/10 text-white/30 line-through' : ''}
-              ${!isActive && !isDone ? 'bg-white/10 text-white/60' : ''}
+            animate={isActive ? { opacity: [0.7, 1, 0.7] } : {}}
+            transition={{ repeat: isActive ? Infinity : 0, duration: 1.8 }}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all
+              ${isActive ? `bg-white/15 text-white border border-white/30` : ''}
+              ${isDone ? 'text-white/20 line-through' : ''}
+              ${!isActive && !isDone ? 'text-white/40' : ''}
             `}
           >
             <span>{r.icon}</span>
@@ -1034,58 +1035,51 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   // MENU
   if (screen === 'menu') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-lg"
+          className="w-full max-w-md"
         >
-          <div className="text-center mb-8">
-            <div className="text-8xl mb-4">🐺</div>
-            <h1 className="text-4xl font-black text-white tracking-tight">One Night</h1>
-            <h2 className="text-3xl font-black text-purple-300">Werewolf</h2>
-            <p className="text-white/60 mt-2 text-sm">The ultimate social deduction game</p>
+          <div className="text-center mb-10">
+            <div className="text-7xl mb-5">🐺</div>
+            <h1 className="text-5xl font-black text-white tracking-tight leading-none">One Night</h1>
+            <h2 className="text-5xl font-black text-white/40 tracking-tight leading-none">Werewolf</h2>
+            <p className="text-white/30 mt-4 text-sm tracking-wide">Social deduction for 3–10 players</p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 space-y-4">
+          <div className="space-y-3">
             <button
               onClick={createRoom}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-4 rounded-2xl text-lg transition-all hover:scale-[1.02] shadow-lg"
+              className="w-full bg-white text-gray-950 font-black py-4 rounded-2xl text-lg transition-all hover:bg-white/90 active:scale-[0.98] shadow-lg shadow-black/40"
             >
-              🎮 Create Room
+              Create Room
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/20" />
-              <span className="text-white/40 text-sm">or join</span>
-              <div className="flex-1 h-px bg-white/20" />
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-white/25 text-xs tracking-widest uppercase">or</span>
+              <div className="flex-1 h-px bg-white/10" />
             </div>
 
             <div className="flex gap-2">
               <input
                 value={joinCode}
                 onChange={e => setJoinCode(e.target.value.toUpperCase().slice(0, 4))}
-                placeholder="Room code"
-                className="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 font-mono text-lg tracking-widest text-center uppercase focus:outline-none focus:border-purple-400"
+                placeholder="ROOM"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder-white/20 font-black text-2xl tracking-[0.4em] text-center uppercase focus:outline-none focus:border-white/30 focus:bg-white/8 transition-all"
                 onKeyDown={e => e.key === 'Enter' && joinRoom()}
               />
               <button
                 onClick={joinRoom}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-6 rounded-xl transition-all hover:scale-[1.02]"
+                className="bg-white/10 hover:bg-white/15 border border-white/10 text-white font-black px-7 rounded-xl transition-all active:scale-[0.98] text-lg"
               >
                 Join
               </button>
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-            {['🐺 Werewolves', '👁️ Seer', '🦹 Robber'].map(r => (
-              <div key={r} className="bg-white/5 rounded-xl p-3 border border-white/10">
-                <p className="text-white/80 text-sm font-semibold">{r}</p>
-              </div>
-            ))}
-          </div>
-          <p className="text-center text-white/30 text-xs mt-4">3–10 players • ~15 minutes</p>
+          <p className="text-center text-white/20 text-xs mt-8 tracking-wide">~15 minutes per game</p>
         </motion.div>
       </div>
     );
@@ -1102,32 +1096,37 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     hostRolePool.forEach(r => { roleCounts[r] = (roleCounts[r] || 0) + 1; });
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 p-4 text-white">
+      <div className="min-h-screen bg-[#0d1117] p-4 text-white">
         <div className="max-w-2xl mx-auto space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <button onClick={leaveGame} className="text-white/60 hover:text-white text-sm">← Leave</button>
-            <div className="text-center">
-              <p className="text-white/60 text-sm">Room Code</p>
-              <p className="text-3xl font-black tracking-widest text-yellow-300">{roomCode}</p>
-            </div>
-            <div className="text-white/60 text-sm text-right">
-              {playerCount} player{playerCount !== 1 ? 's' : ''}
-            </div>
+          <div className="flex items-center justify-between pt-2 pb-1">
+            <button onClick={leaveGame} className="text-white/40 hover:text-white/70 text-sm transition-colors">← Leave</button>
+            <div className="text-white/40 text-sm">{playerCount}/{10} players</div>
+          </div>
+
+          {/* Room Code — netgames.io style: BIG and centered */}
+          <div className="text-center py-6 border-b border-white/5">
+            <p className="text-white/30 text-xs font-medium tracking-[0.3em] uppercase mb-2">Room Code</p>
+            <p className="text-7xl font-black tracking-[0.12em] text-white leading-none">{roomCode}</p>
+            <p className="text-white/25 text-xs mt-3 tracking-wide">Share this code with your players</p>
           </div>
 
           {/* Players */}
-          <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-            <h3 className="font-bold mb-3 text-white/80">Players in Room</h3>
-            <div className="flex flex-wrap gap-2">
+          <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
+            <h3 className="text-xs font-semibold mb-3 text-white/40 tracking-widest uppercase">Players · {playerCount}</h3>
+            <div className="grid grid-cols-2 gap-2">
               {playerList.map(p => (
-                <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border
-                  ${p.id === myId ? 'bg-purple-600/30 border-purple-400' : 'bg-white/10 border-white/20'}`}>
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold">
+                <div key={p.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all
+                  ${p.id === myId ? 'bg-white/10 border-white/20' : 'bg-white/[0.03] border-white/[0.06]'}`}>
+                  <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-black text-white/70 flex-shrink-0">
                     {p.name?.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium">{p.name}{p.id === myId ? ' (You)' : ''}</span>
-                  {p.isHost && <span className="text-xs text-yellow-300">HOST</span>}
+                  <div className="min-w-0">
+                    <span className="text-sm font-semibold text-white/80 truncate block">{p.name}</span>
+                    {(p.id === myId || p.isHost) && (
+                      <span className="text-xs text-white/30">{p.isHost ? 'host' : ''}{p.id === myId ? ' you' : ''}</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -1135,17 +1134,17 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
 
           {/* Role Selection (host only) */}
           {isHost && (
-            <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
+            <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
               <div className="flex items-center justify-between mb-1">
-                <h3 className="font-bold text-white/80">Role Pool</h3>
+                <h3 className="text-xs font-semibold text-white/40 tracking-widest uppercase">Role Pool</h3>
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm px-2 py-1 rounded-lg ${hostRolePool.length === neededRoles ? 'bg-green-600/40 text-green-300' : 'bg-yellow-600/40 text-yellow-300'}`}>
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${hostRolePool.length === neededRoles ? 'bg-green-500/15 text-green-400 border border-green-500/20' : 'bg-amber-500/15 text-amber-400 border border-amber-500/20'}`}>
                     {hostRolePool.length}/{neededRoles}
                   </span>
-                  <button onClick={() => setShowRoleGuide(true)} className="text-xs bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 px-2 py-1 rounded-lg transition-all">📖 Guide</button>
+                  <button onClick={() => setShowRoleGuide(true)} className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white/80 px-2.5 py-1 rounded-full transition-all">Guide</button>
                 </div>
               </div>
-              <p className="text-white/50 text-xs mb-3">Need exactly {playerCount} players + 3 center = {neededRoles} total roles</p>
+              <p className="text-white/25 text-xs mb-3">{playerCount} players + 3 center = {neededRoles} roles needed</p>
 
               {['Base Game', 'Daybreak'].map(exp => {
                 const expRoles = allRoleTypes.filter(id => ROLES[id].expansion === exp);
@@ -1190,21 +1189,21 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               <button
                 onClick={startGame}
                 disabled={hostRolePool.length !== neededRoles || playerCount < 3}
-                className="mt-2 w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all"
+                className="mt-3 w-full bg-white disabled:bg-white/20 disabled:text-white/30 text-gray-950 font-black py-3.5 rounded-xl transition-all hover:bg-white/90 active:scale-[0.98] disabled:cursor-not-allowed"
               >
-                {playerCount < 3 ? `Need ${3 - playerCount} more player(s)` :
-                 hostRolePool.length !== neededRoles ? `Adjust roles (need ${neededRoles})` :
-                 '🌙 Start Game'}
+                {playerCount < 3 ? `Need ${3 - playerCount} more player${3 - playerCount !== 1 ? 's' : ''}` :
+                 hostRolePool.length !== neededRoles ? `Set ${neededRoles} roles to start` :
+                 'Start Game'}
               </button>
             </div>
           )}
 
           {!isHost && (
-            <div className="bg-white/10 rounded-2xl p-6 border border-white/20 text-center">
-              <div className="text-4xl mb-2 animate-pulse">⏳</div>
-              <p className="text-white/70">Waiting for the host to start the game...</p>
-              <p className="text-white/40 text-sm mt-1">Share room code <span className="text-yellow-300 font-mono font-bold">{roomCode}</span> with friends</p>
-              <button onClick={() => setShowRoleGuide(true)} className="mt-3 text-sm bg-blue-600/30 hover:bg-blue-600/50 border border-blue-500/40 text-blue-300 px-4 py-2 rounded-xl transition-all">📖 View Role Guide</button>
+            <div className="bg-white/[0.04] rounded-2xl p-6 border border-white/[0.07] text-center">
+              <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="text-4xl mb-3">🌙</motion.div>
+              <p className="text-white/60 font-semibold">Waiting for host to start...</p>
+              <p className="text-white/25 text-sm mt-1">Room code: <span className="text-white/60 font-mono font-black tracking-widest">{roomCode}</span></p>
+              <button onClick={() => setShowRoleGuide(true)} className="mt-4 text-xs bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white/70 px-4 py-2 rounded-full transition-all">View Role Guide</button>
             </div>
           )}
         </div>
@@ -1224,13 +1223,13 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     const r = role ? ROLES[role] : null;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0d1117] flex flex-col items-center justify-center p-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center max-w-sm w-full"
+          className="text-center w-full max-w-xs"
         >
-          <p className="text-white/60 mb-4">Your secret role</p>
+          <p className="text-white/30 text-xs tracking-[0.3em] uppercase mb-6">Your Secret Role</p>
 
           <AnimatePresence mode="wait">
             {roleHidden ? (
@@ -1239,12 +1238,11 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="mx-auto w-48 h-64 bg-gradient-to-br from-slate-800 to-slate-950 rounded-3xl border-4 border-white/20 flex flex-col items-center justify-center gap-3 shadow-2xl cursor-pointer"
+                className="mx-auto w-52 h-72 bg-white/[0.04] border border-white/10 rounded-3xl flex flex-col items-center justify-center gap-3 shadow-2xl cursor-pointer hover:bg-white/[0.06] transition-all"
                 onClick={() => setRoleHidden(false)}
               >
-                <span className="text-5xl">🙈</span>
-                <p className="text-white/50 text-sm font-semibold">Role Hidden</p>
-                <p className="text-white/30 text-xs">Tap to reveal</p>
+                <span className="text-5xl opacity-40">?</span>
+                <p className="text-white/30 text-sm font-semibold">Tap to reveal</p>
               </motion.div>
             ) : showRoleReveal && r ? (
               <motion.div
@@ -1252,17 +1250,17 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                 initial={{ rotateY: 90, opacity: 0 }}
                 animate={{ rotateY: 0, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 200 }}
-                className={`mx-auto bg-gradient-to-br ${r.bg} ${r.border} border-4 rounded-3xl p-8 shadow-2xl max-w-xs`}
+                className={`mx-auto bg-gradient-to-br ${r.bg} border ${r.border} rounded-3xl p-8 shadow-2xl`}
               >
-                <div className="text-7xl mb-4">{r.icon}</div>
-                <h2 className="text-3xl font-black text-white mb-2">{r.name}</h2>
-                <div className={`inline-block px-3 py-1 rounded-full ${r.badge} text-xs font-bold text-white mb-4`}>
+                <div className="text-8xl mb-4">{r.icon}</div>
+                <h2 className="text-4xl font-black text-white mb-2">{r.name}</h2>
+                <div className={`inline-block px-3 py-1 rounded-full ${r.badge} text-xs font-bold text-white mb-4 opacity-80`}>
                   {ROLE_DESCRIPTIONS[r.team]}
                 </div>
-                <p className={`${r.text} text-sm leading-relaxed`}>{r.description}</p>
+                <p className={`${r.text} text-sm leading-relaxed opacity-80`}>{r.description}</p>
                 {r.nightAction && (
-                  <div className="mt-4 bg-black/30 rounded-xl p-3">
-                    <p className="text-white/60 text-xs mb-1">Tonight you will:</p>
+                  <div className="mt-4 bg-black/30 rounded-2xl p-4">
+                    <p className="text-white/40 text-xs mb-1 tracking-widest uppercase">Tonight</p>
                     <p className={`${r.text} text-sm font-semibold`}>{r.nightAction}</p>
                   </div>
                 )}
@@ -1270,33 +1268,34 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             ) : (
               <motion.div
                 key="loading"
-                className="mx-auto w-48 h-64 bg-gradient-to-br from-slate-700 to-slate-900 rounded-3xl border-4 border-white/20 flex items-center justify-center"
+                className="mx-auto w-52 h-72 bg-white/[0.03] border border-white/[0.06] rounded-3xl flex items-center justify-center"
               >
-                <span className="text-white/20 font-black text-2xl">🌙</span>
+                <motion.span animate={{ opacity: [0.2, 0.6, 0.2] }} transition={{ repeat: Infinity, duration: 1.5 }} className="text-4xl">🌙</motion.span>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <p className="text-white/40 text-sm mt-6">Remember your role — don&apos;t show anyone!</p>
+          <p className="text-white/25 text-xs mt-5">Keep your role secret — don&apos;t show anyone!</p>
 
-          {/* Hide role toggle */}
           <button
             onClick={() => setRoleHidden(h => !h)}
-            className="mt-3 w-full bg-black/40 hover:bg-black/60 border border-white/20 text-white/70 hover:text-white font-semibold py-2 rounded-xl transition-all text-sm flex items-center justify-center gap-2"
+            className="mt-3 w-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-white/40 hover:text-white/70 font-semibold py-2.5 rounded-xl transition-all text-sm"
           >
-            {roleHidden ? '👁️ Show My Role' : '🙈 Hide My Role'}
+            {roleHidden ? 'Show My Role' : 'Hide My Role'}
           </button>
 
           {isHost && (
             <button
               onClick={beginNight}
-              className="mt-4 w-full bg-gradient-to-r from-indigo-700 to-purple-700 hover:from-indigo-600 hover:to-purple-600 text-white font-bold py-3 rounded-xl transition-all"
+              className="mt-3 w-full bg-white text-gray-950 font-black py-3.5 rounded-xl transition-all hover:bg-white/90 active:scale-[0.98]"
             >
-              🌙 Begin Night Phase
+              Begin Night Phase
             </button>
           )}
           {!isHost && (
-            <p className="mt-4 text-white/40 text-sm animate-pulse">Waiting for host to start night phase...</p>
+            <motion.p animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ repeat: Infinity, duration: 2 }} className="mt-4 text-white/40 text-sm">
+              Waiting for host to begin night...
+            </motion.p>
           )}
         </motion.div>
       </div>
@@ -1517,16 +1516,16 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.8, y: 40 }}
           transition={{ type: 'spring', stiffness: 300 }}
-          className="bg-slate-900 border border-white/20 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+          className="bg-[#0d1117] border border-white/[0.1] rounded-3xl p-6 max-w-sm w-full shadow-2xl shadow-black/60"
           onClick={e => e.stopPropagation()}
         >
           <h3 className="text-xl font-black text-white text-center mb-4">{title}</h3>
           {content}
           <button
             onClick={() => setNightResultModal(null)}
-            className="mt-5 w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-all"
+            className="mt-5 w-full bg-white hover:bg-white/90 text-gray-950 font-black py-3 rounded-xl transition-all active:scale-[0.98]"
           >
-            Got it ✓
+            Got it
           </button>
         </motion.div>
       </motion.div>
@@ -1545,21 +1544,21 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     const centerCards = roomData?.centerCards || [];
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 p-4 text-white">
+      <div className="min-h-screen bg-[#060810] p-4 text-white">
         <div className="max-w-lg mx-auto space-y-4">
           {/* Header */}
-          <div className="text-center py-4">
-            <div className="text-5xl mb-2">🌙</div>
-            <h2 className="text-2xl font-black">Night Phase</h2>
-            <p className="text-white/50 text-sm">Everyone is asleep... except one</p>
+          <div className="text-center py-5">
+            <div className="text-4xl mb-3 opacity-80">🌙</div>
+            <h2 className="text-3xl font-black tracking-tight">Night Phase</h2>
+            <p className="text-white/30 text-sm mt-1">The village sleeps...</p>
           </div>
 
           {/* Night order progress */}
-          <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+          <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
             <NightRoleIndicator currentRole={currentNightRole} activeRoles={activeNightOrder} />
             <div className="text-center mt-3">
-              <p className="text-white/60 text-sm">
-                {ROLES[currentNightRole]?.icon} <span className="font-bold text-white">{ROLES[currentNightRole]?.name}</span> is awake
+              <p className="text-white/50 text-sm">
+                <span className="font-bold text-white">{ROLES[currentNightRole]?.name}</span> is awake
               </p>
               <PhaseTimer endTime={stepEnd} />
             </div>
@@ -2001,13 +2000,13 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white/10 rounded-2xl p-5 border border-white/20 text-center"
+              className="bg-white/[0.04] rounded-2xl p-5 border border-white/[0.07] text-center"
             >
               <div className="text-4xl mb-2">✅</div>
               <h3 className="font-bold text-white mb-2">Action Complete</h3>
 
               {nightResult && (
-                <div className="bg-black/30 rounded-xl p-3 text-sm text-left">
+                <div className="bg-black/20 rounded-xl p-3 text-sm text-left">
                   {nightResult.type === 'werewolf_team' && (
                     <p className="text-red-300">Your fellow werewolves: {nightResult.werewolves.join(', ') || 'None'}</p>
                   )}
@@ -2043,34 +2042,34 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               {nightResult && (
                 <button
                   onClick={() => setNightResultModal(nightResult)}
-                  className="mt-3 w-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-sm font-semibold py-2 rounded-xl border border-white/20 transition-all"
+                  className="mt-3 w-full bg-white/[0.05] hover:bg-white/10 text-white/50 hover:text-white/80 text-sm font-semibold py-2 rounded-xl border border-white/[0.08] transition-all"
                 >
-                  👁️ Review What You Saw
+                  Review What You Saw
                 </button>
               )}
             </motion.div>
           ) : (
-            <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center">
+            <div className="bg-white/[0.03] rounded-2xl p-8 border border-white/[0.06] text-center">
               <motion.div
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="text-5xl mb-3"
+                animate={{ opacity: [0.3, 0.7, 0.3] }}
+                transition={{ repeat: Infinity, duration: 3 }}
+                className="text-5xl mb-4"
               >😴</motion.div>
-              <p className="text-white/70 font-semibold">You are asleep...</p>
-              <p className="text-white/40 text-sm mt-1">
+              <p className="text-white/50 font-semibold text-lg">You are asleep</p>
+              <p className="text-white/25 text-sm mt-1">
                 {`Waiting for the ${ROLES[currentNightRole]?.name}...`}
               </p>
               {r && !roleHidden && (
-                <div className={`inline-flex items-center gap-2 px-3 py-1 mt-3 rounded-full ${r.badge} text-xs text-white`}>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 mt-4 rounded-full ${r.badge} text-xs text-white opacity-80`}>
                   {r.icon} You are the {r.name}
                 </div>
               )}
               {roleHidden && (
                 <button
                   onClick={() => setRoleHidden(false)}
-                  className="inline-flex items-center gap-2 px-3 py-1 mt-3 rounded-full bg-slate-700/60 border border-white/10 text-xs text-white/40 hover:text-white/70 transition-all"
+                  className="mt-4 text-xs text-white/25 hover:text-white/50 transition-all"
                 >
-                  🙈 Role hidden — tap to reveal
+                  Role hidden — tap to reveal
                 </button>
               )}
             </div>
@@ -2091,18 +2090,18 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     const r = myOriginalRole ? ROLES[myOriginalRole] : null;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-900 via-orange-900 to-amber-950 p-4 text-white">
+      <div className="min-h-screen bg-gradient-to-b from-amber-950/60 to-[#0d1117] p-4 text-white">
         <div className="max-w-lg mx-auto space-y-4">
-          <div className="text-center py-4">
-            <div className="text-5xl mb-2">☀️</div>
-            <h2 className="text-2xl font-black">Morning — Discuss!</h2>
+          <div className="text-center py-5">
+            <div className="text-4xl mb-3">☀️</div>
+            <h2 className="text-3xl font-black tracking-tight">Discuss!</h2>
             {dayEnd && <PhaseTimer endTime={dayEnd} paused={roomData?.timerPaused} pausedRemaining={roomData?.pausedRemaining} />}
-            <p className="text-white/60 text-sm mt-1">Talk to each other. Accuse, bluff, and deduce.</p>
+            <p className="text-white/40 text-sm mt-1">Accuse, bluff, and deduce.</p>
           </div>
 
           {/* Host timer controls */}
           {isHost && (
-            <div className="bg-black/30 rounded-2xl p-3 border border-white/10 flex flex-wrap gap-2 justify-center">
+            <div className="bg-white/[0.03] rounded-2xl p-3 border border-white/[0.06] flex flex-wrap gap-2 justify-center">
               <button onClick={() => {
                 if (roomData?.timerPaused) {
                   fb?.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { timerPaused: false, dayEndTime: Date.now() + (roomData.pausedRemaining || 30000), pausedRemaining: null });
@@ -2123,12 +2122,11 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             roleHidden ? (
               <button
                 onClick={() => setRoleHidden(false)}
-                className="w-full bg-black/40 border border-white/20 rounded-2xl p-4 flex items-center justify-center gap-3 text-white/60 hover:text-white transition-all"
+                className="w-full bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 flex items-center justify-center gap-3 text-white/40 hover:text-white/70 transition-all"
               >
-                <span className="text-2xl">🙈</span>
                 <div className="text-left">
-                  <p className="font-bold text-sm">Role Hidden</p>
-                  <p className="text-xs text-white/40">Tap to reveal your role</p>
+                  <p className="font-semibold text-sm">Role Hidden</p>
+                  <p className="text-xs text-white/30">Tap to reveal your role</p>
                 </div>
               </button>
             ) : (
@@ -2155,8 +2153,8 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           )}
 
           {nightResult && (
-            <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-              <h4 className="font-bold text-white/80 text-sm mb-2">🌙 What you learned last night:</h4>
+            <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
+              <h4 className="font-bold text-white/50 text-xs mb-2 tracking-widest uppercase">What you learned last night</h4>
               <div className="text-sm text-white/80">
                 {nightResult.type === 'werewolf_team' && <p>Your fellow werewolves: <strong>{nightResult.werewolves.join(', ') || 'None'}</strong></p>}
                 {nightResult.type === 'center_card' && <p>Center card {nightResult.index + 1}: <strong>{ROLES[nightResult.role]?.icon} {ROLES[nightResult.role]?.name}</strong></p>}
@@ -2171,23 +2169,23 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             </div>
           )}
 
-          <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-            <h4 className="font-bold text-white/80 text-sm mb-3">Players</h4>
-            <div className="flex flex-wrap gap-2">
+          <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
+            <h4 className="text-white/30 text-xs font-semibold mb-3 tracking-widest uppercase">Players</h4>
+            <div className="grid grid-cols-2 gap-2">
               {playerList.map(p => (
-                <div key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border
-                  ${p.id === myId ? 'bg-white/20 border-white/40' : 'bg-white/10 border-white/20'}`}>
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xs font-bold">
+                <div key={p.id} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border
+                  ${p.id === myId ? 'bg-white/10 border-white/20' : 'bg-white/[0.03] border-white/[0.06]'}`}>
+                  <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-xs font-black text-white/50 flex-shrink-0">
                     {p.name?.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium">{p.name}{p.id === myId ? ' (You)' : ''}</span>
+                  <span className="text-sm font-semibold text-white/70 truncate">{p.name}{p.id === myId ? ' (You)' : ''}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="bg-amber-800/40 rounded-2xl p-4 border border-amber-600/40 text-center">
-            <p className="text-amber-200 text-sm">💬 Discuss out loud! Voting begins when the timer runs out.</p>
+          <div className="bg-amber-500/10 rounded-2xl p-4 border border-amber-500/20 text-center">
+            <p className="text-amber-200/60 text-sm">Voting begins when the timer ends.</p>
           </div>
         </div>
       </div>
@@ -2200,13 +2198,13 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     const votes = roomData?.votes || {};
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-950 via-rose-950 to-red-950 p-4 text-white">
+      <div className="min-h-screen bg-[#0d1117] p-4 text-white">
         <div className="max-w-lg mx-auto space-y-4">
-          <div className="text-center py-4">
-            <div className="text-5xl mb-2">🗳️</div>
-            <h2 className="text-2xl font-black">Vote!</h2>
+          <div className="text-center py-5">
+            <div className="text-4xl mb-3">🗳️</div>
+            <h2 className="text-3xl font-black tracking-tight">Vote</h2>
             {voteEnd && <PhaseTimer endTime={voteEnd} paused={roomData?.timerPaused} pausedRemaining={roomData?.pausedRemaining} />}
-            <p className="text-white/60 text-sm mt-1">Who do you think is the werewolf?</p>
+            <p className="text-white/30 text-sm mt-1">Who is the werewolf?</p>
           </div>
 
           {isHost && (
@@ -2230,38 +2228,40 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           )}
 
           {myVote ? (
-            <div className="bg-green-900/40 rounded-2xl p-4 border border-green-500/40 text-center">
-              <div className="text-3xl mb-1">✅</div>
-              <p className="text-green-300 font-bold">Vote cast for {players[myVote]?.name}</p>
-              <p className="text-white/50 text-sm mt-1">{Object.keys(votes).length}/{playerList.length} voted</p>
+            <div className="bg-green-500/10 rounded-2xl p-5 border border-green-500/20 text-center">
+              <div className="text-3xl mb-2">✓</div>
+              <p className="text-green-300 font-bold text-lg">Voted for {players[myVote]?.name}</p>
+              <p className="text-white/30 text-sm mt-1">{Object.keys(votes).length}/{playerList.length} players have voted</p>
             </div>
           ) : (
-            <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-              <h4 className="font-bold text-white/80 mb-3">Vote to eliminate:</h4>
-              <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-white/30 text-xs font-semibold tracking-widest uppercase text-center mb-3">Choose a player to eliminate</p>
+              <div className="grid grid-cols-2 gap-3">
                 {playerList.filter(p => p.id !== myId).map(p => (
-                  <button
+                  <motion.button
                     key={p.id}
                     onClick={() => submitVote(p.id)}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-white/10 hover:bg-red-500/30 border border-white/20 hover:border-red-400 transition-all text-left"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex flex-col items-center gap-3 py-6 px-4 rounded-2xl bg-white/[0.04] hover:bg-red-500/15 border border-white/[0.07] hover:border-red-500/30 transition-all"
                   >
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-red-600 to-rose-800 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                    <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center font-black text-xl text-white/60">
                       {p.name?.charAt(0).toUpperCase()}
                     </div>
-                    <span className="font-semibold">{p.name}</span>
-                  </button>
+                    <span className="font-bold text-white/80 text-sm">{p.name}</span>
+                  </motion.button>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-            <h4 className="text-white/50 text-xs mb-2">Votes submitted: {Object.keys(votes).length}/{playerList.length}</h4>
-            <div className="flex flex-wrap gap-2">
+          <div className="bg-white/[0.02] rounded-2xl p-3 border border-white/[0.05]">
+            <div className="flex flex-wrap gap-2 items-center justify-center">
+              <span className="text-white/25 text-xs">{Object.keys(votes).length}/{playerList.length} voted</span>
               {playerList.map(p => (
                 <div key={p.id} className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs
-                  ${votes[p.id] ? 'bg-green-800/40 text-green-300' : 'bg-white/5 text-white/40'}`}>
-                  {p.name} {votes[p.id] ? '✓' : '…'}
+                  ${votes[p.id] ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-white/[0.03] text-white/25 border border-white/[0.05]'}`}>
+                  {p.name} {votes[p.id] ? '✓' : '·'}
                 </div>
               ))}
             </div>
@@ -2353,7 +2353,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     // ── Phase 1: Suspense ────────────────────────────────────────────────────
     if (revealPhase === 'suspense') {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 flex items-center justify-center p-4 text-white">
+        <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4 text-white">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center">
             <motion.div
               animate={{ scale: [1, 1.15, 1], rotate: [0, -3, 3, 0] }}
@@ -2392,7 +2392,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     // ── Phase 2: Eliminated ──────────────────────────────────────────────────
     if (revealPhase === 'eliminated') {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-red-950 to-slate-950 flex items-center justify-center p-4 text-white">
+        <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4 text-white">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center max-w-md w-full">
             <motion.div
               initial={{ scale: 4, opacity: 0 }}
@@ -2412,7 +2412,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             {eliminated.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7 }}
-                className="mt-4 bg-white/10 rounded-3xl p-8 border border-white/20"
+                className="mt-4 bg-white/[0.04] rounded-3xl p-8 border border-white/[0.07]"
               >
                 <p className="text-2xl font-bold text-white/80">All votes were tied.</p>
                 <p className="text-white/50 mt-2">No one could be eliminated!</p>
@@ -2452,15 +2452,15 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     // ── Phase 3: Roles revealed ──────────────────────────────────────────────
     if (revealPhase === 'roles') {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 p-4 text-white">
+        <div className="min-h-screen bg-[#0d1117] p-4 text-white">
           <div className="max-w-xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
               className="text-center py-6"
             >
-              <div className="text-6xl mb-2">🎭</div>
-              <h2 className="text-3xl font-black text-white">The Truth Revealed</h2>
-              <p className="text-white/50 text-sm mt-1">All identities uncovered</p>
+              <div className="text-5xl mb-3 opacity-80">🎭</div>
+              <h2 className="text-3xl font-black text-white tracking-tight">The Truth</h2>
+              <p className="text-white/25 text-sm mt-1">All identities uncovered</p>
             </motion.div>
 
             <div className="space-y-2 mb-6">
@@ -2509,8 +2509,8 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               transition={{ delay: playerList.length * 0.18 + 0.4 }}
               onClick={() => setRevealPhase('done')}
-              className="w-full py-4 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-white font-black text-xl rounded-2xl transition-all shadow-xl shadow-amber-900/40"
-            >🏆 Reveal Winner!</motion.button>
+              className="w-full py-4 bg-white hover:bg-white/90 text-gray-950 font-black text-lg rounded-2xl transition-all active:scale-[0.98] shadow-xl shadow-black/40"
+            >Reveal Winner</motion.button>
           </div>
         </div>
       );
@@ -2518,7 +2518,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
 
     // ── Phase 4: Full results (done) ─────────────────────────────────────────
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-950 to-slate-900 p-4 text-white">
+      <div className="min-h-screen bg-[#0d1117] p-4 text-white">
         <div className="max-w-xl mx-auto space-y-4">
 
           {/* Winner banner */}
@@ -2555,8 +2555,8 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           </motion.div>
 
           {/* Final roles */}
-          <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-            <h3 className="font-bold text-white/80 mb-3">🎭 Final Roles</h3>
+          <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
+            <h3 className="text-xs font-semibold text-white/30 tracking-widest uppercase mb-3">Final Roles</h3>
             <div className="space-y-2">
               {playerList.map((p, i) => {
                 const finalRole = fr[p.id] || p.originalRole;
@@ -2593,8 +2593,8 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           </div>
 
           {/* Center cards */}
-          <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-            <h3 className="font-bold text-white/80 mb-3">📚 Center Cards</h3>
+          <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
+            <h3 className="text-xs font-semibold text-white/30 tracking-widest uppercase mb-3">Center Cards</h3>
             <div className="flex gap-3 justify-center">
               {centerCards.map((role, i) => {
                 const r = ROLES[role];
@@ -2610,8 +2610,8 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           </div>
 
           {/* Vote tally with bars */}
-          <div className="bg-white/10 rounded-2xl p-4 border border-white/20">
-            <h3 className="font-bold text-white/80 mb-3">🗳️ Vote Tally</h3>
+          <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.07]">
+            <h3 className="text-xs font-semibold text-white/30 tracking-widest uppercase mb-3">Vote Tally</h3>
             <div className="space-y-3">
               {[...playerList].sort((a, b) => (voteCounts[b.id] || 0) - (voteCounts[a.id] || 0)).map((p, i) => {
                 const count = voteCounts[p.id] || 0;
@@ -2643,17 +2643,17 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           </div>
 
           {/* Play again */}
-          <div className="flex gap-3 pb-4">
+          <div className="flex gap-3 pb-6">
             {isHost && (
               <button
                 onClick={playAgain}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg"
-              >🔄 Play Again</button>
+                className="flex-1 bg-white hover:bg-white/90 text-gray-950 font-black py-3.5 rounded-xl transition-all active:scale-[0.98]"
+              >Play Again</button>
             )}
             <button
               onClick={leaveGame}
-              className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl border border-white/20 transition-all"
-            >Leave Game</button>
+              className="flex-1 bg-white/[0.04] hover:bg-white/[0.08] text-white/50 hover:text-white/80 font-bold py-3.5 rounded-xl border border-white/[0.07] transition-all"
+            >Leave</button>
           </div>
         </div>
       </div>
