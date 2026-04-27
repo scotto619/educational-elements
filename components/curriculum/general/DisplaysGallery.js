@@ -149,6 +149,21 @@ const displayCategories = [
           { name: 'Persuasive Elements', file: 'Writing/Persuasive/Persuasive Elements.png' },
           { name: 'Persuasive Structure', file: 'Writing/Persuasive/Persuasive Structure.png' }
         ]
+      },
+      {
+        name: 'Worksheets',
+        images: [
+          { name: 'Comprehension Worksheet 1', file: 'Worksheets/ComprehensionWorksheet.png' },
+          { name: 'Comprehension Worksheet 2', file: 'Worksheets/ComprehensionWorksheet2.png' },
+          { name: 'Comprehension Worksheet 3', file: 'Worksheets/ComprehensionWorksheet3.png' },
+          { name: 'Comprehension Worksheet 4', file: 'Worksheets/ComprehensionWorksheet4.png' },
+          { name: 'Comprehension Worksheet 5', file: 'Worksheets/ComprehensionWorksheet5.png' },
+          { name: 'Comprehension Worksheet 6', file: 'Worksheets/ComprehensionWorksheet6.png' },
+          { name: 'Narrative Writing Worksheet', file: 'Worksheets/NarrativeWritingWorksheet.png' },
+          { name: 'Persuasive Writing Worksheet 1', file: 'Worksheets/PersuasiveWritingWorksheet.png' },
+          { name: 'Persuasive Writing Worksheet 2', file: 'Worksheets/PersuasiveWritingWorksheet2.png' },
+          { name: 'TEEL Paragraph Worksheet', file: 'Worksheets/TEELParagraphWorksheet.png' }
+        ]
       }
     ]
   },
@@ -193,6 +208,17 @@ const displayCategories = [
           { name: 'Length', file: 'Length.png' },
           { name: 'Mass', file: 'Mass.png' },
           { name: 'Volume', file: 'Volume.png' }
+        ]
+      },
+      {
+        name: 'Worksheets',
+        images: [
+          { name: 'Australian Currency Worksheet', file: 'Worksheets/AustralianCurrencyWorksheet.png' },
+          { name: 'Counting Worksheet', file: 'Worksheets/CountingWorksheet.png' },
+          { name: 'Expanded Form Worksheet', file: 'Worksheets/ExpandedFormWorksheet.png' },
+          { name: 'Place Value Worksheet', file: 'Worksheets/PlaceValueWorksheet.png' },
+          { name: 'Skip Counting Worksheet', file: 'Worksheets/SkipCountingWorksheet.png' },
+          { name: 'Whole Numbers Worksheet', file: 'Worksheets/WholeNumbersWorksheet.png' }
         ]
       }
     ]
