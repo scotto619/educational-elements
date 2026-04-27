@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Werewolf</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐺</text></svg>">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ LANDING ══ -->
+<div id="screen-landing" class="screen active">
+  <div class="center-content">
+    <div class="logo">🐺</div>
+    <h1>Werewolf</h1>
+    <p>A social deduction party game for 3–10 players. One night, one vote, one chance.</p>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-primary" onclick="showNameEntry('create')">New Game</button>
+    <button class="btn btn-ghost"   onclick="showNameEntry('join')">Join Game</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ NAME ENTRY ══ -->
+<div id="screen-name" class="screen">
+  <div class="center-content">
+    <h2 id="name-title">Enter Your Name</h2>
+    <div class="input-group">
+      <label for="inp-name">Your name</label>
+      <input type="text" id="inp-name" placeholder="e.g. Alex" maxlength="20" autocomplete="off">
+    </div>
+    <div class="input-group" id="code-group" style="display:none">
+      <label for="inp-code">Room code</label>
+      <input type="text" id="inp-code" placeholder="e.g. ABCD" maxlength="4" autocomplete="off"
+             style="text-transform:uppercase;letter-spacing:4px;font-family:monospace;font-size:1.3rem">
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-ghost"   onclick="showScreen('landing')">Back</button>
+    <button class="btn btn-primary" onclick="submitName()" id="name-submit-btn">Continue</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ LOBBY ══ -->
+<div id="screen-lobby" class="screen">
+  <div class="content" id="lobby-content">
+
+    <div class="room-code-block">
+      <div class="room-code" id="lobby-code">----</div>
+      <div class="room-phrase" id="lobby-phrase"></div>
+      <div class="text-dim mt-8" style="font-size:.78rem">Share this code with friends</div>
+    </div>
+
+    <div class="section-label">Players</div>
+    <div class="players-list" id="lobby-players"></div>
+
+    <!-- Host-only: Role picker -->
+    <div id="host-controls" style="display:none">
+      <div class="divider"></div>
+      <div class="role-picker-header">
+        <span class="section-label" style="margin:0">Role Cards</span>
+        <span class="role-count-badge" id="role-count-badge">0 / 0</span>
+      </div>
+      <div class="role-grid" id="role-grid"></div>
+
+      <div class="divider"></div>
+      <div class="section-label">Discussion Timer</div>
+      <div class="timer-row">
+        <label>Duration</label>
+        <input type="range" id="day-timer-range" min="30" max="600" step="30" value="300"
+               oninput="updateDayTimer(this.value)">
+        <span class="timer-val" id="day-timer-val">5:00</span>
+      </div>
+    </div>
+
+    <!-- Guest waiting -->
+    <div id="guest-waiting" style="display:none;text-align:center;padding:20px 0;color:var(--text-muted)">
+      Waiting for the host to start the game<span class="waiting-dots"></span>
+    </div>
+
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-danger" onclick="leaveRoom()">Leave</button>
+    <button class="btn btn-success" id="start-btn" onclick="startGame()" style="display:none" disabled>Start Game</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ ROLE REVEAL ══ -->
+<div id="screen-role-reveal" class="screen">
+  <div class="center-content">
+    <div class="text-muted mb-8">Your role this round</div>
+    <div class="reveal-flip-container">
+      <div class="reveal-flip" id="reveal-flip" onclick="flipCard()">
+        <div class="reveal-flip-front">
+          <div class="role-card role-card-back"></div>
+        </div>
+        <div class="reveal-flip-back" id="reveal-card-back-el">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+    <div class="reveal-hint" id="reveal-hint">Tap to reveal your role</div>
+    <div class="role-desc" id="role-desc" style="display:none"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-primary" id="reveal-ok-btn" onclick="goToNightWait()" disabled>I'm Ready</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ NIGHT — SLEEPING ══ -->
+<div id="screen-night-sleep" class="screen night-bg">
+  <div class="center-content">
+    <div class="night-moon">🌙</div>
+    <div class="night-label">Night has fallen…</div>
+    <div class="night-role-badge">
+      <span id="sleep-role-name">Someone</span> is awake
+    </div>
+    <div class="night-sub">Stay quiet. Close your eyes.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ NIGHT — ACTION ══ -->
+<div id="screen-night-action" class="screen night-bg">
+  <div class="content">
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:2rem" id="night-action-icon"></div>
+      <h2 id="night-action-title" style="margin-top:6px"></h2>
+      <div class="text-muted mt-8" id="night-action-desc"></div>
+    </div>
+    <div id="night-action-body"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-ghost"   onclick="nightSkip()" id="night-skip-btn">Skip / No action</button>
+    <button class="btn btn-primary" onclick="nightConfirm()" id="night-confirm-btn" disabled>Confirm</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ NIGHT — RESULT ══ -->
+<div id="screen-night-result" class="screen night-bg">
+  <div class="center-content">
+    <div style="font-size:2rem" id="night-result-icon"></div>
+    <h2 id="night-result-title"></h2>
+    <div id="night-result-body" class="night-action-card"></div>
+    <div class="text-muted" style="font-size:.85rem">Remember what you learned.</div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-primary" onclick="acknowledgeNightResult()">OK</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ DAY ══ -->
+<div id="screen-day" class="screen day-bg">
+  <div class="center-content">
+    <div class="day-sun">☀️</div>
+    <h2>Day has risen</h2>
+    <div class="text-muted">Discuss. Debate. Decide.</div>
+    <div class="timer-display" id="day-timer-display">5:00</div>
+    <div class="day-players-list" id="day-players-list"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-ghost"  id="skip-vote-btn" style="display:none" onclick="hostSkipToVote()">Skip to Vote</button>
+    <button class="btn btn-danger" id="vote-now-btn"  style="display:none" onclick="hostSkipToVote()">Vote Now!</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ VOTING ══ -->
+<div id="screen-voting" class="screen">
+  <div class="content">
+    <div style="text-align:center;margin-bottom:20px">
+      <h2>Who is the Werewolf?</h2>
+      <div class="text-muted mt-8">Vote for the player you want to eliminate</div>
+    </div>
+    <div class="vote-grid" id="vote-grid"></div>
+    <div class="vote-progress">
+      <div class="vote-count-text" id="vote-count-text">0 / 0 voted</div>
+      <div class="vote-bar"><div class="vote-bar-fill" id="vote-bar-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-danger" id="vote-confirm-btn" onclick="confirmVote()" disabled>Cast Vote</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════ RESULTS ══ -->
+<div id="screen-results" class="screen">
+  <div class="content" style="align-items:center;display:flex;flex-direction:column">
+    <div id="result-banner" class="result-banner"></div>
+
+    <div class="section-label w-full" style="max-width:480px">Eliminated</div>
+    <div class="killed-list" id="killed-list"></div>
+
+    <div class="section-label w-full" style="max-width:480px">Center Cards</div>
+    <div class="center-row" id="center-row"></div>
+
+    <div class="section-label w-full" style="max-width:480px">Role Reveal</div>
+    <table class="results-table" id="results-table">
+      <thead>
+        <tr><th>Player</th><th>Start Role</th><th>Final Role</th><th>Votes</th></tr>
+      </thead>
+      <tbody id="results-tbody"></tbody>
+    </table>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-ghost"   onclick="leaveRoom()">Leave</button>
+    <button class="btn btn-primary" id="play-again-btn" style="display:none" onclick="playAgain()">Play Again</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ TOAST ══ -->
+<div id="toast"></div>
+
+<!-- Firebase SDK (v9 compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Your Firebase project config — edit this file! -->
+<script src="/firebase-config.js"></script>
+<script src="/client.js"></script>
+</body>
+</html>
