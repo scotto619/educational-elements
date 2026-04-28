@@ -529,61 +529,17 @@ const ChessGame = ({ studentData, showToast }) => {
 
   // ── Update tournament match after a chess game ends ───────────────────────
   const updateTournamentMatch = useCallback(async (tCode,roundIdx,matchIdx,winnerId,isDraw)=>{
-    if(!firebase) return;
-    const matchPath = `chess_tournaments/${tCode}/rounds/${roundIdx}/${matchIdx}`;
-    const matchRef  = firebase.ref(firebase.database, matchPath);
-    const mSnap     = await firebase.get(matchRef);
-    const match     = mSnap.val();
-    if(!match||match.status==='finished') return;
-
-    await firebase.update(matchRef,{
-      status:'finished',
-      winnerId: isDraw ? null : winnerId,
-      isDraw:   !!isDraw,
-    });
-
-    // Check if all matches in this round are done
-    const tRef  = firebase.ref(firebase.database,`chess_tournaments/${tCode}`);
-    const tSnap = await firebase.get(tRef);
-    const tData = tSnap.val();
-    if(!tData) return;
-
-    const thisRound = tData.rounds[roundIdx];
-    const allDone   = thisRound.every((m,i)=> i===matchIdx ? true : m.status==='finished');
-    if(!allDone) return;
-
-    // Collect winners
-    const winners = thisRound.map((m,i)=>{
-      if(i===matchIdx) return isDraw ? null : winnerId;
-      return m.isDraw ? null : m.winnerId;
-    }).filter(Boolean);
-
-    // Handle draws that blocked advancement: give bye to remaining player
-    const allPlayers = thisRound.flatMap(m=>[m.p1Id,m.p2Id].filter(Boolean));
-    const advanced   = winners.length ? winners : allPlayers; // fallback
-
-    if(advanced.length===1){
-      // Tournament over
-      await firebase.update(tRef,{ status:'finished', winner:advanced[0], currentRound:roundIdx+1 });
-    } else {
-      // Build next round
-      const next = [];
-      for(let i=0;i<advanced.length;i+=2){
-        next.push({
-          p1Id:     advanced[i],
-          p2Id:     advanced[i+1]||null,
-          winnerId: advanced[i+1] ? null : advanced[i],
-          status:   advanced[i+1] ? 'pending' : 'finished',
-          gameCode: null,
-          isDraw:   false,
-        });
-      }
-      const updates = {};
-      updates[`rounds/${roundIdx+1}`] = next;
-      updates['currentRound']         = roundIdx+1;
-      await firebase.update(tRef, updates);
+    // Route through the server-side API to bypass Firebase security rules
+    try{
+      await fetch('/api/chess-tournament',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'update_match', code:tCode, roundIdx, matchIdx, winnerId, isDraw }),
+      });
+    }catch(e){
+      console.error('Failed to update tournament match:',e);
     }
-  },[firebase]);
+  },[]);
 
   // ── Create normal game ─────────────────────────────────────────────────────
   const createGame = async (timeSeconds=0, tournamentInfo=null) => {
@@ -788,11 +744,12 @@ const ChessGame = ({ studentData, showToast }) => {
     const code = 'T'+Math.random().toString(36).substring(2,5).toUpperCase();
     tournRoom.current = code;
     try{
-      await firebase.set(firebase.ref(firebase.database,`chess_tournaments/${code}`),{
-        code, hostId:myId, status:'registering', createdAt:Date.now(),
-        players:{ [myId]:{ id:myId, name:myName } },
-        playerOrder:[myId], rounds:[], currentRound:0, winner:null,
+      const res = await fetch('/api/chess-tournament',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'create', code, hostId:myId, hostName:myName }),
       });
+      if(!res.ok){ const e=await res.json(); throw new Error(e.error||'Server error'); }
       setTournamentCode(code); setScreen('tournament_lobby');
       showToast(`Tournament created! Code: ${code}`,'success');
     }catch(e){ showToast('Failed to create tournament','error'); tournRoom.current=null; }
@@ -806,18 +763,17 @@ const ChessGame = ({ studentData, showToast }) => {
     if(!code){ showToast('Enter tournament code','error'); return; }
     setLoading(true);
     try{
-      const snap = await firebase.get(firebase.ref(firebase.database,`chess_tournaments/${code}`));
-      const data = snap.val();
-      if(!data)                      { showToast('Tournament not found','error'); setLoading(false); return; }
-      if(data.status!=='registering'){ showToast('Tournament already started','error'); setLoading(false); return; }
-      const curPO = data.playerOrder||[];
-      if(curPO.includes(myId)){ showToast('Already in this tournament','info'); setLoading(false); return; }
-      await firebase.update(firebase.ref(firebase.database,`chess_tournaments/${code}`),{
-        [`players/${myId}`]:{ id:myId, name:myName },
-        playerOrder:[...curPO, myId],
+      const res = await fetch('/api/chess-tournament',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'join', code, userId:myId, userName:myName }),
       });
+      const json = await res.json();
+      if(res.status===404){ showToast('Tournament not found','error'); setLoading(false); return; }
+      if(res.status===400){ showToast(json.error||'Tournament already started','error'); setLoading(false); return; }
+      if(!res.ok){ showToast('Failed to join tournament','error'); setLoading(false); return; }
       tournRoom.current=code; setTournamentCode(code);
-      setTournamentData(data); setScreen('tournament_lobby');
+      setTournamentData(json.data||null); setScreen('tournament_lobby');
       showToast('Joined tournament!','success');
     }catch(e){ showToast('Failed to join tournament','error'); }
     setLoading(false);
@@ -843,10 +799,15 @@ const ChessGame = ({ studentData, showToast }) => {
         isDraw:  false,
       });
     }
-    await firebase.update(firebase.ref(firebase.database,`chess_tournaments/${tournRoom.current}`),{
-      status:'playing', rounds:[round0], currentRound:0,
-    });
-    setScreen('tournament_bracket');
+    try{
+      const res = await fetch('/api/chess-tournament',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'start', code:tournRoom.current, rounds:[round0] }),
+      });
+      if(!res.ok){ const e=await res.json(); throw new Error(e.error||'Server error'); }
+      setScreen('tournament_bracket');
+    }catch(e){ showToast('Failed to start tournament','error'); }
   };
 
   // ── Tournament: play match ─────────────────────────────────────────────────
@@ -860,11 +821,12 @@ const ChessGame = ({ studentData, showToast }) => {
         tournamentMatchIdx:  matchIdx,
       });
       if(!code) return;
-      // Store game code on the match
-      await firebase.update(
-        firebase.ref(firebase.database,`chess_tournaments/${tournRoom.current}/rounds/${roundIdx}/${matchIdx}`),
-        { gameCode:code, status:'in_progress' }
-      );
+      // Store game code on the match (via server to bypass security rules)
+      await fetch('/api/chess-tournament',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'set_match_game', code:tournRoom.current, roundIdx, matchIdx, gameCode:code }),
+      });
     } else if(isHost && match.gameCode){
       // Rejoin
       gameRoom.current = match.gameCode;
