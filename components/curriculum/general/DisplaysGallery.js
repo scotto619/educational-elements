@@ -108,7 +108,9 @@ const displayCategories = [
           { name: 'Information Reports', file: 'Writing/InfoReports.png' },
           { name: 'Poetry', file: 'Writing/Poetry.png' },
           { name: 'Recount Writing', file: 'Writing/Recount.png' },
-          { name: 'Science Fiction Narratives', file: 'Writing/SciFi Narratives.png' }
+          { name: 'Science Fiction Narratives', file: 'Writing/SciFi Narratives.png' },
+          { name: 'Informative Writing', file: 'Writing/InformativeWritingDisplay.png' },
+          { name: 'TEEL Paragraph Structure', file: 'Writing/TEELParagraphDisplay.png' }
         ]
       },
       {
@@ -162,7 +164,9 @@ const displayCategories = [
           { name: 'Narrative Writing Worksheet', file: 'Worksheets/NarrativeWritingWorksheet.png' },
           { name: 'Persuasive Writing Worksheet 1', file: 'Worksheets/PersuasiveWritingWorksheet.png' },
           { name: 'Persuasive Writing Worksheet 2', file: 'Worksheets/PersuasiveWritingWorksheet2.png' },
-          { name: 'TEEL Paragraph Worksheet', file: 'Worksheets/TEELParagraphWorksheet.png' }
+          { name: 'TEEL Paragraph Worksheet', file: 'Worksheets/TEELParagraphWorksheet.png' },
+          { name: 'Complex Sentences Worksheet', file: 'Worksheets/ComplexSentencesWorksheet.png' },
+          { name: 'Verbs Worksheet', file: 'Worksheets/VerbsWorksheet.png' }
         ]
       }
     ]
@@ -249,6 +253,7 @@ const displayCategories = [
           { name: 'Saturn', file: 'Space/Saturn.png' },
           { name: 'Solar System', file: 'Space/SolarSystem.png' },
           { name: 'Space Vocabulary', file: 'Space/SpaceVocab.png' },
+          { name: 'Space Vocabulary Display', file: 'Space/SpaceVocabDisplay.png' },
           { name: 'Uranus', file: 'Space/Uranus.png' },
           { name: 'Venus', file: 'Space/Venus.png' }
         ]

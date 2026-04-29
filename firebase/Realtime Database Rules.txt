@@ -419,6 +419,14 @@ Realtime Database Rules
       }
     },
 
+    // Word Imposter multiplayer social deduction game
+    "wordImposterRooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
     // Memory Game monitoring
     "memoryGameMonitoring": {
       "$gameCode": {

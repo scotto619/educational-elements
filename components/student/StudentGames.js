@@ -36,6 +36,7 @@ const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loadin
 const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoadingSpinner, ssr: false });
 const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
 const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: GameLoadingSpinner, ssr: false });
+const WordImposterGame = dynamic(() => import('../games/WordImposterGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -291,6 +292,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'multiplayer',
       logo: getGameLogo('werewolf')
+    },
+    {
+      id: 'word-imposter',
+      name: 'Word Imposter',
+      icon: '🕵️',
+      description: 'Everyone gets the same secret word — except one imposter who gets a similar word! Give one-word clues, spot the bluffer, and vote them out before they escape.',
+      component: WordImposterGame,
+      color: 'from-purple-700 to-pink-700',
+      difficulty: 'Easy - Medium',
+      time: '5-15 minutes',
+      multiplayer: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('word-imposter')
     },
     {
       id: 'tic-tac-toe',
