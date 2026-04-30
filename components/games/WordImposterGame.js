@@ -292,7 +292,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
     const trimmed = clueInput.trim();
     if (!fb || !trimmed) { showToast?.('Type a one-word clue!', 'error'); return; }
     if (trimmed.includes(' ')) { showToast?.('One word only — no spaces!', 'error'); return; }
-    const clueOrder = roomData?.clueOrder || players.map(p => p.id);
+    const clueOrder = roomData?.clueOrder || Object.values(roomData?.players || {}).map(p => p.id);
     const currentClueTurn = roomData?.currentClueTurn || 0;
     const currentPlayerId = clueOrder[currentClueTurn];
     if (currentPlayerId && currentPlayerId !== myId) {
@@ -320,7 +320,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
     }
     setClueInput('');
     showToast?.('Clue locked in! 🔒', 'success');
-  }, [fb, clueInput, roomCode, myId, showToast, roomData, players]);
+  }, [fb, clueInput, roomCode, myId, showToast, roomData]);
 
   // ── Keep clue turn valid (host): repair missing order / skip missing players ─
   useEffect(() => {
