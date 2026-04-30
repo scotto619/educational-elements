@@ -292,7 +292,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
     const trimmed = clueInput.trim();
     if (!fb || !trimmed) { showToast?.('Type a one-word clue!', 'error'); return; }
     if (trimmed.includes(' ')) { showToast?.('One word only — no spaces!', 'error'); return; }
-    const clueOrder = roomData?.clueOrder || [];
+    const clueOrder = roomData?.clueOrder || players.map(p => p.id);
     const currentClueTurn = roomData?.currentClueTurn || 0;
     const currentPlayerId = clueOrder[currentClueTurn];
     if (currentPlayerId && currentPlayerId !== myId) {
@@ -320,7 +320,44 @@ const WordImposterGame = ({ studentData, showToast }) => {
     }
     setClueInput('');
     showToast?.('Clue locked in! 🔒', 'success');
-  }, [fb, clueInput, roomCode, myId, showToast, roomData]);
+  }, [fb, clueInput, roomCode, myId, showToast, roomData, players]);
+
+  // ── Keep clue turn valid (host): repair missing order / skip missing players ─
+  useEffect(() => {
+    if (!isHost || !roomData || roomData.phase !== 'clues' || !fb) return;
+    const livePlayers = Object.values(roomData.players || {});
+    if (livePlayers.length === 0) return;
+
+    const liveIds = new Set(livePlayers.map(p => p.id));
+    const existingOrder = Array.isArray(roomData.clueOrder) ? roomData.clueOrder : [];
+    const filteredOrder = existingOrder.filter(id => liveIds.has(id));
+    const missingIds = livePlayers.map(p => p.id).filter(id => !filteredOrder.includes(id));
+    const repairedOrder = [...filteredOrder, ...missingIds];
+    const currentTurn = Math.max(0, roomData.currentClueTurn || 0);
+
+    // If order changed, save it.
+    if (repairedOrder.length !== existingOrder.length || repairedOrder.some((id, i) => id !== existingOrder[i])) {
+      fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), {
+        clueOrder: repairedOrder,
+        currentClueTurn: Math.min(currentTurn, Math.max(0, repairedOrder.length - 1)),
+      });
+      return;
+    }
+
+    // If current turn points to someone who already submitted, advance automatically.
+    let nextTurn = currentTurn;
+    while (nextTurn < repairedOrder.length) {
+      const nextPlayer = livePlayers.find(p => p.id === repairedOrder[nextTurn]);
+      if (!nextPlayer?.clue) break;
+      nextTurn += 1;
+    }
+
+    if (nextTurn >= repairedOrder.length) {
+      fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), { phase: 'vote' });
+    } else if (nextTurn !== currentTurn) {
+      fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), { currentClueTurn: nextTurn });
+    }
+  }, [isHost, roomData, fb, roomCode]);
 
   // ── Cast vote ──────────────────────────────────────────────────────────────
   const castVote = useCallback(async (targetId) => {
@@ -769,6 +806,9 @@ const WordImposterGame = ({ studentData, showToast }) => {
                 <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-xl px-3 py-2.5">
                   <span className="text-xl">{p.emoji}</span>
                   <span className="text-white font-semibold flex-1">{p.name}</span>
+                  {p.id === currentCluePlayerId && !p.clue && (
+                    <span className="text-yellow-300 text-xs font-bold uppercase tracking-wide">🎤 Their turn</span>
+                  )}
                   {p.clue ? (
                     <span className="bg-purple-500/30 text-purple-200 font-bold px-3 py-1 rounded-full text-sm">{p.clue}</span>
                   ) : (
