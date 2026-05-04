@@ -262,6 +262,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
     const wordPair = getRandomWordPair(selectedCategory);
     const imposterIdx = Math.floor(Math.random() * players.length);
     const imposterId = players[imposterIdx].id;
+    const clueOrder = [...players].sort(() => Math.random() - 0.5).map(p => p.id);
     // Clear clues/votes from any previous round
     const playerUpdates = {};
     players.forEach(p => {
@@ -273,6 +274,8 @@ const WordImposterGame = ({ studentData, showToast }) => {
       phase: 'wordReveal',
       wordPair,
       imposterId,
+      clueOrder,
+      currentClueTurn: 0,
       results: null,
       roundNumber: (roomData.roundNumber || 0) + 1,
     });
@@ -289,21 +292,72 @@ const WordImposterGame = ({ studentData, showToast }) => {
     const trimmed = clueInput.trim();
     if (!fb || !trimmed) { showToast?.('Type a one-word clue!', 'error'); return; }
     if (trimmed.includes(' ')) { showToast?.('One word only — no spaces!', 'error'); return; }
+    const clueOrder = roomData?.clueOrder || Object.values(roomData?.players || {}).map(p => p.id);
+    const currentClueTurn = roomData?.currentClueTurn || 0;
+    const currentPlayerId = clueOrder[currentClueTurn];
+    if (currentPlayerId && currentPlayerId !== myId) {
+      showToast?.("It's not your turn yet!", 'error');
+      return;
+    }
+    const normalizedClue = trimmed.toLowerCase();
+    const existingClues = Object.values(roomData?.players || {})
+      .filter(p => p.id !== myId && p.clue)
+      .map(p => p.clue.toLowerCase());
+    if (existingClues.includes(normalizedClue)) {
+      showToast?.('That clue has already been used. Try a different word!', 'error');
+      return;
+    }
     await fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}/players/${myId}`), { clue: trimmed });
+    if (currentPlayerId) {
+      const nextTurn = currentClueTurn + 1;
+      const updates = {};
+      if (nextTurn >= clueOrder.length) {
+        updates.phase = 'vote';
+      } else {
+        updates.currentClueTurn = nextTurn;
+      }
+      await fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), updates);
+    }
     setClueInput('');
     showToast?.('Clue locked in! 🔒', 'success');
-  }, [fb, clueInput, roomCode, myId, showToast]);
+  }, [fb, clueInput, roomCode, myId, showToast, roomData]);
 
-  // ── Auto-advance: clues → vote when all clues submitted (host) ─────────────
+  // ── Keep clue turn valid (host): repair missing order / skip missing players ─
   useEffect(() => {
     if (!isHost || !roomData || roomData.phase !== 'clues' || !fb) return;
-    const players = Object.values(roomData.players || {});
-    if (players.length === 0) return;
-    const allClued = players.every(p => p.clue);
-    if (allClued) {
-      fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), { phase: 'vote' });
+    const livePlayers = Object.values(roomData.players || {});
+    if (livePlayers.length === 0) return;
+
+    const liveIds = new Set(livePlayers.map(p => p.id));
+    const existingOrder = Array.isArray(roomData.clueOrder) ? roomData.clueOrder : [];
+    const filteredOrder = existingOrder.filter(id => liveIds.has(id));
+    const missingIds = livePlayers.map(p => p.id).filter(id => !filteredOrder.includes(id));
+    const repairedOrder = [...filteredOrder, ...missingIds];
+    const currentTurn = Math.max(0, roomData.currentClueTurn || 0);
+
+    // If order changed, save it.
+    if (repairedOrder.length !== existingOrder.length || repairedOrder.some((id, i) => id !== existingOrder[i])) {
+      fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), {
+        clueOrder: repairedOrder,
+        currentClueTurn: Math.min(currentTurn, Math.max(0, repairedOrder.length - 1)),
+      });
+      return;
     }
-  }, [isHost, roomData?.phase, JSON.stringify(Object.values(roomData?.players || {}).map(p => p.clue)), roomCode, fb]);
+
+    // If current turn points to someone who already submitted, advance automatically.
+    let nextTurn = currentTurn;
+    while (nextTurn < repairedOrder.length) {
+      const nextPlayer = livePlayers.find(p => p.id === repairedOrder[nextTurn]);
+      if (!nextPlayer?.clue) break;
+      nextTurn += 1;
+    }
+
+    if (nextTurn >= repairedOrder.length) {
+      fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), { phase: 'vote' });
+    } else if (nextTurn !== currentTurn) {
+      fb.update(fb.ref(fb.database, `wordImposterRooms/${roomCode}`), { currentClueTurn: nextTurn });
+    }
+  }, [isHost, roomData, fb, roomCode]);
 
   // ── Cast vote ──────────────────────────────────────────────────────────────
   const castVote = useCallback(async (targetId) => {
@@ -385,7 +439,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
   const myPlayerData = players.find(p => p.id === myId);
   const amIImposter = roomData?.imposterId === myId;
   const myWord = roomData?.wordPair
-    ? (amIImposter ? roomData.wordPair.imposterWord : roomData.wordPair.realWord)
+    ? (amIImposter ? 'IMPOSTER' : roomData.wordPair.realWord)
     : null;
   const imposterPlayer = players.find(p => p.id === roomData?.imposterId);
   const myClue = myPlayerData?.clue;
@@ -430,7 +484,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
 
           {/* How to play */}
           <div className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-5 mb-8 text-left text-sm text-white/80 space-y-2">
-            <div className="flex gap-3 items-start"><span className="text-lg">🎯</span><span>Everyone gets the <strong className="text-white">same word</strong> — except the imposter who gets a <strong className="text-purple-300">similar word</strong></span></div>
+            <div className="flex gap-3 items-start"><span className="text-lg">🎯</span><span>Everyone gets the <strong className="text-white">same word</strong> — except the imposter, whose card only says <strong className="text-red-300">IMPOSTER</strong></span></div>
             <div className="flex gap-3 items-start"><span className="text-lg">💬</span><span>Players say a <strong className="text-white">one-word clue</strong> about their word. The imposter must bluff!</span></div>
             <div className="flex gap-3 items-start"><span className="text-lg">🗳️</span><span>Vote for who you think is the imposter</span></div>
             <div className="flex gap-3 items-start"><span className="text-lg">🏆</span><span>Catch the imposter → <strong className="text-green-300">everyone gets 1pt</strong>. Imposter escapes → <strong className="text-red-300">imposter gets 3pts</strong></span></div>
@@ -640,7 +694,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
                     <div className="bg-red-500/20 rounded-xl px-3 py-1 inline-block mb-3">
                       <span className="text-red-300 text-sm font-bold uppercase tracking-widest">You are the Imposter!</span>
                     </div>
-                    <p className="text-white/60 text-sm mb-4">Your word is similar — but NOT the same as theirs. Bluff your way through!</p>
+                    <p className="text-white/60 text-sm mb-4">You don't get the secret word. Bluff your way through!</p>
                     <div className="text-4xl font-black text-white mb-1">{myWord}</div>
                     <p className="text-red-300/70 text-xs mt-2">⚠️ The others have a different word. Don't reveal yours!</p>
                   </>
@@ -682,12 +736,20 @@ const WordImposterGame = ({ studentData, showToast }) => {
   // ── CLUES ──────────────────────────────────────────────────────────────────
   if (screen === 'clues') {
     const myClueSubmitted = !!myPlayerData?.clue;
+    const clueOrder = roomData?.clueOrder || [];
+    const currentClueTurn = roomData?.currentClueTurn || 0;
+    const currentCluePlayerId = clueOrder[currentClueTurn];
+    const currentCluePlayer = players.find(p => p.id === currentCluePlayerId);
+    const isMyTurnForClue = currentCluePlayerId === myId;
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-6">
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-6">
             <h2 className="text-3xl font-black text-white">💬 Clue Time!</h2>
             <p className="text-white/50 mt-1">Give ONE word that relates to your secret word</p>
+            <p className="text-white/70 mt-2 text-sm">
+              Turn: <strong className="text-white">{currentCluePlayer?.name || '—'}</strong>
+            </p>
             <div className="mt-3 bg-white/10 rounded-full px-4 py-1.5 inline-flex items-center gap-2">
               <span className="text-green-400 font-bold">{cluesSubmitted}</span>
               <span className="text-white/50">/ {players.length} clues in</span>
@@ -714,14 +776,19 @@ const WordImposterGame = ({ studentData, showToast }) => {
                   maxLength={30}
                   className="flex-1 bg-white/10 border border-white/20 text-white placeholder-white/30 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-purple-400 transition-all"
                   onKeyDown={e => e.key === 'Enter' && submitClue()}
+                  disabled={!isMyTurnForClue}
                 />
                 <button
                   onClick={submitClue}
+                  disabled={!isMyTurnForClue}
                   className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold px-5 rounded-xl text-lg hover:from-purple-400 hover:to-pink-400 transition-all active:scale-95"
                 >
                   Lock
                 </button>
               </div>
+              {!isMyTurnForClue && (
+                <p className="text-white/40 text-xs mt-2">Please wait for your turn.</p>
+              )}
             </div>
           ) : (
             <div className="bg-green-900/40 border border-green-500/30 rounded-2xl p-4 mb-5 text-center">
@@ -739,6 +806,9 @@ const WordImposterGame = ({ studentData, showToast }) => {
                 <div key={p.id} className="flex items-center gap-3 bg-white/5 rounded-xl px-3 py-2.5">
                   <span className="text-xl">{p.emoji}</span>
                   <span className="text-white font-semibold flex-1">{p.name}</span>
+                  {p.id === currentCluePlayerId && !p.clue && (
+                    <span className="text-yellow-300 text-xs font-bold uppercase tracking-wide">🎤 Their turn</span>
+                  )}
                   {p.clue ? (
                     <span className="bg-purple-500/30 text-purple-200 font-bold px-3 py-1 rounded-full text-sm">{p.clue}</span>
                   ) : (
@@ -896,7 +966,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
                 <p className="text-white/50 text-sm mt-1">
                   Real word: <strong className="text-green-300">{roomData?.wordPair?.realWord}</strong>
                   <span className="mx-2">·</span>
-                  Imposter's word: <strong className="text-red-300">{roomData?.wordPair?.imposterWord}</strong>
+                  Imposter's card: <strong className="text-red-300">IMPOSTER</strong>
                 </p>
               </div>
             </div>
