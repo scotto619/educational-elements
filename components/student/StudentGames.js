@@ -297,7 +297,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       id: 'word-imposter',
       name: 'Word Imposter',
       icon: '🕵️',
-      description: 'Everyone gets the same secret word — except one imposter who gets a similar word! Give one-word clues, spot the bluffer, and vote them out before they escape.',
+      description: 'Everyone gets the same secret word — except one imposter whose card just says IMPOSTER. Give one-word clues, spot the bluffer, and vote them out before they escape.',
       component: WordImposterGame,
       color: 'from-purple-700 to-pink-700',
       difficulty: 'Easy - Medium',
