@@ -142,7 +142,18 @@ export const SHOP_BASIC_AVATARS = [
   { name: 'Pirate', price: 22, path: '/shop/Basic/Update4/Pirate.png' },
   { name: 'Tough Guy', price: 20, path: '/shop/Basic/Update4/ToughGuy.png' },
   { name: 'Wrestler', price: 22, path: '/shop/Basic/Update4/Wrestler.png' },
-  { name: 'WuKong', price: 30, path: '/shop/Basic/Update4/WuKong.png' }
+  { name: 'WuKong', price: 30, path: '/shop/Basic/Update4/WuKong.png' },
+  { name: 'Bardo', price: 22, path: '/shop/Basic/Update5/Bardo.png' },
+  { name: 'Chicken', price: 15, path: '/shop/Basic/Update5/Chicken.png' },
+  { name: 'Fighter', price: 22, path: '/shop/Basic/Update5/Figther.png' },
+  { name: 'Frog Prince', price: 20, path: '/shop/Basic/Update5/Frog Prince.png' },
+  { name: 'Mage Girl', price: 25, path: '/shop/Basic/Update5/Mage Girl.png' },
+  { name: 'Pirate Skelly', price: 22, path: '/shop/Basic/Update5/Pirate Skelly.png' },
+  { name: 'Ranger Girl', price: 22, path: '/shop/Basic/Update5/Ranger Girl.png' },
+  { name: 'Rogue', price: 20, path: '/shop/Basic/Update5/Rogue.png' },
+  { name: 'Rogue 2', price: 22, path: '/shop/Basic/Update5/Rogue 2.png' },
+  { name: 'Scientist', price: 20, path: '/shop/Basic/Update5/Scientist.png' },
+  { name: 'Warthog', price: 18, path: '/shop/Basic/Update5/Warthog.png' }
 ];
 
 export const SHOP_PREMIUM_AVATARS = [
@@ -160,7 +171,9 @@ export const SHOP_PREMIUM_AVATARS = [
   { name: 'RobotBoy Premium', price: 38, path: '/shop/Premium/RobotBoy.png' },
   { name: 'RobotGirl Premium', price: 38, path: '/shop/Premium/RobotGirl.png' },
   { name: 'Vampire2', price: 40, path: '/shop/Premium/Vampire2.png' },
-  { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' }
+  { name: 'VampireGirl2', price: 40, path: '/shop/Premium/VampireGirl2.png' },
+  { name: 'Gold Mask', price: 45, path: '/shop/Premium/Gold Mask.png' },
+  { name: 'Skeleton Lord', price: 50, path: '/shop/Premium/Skeleton Lord.png' }
 ];
 
 // ===============================================

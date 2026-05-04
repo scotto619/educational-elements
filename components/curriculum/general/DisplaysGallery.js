@@ -110,7 +110,11 @@ const displayCategories = [
           { name: 'Recount Writing', file: 'Writing/Recount.png' },
           { name: 'Science Fiction Narratives', file: 'Writing/SciFi Narratives.png' },
           { name: 'Informative Writing', file: 'Writing/InformativeWritingDisplay.png' },
-          { name: 'TEEL Paragraph Structure', file: 'Writing/TEELParagraphDisplay.png' }
+          { name: 'Informative Text Display 2', file: 'Writing/InformativeTextDisplay2.png' },
+          { name: 'TEEL Paragraph Structure', file: 'Writing/TEELParagraphDisplay.png' },
+          { name: 'TEEL Paragraph Structure 2', file: 'Writing/TEELParagraphDisplay2.png' },
+          { name: 'Narrative Writing Display', file: 'Writing/NarrativeWritingDisplay.png' },
+          { name: 'TEEL Display', file: 'Writing/TEELDisplay.png' }
         ]
       },
       {
@@ -149,7 +153,8 @@ const displayCategories = [
           { name: 'Persuasive Checklist', file: 'Writing/Persuasive/Persuasive Checklist.png' },
           { name: 'Persuasive Devices', file: 'Writing/Persuasive/Persuasive Devices.png' },
           { name: 'Persuasive Elements', file: 'Writing/Persuasive/Persuasive Elements.png' },
-          { name: 'Persuasive Structure', file: 'Writing/Persuasive/Persuasive Structure.png' }
+          { name: 'Persuasive Structure', file: 'Writing/Persuasive/Persuasive Structure.png' },
+          { name: 'Persuasive Writing Display', file: 'Writing/PersuasiveWritingDisplay.png' }
         ]
       },
       {
@@ -255,7 +260,8 @@ const displayCategories = [
           { name: 'Space Vocabulary', file: 'Space/SpaceVocab.png' },
           { name: 'Space Vocabulary Display', file: 'Space/SpaceVocabDisplay.png' },
           { name: 'Uranus', file: 'Space/Uranus.png' },
-          { name: 'Venus', file: 'Space/Venus.png' }
+          { name: 'Venus', file: 'Space/Venus.png' },
+          { name: 'NASA Fact File', file: 'Space/NASA Fact File.png' }
         ]
       },
       {
