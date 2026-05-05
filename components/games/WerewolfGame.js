@@ -393,7 +393,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const [witchPeekedCard, setWitchPeekedCard]       = useState(null);
   const [gameResult, setGameResult]                 = useState(null);
   const [finalRolesData, setFinalRolesData]         = useState(null);
-  const [nightCountdown, setNightCountdown]         = useState(7);
+  const [nightCountdown, setNightCountdown]         = useState(14);
   const [dayCountdown, setDayCountdown]             = useState(300);
 
   const roomRef        = useRef(null);
@@ -474,7 +474,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     if (nightTickRef.current) clearInterval(nightTickRef.current);
     nightTickRef.current = setInterval(() => {
       const elapsed = (Date.now() - roomData.stepStartTime) / 1000;
-      const remaining = Math.max(0, 7 - elapsed);
+      const remaining = Math.max(0, 14 - elapsed);
       setNightCountdown(Math.ceil(remaining));
     }, 250);
     return () => clearInterval(nightTickRef.current);
@@ -516,7 +516,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       if (data.phase !== 'night') { clearInterval(hostIntervalRef.current); return; }
 
       const elapsed = Date.now() - (data.stepStartTime ?? Date.now());
-      if (elapsed < 7000) return; // Always wait full 7 seconds
+      if (elapsed < 14000) return; // Always wait full 14 seconds
 
       const activeOrder = data.activeNightOrder || [];
       const nextStep = (data.nightStep ?? 0) + 1;
@@ -645,6 +645,11 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const skipToVote = useCallback(async () => {
     if (!isHost || !fb || roomData?.phase !== 'day') return;
     await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'vote' });
+  }, [fb, isHost, roomCode, roomData?.phase]);
+
+  const endVoting = useCallback(async () => {
+    if (!isHost || !fb || roomData?.phase !== 'vote') return;
+    await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), { phase: 'results' });
   }, [fb, isHost, roomCode, roomData?.phase]);
 
   const submitNightAction = useCallback(async actionData => {
@@ -1095,8 +1100,8 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               className="w-full max-w-sm space-y-4">
 
               {/* Role header with image */}
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-16 h-20 rounded-xl overflow-hidden border border-white/20 flex-shrink-0">
+              <div className="flex flex-col items-center gap-3 mb-2 text-center">
+                <div className="w-32 h-44 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl flex-shrink-0">
                   <img src={getRoleImage(myOriginalRole, myPlayerGender, myMasonSlot)} alt=""
                     className="w-full h-full object-cover object-top" />
                 </div>
@@ -1110,7 +1115,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
               {/* Countdown */}
               <div className="flex justify-end">
                 <div className={`px-3 py-1 rounded-full text-sm font-black border transition-all
-                  ${nightCountdown <= 3 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-white/50 border-white/10'}`}>
+                  ${nightCountdown <= 5 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-white/50 border-white/10'}`}>
                   {nightCountdown}s
                 </div>
               </div>
@@ -1149,7 +1154,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                   <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.3 }}
                     className="mt-6 flex flex-col items-center gap-3">
-                    <div className="w-20 h-24 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
+                    <div className="w-36 h-48 rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl">
                       <img src={getRoleImage(role, 'male', 1)} alt={r.name}
                         className="w-full h-full object-cover object-top" />
                     </div>
@@ -1159,7 +1164,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                 )}
               </div>
               <div className={`inline-block px-4 py-2 rounded-full text-sm font-black border
-                ${nightCountdown <= 3 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-white/40 border-white/10'}`}>
+                ${nightCountdown <= 5 ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-white/40 border-white/10'}`}>
                 {nightCountdown}s
               </div>
             </motion.div>
@@ -1242,16 +1247,28 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             {myVote && <p className="text-green-400 text-xs font-bold mt-2">✓ Your vote has been cast</p>}
           </div>
 
+          {isHost && (
+            <div className="pb-3">
+              <button onPointerDown={e => { e.preventDefault(); endVoting(); }}
+                className="w-full bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-black py-3 rounded-xl transition-all text-sm"
+                style={{ touchAction: 'manipulation' }}>
+                ⚔️ End Voting &amp; Reveal Results
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3 flex-1">
             {playerList.map(p => {
               const isMe = p.id === myId;
               const isSelected = myVote === p.id;
               const hasVoted = !!roomData?.votes?.[p.id]; // anonymous: just show voted/not, not who for
               return (
-                <motion.button key={p.id} onClick={() => !isMe && !myVote && submitVote(p.id)}
+                <motion.button key={p.id}
+                  onPointerDown={e => { e.preventDefault(); if (!isMe && !myVote) submitVote(p.id); }}
                   disabled={isMe || !!myVote}
                   whileHover={!isMe && !myVote ? { scale: 1.03 } : {}}
                   whileTap={!isMe && !myVote ? { scale: 0.97 } : {}}
+                  style={{ touchAction: 'manipulation' }}
                   className={`relative rounded-2xl border-2 overflow-hidden flex flex-col items-center justify-end pb-3 pt-0 transition-all min-h-[120px]
                     ${isSelected ? 'border-red-500 shadow-red-500/30 shadow-lg' : isMe ? 'border-white/20 opacity-70' : 'border-white/10 hover:border-white/30'}
                     ${myVote && !isSelected ? 'opacity-50' : ''}
@@ -1436,21 +1453,27 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
   const PlayerBtn = ({ id, name, gender, disabled: dis }) => {
     const sel = selectedTargets.includes(id);
     return (
-      <button onClick={() => !dis && toggleTarget(id, role === 'troublemaker' ? 2 : 1)} disabled={dis || nightActionDone}
+      <button
+        onPointerDown={e => { e.preventDefault(); if (!dis && !nightActionDone) toggleTarget(id, role === 'troublemaker' ? 2 : 1); }}
+        disabled={dis || nightActionDone}
+        style={{ touchAction: 'manipulation' }}
         className={`flex items-center gap-2.5 w-full p-3 rounded-xl border-2 transition-all text-left
           ${sel ? 'border-yellow-400 bg-yellow-400/10' : 'border-white/10 bg-white/[0.04] hover:border-white/25 hover:bg-white/[0.07]'}
           ${dis ? 'opacity-30 cursor-not-allowed' : ''}`}>
         <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
           <img src={getRoleImage('villager', gender || 'male', 1)} alt="" className="w-full h-full object-cover object-top" />
         </div>
-        <span className="font-semibold text-sm">{name}</span>
+        <span className="font-semibold text-sm text-white">{name}</span>
         {sel && <span className="ml-auto text-yellow-400 text-sm">✓</span>}
       </button>
     );
   };
 
   const CenterBtn = ({ index, selected, selected2, disabled: dis }) => (
-    <button onClick={() => !dis && toggleTarget(index, role === 'seer' ? 2 : 1)} disabled={dis || nightActionDone}
+    <button
+      onPointerDown={e => { e.preventDefault(); if (!dis && !nightActionDone) toggleTarget(index, role === 'seer' ? 2 : 1); }}
+      disabled={dis || nightActionDone}
+      style={{ touchAction: 'manipulation' }}
       className={`relative w-20 h-24 rounded-xl border-2 overflow-hidden flex flex-col items-center justify-end pb-1 transition-all
         ${selected ? 'border-yellow-400' : selected2 ? 'border-green-400' : 'border-white/15 hover:border-white/30'}
         ${dis ? 'opacity-30 cursor-not-allowed' : ''}`}>
@@ -1564,7 +1587,9 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
       <div className="space-y-3">
         <div className="flex rounded-xl overflow-hidden border border-white/10">
           {['player', 'center'].map(m => (
-            <button key={m} onClick={() => { setSeerMode(m); setSelectedTargets([]); }}
+            <button key={m}
+              onPointerDown={e => { e.preventDefault(); setSeerMode(m); setSelectedTargets([]); }}
+              style={{ touchAction: 'manipulation' }}
               className={`flex-1 py-2 text-sm font-bold transition-all capitalize
                 ${seerMode === m ? 'bg-white/15 text-white' : 'bg-white/[0.03] text-white/30 hover:text-white/50'}`}>
               {m === 'player' ? 'A Player' : '2 Center Cards'}
@@ -1596,7 +1621,9 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
           <p className="text-white/50 text-sm">Peek at a center card:</p>
           <div className="flex gap-3 justify-center">
             {centerCards.map((roleKey, i) => (
-              <button key={i} onClick={() => setWitchPeekedCard({ index: i, roleKey })}
+              <button key={i}
+                onPointerDown={e => { e.preventDefault(); setWitchPeekedCard({ index: i, roleKey }); }}
+                style={{ touchAction: 'manipulation' }}
                 className="relative w-20 h-24 rounded-xl border-2 border-white/15 overflow-hidden hover:border-white/40 transition-all">
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
                 <span className="absolute inset-0 flex items-center justify-center text-white/15 font-black text-xl">{i + 1}</span>
@@ -1620,7 +1647,7 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
         </div>
         <p className="text-white/50 text-sm">Optionally swap with a player (or Confirm to skip):</p>
         <div className="space-y-1.5">{otherPlayers.map(p => <PlayerBtn key={p.id} {...p} />)}</div>
-        <button onClick={() => setWitchPeekedCard(null)} className="text-white/30 text-xs underline w-full text-center">Peek a different card</button>
+        <button onPointerDown={e => { e.preventDefault(); setWitchPeekedCard(null); }} style={{ touchAction: 'manipulation' }} className="text-white/30 text-xs underline w-full text-center">Peek a different card</button>
       </div>
     );
   }
