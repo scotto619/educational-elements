@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b"/>
+      <stop offset="100%" style="stop-color:#312e81"/>
+    </linearGradient>
+    <linearGradient id="track" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="200" height="200" rx="24" fill="url(#bg)"/>
+
+  <!-- Track lanes -->
+  <rect x="20" y="72" width="160" height="14" rx="7" fill="url(#track)" opacity="0.3"/>
+  <rect x="20" y="92" width="160" height="14" rx="7" fill="url(#track)" opacity="0.3"/>
+  <rect x="20" y="112" width="160" height="14" rx="7" fill="url(#track)" opacity="0.3"/>
+
+  <!-- Finish line stripes -->
+  <rect x="160" y="68" width="20" height="62" rx="4" fill="none" stroke="#fbbf24" stroke-width="2"/>
+  <rect x="160" y="68" width="10" height="10" fill="#fbbf24" opacity="0.8"/>
+  <rect x="170" y="78" width="10" height="10" fill="#fbbf24" opacity="0.8"/>
+  <rect x="160" y="88" width="10" height="10" fill="#fbbf24" opacity="0.8"/>
+  <rect x="170" y="98" width="10" height="10" fill="#fbbf24" opacity="0.8"/>
+  <rect x="160" y="108" width="10" height="10" fill="#fbbf24" opacity="0.8"/>
+  <rect x="170" y="118" width="10" height="10" fill="#fbbf24" opacity="0.8"/>
+
+  <!-- Runner tokens -->
+  <circle cx="60" cy="79" r="8" fill="#ef4444" stroke="#b91c1c" stroke-width="1.5"/>
+  <circle cx="85" cy="99" r="8" fill="#3b82f6" stroke="#1d4ed8" stroke-width="1.5"/>
+  <circle cx="50" cy="119" r="8" fill="#22c55e" stroke="#15803d" stroke-width="1.5"/>
+
+  <!-- Star token -->
+  <polygon points="130,65 133,73 141,73 135,78 137,86 130,81 123,86 125,78 119,73 127,73" fill="url(#star)"/>
+
+  <!-- Lightning bolt -->
+  <polygon points="100,20 90,45 100,42 88,68 112,38 101,41" fill="#a855f7" opacity="0.9"/>
+
+  <!-- Title text -->
+  <text x="100" y="152" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="13" font-weight="900" fill="white" letter-spacing="0.5">MAGICAL</text>
+  <text x="100" y="170" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="13" font-weight="900" fill="#a5b4fc" letter-spacing="1">ATHLETES</text>
+
+  <!-- Dice -->
+  <rect x="22" y="64" width="22" height="22" rx="4" fill="white" opacity="0.9"/>
+  <circle cx="28" cy="70" r="2.5" fill="#312e81"/>
+  <circle cx="38" cy="80" r="2.5" fill="#312e81"/>
+  <circle cx="28" cy="80" r="2.5" fill="#312e81"/>
+</svg>

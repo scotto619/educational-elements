@@ -43,6 +43,7 @@ const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loadin
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
 const EndlessRunnerGame = dynamic(() => import('../games/EndlessRunnerGame'), { loading: GameLoadingSpinner, ssr: false });
 const CozyCottageGame = dynamic(() => import('../games/CozyCottage/App'), { loading: GameLoadingSpinner, ssr: false });
+const MagicalAthletesGame = dynamic(() => import('../games/MagicalAthletesGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -457,6 +458,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('cozy-cottage')
+    },
+    {
+      id: 'magical-athletes',
+      name: 'Magical Athletes',
+      icon: '⚡',
+      description: 'A fantasy racing board game! Pick a character with unique powers — Ninja, Medusa, Rocket Scientist, and more — then race to the finish line.',
+      component: MagicalAthletesGame,
+      color: 'from-purple-600 to-indigo-600',
+      difficulty: 'Medium',
+      time: '15-40 minutes',
+      multiplayer: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('magical-athletes')
     }
   ];
 
