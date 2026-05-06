@@ -105,9 +105,9 @@ const ROLES = {
   tannerApprentice: {
     name: 'Tanner Apprentice', team: 'tanner',
     desc: 'You\'re learning from the best. Just like the Tanner, you WANT to be voted out!',
-    nightDesc: null,
+    nightDesc: 'Wake up and learn who the Tanner is. Work together to get one of you eliminated.',
     winCondition: 'WIN by being eliminated! Get the most votes against you.',
-    hasAction: false, bg: 'from-lime-900 to-stone-950', border: 'border-lime-600',
+    hasAction: true, bg: 'from-lime-900 to-stone-950', border: 'border-lime-600',
     text: 'text-lime-100', badge: 'bg-lime-900', teamLabel: 'Solo — Tanner 😅',
   },
   prince: {
@@ -126,7 +126,7 @@ const WEREWOLF_ROLES = new Set(['werewolf', 'alphaWolf']);
 // Night order — only active-action roles, passive roles never appear
 const NIGHT_ORDER = [
   'alphaWolf', 'werewolf', 'minion', 'mason',
-  'seer', 'witch', 'robber', 'troublemaker', 'drunk', 'insomniac',
+  'seer', 'witch', 'robber', 'troublemaker', 'drunk', 'insomniac', 'tannerApprentice',
 ];
 
 // Roles grouped for lobby picker
@@ -230,13 +230,14 @@ function determineWinner(finalRoles, votes, playerIds, originalRoles) {
   // Prince/Princess protection — remove from eliminated list
   eliminated = eliminated.filter(id => finalRoles[id] !== 'prince');
 
-  const werewolvesExist = playerIds.some(id => WEREWOLF_ROLES.has(finalRoles[id]));
-  const werewolfKilled  = eliminated.some(id => WEREWOLF_ROLES.has(finalRoles[id]));
-  const tannerKilled    = eliminated.some(id => ['tanner', 'tannerApprentice'].includes(finalRoles[id]));
+  const werewolvesExist    = playerIds.some(id => WEREWOLF_ROLES.has(finalRoles[id]));
+  const werewolfKilled     = eliminated.some(id => WEREWOLF_ROLES.has(finalRoles[id]));
+  const minionKilled       = eliminated.some(id => finalRoles[id] === 'minion');
+  const tannerKilled       = eliminated.some(id => ['tanner', 'tannerApprentice'].includes(finalRoles[id]));
 
-  if (tannerKilled && !werewolfKilled) return { winner: 'tanner', eliminated };
-  if (werewolfKilled)                  return { winner: 'villagers', eliminated };
-  if (!werewolvesExist && !eliminated.length) return { winner: 'villagers', eliminated };
+  if (tannerKilled && !werewolfKilled && !minionKilled) return { winner: 'tanner', eliminated };
+  if (werewolfKilled || minionKilled)                   return { winner: 'villagers', eliminated };
+  if (!werewolvesExist && !eliminated.length)           return { winner: 'villagers', eliminated };
   return { winner: 'werewolves', eliminated };
 }
 
@@ -504,25 +505,20 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     return () => clearInterval(dayTickRef.current);
   }, [screen, roomData?.dayEndTime]);
 
-  // ── Host: drive night phase (7s per active role) ──────────────────────────
+  // ── Host: drive night phase (14s per active role) ────────────────────────
   useEffect(() => {
     if (!isHost || !roomData || roomData.phase !== 'night' || !fb) return;
-    if (hostIntervalRef.current) clearInterval(hostIntervalRef.current);
 
-    hostIntervalRef.current = setInterval(async () => {
-      const snap = await fb.get(fb.ref(fb.database, `werewolfRooms/${roomCode}`));
-      if (!snap.exists()) return;
-      const data = snap.val();
-      if (data.phase !== 'night') { clearInterval(hostIntervalRef.current); return; }
+    const stepStartTime = roomData.stepStartTime ?? Date.now();
+    const activeOrder   = roomData.activeNightOrder || [];
+    const nightStep     = roomData.nightStep ?? 0;
 
-      const elapsed = Date.now() - (data.stepStartTime ?? Date.now());
-      if (elapsed < 14000) return; // Always wait full 14 seconds
+    const elapsed   = Date.now() - stepStartTime;
+    const remaining = Math.max(0, 14000 - elapsed);
 
-      const activeOrder = data.activeNightOrder || [];
-      const nextStep = (data.nightStep ?? 0) + 1;
-
+    const advance = async () => {
+      const nextStep = nightStep + 1;
       if (nextStep >= activeOrder.length) {
-        clearInterval(hostIntervalRef.current);
         await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
           phase: 'day',
           dayEndTime: Date.now() + 300000, // 5-minute discussion
@@ -533,10 +529,16 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           stepStartTime: Date.now(),
         });
       }
-    }, 500);
+    };
 
-    return () => clearInterval(hostIntervalRef.current);
-  }, [isHost, roomData?.phase, roomData?.nightStep, roomCode, fb]);
+    if (remaining <= 0) {
+      advance();
+      return;
+    }
+
+    const t = setTimeout(advance, remaining);
+    return () => clearTimeout(t);
+  }, [isHost, roomData?.phase, roomData?.nightStep, roomData?.stepStartTime, roomCode, fb]);
 
   // ── Host: day → vote, vote → results ─────────────────────────────────────
   useEffect(() => {
@@ -1691,6 +1693,28 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
       <div className="text-center py-4">
         <p className="text-white/50 text-sm mb-2">Checking your card at end of night…</p>
         <p className="text-white/30 text-xs">Press Confirm to see if your role changed</p>
+      </div>
+    );
+  }
+
+  // ── Tanner Apprentice ──
+  if (role === 'tannerApprentice') {
+    const tanner = Object.entries(players).find(([, p]) => p.originalRole === 'tanner');
+    return (
+      <div className="space-y-2">
+        <p className="text-white/50 text-xs font-bold uppercase tracking-wider">
+          {tanner ? 'The Tanner is:' : 'No Tanner in this game!'}
+        </p>
+        {tanner && (
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-yellow-900/30 border border-yellow-500/40">
+            <div className="w-8 h-8 rounded-lg overflow-hidden">
+              <img src={getRoleImage('tanner', tanner[1].gender || 'male', 1)} alt="" className="w-full h-full object-cover object-top" />
+            </div>
+            <span className="font-bold text-yellow-200">😅 {tanner[1].name}</span>
+          </div>
+        )}
+        {!tanner && <p className="text-white/40 text-sm">You're on your own — be suspicious!</p>}
+        <p className="text-white/25 text-xs text-center">Press Confirm when ready</p>
       </div>
     );
   }
