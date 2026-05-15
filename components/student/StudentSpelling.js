@@ -672,56 +672,10 @@ const SpellingWordSearch = ({ words, onSolved }) => {
     activePointerIdRef.current = null;
   }, [selection, puzzle, isComplete, onSolved]);
 
-  useEffect(() => {
-    if (!isSelecting) return;
-
-    const handlePointerUp = event => {
-      if (activePointerIdRef.current !== null && typeof event?.pointerId === 'number') {
-        if (event.pointerId !== activePointerIdRef.current) {
-          return;
-        }
-      }
-
-      handleGlobalPointerMove(event);
-
-      activePointerIdRef.current = null;
-      finalizeSelection();
-    };
-
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('touchend', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
-    window.addEventListener('touchcancel', handlePointerUp);
-
-    return () => {
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('touchend', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
-      window.removeEventListener('touchcancel', handlePointerUp);
-    };
-  }, [isSelecting, finalizeSelection, handleGlobalPointerMove]);
-
-  const handlePointerDown = useCallback((event, row, col) => {
-    if (event?.preventDefault) {
-      event.preventDefault();
-    }
-
-    const pointerId = typeof event?.pointerId === 'number' ? event.pointerId : null;
-    activePointerIdRef.current = pointerId;
-
-    if (pointerId !== null && event?.currentTarget?.setPointerCapture) {
-      try {
-        event.currentTarget.setPointerCapture(pointerId);
-      } catch {
-        // Ignore pointer capture issues on unsupported devices/elements
-      }
-    }
-
-    setIsSelecting(true);
-    setSelection([{ row, col }]);
-    setSelectionDirection(null);
-  }, []);
-
+  // handlePointerEnter and handleGlobalPointerMove must be declared BEFORE the
+  // useEffect below that lists handleGlobalPointerMove in its dependency array.
+  // Declaring them after that useEffect causes a Temporal Dead Zone (TDZ)
+  // ReferenceError when SpellingWordSearch mounts.
   const handlePointerEnter = useCallback((row, col) => {
     if (!isSelecting || !selection.length) return;
 
@@ -783,6 +737,56 @@ const SpellingWordSearch = ({ words, onSolved }) => {
 
     handlePointerEnter(row, col);
   }, [handlePointerEnter]);
+
+  useEffect(() => {
+    if (!isSelecting) return;
+
+    const handlePointerUp = event => {
+      if (activePointerIdRef.current !== null && typeof event?.pointerId === 'number') {
+        if (event.pointerId !== activePointerIdRef.current) {
+          return;
+        }
+      }
+
+      handleGlobalPointerMove(event);
+
+      activePointerIdRef.current = null;
+      finalizeSelection();
+    };
+
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('touchend', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    window.addEventListener('touchcancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('touchend', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+      window.removeEventListener('touchcancel', handlePointerUp);
+    };
+  }, [isSelecting, finalizeSelection, handleGlobalPointerMove]);
+
+  const handlePointerDown = useCallback((event, row, col) => {
+    if (event?.preventDefault) {
+      event.preventDefault();
+    }
+
+    const pointerId = typeof event?.pointerId === 'number' ? event.pointerId : null;
+    activePointerIdRef.current = pointerId;
+
+    if (pointerId !== null && event?.currentTarget?.setPointerCapture) {
+      try {
+        event.currentTarget.setPointerCapture(pointerId);
+      } catch {
+        // Ignore pointer capture issues on unsupported devices/elements
+      }
+    }
+
+    setIsSelecting(true);
+    setSelection([{ row, col }]);
+    setSelectionDirection(null);
+  }, []);
 
   const handlePointerUp = useCallback(event => {
     if (!isSelecting) return;
