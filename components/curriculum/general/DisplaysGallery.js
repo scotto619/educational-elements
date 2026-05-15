@@ -62,7 +62,9 @@ const displayCategories = [
           { name: 'Spelling - Letter Sounds', file: 'Spelling/LetterSound.png' },
           { name: 'Spelling - Phonetic Strategies', file: 'Spelling/Phonetic Strategies.png' },
           { name: 'Spelling - Rhyming', file: 'Spelling/Rhyming.png' },
-          { name: 'Spelling - Sound It Out', file: 'Spelling/SoundItOut.png' }
+          { name: 'Spelling - Sound It Out', file: 'Spelling/SoundItOut.png' },
+          { name: 'Spelling Rule - Double the Final Consonant', file: 'Spelling/Spelling Rule Double the final consonant.png' },
+          { name: 'Spelling Rule - Drop the E', file: 'Spelling/Spelling Rule Drop the e.png' }
         ]
       },
       {
@@ -98,7 +100,41 @@ const displayCategories = [
           { name: 'SW Blend', file: 'Phonics/SW.png' },
           { name: 'TH Digraph', file: 'Phonics/TH.png' },
           { name: 'TR Blend', file: 'Phonics/TR.png' },
-          { name: 'WH Digraph', file: 'Phonics/WH.png' }
+          { name: 'WH Digraph', file: 'Phonics/WH.png' },
+          { name: 'BL Blend Card', file: 'Phonics/BL Blend.png' },
+          { name: 'BR Blend Card', file: 'Phonics/BR Blend.png' },
+          { name: 'CH Blend Card', file: 'Phonics/CH Blend.png' },
+          { name: 'CK Blend', file: 'Phonics/CK Blend.png' },
+          { name: 'CL Blend Card', file: 'Phonics/CL Blend.png' },
+          { name: 'DR Blend Card', file: 'Phonics/DR Blend.png' },
+          { name: 'FL Blend Card', file: 'Phonics/FL Blend.png' },
+          { name: 'FR Blend Card', file: 'Phonics/FR Blend.png' },
+          { name: 'GL Blend Card', file: 'Phonics/GL Blend.png' },
+          { name: 'GR Blend Card', file: 'Phonics/GR Blend.png' },
+          { name: 'PH Digraph Card', file: 'Phonics/PH Blend.png' },
+          { name: 'PL Blend Card', file: 'Phonics/PL Blend.png' },
+          { name: 'PR Blend Card', file: 'Phonics/PR Blend.png' },
+          { name: 'SH Blend Card', file: 'Phonics/SH Blend.png' },
+          { name: 'SK Blend Card', file: 'Phonics/SK Blend.png' },
+          { name: 'SL Blend Card', file: 'Phonics/SL Blend.png' },
+          { name: 'SM Blend Card', file: 'Phonics/SM Blend.png' },
+          { name: 'SN Blend Card', file: 'Phonics/SN Blend.png' },
+          { name: 'SP Blend Card', file: 'Phonics/SP Blend.png' },
+          { name: 'ST Blend Card', file: 'Phonics/ST Blend.png' },
+          { name: 'SW Blend Card', file: 'Phonics/SW Blend.png' },
+          { name: 'TH Blend Card', file: 'Phonics/TH Blend.png' },
+          { name: 'TR Blend Card', file: 'Phonics/TR Blend.png' },
+          { name: 'WH Blend Card', file: 'Phonics/WH Blend.png' }
+        ]
+      },
+      {
+        name: 'Long & Short Vowels',
+        images: [
+          { name: 'Long A / Short A', file: 'Phonics/Long a Short s.png' },
+          { name: 'Long E / Short E', file: 'Phonics/Long e Short e.png' },
+          { name: 'Long I / Short I', file: 'Phonics/Long i Short i.png' },
+          { name: 'Long O / Short O', file: 'Phonics/Long o Short o.png' },
+          { name: 'Long U / Short U', file: 'Phonics/Long u Short u.png' }
         ]
       },
       {
@@ -114,7 +150,11 @@ const displayCategories = [
           { name: 'TEEL Paragraph Structure', file: 'Writing/TEELParagraphDisplay.png' },
           { name: 'TEEL Paragraph Structure 2', file: 'Writing/TEELParagraphDisplay2.png' },
           { name: 'Narrative Writing Display', file: 'Writing/NarrativeWritingDisplay.png' },
-          { name: 'TEEL Display', file: 'Writing/TEELDisplay.png' }
+          { name: 'TEEL Display', file: 'Writing/TEELDisplay.png' },
+          { name: 'Informative Writing Structure', file: 'Writing/Informative Writing Structure.png' },
+          { name: 'Narrative Writing Structure', file: 'Writing/Narrative Writing Structure.png' },
+          { name: 'Poetry Writing Structure', file: 'Writing/Poetry Writing Structure.png' },
+          { name: 'Retell Writing Structure', file: 'Writing/Retell Writing Structure.png' }
         ]
       },
       {
@@ -143,7 +183,8 @@ const displayCategories = [
           { name: 'Review Editing', file: 'Writing/Book Review/Review Editing.png' },
           { name: 'Review Introduction', file: 'Writing/Book Review/Review Introduction.png' },
           { name: 'Review Preparation', file: 'Writing/Book Review/Review Preperation.png' },
-          { name: 'Review Structure', file: 'Writing/Book Review/Review Structure.png' }
+          { name: 'Review Structure', file: 'Writing/Book Review/Review Structure.png' },
+          { name: 'Review Writing Structure', file: 'Writing/Review Writing Structure.png' }
         ]
       },
       {
@@ -154,7 +195,8 @@ const displayCategories = [
           { name: 'Persuasive Devices', file: 'Writing/Persuasive/Persuasive Devices.png' },
           { name: 'Persuasive Elements', file: 'Writing/Persuasive/Persuasive Elements.png' },
           { name: 'Persuasive Structure', file: 'Writing/Persuasive/Persuasive Structure.png' },
-          { name: 'Persuasive Writing Display', file: 'Writing/PersuasiveWritingDisplay.png' }
+          { name: 'Persuasive Writing Display', file: 'Writing/PersuasiveWritingDisplay.png' },
+          { name: 'Persuasive Writing Structure', file: 'Writing/Persuasive Writing Structure.png' }
         ]
       },
       {
@@ -172,6 +214,16 @@ const displayCategories = [
           { name: 'TEEL Paragraph Worksheet', file: 'Worksheets/TEELParagraphWorksheet.png' },
           { name: 'Complex Sentences Worksheet', file: 'Worksheets/ComplexSentencesWorksheet.png' },
           { name: 'Verbs Worksheet', file: 'Worksheets/VerbsWorksheet.png' }
+        ]
+      },
+      {
+        name: 'Classroom Mats',
+        images: [
+          { name: 'Adjective Mat', file: 'Adjective Mat.png' },
+          { name: 'Noun Mat', file: 'Noun Mat.png' },
+          { name: 'Simple Sentence Mat', file: 'Simple Sentence Mat.png' },
+          { name: 'Verb Mat', file: 'Verb Mat.png' },
+          { name: 'Word of the Day Mat', file: 'Word of the Day Mat.png' }
         ]
       }
     ]
@@ -227,7 +279,20 @@ const displayCategories = [
           { name: 'Expanded Form Worksheet', file: 'Worksheets/ExpandedFormWorksheet.png' },
           { name: 'Place Value Worksheet', file: 'Worksheets/PlaceValueWorksheet.png' },
           { name: 'Skip Counting Worksheet', file: 'Worksheets/SkipCountingWorksheet.png' },
-          { name: 'Whole Numbers Worksheet', file: 'Worksheets/WholeNumbersWorksheet.png' }
+          { name: 'Whole Numbers Worksheet', file: 'Worksheets/WholeNumbersWorksheet.png' },
+          { name: 'BODMAS Worksheet', file: 'Worksheets/BODMAS Worksheet.png' },
+          { name: 'Column Addition Worksheet', file: 'Worksheets/Column Addition Worksheet.png' },
+          { name: 'Column Subtraction Worksheet', file: 'Worksheets/Column Subtraction Worksheet.png' },
+          { name: 'Division Worksheet', file: 'Worksheets/Division Worksheet.png' },
+          { name: 'Multiplication Worksheet', file: 'Worksheets/Multiplication Worksheet.png' }
+        ]
+      },
+      {
+        name: 'Maths Mats',
+        images: [
+          { name: 'Multiplication Mat', file: 'Multiplication Mat.png' },
+          { name: 'Number Fact Mat', file: 'Number Fact Mat.png' },
+          { name: 'Number of the Day Mat', file: 'Number of the Day Mat.png' }
         ]
       }
     ]
@@ -299,7 +364,12 @@ const displayCategories = [
           { name: 'Colours', file: 'Colours.png' },
           { name: 'Green', file: 'Green.png' },
           { name: 'Red', file: 'Red.png' },
-          { name: 'Yellow', file: 'Yellow.png' }
+          { name: 'Yellow', file: 'Yellow.png' },
+          { name: 'Zones of Regulation', file: 'Zones of Regulation.png' },
+          { name: 'Zones of Regulation - Blue', file: 'Zones of Regulation Blue.png' },
+          { name: 'Zones of Regulation - Green', file: 'Zones of Regulation Green.png' },
+          { name: 'Zones of Regulation - Red', file: 'Zones of Regulation Red.png' },
+          { name: 'Zones of Regulation - Yellow', file: 'Zones of Regulation Yellow.png' }
         ]
       }
     ]
@@ -330,7 +400,11 @@ const displayCategories = [
           { name: 'Secret Leader', file: 'SecretLeader.png' },
           { name: 'Sharks and Minnows', file: 'SharksandMinnows.png' },
           { name: 'Silent Ball', file: 'Silent Ball.png' },
-          { name: 'Sleepy Spy', file: 'SleepySpy.png' }
+          { name: 'Sleepy Spy', file: 'SleepySpy.png' },
+          { name: 'Four Corners (Display)', file: 'Classroom Game Four Corners.png' },
+          { name: 'Heads Down Thumbs Up (Display)', file: 'Classroom Game Heads Down Thumbs Up.png' },
+          { name: 'Silent Ball (Display)', file: 'Classroom Game Silent Ball.png' },
+          { name: 'Silent Line Up', file: 'Classroom Game Silent Line Up.png' }
         ]
       }
     ]
