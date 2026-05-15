@@ -276,6 +276,98 @@ export default function Dashboard() {
     return formattedClasses;
   }
 
+  // One-time migration of a user's V1 classes (stored inside the user
+  // document) into V2 collections (`classes`, `class_memberships`, `students`).
+  // V2 is the only architecture that the public, unauthenticated student
+  // portal and quiz join page can look up by class code, so any user still
+  // on V1 has classes that are effectively invisible to students. Running
+  // this migration on login fixes pre-existing accounts in place.
+  //
+  // The original V1 `classes` array on the user doc is preserved as a safety
+  // backup; the user's data is never deleted, just copied to the new shape.
+  async function migrateV1ToV2(userId, sourceUserData) {
+    if (!sourceUserData) return { migrated: false };
+    if (sourceUserData.version === '2.0' || sourceUserData.migratedAt) {
+      return { migrated: false, reason: 'already_v2' };
+    }
+    const v1Classes = Array.isArray(sourceUserData.classes) ? sourceUserData.classes : [];
+    if (v1Classes.length === 0) {
+      return { migrated: false, reason: 'no_v1_classes' };
+    }
+
+    console.log(`🚀 Migrating ${v1Classes.length} V1 class(es) to V2 for user ${userId}`);
+
+    const batch = writeBatch(firestore);
+    const now = new Date().toISOString();
+    let firstClassId = null;
+
+    for (const v1Class of v1Classes) {
+      if (!v1Class || !v1Class.id) continue;
+
+      const classId = v1Class.id;
+      if (!firstClassId) firstClassId = classId;
+
+      const classRef = doc(firestore, 'classes', classId);
+      const membershipRef = doc(firestore, 'class_memberships', classId);
+
+      const v1Students = Array.isArray(v1Class.students) ? v1Class.students : [];
+      const studentIds = v1Students
+        .filter(s => s && s.id)
+        .map(s => s.id);
+
+      batch.set(classRef, {
+        id: classId,
+        teacherId: userId,
+        name: v1Class.name || 'My Class',
+        classCode: v1Class.classCode || '',
+        createdAt: v1Class.createdAt || now,
+        updatedAt: now,
+        xpCategories: v1Class.xpCategories || [],
+        classRewards: v1Class.classRewards || [],
+        activeQuests: v1Class.activeQuests || [],
+        attendanceData: v1Class.attendanceData || {},
+        toolkitData: v1Class.toolkitData || {},
+        studentOrder: Array.isArray(v1Class.studentOrder) ? v1Class.studentOrder : studentIds,
+        studentCount: studentIds.length,
+        lastActivity: now,
+        archived: v1Class.archived === true ? true : false
+      });
+
+      batch.set(membershipRef, {
+        classId,
+        teacherId: userId,
+        students: studentIds,
+        createdAt: v1Class.createdAt || now,
+        updatedAt: now
+      });
+
+      for (const student of v1Students) {
+        if (!student || !student.id) continue;
+        const studentRef = doc(firestore, 'students', student.id);
+        batch.set(studentRef, {
+          ...student,
+          classId,
+          classCode: v1Class.classCode || '',
+          lastActivity: now,
+          archived: false
+        });
+      }
+    }
+
+    const userRef = doc(firestore, 'users', userId);
+    batch.update(userRef, {
+      version: '2.0',
+      migratedAt: now,
+      activeClassId: sourceUserData.activeClassId || firstClassId,
+      updatedAt: now
+      // Note: `classes` array is intentionally left in place as a backup.
+    });
+
+    await batch.commit();
+    console.log('✅ V1→V2 migration complete');
+    return { migrated: true, firstClassId };
+  }
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -313,10 +405,33 @@ export default function Dashboard() {
             setUserData(userData);
           }
 
-          // Determine architecture version and load classes
+          // Determine architecture version and load classes.
+          // If a legacy account is still on V1 and has classes, migrate it
+          // up to V2 in place so the public student portal can find them.
+          let hasV2Marker = userData.version === '2.0' || userData.migratedAt;
+          const needsMigration =
+            !hasV2Marker &&
+            Array.isArray(userData.classes) &&
+            userData.classes.length > 0;
 
-          // Check if user has been migrated to V2
-          const hasV2Marker = userData.version === '2.0' || userData.migratedAt;
+          if (needsMigration) {
+            try {
+              const result = await migrateV1ToV2(user.uid, userData);
+              if (result?.migrated) {
+                // Re-read the user document so subsequent logic sees the
+                // freshly-written V2 markers.
+                const refreshed = await getDoc(doc(firestore, 'users', user.uid));
+                if (refreshed.exists()) {
+                  userData = refreshed.data();
+                  setUserData(userData);
+                  hasV2Marker = true;
+                }
+              }
+            } catch (migrationError) {
+              console.error('❌ V1→V2 migration failed (continuing in V1 mode):', migrationError);
+              // Fall through to V1 path so the user can still see their classes.
+            }
+          }
 
           if (hasV2Marker) {
             setArchitectureVersion('v2');

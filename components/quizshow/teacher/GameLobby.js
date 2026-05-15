@@ -90,7 +90,8 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
                 <p className="text-4xl font-bold tracking-wider">{roomCode}</p>
               </div>
               <p className="text-purple-100 text-sm mt-2">
-                Students go to: <strong>educational-elements.com/join</strong>
+                Students join from the <strong>Quiz Show</strong> tab inside
+                their student portal.
               </p>
             </div>
           </div>
@@ -128,10 +129,10 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
                     <h4 className="font-bold text-blue-800 mb-2">📱 How students join:</h4>
                     <ol className="text-blue-700 text-sm space-y-1 text-left">
-                      <li>1. Open browser on phone/tablet</li>
-                      <li>2. Go to <strong>educational-elements.com/join</strong></li>
-                      <li>3. Enter room code: <strong>{roomCode}</strong></li>
-                      <li>4. Enter their name and join!</li>
+                      <li>1. Open the <strong>student portal</strong> on a phone, tablet, or laptop</li>
+                      <li>2. Sign in with the class code and their student profile</li>
+                      <li>3. Open the <strong>Quiz Show</strong> tab</li>
+                      <li>4. Enter room code: <strong>{roomCode}</strong> and tap Join</li>
                     </ol>
                   </div>
                 </div>
@@ -222,14 +223,18 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
               <h3 className="text-lg font-bold mb-3">🔗 Share with Students</h3>
               <div className="space-y-3">
                 <div className="bg-white bg-opacity-20 rounded-lg p-3">
-                  <p className="text-sm opacity-90 mb-1">Website:</p>
-                  <p className="font-bold">educational-elements.com/join</p>
+                  <p className="text-sm opacity-90 mb-1">Where to join:</p>
+                  <p className="font-bold">Student portal → Quiz Show tab</p>
                 </div>
                 <div className="bg-white bg-opacity-20 rounded-lg p-3">
                   <p className="text-sm opacity-90 mb-1">Room Code:</p>
                   <p className="text-2xl font-bold tracking-wider">{roomCode}</p>
                 </div>
               </div>
+              <p className="text-xs text-white/80 mt-3">
+                Students must be signed into the student portal with the class
+                code to join — there's no separate join page anymore.
+              </p>
             </div>
           </div>
         </div>
@@ -244,10 +249,10 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
                 <div>
                   <h4 className="font-semibold mb-2">For Students:</h4>
                   <ol className="space-y-1">
-                    <li>1. Open browser on phone/tablet</li>
-                    <li>2. Go to <strong>educational-elements.com/join</strong></li>
+                    <li>1. Sign into the <strong>student portal</strong> with the class code</li>
+                    <li>2. Open the <strong>Quiz Show</strong> tab</li>
                     <li>3. Enter room code: <strong>{roomCode}</strong></li>
-                    <li>4. Enter name and join the game!</li>
+                    <li>4. Tap Join and wait for the game to start!</li>
                   </ol>
                 </div>
                 <div>
