@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { database, firestore } from '../utils/firebase';
 import { ref, onValue, set, get } from 'firebase/database';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { validateRoomCode, playQuizSound } from '../utils/quizShowHelpers';
 
 const StudentJoinPage = () => {
@@ -99,22 +99,55 @@ const StudentJoinPage = () => {
   // Load students from the class when game room is found
   const loadClassStudents = async (gameRoomData) => {
     if (!gameRoomData?.hostId) return;
-    
+
     setLoadingStudents(true);
     try {
-      // Find the teacher's document and get their active class students
-      const q = query(collection(firestore, 'users'), where('__name__', '==', gameRoomData.hostId));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const teacherDoc = querySnapshot.docs[0];
+      // Find the teacher's document and get their active class students.
+      // We read by document id rather than running a where() query so the
+      // call works under stricter Firestore rules where unauthenticated
+      // clients can't list the `users` collection.
+      const teacherDoc = await getDoc(doc(firestore, 'users', gameRoomData.hostId));
+
+      if (teacherDoc.exists()) {
         const teacherData = teacherDoc.data();
-        
-        // Get the active class or first class
-        const activeClassId = teacherData.activeClassId || (teacherData.classes && teacherData.classes[0]?.id);
-        if (activeClassId) {
-          const activeClass = teacherData.classes.find(cls => cls.id === activeClassId);
-          if (activeClass && activeClass.students) {
+
+        // V2 architecture: classes live in their own top-level collection,
+        // students live in `students`, and class membership is tracked in
+        // `class_memberships`. Try this first because new accounts default
+        // to V2 (and older accounts that have migrated use it too).
+        const activeClassId = teacherData.activeClassId
+          || (Array.isArray(teacherData.classes) && teacherData.classes[0]?.id);
+
+        const isV2 = teacherData.version === '2.0' || teacherData.migratedAt;
+        let v2StudentsLoaded = false;
+
+        if (isV2 && activeClassId) {
+          try {
+            const membershipDoc = await getDoc(doc(firestore, 'class_memberships', activeClassId));
+            if (membershipDoc.exists()) {
+              const studentIds = membershipDoc.data().students || [];
+              if (studentIds.length > 0) {
+                const studentDocs = await Promise.all(
+                  studentIds.map(id => getDoc(doc(firestore, 'students', id)).catch(() => null))
+                );
+                const v2Students = studentDocs
+                  .filter(d => d && d.exists())
+                  .map(d => ({ id: d.id, ...d.data() }));
+                if (v2Students.length > 0) {
+                  setAvailableStudents(v2Students);
+                  v2StudentsLoaded = true;
+                }
+              }
+            }
+          } catch (v2Err) {
+            console.warn('⚠️ V2 student lookup failed, falling back to V1:', v2Err?.message || v2Err);
+          }
+        }
+
+        // V1 fallback: students embedded directly inside the user document.
+        if (!v2StudentsLoaded && Array.isArray(teacherData.classes) && activeClassId) {
+          const activeClass = teacherData.classes.find(cls => cls && cls.id === activeClassId);
+          if (activeClass && Array.isArray(activeClass.students)) {
             setAvailableStudents(activeClass.students);
           }
         }
@@ -277,31 +310,54 @@ const StudentJoinPage = () => {
       return;
     }
 
+    if (!roomCode || !/^\d{6}$/.test(roomCode)) {
+      setError('Invalid room code. Please go back and try again.');
+      return;
+    }
+
     setLoading(true);
+    setError('');
     try {
+      // Re-verify the room still exists before trying to write to it.
+      // If the teacher closed the room between step 1 and now, an
+      // outright .set() would still succeed and create a dangling record,
+      // so we read first and abort cleanly if the game is gone.
+      const roomSnapshot = await get(ref(database, `gameRooms/${roomCode}`));
+      if (!roomSnapshot.exists()) {
+        setError('This game has ended or no longer exists. Ask your teacher for a new code.');
+        setLoading(false);
+        return;
+      }
+
       const newPlayerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
+      // Build playerData defensively. Firebase Realtime Database rejects
+      // any value of `undefined`, so every field below must resolve to a
+      // concrete primitive even if the underlying student record is
+      // missing data.
       let playerData;
       if (selectedStudent) {
-        // Use selected student's data
         const level = calculateAvatarLevel(selectedStudent.totalPoints || 0);
+        const baseAvatar = selectedStudent.avatarBase || 'Wizard F';
+        const firstName = (selectedStudent.firstName || '').toString();
+        const lastName = (selectedStudent.lastName || '').toString();
+        const fullName = `${firstName} ${lastName}`.trim() || 'Player';
         playerData = {
-          name: `${selectedStudent.firstName} ${selectedStudent.lastName || ''}`.trim(),
-          studentId: selectedStudent.id,
+          name: fullName,
+          studentId: selectedStudent.id || '',
           avatar: {
-            base: selectedStudent.avatarBase || 'Wizard F',
+            base: baseAvatar,
             level: level,
-            image: getAvatarImage(selectedStudent.avatarBase || 'Wizard F', level)
+            image: getAvatarImage(baseAvatar, level)
           },
           score: 0,
           joinedAt: Date.now(),
           isReady: true
         };
       } else {
-        // Use manual name entry with default avatar
         playerData = {
           name: playerName.trim(),
-          studentId: null,
+          studentId: '',
           avatar: {
             base: 'Wizard F',
             level: 1,
@@ -318,7 +374,14 @@ const StudentJoinPage = () => {
       setStep(3);
       playQuizSound('join');
     } catch (error) {
-      setError('Failed to join game. Please try again.');
+      // Surface the real reason in the console so it can be diagnosed in
+      // dev tools (permission denied, network error, etc.) instead of
+      // silently swallowing it.
+      console.error('❌ Error joining game:', error);
+      const message = error?.code === 'PERMISSION_DENIED'
+        ? 'Permission denied joining this game. Please refresh and try again.'
+        : `Failed to join game: ${error?.message || 'Please try again.'}`;
+      setError(message);
     }
     setLoading(false);
   };

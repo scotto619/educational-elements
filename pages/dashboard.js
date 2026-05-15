@@ -101,13 +101,24 @@ export default function Dashboard() {
     const sessionId = urlParams.get('session_id');
 
     // Mark that we came from checkout to prevent redirect loops
+    // Store a timestamp so we know how long ago they returned from checkout
     if (sessionId) {
       sessionStorage.setItem('returning_from_checkout', 'true');
+      sessionStorage.setItem('returning_from_checkout_at', Date.now().toString());
       window.history.replaceState({}, document.title, '/dashboard');
     }
 
-    // Check if webhook has completed
-    const hasValidSubscription = ['active', 'trialing', 'trial'].includes(userData.subscriptionStatus);
+    // Check if webhook has completed - check both subscriptionStatus AND
+    // legacy fields (subscription + stripeCustomerId) since the webhook
+    // may set those in stages.
+    const hasActiveStatus = ['active', 'trialing', 'trial'].includes(userData.subscriptionStatus);
+    const hasLegacyActive =
+      (userData.subscription &&
+        userData.subscription !== 'cancelled' &&
+        userData.subscription !== null) ||
+      (userData.stripeCustomerId &&
+        userData.accountStatus !== 'canceled');
+    const hasValidSubscription = hasActiveStatus || hasLegacyActive;
 
     // Poll for webhook if: (1) just returned from Stripe OR (2) marked as returning from checkout
     const justReturnedFromCheckout = sessionId || sessionStorage.getItem('returning_from_checkout') === 'true';
@@ -118,7 +129,9 @@ export default function Dashboard() {
       setWaitingForWebhook(true);
 
       let pollCount = 0;
-      const maxPolls = 15; // 15 polls × 2s = 30 seconds max
+      // Extended timeout: 60 polls × 2s = 2 minutes total polling window.
+      // Stripe webhooks can occasionally take 30-60s to arrive under load.
+      const maxPolls = 60;
 
       const pollInterval = setInterval(async () => {
         pollCount++;
@@ -128,36 +141,50 @@ export default function Dashboard() {
           const snap = await getDoc(docRef);
           const data = snap.data();
 
-          if (['active', 'trialing', 'trial'].includes(data.subscriptionStatus)) {
+          const pollHasActive = ['active', 'trialing', 'trial'].includes(data.subscriptionStatus);
+          const pollHasLegacy =
+            (data.subscription &&
+              data.subscription !== 'cancelled' &&
+              data.subscription !== null) ||
+            (data.stripeCustomerId && data.accountStatus !== 'canceled');
+
+          if (pollHasActive || pollHasLegacy) {
             setUserData(data);
             setWaitingForWebhook(false);
             clearInterval(pollInterval);
-            sessionStorage.removeItem('returning_from_checkout'); // Clear flag
+            sessionStorage.removeItem('returning_from_checkout');
+            sessionStorage.removeItem('returning_from_checkout_at');
 
             setTimeout(() => {
               alert(`🎉 Welcome to Educational Elements! Your subscription is now active.`);
             }, 500);
           } else if (pollCount >= maxPolls) {
-            console.warn('⚠️ Webhook polling timeout - stopping');
+            console.warn('⚠️ Webhook polling timeout - stopping (will retry on next refresh)');
             clearInterval(pollInterval);
             setWaitingForWebhook(false);
-            sessionStorage.removeItem('returning_from_checkout'); // Clear flag even on timeout
+            // IMPORTANT: Do NOT clear the returning_from_checkout flag here.
+            // Keep it so a manual refresh will resume polling and so the
+            // access check below grants a grace period instead of bouncing
+            // the user to the subscription-required screen.
           }
         } catch (error) {
           console.error('Error polling for webhook:', error);
           clearInterval(pollInterval);
           setWaitingForWebhook(false);
-          sessionStorage.removeItem('returning_from_checkout');
+          // Do NOT clear sessionStorage on error - allow a refresh to retry
         }
       }, 2000); // Poll every 2 seconds
 
       return () => clearInterval(pollInterval);
-    } else if (hasValidSubscription && sessionId) {
+    } else if (hasValidSubscription && (sessionId || sessionStorage.getItem('returning_from_checkout'))) {
       // Webhook already completed
       sessionStorage.removeItem('returning_from_checkout');
-      setTimeout(() => {
-        alert('🎉 Welcome back! Your subscription is active.');
-      }, 1000);
+      sessionStorage.removeItem('returning_from_checkout_at');
+      if (sessionId) {
+        setTimeout(() => {
+          alert('🎉 Welcome back! Your subscription is active.');
+        }, 1000);
+      }
     }
   }, [user, userData]);
 
@@ -269,13 +296,17 @@ export default function Dashboard() {
             setUserData(userData);
           } else {
             // New user - create initial document
+            // Tag as version '2.0' so class creation uses V2 architecture
+            // (top-level `classes` collection) which the student portal
+            // and quiz join page can look up by class code.
             userData = {
               email: user.email,
               createdAt: new Date().toISOString(),
               classes: [],
               subscription: null,
               subscriptionStatus: null,
-              trialUntil: null
+              trialUntil: null,
+              version: '2.0'
             };
 
             await setDoc(docRef, userData);
@@ -452,7 +483,17 @@ export default function Dashboard() {
         ]
       };
 
-      if (architectureVersion === 'v2') {
+      // Use V2 architecture if the user is already on V2 OR if they have no
+      // existing V1 classes (i.e. brand new account). V2 stores classes in
+      // the top-level `classes` collection, which is the only path the
+      // student portal and quiz join page can reliably look up class codes
+      // through without scanning every user document. Existing V1 users
+      // with V1 classes keep using V1 so we don't orphan their data.
+      const shouldUseV2 =
+        architectureVersion === 'v2' ||
+        (architectureVersion !== 'v2' && savedClasses.length === 0);
+
+      if (shouldUseV2) {
         const batch = writeBatch(firestore);
         const now = new Date().toISOString();
         const classId = `class_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -506,6 +547,12 @@ export default function Dashboard() {
         });
 
         await batch.commit();
+
+        // Locally mirror the architecture change so any follow-up actions
+        // in this same session (e.g. generating a new class code) take the
+        // V2 path instead of trying to mutate a non-existent V1 class.
+        setArchitectureVersion('v2');
+        setUserData(prev => prev ? { ...prev, version: '2.0', activeClassId: classId } : prev);
 
         const v2Classes = await loadV2Classes(user.uid);
         setSavedClasses(v2Classes);
@@ -668,7 +715,21 @@ export default function Dashboard() {
   };
 
   const accessResult = checkAccess();
-  const canAccess = accessResult.hasAccess || waitingForWebhook;
+
+  // Grace period: if user just returned from checkout, give them up to
+  // 10 minutes of access even if the webhook hasn't landed yet. This
+  // prevents flashing the "Subscription Required" screen during the
+  // (often slow) Stripe webhook delivery.
+  const recentlyReturnedFromCheckout = (() => {
+    if (typeof window === 'undefined') return false;
+    if (sessionStorage.getItem('returning_from_checkout') !== 'true') return false;
+    const ts = parseInt(sessionStorage.getItem('returning_from_checkout_at') || '0', 10);
+    if (!ts) return true; // No timestamp -> assume just returned
+    const tenMinutesMs = 10 * 60 * 1000;
+    return (Date.now() - ts) < tenMinutesMs;
+  })();
+
+  const canAccess = accessResult.hasAccess || waitingForWebhook || recentlyReturnedFromCheckout;
   const isCanceledUser = accessResult.isCanceled;
 
   // Helper variables for JSX template (derived from accessResult)

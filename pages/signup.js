@@ -78,13 +78,19 @@ export default function Signup() {
       const user = userCredential.user;
 
       // Create user document in Firestore
+      // Tag brand-new accounts with version '2.0' so they create classes in
+      // the V2 `classes` collection. V2 is the only architecture the public
+      // student portal and quiz join page can reliably read from without
+      // scanning every user document (which the Firestore rules block for
+      // unauthenticated lookups).
       await setDoc(doc(firestore, 'users', user.uid), {
         email: user.email,
         createdAt: new Date().toISOString(),
         classes: [],
         subscription: null,
         stripeCustomerId: null,
-        planType: 'educational-elements'
+        planType: 'educational-elements',
+        version: '2.0'
       });
 
       // Redirect to Stripe checkout
