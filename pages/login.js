@@ -168,8 +168,8 @@ export default function Login() {
         }
       }
 
-      // All checks passed - go to dashboard
-      router.push('/dashboard');
+      // All checks passed - go to main menu
+      router.push('/main-menu');
 
     } catch (error) {
       console.error('Login error:', error);

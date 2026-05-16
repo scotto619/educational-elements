@@ -1064,11 +1064,11 @@ export default function Dashboard() {
                 </button>
               )}
               <button
-                onClick={() => router.push('/main-menu')}
+                onClick={() => router.push('/classroom-champions')}
                 disabled={!canAccess || savedClasses.length === 0}
                 className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-green-600 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 text-base sm:text-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                🚀 Launch Platform
+                🚀 Launch Classroom Champions
               </button>
               <button
                 onClick={handleLogout}
@@ -1437,11 +1437,15 @@ export default function Dashboard() {
                           {userData?.activeClassId === cls.id ? 'Current Class' : 'Set Active'}
                         </button>
                         <button
-                          onClick={() => router.push('/main-menu')}
+                          onClick={async () => {
+                            // Make this the active class before navigating
+                            await setActiveClass(cls.id);
+                            router.push('/classroom-champions');
+                          }}
                           disabled={!canAccess}
                           className="flex-1 bg-green-500 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                         >
-                          Open Class
+                          Open Class →
                         </button>
                       </div>
                     </div>

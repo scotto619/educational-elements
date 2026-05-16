@@ -67,17 +67,17 @@ export default function MainMenu() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans selection:bg-purple-100 placeholder-opacity-100">
+        <div className="min-h-screen font-sans" style={{ background: 'linear-gradient(135deg, #fdf6ff 0%, #f0f9ff 50%, #fff7ed 100%)' }}>
             <Head>
                 <title>Main Menu | Educational Elements</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
             </Head>
 
             {/* Navigation Bar */}
-            <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 shadow-sm">
+            <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center cursor-pointer" onClick={() => router.push('/dashboard')}>
+                        <div className="flex items-center cursor-pointer" onClick={() => router.push('/main-menu')}>
                             <div className="flex-shrink-0 flex items-center">
                                 <Image
                                     src="/Logo/LOGO_NoBG.png"
@@ -86,21 +86,20 @@ export default function MainMenu() {
                                     height={40}
                                     className="h-10 w-10 sm:h-12 sm:w-12 transition-transform hover:scale-105"
                                 />
-                                <span className="ml-3 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 hidden sm:block">
+                                <span className="ml-3 text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500 hidden sm:block">
                                     Educational Elements
                                 </span>
                             </div>
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <button
-                                onClick={() => router.push('/dashboard')}
-                                className="text-gray-600 hover:text-purple-600 font-medium transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
-                            >
-                                Dashboard
-                            </button>
+                        <div className="flex items-center space-x-3">
+                            {userData?.email && (
+                                <span className="text-sm text-gray-500 hidden sm:block">
+                                    👋 {userData.email.split('@')[0]}
+                                </span>
+                            )}
                             <button
                                 onClick={handleLogout}
-                                className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-all shadow-md transform hover:-translate-y-0.5 text-sm font-semibold"
+                                className="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all shadow-md text-sm font-semibold"
                             >
                                 Sign Out
                             </button>
@@ -109,11 +108,11 @@ export default function MainMenu() {
                 </div>
             </nav>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+            <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
                 {/* Header Section with Main Logo Banner */}
-                <div className="relative mb-12 sm:mb-16 transform transition-all hover:scale-[1.01] duration-500">
-                    <div className="rounded-3xl overflow-hidden shadow-2xl ring-1 ring-gray-900/5">
+                <div className="relative mb-10 sm:mb-14 transform transition-all hover:scale-[1.01] duration-500">
+                    <div className="rounded-3xl overflow-hidden shadow-2xl ring-1 ring-purple-100">
                         <Image
                             src="/Displays/Banners/Educational Elements.png"
                             alt="Educational Elements"
@@ -122,162 +121,121 @@ export default function MainMenu() {
                             className="w-full h-auto object-cover"
                             priority
                         />
-                        {/* Optional Overlay Content if the banner is too plain, but the user requested REPLACEMENT of headings with banner */}
                     </div>
                 </div>
 
-                {/* Primary Options - The Big Three */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-16">
+                {/* Section label */}
+                <div className="text-center mb-8">
+                    <p className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Choose your area</p>
+                </div>
 
-                    {/* Classroom Champions */}
+                {/* Primary Options - The Big Three */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-7 mb-8">
+
+                    {/* Classroom Champions — needs a class → go to dashboard */}
                     <div
-                        onClick={() => handleNavigation('/classroom-champions')}
-                        className="group cursor-pointer relative"
+                        onClick={() => handleNavigation('/dashboard')}
+                        className="group cursor-pointer"
                     >
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl opacity-50 blur group-hover:opacity-100 transition duration-300"></div>
-                        <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl h-full">
-                            <div className="relative h-48 sm:h-64 overflow-hidden">
+                        <div className="relative bg-white rounded-3xl overflow-hidden shadow-lg border-2 border-amber-100 hover:border-amber-300 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl h-full">
+                            {/* Pastel colour band at top */}
+                            <div className="h-3 w-full bg-gradient-to-r from-amber-300 to-orange-300 rounded-t-3xl" />
+                            <div className="relative h-44 sm:h-52 overflow-hidden bg-amber-50">
                                 <Image
                                     src="/Displays/Banners/ClassroomChampions.png"
                                     alt="Classroom Champions"
                                     fill
-                                    className="object-contain transform group-hover:scale-110 transition-transform duration-700"
+                                    className="object-contain p-4 transform group-hover:scale-105 transition-transform duration-500"
                                 />
                             </div>
-                            <div className="p-6 text-center">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-amber-600 transition-colors">Classroom Champions</h2>
-                                <p className="text-gray-600">Enter the gamified classroom experience.</p>
+                            <div className="p-5 text-center border-t border-amber-100">
+                                <h2 className="text-2xl font-black text-gray-800 mb-1 group-hover:text-amber-600 transition-colors tracking-tight">Classroom Champions</h2>
+                                <p className="text-gray-500 text-sm">Gamified XP, quests, shop & more</p>
+                                <div className="mt-4 inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                                    Select a class to enter →
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Resource Hub */}
+                    {/* Resource Hub — no class needed → go straight to /curriculum */}
                     <div
-                        onClick={() => handleNavigation('/classroom-champions?tab=curriculum')}
-                        className="group cursor-pointer relative"
+                        onClick={() => handleNavigation('/curriculum')}
+                        className="group cursor-pointer"
                     >
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-2xl opacity-50 blur group-hover:opacity-100 transition duration-300"></div>
-                        <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl h-full">
-                            <div className="relative h-48 sm:h-64 overflow-hidden">
+                        <div className="relative bg-white rounded-3xl overflow-hidden shadow-lg border-2 border-blue-100 hover:border-blue-300 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl h-full">
+                            <div className="h-3 w-full bg-gradient-to-r from-sky-300 to-indigo-300 rounded-t-3xl" />
+                            <div className="relative h-44 sm:h-52 overflow-hidden bg-blue-50">
                                 <Image
                                     src="/Displays/Banners/CurriculumCorner.png"
                                     alt="Resource Hub"
                                     fill
-                                    className="object-contain transform group-hover:scale-110 transition-transform duration-700"
+                                    className="object-contain p-4 transform group-hover:scale-105 transition-transform duration-500"
                                 />
                             </div>
-                            <div className="p-6 text-center">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">Resource Hub</h2>
-                                <p className="text-gray-600">Access resources, displays, and lesson plans.</p>
+                            <div className="p-5 text-center border-t border-blue-100">
+                                <h2 className="text-2xl font-black text-gray-800 mb-1 group-hover:text-blue-600 transition-colors tracking-tight">Resource Hub</h2>
+                                <p className="text-gray-500 text-sm">Lessons, worksheets, tools & displays</p>
+                                <div className="mt-4 inline-flex items-center gap-1.5 bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                                    Browse resources →
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Teacher Toolkit */}
+                    {/* Teacher Toolkit — needs a class → go to dashboard */}
                     <div
-                        onClick={() => handleNavigation('/classroom-champions?tab=toolkit')}
-                        className="group cursor-pointer relative"
+                        onClick={() => handleNavigation('/dashboard')}
+                        className="group cursor-pointer"
                     >
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl opacity-50 blur group-hover:opacity-100 transition duration-300"></div>
-                        <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl h-full">
-                            <div className="relative h-48 sm:h-64 overflow-hidden">
+                        <div className="relative bg-white rounded-3xl overflow-hidden shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl h-full">
+                            <div className="h-3 w-full bg-gradient-to-r from-emerald-300 to-teal-300 rounded-t-3xl" />
+                            <div className="relative h-44 sm:h-52 overflow-hidden bg-emerald-50">
                                 <Image
                                     src="/Displays/Banners/TeacherToolkit.png"
                                     alt="Teacher Toolkit"
                                     fill
-                                    className="object-contain transform group-hover:scale-110 transition-transform duration-700"
+                                    className="object-contain p-4 transform group-hover:scale-105 transition-transform duration-500"
                                 />
                             </div>
-                            <div className="p-6 text-center">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">Teacher Toolkit</h2>
-                                <p className="text-gray-600">Manage students, groups, and daily tasks.</p>
+                            <div className="p-5 text-center border-t border-emerald-100">
+                                <h2 className="text-2xl font-black text-gray-800 mb-1 group-hover:text-emerald-600 transition-colors tracking-tight">Teacher Toolkit</h2>
+                                <p className="text-gray-500 text-sm">Name picker, timer, timetable & more</p>
+                                <div className="mt-4 inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                                    Select a class to enter →
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Secondary Navigation - Other Banners */}
-                <div className="relative">
-                    <div className="flex items-center justify-center mb-8">
-                        <div className="h-px w-24 bg-gray-300"></div>
-                        <span className="px-4 text-gray-400 text-sm font-semibold uppercase tracking-widest">More Adventures</span>
-                        <div className="h-px w-24 bg-gray-300"></div>
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-
-                        {/* Shop */}
-                        <div
-                            onClick={() => handleNavigation('/classroom-champions?tab=shop')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-amber-50 to-orange-50"
-                        >
-                            <div className="relative aspect-[4/3] overflow-hidden">
-                                <Image
-                                    src="/Displays/Banners/Shop.png"
-                                    alt="Shop"
-                                    fill
-                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
-                            </div>
-                        </div>
-
-                        {/* Quests */}
-                        <div
-                            onClick={() => handleNavigation('/classroom-champions?tab=quests')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-purple-50 to-indigo-50"
-                        >
-                            <div className="relative aspect-[4/3] overflow-hidden">
-                                <Image
-                                    src="/Displays/Banners/Quests.png"
-                                    alt="Quests"
-                                    fill
-                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
-                            </div>
-                        </div>
-
-                        {/* Games */}
-                        <div
-                            onClick={() => handleNavigation('/classroom-champions?tab=games')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-blue-50 to-cyan-50"
-                        >
-                            <div className="relative aspect-[4/3] overflow-hidden">
-                                <Image
-                                    src="/Displays/Banners/Games.png"
-                                    alt="Games"
-                                    fill
-                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
-                            </div>
-                        </div>
-
-                        {/* Students */}
-                        <div
-                            onClick={() => handleNavigation('/classroom-champions?tab=students')}
-                            className="cursor-pointer group rounded-xl overflow-hidden shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-[1.03] bg-gradient-to-br from-green-50 to-emerald-50"
-                        >
-                            <div className="relative aspect-[4/3] overflow-hidden">
-                                <Image
-                                    src="/Displays/Banners/Students.png"
-                                    alt="Students"
-                                    fill
-                                    className="object-contain p-2 transition-transform duration-500 group-hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
-                            </div>
-                        </div>
-
+                {/* Quick-links row - within Classroom Champions */}
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-purple-100 p-5 shadow-sm">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 text-center">Quick access — via Classroom Champions</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {[
+                            { label: 'Shop', icon: '🛒', tab: 'shop', bg: 'from-amber-50 to-yellow-50', border: 'border-amber-200', text: 'text-amber-700' },
+                            { label: 'Quests', icon: '📜', tab: 'quests', bg: 'from-purple-50 to-indigo-50', border: 'border-purple-200', text: 'text-purple-700' },
+                            { label: 'Games', icon: '🎮', tab: 'games', bg: 'from-blue-50 to-cyan-50', border: 'border-blue-200', text: 'text-blue-700' },
+                            { label: 'Students', icon: '👥', tab: 'students', bg: 'from-green-50 to-emerald-50', border: 'border-green-200', text: 'text-green-700' },
+                        ].map(item => (
+                            <button
+                                key={item.tab}
+                                onClick={() => handleNavigation(`/dashboard`)}
+                                className={`flex flex-col items-center justify-center gap-2 py-4 px-3 rounded-2xl bg-gradient-to-br ${item.bg} border ${item.border} hover:shadow-md transition-all duration-200 hover:scale-[1.04] group`}
+                            >
+                                <span className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</span>
+                                <span className={`text-sm font-bold ${item.text}`}>{item.label}</span>
+                            </button>
+                        ))}
                     </div>
                 </div>
 
             </main>
 
             {/* Footer */}
-            <footer className="bg-white border-t border-gray-200 mt-12 py-8">
-                <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            <footer className="border-t border-purple-100 mt-12 py-8 bg-white/50">
+                <div className="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm">
                     <p>&copy; {new Date().getFullYear()} Educational Elements. All rights reserved.</p>
                 </div>
             </footer>
