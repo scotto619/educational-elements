@@ -15,9 +15,7 @@ const GameLoadingSpinner = () => (
 
 // Dynamically imported game components (loaded only when a game is selected)
 const BoggleGame = dynamic(() => import('../games/BoggleGame'), { loading: GameLoadingSpinner, ssr: false });
-const MemoryMatchGame = dynamic(() => import('../games/MemoryMatchGame'), { loading: GameLoadingSpinner, ssr: false });
 const WordSearchGame = dynamic(() => import('../games/WordSearchGame'), { loading: GameLoadingSpinner, ssr: false });
-const CrosswordGame = dynamic(() => import('../games/CrosswordGame'), { loading: GameLoadingSpinner, ssr: false });
 const TicTacToeGame = dynamic(() => import('../games/TicTacToeGame'), { loading: GameLoadingSpinner, ssr: false });
 const BattleshipsGame = dynamic(() => import('../games/BattleshipsGame'), { loading: GameLoadingSpinner, ssr: false });
 const ClickerGame = dynamic(() => import('../games/ClickerGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -31,7 +29,6 @@ const CoordinateQuestGame = dynamic(() => import('../games/CoordinateQuestGame')
 const PrecisionTimerGame = dynamic(() => import('../games/PrecisionTimerGame'), { loading: GameLoadingSpinner, ssr: false });
 const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading: GameLoadingSpinner, ssr: false });
 const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
-const SinMinerGame = dynamic(() => import('../games/SinMinerGame'), { loading: GameLoadingSpinner, ssr: false });
 const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
 const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoadingSpinner, ssr: false });
 const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -39,11 +36,7 @@ const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: G
 const WordImposterGame = dynamic(() => import('../games/WordImposterGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
-const KawaiiAgarGame = dynamic(() => import('../games/KawaiiAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
-const EndlessRunnerGame = dynamic(() => import('../games/EndlessRunnerGame'), { loading: GameLoadingSpinner, ssr: false });
-const CozyCottageGame = dynamic(() => import('../games/CozyCottage/App'), { loading: GameLoadingSpinner, ssr: false });
-const MagicalAthletesGame = dynamic(() => import('../games/MagicalAthletesGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -237,6 +230,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy',
       time: '10+ minutes',
       category: 'fun',
+      inDevelopment: true,
       logo: getGameLogo('hero-forge')
     },
     {
@@ -333,6 +327,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       multiplayer: true,
       requiresClassCode: true,
       category: 'multiplayer',
+      inDevelopment: true,
       logo: getGameLogo('cell-arena')
     },
 
@@ -364,44 +359,6 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       logo: getGameLogo('word-hunt')
     },
     {
-      id: 'crossword',
-      name: 'Crossword Challenge',
-      icon: '📝',
-      description: 'Solve crossword puzzles to test your vocabulary and knowledge!',
-      component: CrosswordGame,
-      color: 'from-indigo-500 to-purple-600',
-      difficulty: 'Medium - Hard',
-      time: '10-20 minutes',
-      category: 'educational',
-      educational: true,
-      logo: getGameLogo('crossword')
-    },
-    {
-      id: 'memory-match',
-      name: 'Memory Match',
-      icon: '🎴',
-      description: 'Classic memory card matching game with beautiful themes!',
-      component: MemoryMatchGame,
-      color: 'from-pink-500 to-rose-600',
-      difficulty: 'Easy - Medium',
-      time: '3-10 minutes',
-      category: 'educational',
-      logo: getGameLogo('memory-match')
-    },
-    {
-      id: 'sin-miner',
-      name: 'Sin Miner',
-      icon: '⛏️',
-      description: 'Dig deep into the abyss! Choose your Sin, mine for gold, and battle bosses in this roguelike clicker adventure.',
-      component: SinMinerGame,
-      color: 'from-red-900 to-purple-900',
-      difficulty: 'Hard',
-      time: '15-30 minutes',
-      category: 'fun',
-      new: true,
-      logo: getGameLogo('sin-miner')
-    },
-    {
       id: 'sprout-bloom',
       name: 'Sprout & Bloom',
       icon: '🌱',
@@ -411,67 +368,9 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       difficulty: 'Easy - Medium',
       time: '10-30 minutes',
       featured: true,
-      new: true,
       category: 'fun',
+      inDevelopment: true,
       logo: getGameLogo('sprout-bloom')
-    },
-    {
-      id: 'kawaii-agar',
-      name: 'Kawaii Agar',
-      icon: '🫧',
-      description: 'Cute multiplayer cell battle! Grow your kawaii blob by eating food and other players. Team up or compete against your classmates!',
-      component: KawaiiAgarGame,
-      color: 'from-pink-400 to-rose-500',
-      difficulty: 'Easy - Medium',
-      time: '5-15 minutes',
-      multiplayer: true,
-      requiresClassCode: true,
-      featured: true,
-      new: true,
-      category: 'multiplayer',
-      logo: getGameLogo('kawaii-agar')
-    },
-    {
-      id: 'endless-runner',
-      name: 'Endless Runner',
-      icon: '🏃',
-      description: 'Sprint through an endless world! Jump over obstacles, collect coins, grab power-ups, and chase the high score.',
-      component: EndlessRunnerGame,
-      color: 'from-emerald-500 to-teal-600',
-      difficulty: 'Easy - Hard',
-      time: '2-5 minutes',
-      featured: false,
-      new: true,
-      category: 'fun',
-      logo: getGameLogo('endless-runner')
-    },
-    {
-      id: 'cozy-cottage',
-      name: 'Cozy Cottage',
-      icon: '🏡',
-      description: 'Decorate your cottage, grow a garden, fish at the river, forage in the forest, and discover new recipes at the stove!',
-      component: CozyCottageGame,
-      color: 'from-amber-400 to-orange-500',
-      difficulty: 'Easy',
-      time: '10-30 minutes',
-      featured: true,
-      new: true,
-      category: 'fun',
-      logo: getGameLogo('cozy-cottage')
-    },
-    {
-      id: 'magical-athletes',
-      name: 'Magical Athletes',
-      icon: '⚡',
-      description: 'A fantasy racing board game! Pick a character with unique powers — Ninja, Medusa, Rocket Scientist, and more — then race to the finish line.',
-      component: MagicalAthletesGame,
-      color: 'from-purple-600 to-indigo-600',
-      difficulty: 'Medium',
-      time: '15-40 minutes',
-      multiplayer: true,
-      new: true,
-      category: 'multiplayer',
-      logo: getGameLogo('magical-athletes')
     }
   ];
 
@@ -674,16 +573,19 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                       <span className="text-lg">{game.icon}</span>
                       <span>{categoryLabel}</span>
                     </div>
-                    {game.new && (
+                    {game.inDevelopment ? (
+                      <div className="absolute top-3 right-3 bg-gradient-to-r from-slate-500 to-slate-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
+                        🔧 In Development
+                      </div>
+                    ) : game.new ? (
                       <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow animate-bounce">
                         NEW
                       </div>
-                    )}
-                    {!game.new && game.featured && (
+                    ) : game.featured ? (
                       <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
                         ⭐ Featured
                       </div>
-                    )}
+                    ) : null}
                   </div>
                   <div className="flex-1 p-4 md:p-6 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
