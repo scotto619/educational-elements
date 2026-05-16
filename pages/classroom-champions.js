@@ -1098,11 +1098,8 @@ const ClassroomChampions = () => {
         );
 
       case 'resource-hub':
-        return <ResourceHubTab
-          {...commonProps}
-          saveData={saveClassData}
-          loadedData={currentClassData || {}}
-        />;
+        router.push('/curriculum');
+        return null;
 
       case 'toolkit':
         return <TeachersToolkitTab
@@ -1427,6 +1424,10 @@ const ClassroomChampions = () => {
                 <button
                   key={tab.id}
                   onClick={() => {
+                    if (tab.id === 'resource-hub') {
+                      router.push('/curriculum');
+                      return;
+                    }
                     setActiveTab(tab.id);
                     setShowMobileMenu(false);
                   }}
