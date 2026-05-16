@@ -1402,6 +1402,9 @@ const StudentSpelling = ({
   const [showActivityInstructions, setShowActivityInstructions] = useState(null);
   const [selectedListId, setSelectedListId] = useState(null);
   const [selectedInteractive, setSelectedInteractive] = useState('word_search');
+  const [selectedTextType, setSelectedTextType] = useState('narrative');
+  const [passageFontSize, setPassageFontSize] = useState(16);
+  const [expandedPassage, setExpandedPassage] = useState(false);
 
   const passageMap = useMemo(() => {
     const map = {};
@@ -1568,327 +1571,242 @@ const StudentSpelling = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className={`${studentAssignments.groupColor} text-white rounded-xl p-6 md:p-8`}>
-        <div className="text-center">
-          <h1 className="text-2xl md:text-4xl font-bold mb-2 flex items-center justify-center">
-            <span className="mr-3">📝</span>
-            My Spelling Words
-          </h1>
-          <div className="text-lg md:text-xl opacity-90">
-            {studentAssignments.groupName}
-          </div>
-          <div className="text-sm md:text-base opacity-80 mt-2">
-            {studentAssignments.lists.length} spelling list{studentAssignments.lists.length !== 1 ? 's' : ''} assigned
-          </div>
+    <div className="space-y-5">
+
+      {/* ── HEADER ── */}
+      <div className={`${studentAssignments.groupColor} text-white rounded-2xl px-5 py-4 flex items-center justify-between shadow-sm`}>
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">📝 My Spelling</h1>
+          <p className="text-white/80 text-sm mt-0.5">{studentAssignments.groupName} · {studentAssignments.lists.length} list{studentAssignments.lists.length !== 1 ? 's' : ''} assigned</p>
         </div>
       </div>
 
-      {/* Weekly Progress */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <div className="text-center mb-4">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">🎯 Weekly Spelling Challenge</h2>
-          <p className="text-gray-600">Complete 5 different spelling activities this week!</p>
-        </div>
-        
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
-              Progress: {completedActivities.length}/5 activities
-            </span>
-            <span className="text-sm font-medium text-gray-700">
-              {Math.round(getProgressPercentage())}%
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div 
-              className={`h-3 rounded-full transition-all duration-300 ${getProgressColor()}`}
-              style={{ width: `${getProgressPercentage()}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {completedActivities.length >= 5 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-            <div className="text-2xl mb-2">🎉</div>
-            <h3 className="text-lg font-bold text-green-800">Congratulations!</h3>
-            <p className="text-green-700">You've completed your weekly spelling challenge!</p>
-          </div>
-        )}
-      </div>
-
-      {/* Spelling Activities Grid */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 md:p-6 rounded-t-xl">
-          <h2 className="text-xl md:text-2xl font-bold text-center">🎲 Choose Your Spelling Activities</h2>
-          <p className="text-sm md:text-base opacity-90 text-center mt-2">
-            Pick any activities you'd like to try with your spelling words!
-          </p>
-        </div>
-        
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {ACTIVITIES.map(activity => {
-              const isCompleted = completedActivities.includes(activity.id);
-              return (
-                <div 
-                  key={activity.id} 
-                  className={`border-2 rounded-xl p-4 transition-all duration-200 cursor-pointer ${
-                    isCompleted 
-                      ? 'border-green-500 bg-green-50' 
-                      : 'border-gray-200 hover:border-indigo-300 hover:shadow-md'
-                  }`}
-                  onClick={() => toggleActivity(activity.id)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center">
-                      <span className="text-2xl mr-3">{activity.icon}</span>
-                      <div>
-                        <h3 className="font-bold text-gray-800 text-sm md:text-base">
-                          {activity.name}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
-                      isCompleted 
-                        ? 'bg-green-500 border-green-500 text-white' 
-                        : 'border-gray-300'
-                    }`}>
-                      {isCompleted && '✓'}
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowActivityInstructions(activity);
-                    }}
-                    className="text-xs text-blue-600 hover:text-blue-800 underline"
-                  >
-                    View Instructions
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Activities */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div className="flex-1">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-              <span>🧠</span> Interactive Spelling Lab
-            </h2>
-            <p className="text-sm md:text-base text-gray-600 leading-relaxed">
-              Jump into on-screen challenges that use your current spelling words. Complete the word search or crossword to earn credit for the digital activities!
-            </p>
-          </div>
-          {studentAssignments.lists.length > 0 && (
-            <div className="flex-1 lg:max-w-sm space-y-3">
-              <div>
-                <label htmlFor="spelling-interactive-list" className="block text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
-                  Choose your spelling list
-                </label>
-                <select
-                  id="spelling-interactive-list"
-                  value={selectedListId || ''}
-                  onChange={(e) => setSelectedListId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                >
-                  {studentAssignments.lists.map(list => (
-                    <option key={list.id} value={list.id}>
-                      {list.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { id: 'word_search', label: 'Word Search', icon: '🔎' },
-                  { id: 'crossword', label: 'Crossword', icon: '🧩' }
-                ].map(option => {
-                  const isActive = selectedInteractive === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      onClick={() => setSelectedInteractive(option.id)}
-                      className={`flex-1 min-w-[140px] px-3 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                        isActive
-                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-md'
-                          : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                      }`}
-                    >
-                      <span className="mr-2">{option.icon}</span>
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {(!selectedList || !selectedWords.length) ? (
-          <div className="mt-6 bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center text-gray-600">
-            Add spelling words to your group to unlock the digital puzzles.
-          </div>
-        ) : (
-          <div className="mt-6 space-y-6">
-            {selectedInteractive === 'word_search' && (
-              <SpellingWordSearch
-                key={`word-search-${selectedList.id}`}
-                words={selectedWords}
-                onSolved={() => markActivityComplete('digital_word_search')}
-              />
-            )}
-            {selectedInteractive === 'crossword' && (
-              <SpellingCrossword
-                key={`crossword-${selectedList.id}`}
-                words={selectedWords}
-                onSolved={() => markActivityComplete('digital_crossword')}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Spelling Lists */}
-      <div className="grid gap-6">
-        {studentAssignments.lists.map(list => (
-          <div key={list.id} className="bg-white rounded-xl shadow-lg border border-gray-200">
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 md:p-6 rounded-t-xl">
-              <h2 className="text-xl md:text-2xl font-bold text-center">{list.name}</h2>
-              <p className="text-sm md:text-base opacity-90 text-center mt-2">{list.feature}</p>
-              <div className="text-center mt-2">
-                <span className="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
-                  {list.words.length} words to learn
-                </span>
-              </div>
-            </div>
-            
-            <div className="p-4 md:p-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-                {list.words.map((word, index) => (
-                  <div
-                    key={index}
-                    className="bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-lg p-3 md:p-4 text-center hover:shadow-md transition-all duration-200 hover:scale-105"
-                  >
-                    <span className="text-lg md:text-xl font-bold text-gray-800 select-text">
-                      {word}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              {list.passage && (
-                <div className="mt-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4">
-                  <h3 className="text-base md:text-lg font-semibold text-indigo-700 mb-3 flex items-center gap-2">
-                    <span>📖</span> Connected Reading: {list.passage.level}
-                  </h3>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {list.texts.map(text => (
-                      <div key={`${text.type}-${text.title}`} className="bg-white rounded-lg border border-indigo-100 p-3 shadow-sm">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-bold text-gray-800">{text.title}</h4>
-                          <span className="text-xs uppercase tracking-wide text-indigo-600">{text.type}</span>
-                        </div>
-                        <p className="text-xs text-gray-600">{text.wordCount} words</p>
-                        <p className="text-xs text-gray-500 mt-2 h-16 overflow-hidden">
-                          {text.content.split('\n').join(' ')}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Practice Tips */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">🎯 Spelling Practice Tips</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-bold text-blue-800 mb-2">📚 Study Tips:</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Practice a little bit every day</li>
-              <li>• Say the letters out loud as you write</li>
-              <li>• Break long words into smaller parts</li>
-              <li>• Use the words in sentences</li>
-            </ul>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="font-bold text-green-800 mb-2">🏆 Challenge Yourself:</h3>
-            <ul className="text-sm text-green-700 space-y-1">
-              <li>• Try spelling words with your eyes closed</li>
-              <li>• Write words in different fonts or styles</li>
-              <li>• Make up memory tricks for tricky words</li>
-              <li>• Teach the words to a friend or family member</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Activity Instructions Modal */}
-      {showActivityInstructions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className={`${showActivityInstructions.color} text-white p-6 rounded-t-xl`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-4xl mr-4">{showActivityInstructions.icon}</span>
-                  <h2 className="text-2xl font-bold">{showActivityInstructions.name}</h2>
-                </div>
-                <button
-                  onClick={() => setShowActivityInstructions(null)}
-                  className="text-white hover:text-gray-200 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-4">📋 How to do this activity:</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans text-sm md:text-base">
-                  {showActivityInstructions.instructions}
-                </pre>
-              </div>
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={() => {
-                    toggleActivity(showActivityInstructions.id);
-                    setShowActivityInstructions(null);
-                  }}
-                  className={`px-6 py-3 rounded-lg font-bold text-white transition-colors ${
-                    completedActivities.includes(showActivityInstructions.id)
-                      ? 'bg-green-500 hover:bg-green-600'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  }`}
-                >
-                  {completedActivities.includes(showActivityInstructions.id) 
-                    ? '✓ Mark as Not Done' 
-                    : '✓ Mark as Done'
-                  }
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* ── LIST TABS (if multiple lists assigned) ── */}
+      {studentAssignments.lists.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {studentAssignments.lists.map(list => (
+            <button
+              key={list.id}
+              onClick={() => setSelectedListId(list.id)}
+              className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all border ${
+                selectedListId === list.id
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                  : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+              }`}
+            >
+              {list.id} — {list.feature}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* No assignments message */}
-      {studentAssignments.lists.length === 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-          <div className="text-4xl mb-4">📝</div>
-          <h2 className="text-xl font-bold text-yellow-800 mb-2">No Spelling Lists Yet</h2>
-          <p className="text-yellow-700">
-            Your teacher hasn't assigned any spelling lists to your group yet. Check back later!
-          </p>
+      {selectedList ? (
+        <>
+          {/* ── SECTION 1: SPELLING WORDS ── */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-4">
+              <h2 className="text-lg font-bold">{selectedList.name}</h2>
+              <p className="text-white/80 text-sm">{selectedList.feature}</p>
+            </div>
+            <div className="p-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {selectedList.words.map((word, i) => (
+                  <div key={i} className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-3 text-center select-text hover:shadow-sm transition-shadow">
+                    <span className="text-lg font-bold text-gray-800">{word}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── SECTION 2: READING PASSAGE ── */}
+          {selectedList.passage && selectedList.texts?.length > 0 && (() => {
+            const passageText = selectedList.texts.find(t => t.type === selectedTextType) || selectedList.texts[0];
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100">
+                  <div>
+                    <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">📖 Connected Reading</h2>
+                    <p className="text-xs text-gray-500 mt-0.5">{selectedList.passage.level}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Text type tabs */}
+                    {selectedList.texts.length > 1 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {selectedList.texts.map(text => (
+                          <button
+                            key={text.type}
+                            onClick={() => setSelectedTextType(text.type)}
+                            className={`px-2.5 py-1 rounded-full text-xs font-semibold transition capitalize ${
+                              selectedTextType === text.type ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                          >
+                            {text.type}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {/* Font size controls */}
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-2 py-1">
+                      <button onClick={() => setPassageFontSize(s => Math.max(s - 2, 12))} className="text-gray-500 hover:text-gray-800 text-xs font-bold px-1">A−</button>
+                      <span className="text-xs text-gray-400 w-8 text-center">{passageFontSize}px</span>
+                      <button onClick={() => setPassageFontSize(s => Math.min(s + 2, 28))} className="text-gray-500 hover:text-gray-800 text-sm font-bold px-1">A+</button>
+                    </div>
+                    <button
+                      onClick={() => setExpandedPassage(true)}
+                      className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1.5 rounded-xl hover:bg-indigo-100 font-semibold"
+                    >
+                      ⛶ Full screen
+                    </button>
+                  </div>
+                </div>
+                {passageText && (
+                  <div className="p-5">
+                    <div className="flex items-baseline gap-3 mb-3">
+                      <h3 className="text-lg font-bold text-gray-800">{passageText.title}</h3>
+                      <span className="text-sm text-gray-400">{passageText.wordCount} words</span>
+                    </div>
+                    <div
+                      className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-2xl p-4 max-h-72 overflow-y-auto"
+                      style={{ fontSize: `${passageFontSize}px` }}
+                    >
+                      {passageText.content}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </>
+      ) : (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 text-center">
+          <div className="text-3xl mb-3">📝</div>
+          <p className="text-yellow-800 font-medium">No spelling lists assigned to your group yet — check back later!</p>
+        </div>
+      )}
+
+      {/* ── SECTION 3: SUGGESTED ACTIVITIES ── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">💡 Suggested Activities</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Ways to practise your spelling words — tap any card to see how</p>
+        </div>
+        <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {ACTIVITIES.map(activity => (
+            <button
+              key={activity.id}
+              onClick={() => setShowActivityInstructions(activity)}
+              className="border border-gray-200 rounded-2xl p-3 text-center hover:border-indigo-300 hover:shadow-sm hover:bg-indigo-50 transition-all group"
+            >
+              <div className="text-3xl mb-2">{activity.icon}</div>
+              <div className="text-xs font-semibold text-gray-700 leading-tight group-hover:text-indigo-700">{activity.name}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── SECTION 4: INTERACTIVE LAB ── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">🧠 Interactive Spelling Lab</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Digital puzzles using your spelling words</p>
+            </div>
+            {studentAssignments.lists.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {studentAssignments.lists.length > 1 && (
+                  <select
+                    value={selectedListId || ''}
+                    onChange={e => setSelectedListId(e.target.value)}
+                    className="text-sm border border-gray-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+                  >
+                    {studentAssignments.lists.map(list => (
+                      <option key={list.id} value={list.id}>{list.name}</option>
+                    ))}
+                  </select>
+                )}
+                {[{ id: 'word_search', label: 'Word Search', icon: '🔎' }, { id: 'crossword', label: 'Crossword', icon: '🧩' }].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => setSelectedInteractive(opt.id)}
+                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition ${
+                      selectedInteractive === opt.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                    }`}
+                  >
+                    {opt.icon} {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="p-5">
+          {(!selectedList || !selectedWords.length) ? (
+            <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-6 text-center text-sm text-gray-500">
+              Your spelling list needs words assigned to unlock the digital puzzles.
+            </div>
+          ) : (
+            <>
+              {selectedInteractive === 'word_search' && (
+                <SpellingWordSearch key={`word-search-${selectedList.id}`} words={selectedWords} onSolved={() => markActivityComplete('digital_word_search')} />
+              )}
+              {selectedInteractive === 'crossword' && (
+                <SpellingCrossword key={`crossword-${selectedList.id}`} words={selectedWords} onSolved={() => markActivityComplete('digital_crossword')} />
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ── EXPANDED PASSAGE MODAL ── */}
+      {expandedPassage && selectedList && (() => {
+        const passageText = selectedList.texts?.find(t => t.type === selectedTextType) || selectedList.texts?.[0];
+        return passageText ? (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+              <div className="flex items-center justify-between p-5 border-b flex-shrink-0">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">{passageText.title}</h2>
+                  <p className="text-sm text-gray-500">{selectedList.passage?.level} · {passageText.type} · {passageText.wordCount} words</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-2 py-1">
+                    <button onClick={() => setPassageFontSize(s => Math.max(s - 2, 12))} className="text-gray-500 text-xs font-bold px-1">A−</button>
+                    <span className="text-xs text-gray-400 w-8 text-center">{passageFontSize}px</span>
+                    <button onClick={() => setPassageFontSize(s => Math.min(s + 2, 30))} className="text-gray-500 text-sm font-bold px-1">A+</button>
+                  </div>
+                  <button onClick={() => setExpandedPassage(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+                </div>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1">
+                <div className="text-gray-800 leading-loose whitespace-pre-wrap" style={{ fontSize: `${passageFontSize}px` }}>
+                  {passageText.content}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null;
+      })()}
+
+      {/* ── ACTIVITY INSTRUCTIONS MODAL ── */}
+      {showActivityInstructions && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl">
+            <div className={`${showActivityInstructions.color} text-white p-5 rounded-t-2xl flex items-center justify-between flex-shrink-0`}>
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{showActivityInstructions.icon}</span>
+                <h2 className="text-xl font-bold">{showActivityInstructions.name}</h2>
+              </div>
+              <button onClick={() => setShowActivityInstructions(null)} className="text-white/70 hover:text-white text-2xl leading-none">×</button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1">
+              <h3 className="font-bold mb-3 text-gray-800">📋 How to do this activity:</h3>
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans text-sm md:text-base">{showActivityInstructions.instructions}</pre>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

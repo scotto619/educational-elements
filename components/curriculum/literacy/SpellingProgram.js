@@ -579,6 +579,9 @@ const SpellingProgram = ({
   const [selectedLevel, setSelectedLevel] = useState('1');
   const [selectedListId, setSelectedListId] = useState('1.1');
   const [selectedTextType, setSelectedTextType] = useState('narrative');
+  const [expandedPassage, setExpandedPassage] = useState(false);
+  const [listSearchQuery, setListSearchQuery] = useState('');
+  const [passageFontSize, setPassageFontSize] = useState(16);
 
   const passageMap = useMemo(() => {
     const map = {};
@@ -1182,333 +1185,413 @@ const SpellingProgram = ({
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-600 text-white rounded-3xl p-8 shadow-xl">
-        <div className="flex flex-col lg:flex-row justify-between gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className="text-4xl">🌀</span>
-              <div>
-                <h1 className="text-3xl lg:text-4xl font-extrabold">Spelling & Fluency Studio</h1>
-                <p className="text-lg opacity-90">Plan, teach, and assign word study with perfectly paired reading passages.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white/15 rounded-xl p-3 text-center">
-                <p className="text-sm uppercase tracking-wide opacity-80">Spelling Lists</p>
-                <p className="text-2xl font-bold">{SPELLING_LISTS.length}</p>
-              </div>
-              <div className="bg-white/15 rounded-xl p-3 text-center">
-                <p className="text-sm uppercase tracking-wide opacity-80">Reading Passages</p>
-                <p className="text-2xl font-bold">{READING_PASSAGES.length}</p>
-              </div>
-              <div className="bg-white/15 rounded-xl p-3 text-center">
-                <p className="text-sm uppercase tracking-wide opacity-80">Levels</p>
-                <p className="text-2xl font-bold">4</p>
-              </div>
-              <div className="bg-white/15 rounded-xl p-3 text-center">
-                <p className="text-sm uppercase tracking-wide opacity-80">Activities</p>
-                <p className="text-2xl font-bold">{ACTIVITIES.length}</p>
-              </div>
-            </div>
-            {loadedData?.spellingGroups && loadedData.spellingGroups.length > 0 && !hasUnsavedChanges && (
-              <p className="text-sm opacity-75">✅ Groups loaded from your saved data</p>
+    <div className="space-y-6">
+
+      {/* ── HEADER ── */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-5 shadow-md">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2">🌀 Spelling & Fluency Studio</h1>
+            <p className="text-white/70 text-sm mt-0.5">{SPELLING_LISTS.length} lists · {READING_PASSAGES.length} passages · 4 levels · {ACTIVITIES.length} activities</p>
+            {loadedData?.spellingGroups?.length > 0 && !hasUnsavedChanges && (
+              <p className="text-green-300 text-xs mt-1">✅ Groups saved</p>
             )}
-            {hasUnsavedChanges && (
-              <p className="text-sm opacity-80">⚠️ You have unsaved changes</p>
-            )}
+            {hasUnsavedChanges && <p className="text-yellow-300 text-xs mt-1">⚠️ Unsaved changes</p>}
           </div>
-          <div className="flex flex-wrap gap-3 items-start lg:items-center justify-end">
-            <button
-              onClick={() => setShowListSelector(!showListSelector)}
-              className="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition"
-            >
-              📋 Browse Lists
-            </button>
-            <button
-              onClick={() => setShowStudentAssignment(true)}
-              className="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition"
-            >
-              👥 Assign Students
-            </button>
-            <button
-              onClick={togglePresentationMode}
-              className="bg-white/15 hover:bg-white/25 px-4 py-2 rounded-xl font-semibold flex items-center gap-2 transition"
-            >
-              🎭 Presentation
-            </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setShowStudentAssignment(true)} className="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition">👥 Assign Students</button>
+            <button onClick={() => setShowListSelector(true)} className="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition">📋 Browse Lists</button>
+            <button onClick={togglePresentationMode} className="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition">🎭 Present</button>
             {hasUnsavedChanges && (
-              <button
-                onClick={saveGroups}
-                className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg"
-              >
-                💾 Save Groups
-              </button>
+              <button onClick={saveGroups} className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 shadow">💾 Save Groups</button>
             )}
           </div>
         </div>
 
-        {/* Dynamic pairing preview */}
-        {selectedList && (
-          <div className="mt-8 bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-1 space-y-3">
-                <p className="text-sm uppercase tracking-[0.2em] opacity-80">Current Focus</p>
-                <h2 className="text-2xl font-bold">{selectedList.name}</h2>
-                <p className="text-white/80 italic">{selectedList.feature}</p>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {['1','2','3','4'].map(level => (
-                    <button
-                      key={level}
-                      onClick={() => setSelectedLevel(level)}
-                      className={`px-3 py-1 rounded-full text-sm font-semibold transition ${selectedLevel === level ? 'bg-white text-indigo-700' : 'bg-white/20 text-white hover:bg-white/30'}`}
-                    >
-                      Level {level}
-                    </button>
-                  ))}
-                </div>
+      </div>
+
+      {/* ── MAIN LAYOUT: 2 columns ── */}
+      <div className="grid lg:grid-cols-5 gap-6 items-start">
+
+        {/* LEFT: List Browser */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">Browse & Select Lists</h2>
+
+            {/* Level tabs */}
+            <div className="flex gap-1 mb-3 bg-gray-100 rounded-xl p-1">
+              {['1','2','3','4'].map(level => (
+                <button
+                  key={level}
+                  onClick={() => setSelectedLevel(level)}
+                  className={`flex-1 py-1.5 rounded-lg text-sm font-semibold transition ${selectedLevel === level ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Level {level}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <input
+              type="text"
+              placeholder="Search lists…"
+              value={listSearchQuery}
+              onChange={e => setListSearchQuery(e.target.value)}
+              className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            />
+
+            {/* List items */}
+            <div className="space-y-0.5 max-h-80 overflow-y-auto">
+              {levelLists
+                .filter(list => !listSearchQuery || list.name.toLowerCase().includes(listSearchQuery.toLowerCase()) || list.feature.toLowerCase().includes(listSearchQuery.toLowerCase()))
+                .map(list => (
+                  <button
+                    key={list.id}
+                    onClick={() => setSelectedListId(list.id)}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-sm transition-all ${selectedListId === list.id ? 'bg-indigo-50 border border-indigo-200 text-indigo-800' : 'hover:bg-gray-50 text-gray-700'}`}
+                  >
+                    <div className="font-semibold">{list.id} — {list.feature}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{list.words.length} words</div>
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          {/* Selected list word preview */}
+          {selectedList && (
+            <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden">
+              <div className="bg-indigo-50 border-b border-indigo-100 px-4 py-3">
+                <div className="font-bold text-indigo-800 text-sm">{selectedList.name}</div>
+                <div className="text-xs text-indigo-600 italic">{selectedList.feature}</div>
               </div>
-              <div className="lg:col-span-1 bg-white/90 text-gray-900 rounded-xl p-4 shadow-inner">
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <span>🔡</span> Spelling Words
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedList.words.map((word, index) => (
-                    <span key={index} className="bg-indigo-50 text-indigo-700 font-semibold rounded-lg px-2 py-1 text-center">
+              <div className="p-4">
+                <div className="grid grid-cols-3 gap-2">
+                  {selectedList.words.map((word, i) => (
+                    <div key={i} className="bg-indigo-50 border border-indigo-200 rounded-lg px-2 py-2 text-center text-sm font-bold text-indigo-700">
                       {word}
-                    </span>
+                    </div>
                   ))}
                 </div>
               </div>
-              <div className="lg:col-span-1 bg-white/90 text-gray-900 rounded-xl p-4 shadow-inner space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <span>📖</span> Connected Reading
-                  </h3>
-                  <div className="flex gap-2">
-                    {TEXT_TYPES.map(type => (
-                      <button
-                        key={type.id}
-                        onClick={() => setSelectedTextType(type.id)}
-                        className={`px-2 py-1 rounded-full text-xs font-semibold transition ${selectedTextType === type.id ? 'bg-indigo-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                      >
-                        {type.icon}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {selectedText ? (
-                  <div className="space-y-2">
-                    <p className="text-sm font-bold text-indigo-700">{selectedList.passage?.level}</p>
-                    <h4 className="text-xl font-semibold">{selectedText.title}</h4>
-                    <p className="text-sm text-gray-600 flex items-center gap-2">
-                      <span>📝 {selectedText.wordCount} words</span>
-                    </p>
-                    <p className="text-sm text-gray-700 bg-gray-100 rounded-lg p-3 max-h-36 overflow-y-auto">
-                      {selectedText.content.split('\n').join(' ')}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-600">No passage found for this list yet.</p>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: Groups Manager */}
+        <div className="lg:col-span-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Groups</h2>
+              <div className="flex gap-2">
+                {unassignedStudents.length > 0 && (
+                  <span className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-200 px-2 py-1 rounded-full font-medium">
+                    {unassignedStudents.length} unassigned
+                  </span>
+                )}
+                {groups.length < 5 && (
+                  <button onClick={addGroup} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-semibold transition">
+                    + Add Group
+                  </button>
                 )}
               </div>
             </div>
 
-            {/* Level list quick picker */}
-            <div className="mt-6 overflow-x-auto">
-              <div className="flex gap-3 min-w-max">
-                {levelLists.map(list => (
+            <div className="space-y-3">
+              {groups.map(group => (
+                <div key={group.id} className="border border-gray-200 rounded-2xl overflow-hidden">
+                  {/* Group colour bar */}
+                  <div className={`${group.color} text-white px-4 py-2.5 flex items-center justify-between`}>
+                    <input
+                      type="text"
+                      value={group.name}
+                      onChange={e => updateGroupName(group.id, e.target.value)}
+                      className="bg-transparent font-bold text-base border-none outline-none w-40"
+                    />
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm opacity-90">{group.students.length} students</span>
+                      <button onClick={() => removeGroup(group.id)} className="text-white/70 hover:text-white text-xl leading-none">×</button>
+                    </div>
+                  </div>
+
+                  {/* Group body — 3 columns */}
+                  <div className="p-3 grid md:grid-cols-3 gap-4">
+
+                    {/* Students */}
+                    <div>
+                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Students</div>
+                      <div className="space-y-1 min-h-[2.5rem]">
+                        {group.students.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">None assigned yet</p>
+                        ) : (
+                          group.students.map(s => (
+                            <div key={s.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-2 py-1 text-xs">
+                              <span className="text-gray-700">{s.firstName} {s.lastName}</span>
+                              <button onClick={() => assignStudentToGroup(s.id, null)} className="text-red-400 hover:text-red-600 ml-1">×</button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Lists */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Lists</div>
+                        <div className="flex gap-1">
+                          <button onClick={() => printLists(group.assignedLists)} disabled={group.assignedLists.length === 0} title="Print lists" className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-lg disabled:opacity-40 hover:bg-blue-100">🖨️</button>
+                          <button onClick={() => printPassages(group.assignedLists)} disabled={group.assignedLists.length === 0} title="Print passages" className="text-xs bg-purple-50 text-purple-600 border border-purple-100 px-1.5 py-0.5 rounded-lg disabled:opacity-40 hover:bg-purple-100">📚</button>
+                        </div>
+                      </div>
+                      <div className="space-y-1 mb-2">
+                        {group.assignedLists.map(listId => {
+                          const list = listsWithPassages.find(l => l.id === listId);
+                          if (!list) return null;
+                          return (
+                            <div key={listId} className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-2 py-1 text-xs">
+                              <span className="text-blue-700 font-medium truncate">{list.id} — {list.feature}</span>
+                              <button onClick={() => assignListsToGroup(group.id, group.assignedLists.filter(id => id !== listId))} className="text-red-400 hover:text-red-600 ml-1 flex-shrink-0">×</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <select
+                        onChange={e => {
+                          if (e.target.value && !group.assignedLists.includes(e.target.value)) {
+                            group.assignedLists.length < 5
+                              ? assignListsToGroup(group.id, [...group.assignedLists, e.target.value])
+                              : showToast('Maximum 5 lists per group', 'error');
+                          }
+                          e.target.value = '';
+                        }}
+                        className="w-full border border-gray-200 rounded-xl text-xs p-1.5 bg-white focus:ring-1 focus:ring-indigo-300"
+                        defaultValue=""
+                      >
+                        <option value="">+ Add list…</option>
+                        {['1','2','3','4'].map(lvl => {
+                          const opts = listsWithPassages.filter(l => l.id.startsWith(`${lvl}.`) && !group.assignedLists.includes(l.id));
+                          if (!opts.length) return null;
+                          return (
+                            <optgroup key={lvl} label={`Level ${lvl}`}>
+                              {opts.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            </optgroup>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {/* Activity */}
+                    <div>
+                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Activity</div>
+                      {group.assignedActivity ? (
+                        <div
+                          className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl p-2 cursor-pointer hover:bg-green-100"
+                          onClick={() => setShowActivityInstructions(ACTIVITIES.find(a => a.id === group.assignedActivity))}
+                        >
+                          <span className="text-lg">{ACTIVITIES.find(a => a.id === group.assignedActivity)?.icon}</span>
+                          <span className="text-xs font-medium text-green-800 flex-1 leading-tight">{ACTIVITIES.find(a => a.id === group.assignedActivity)?.name}</span>
+                          <button onClick={e => { e.stopPropagation(); assignActivityToGroup(group.id, null); }} className="text-red-400 hover:text-red-600 text-xs">×</button>
+                        </div>
+                      ) : (
+                        <select
+                          onChange={e => e.target.value && assignActivityToGroup(group.id, e.target.value)}
+                          className="w-full border border-gray-200 rounded-xl text-xs p-1.5 bg-white focus:ring-1 focus:ring-indigo-300"
+                          defaultValue=""
+                        >
+                          <option value="">Assign activity…</option>
+                          {ACTIVITIES.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {groups.length === 0 && (
+                <p className="text-gray-400 text-sm italic text-center py-8">No groups yet — click "+ Add Group" to get started.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── READING PASSAGE ── */}
+      {selectedList && selectedList.texts?.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100">
+            <div>
+              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">📖 Connected Reading</h2>
+              <p className="text-xs text-gray-500 mt-0.5">{selectedList.name} · {selectedList.passage?.level}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Text type pills */}
+              <div className="flex gap-1 flex-wrap">
+                {TEXT_TYPES.filter(type => selectedList.texts.some(t => t.type === type.id)).map(type => (
                   <button
-                    key={list.id}
-                    onClick={() => setSelectedListId(list.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-semibold transition ${selectedListId === list.id ? 'bg-white text-indigo-700 shadow-lg' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                    key={type.id}
+                    onClick={() => setSelectedTextType(type.id)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold transition ${selectedTextType === type.id ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                   >
-                    {list.name.replace('Level ', 'L').split(' - ')[0]}
+                    {type.icon} {type.name}
                   </button>
                 ))}
               </div>
+              {/* Font size */}
+              <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-2 py-1">
+                <button onClick={() => setPassageFontSize(s => Math.max(s - 2, 12))} className="text-gray-600 hover:text-gray-800 text-xs font-bold px-1">A−</button>
+                <span className="text-xs text-gray-400 w-8 text-center">{passageFontSize}px</span>
+                <button onClick={() => setPassageFontSize(s => Math.min(s + 2, 28))} className="text-gray-600 hover:text-gray-800 text-sm font-bold px-1">A+</button>
+              </div>
+              <button
+                onClick={() => setExpandedPassage(true)}
+                className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-xl hover:bg-indigo-100 font-semibold"
+              >
+                ⛶ Full screen
+              </button>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Coaching cards */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="bg-white rounded-2xl shadow-lg border border-indigo-100 p-6 space-y-4">
-          <h2 className="text-xl font-bold text-indigo-700 flex items-center gap-2">
-            <span>🎙️</span> Fluency Mini-Lessons
-          </h2>
-          <p className="text-sm text-gray-600">Sprinkle one of these quick routines before students tackle their connected passage.</p>
-          <div className="space-y-3">
-            {FLUENCY_MOMENTS.map(moment => (
-              <div key={moment.title} className={`bg-gradient-to-r ${moment.color} text-white rounded-xl p-4 shadow`}> 
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{moment.icon}</span>
-                  <div>
-                    <h3 className="font-semibold">{moment.title}</h3>
-                    <p className="text-sm opacity-90">{moment.description}</p>
-                  </div>
-                </div>
+          {selectedText && (
+            <div className="p-5">
+              <div className="flex items-baseline gap-3 mb-3">
+                <h3 className="text-lg font-bold text-gray-800">{selectedText.title}</h3>
+                <span className="text-sm text-gray-400">{selectedText.wordCount} words</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg border border-purple-100 p-6 space-y-4">
-          <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
-            <span>🎮</span> Engagement Games
-          </h2>
-          <p className="text-sm text-gray-600">Keep practice joyful while reinforcing expression, pacing, and phrasing.</p>
-          <div className="space-y-3">
-            {FLUENCY_GAMES.map(game => (
-              <div key={game.title} className={`border-2 ${game.color} rounded-xl p-4`}> 
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">{game.icon}</span>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-sm uppercase tracking-wide font-semibold">{game.subtitle}</p>
-                      <h3 className="text-lg font-bold">{game.title}</h3>
-                    </div>
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      {game.steps.map((step, index) => (
-                        <li key={index}>{step}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+              <div
+                className="text-gray-700 leading-relaxed whitespace-pre-wrap bg-gray-50 rounded-2xl p-4 max-h-64 overflow-y-auto"
+                style={{ fontSize: `${passageFontSize}px` }}
+              >
+                {selectedText.content}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg border border-emerald-100 p-6 space-y-5">
-          <div>
-            <h2 className="text-xl font-bold text-emerald-700 flex items-center gap-2">
-              <span>📊</span> Assess & Reflect
-            </h2>
-            <p className="text-sm text-gray-600">Capture a quick snapshot of student growth after each reading.</p>
-          </div>
-          <div className="space-y-3">
-            {ASSESSMENT_TIPS.map(tip => (
-              <div key={tip.title} className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                <h3 className="text-sm font-semibold text-emerald-800">{tip.title}</h3>
-                <p className="text-sm text-emerald-700">{tip.detail}</p>
-              </div>
-            ))}
-          </div>
-          <div className="bg-emerald-100 border border-emerald-200 rounded-xl p-4 space-y-2">
-            <h4 className="text-sm font-bold text-emerald-900 flex items-center gap-2">
-              <span>❓</span> Comprehension Prompts
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(QUESTION_TYPES).map(([key, info]) => (
-                <div key={key} className={`border ${info.chip} rounded-lg px-2 py-2`}> 
-                  <div className="flex items-center gap-2 text-sm font-semibold">
-                    <span>{info.icon}</span>
-                    <span>{info.name}</span>
-                  </div>
-                  <p className="text-xs mt-1">{info.description}</p>
-                </div>
-              ))}
             </div>
-          </div>
+          )}
+        </div>
+      )}
+
+      {/* ── SUGGESTED ACTIVITIES ── */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">💡 Suggested Activities</h2>
+          <p className="text-sm text-gray-500 mt-1">Click any card to preview instructions, then assign it to a group from the group's Activity dropdown above.</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {ACTIVITIES.map(activity => (
+            <button
+              key={activity.id}
+              onClick={() => setShowActivityInstructions(activity)}
+              className="border border-gray-200 rounded-2xl p-3 text-center hover:border-indigo-300 hover:shadow-sm hover:bg-indigo-50 transition-all group"
+            >
+              <div className="text-3xl mb-2">{activity.icon}</div>
+              <div className="text-xs font-semibold text-gray-700 leading-tight group-hover:text-indigo-700">{activity.name}</div>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* List Selector Modal */}
+      {/* ── EXPANDED PASSAGE MODAL ── */}
+      {expandedPassage && selectedText && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b">
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">{selectedText.title}</h2>
+                <p className="text-sm text-gray-500">{selectedList?.passage?.level} · {selectedText.type} · {selectedText.wordCount} words</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-gray-100 rounded-xl px-2 py-1">
+                  <button onClick={() => setPassageFontSize(s => Math.max(s - 2, 12))} className="text-gray-600 text-xs font-bold px-1">A−</button>
+                  <span className="text-xs text-gray-400 w-8 text-center">{passageFontSize}px</span>
+                  <button onClick={() => setPassageFontSize(s => Math.min(s + 2, 30))} className="text-gray-600 text-sm font-bold px-1">A+</button>
+                </div>
+                <button onClick={() => setExpandedPassage(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="text-gray-800 leading-loose whitespace-pre-wrap" style={{ fontSize: `${passageFontSize}px` }}>
+                {selectedText.content}
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
+              <p className="text-xs text-indigo-700 font-medium">Spelling focus: {selectedList?.feature} · Words: {selectedList?.words?.join(', ')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── BROWSE LISTS MODAL ── */}
       {showListSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Browse Spelling Lists</h2>
-                <button
-                  onClick={() => {
-                    setShowListSelector(false);
-                    setViewingList(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[88vh] flex flex-col shadow-2xl">
+            <div className="p-5 border-b flex items-center justify-between flex-shrink-0">
+              <h2 className="text-xl font-bold text-gray-800">Browse Spelling Lists</h2>
+              <button onClick={() => { setShowListSelector(false); setViewingList(null); }} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
             </div>
-            <div className="p-6">
+            <div className="p-5 overflow-y-auto flex-1">
               {viewingList ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-5">
+                  <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="text-2xl font-bold text-gray-800">{viewingList.name}</h3>
-                      <p className="text-blue-600 italic">{viewingList.feature}</p>
-                      <p className="text-gray-600">{viewingList.words.length} words</p>
+                      <h3 className="text-xl font-bold text-gray-800">{viewingList.name}</h3>
+                      <p className="text-blue-600 italic text-sm">{viewingList.feature}</p>
+                      <p className="text-gray-500 text-sm">{viewingList.words.length} words</p>
                     </div>
-                    <button
-                      onClick={() => setViewingList(null)}
-                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
-                    >
-                      ← Back to Lists
-                    </button>
+                    <button onClick={() => setViewingList(null)} className="flex-shrink-0 bg-gray-100 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-200 text-sm font-medium">← Back</button>
                   </div>
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h4 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                        <span>🔡</span> Word List
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {viewingList.words.map((word, index) => (
-                          <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-                            <span className="text-base font-bold text-gray-800">{word}</span>
-                          </div>
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div className="bg-gray-50 rounded-2xl p-5">
+                      <h4 className="font-semibold text-gray-700 mb-3">🔡 Word List</h4>
+                      <div className="grid grid-cols-3 gap-2">
+                        {viewingList.words.map((word, i) => (
+                          <div key={i} className="bg-white border border-gray-200 rounded-xl p-2 text-center text-sm font-bold text-gray-800">{word}</div>
                         ))}
                       </div>
                     </div>
-                    <div className="bg-indigo-50 rounded-xl p-6 border border-indigo-200">
-                      <h4 className="text-lg font-semibold text-indigo-700 mb-3 flex items-center gap-2">
-                        <span>📖</span> Connected Passages
-                      </h4>
+                    <div className="bg-indigo-50 rounded-2xl p-5 border border-indigo-100">
+                      <h4 className="font-semibold text-indigo-700 mb-3">📖 Connected Passages</h4>
                       {viewingList.passage ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           <p className="text-sm font-semibold text-indigo-700">{viewingList.passage.level}</p>
-                          <ul className="space-y-2">
-                            {viewingList.passage.texts.map(text => (
-                              <li key={`${text.type}-${text.title}`} className="bg-white rounded-lg p-3 border border-indigo-100">
-                                <div className="flex items-center justify-between">
-                                  <div className="font-semibold text-gray-800">{text.title}</div>
-                                  <span className="text-xs uppercase tracking-wide text-indigo-600">{text.type}</span>
-                                </div>
-                                <p className="text-xs text-gray-600 mt-1">{text.wordCount} words</p>
-                              </li>
-                            ))}
-                          </ul>
+                          {viewingList.passage.texts.map(text => (
+                            <div key={`${text.type}-${text.title}`} className="bg-white rounded-xl p-3 border border-indigo-100">
+                              <div className="flex items-center justify-between">
+                                <div className="font-semibold text-gray-800 text-sm">{text.title}</div>
+                                <span className="text-xs uppercase tracking-wide text-indigo-600">{text.type}</span>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">{text.wordCount} words</p>
+                            </div>
+                          ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-indigo-700">No aligned passage saved for this list yet.</p>
+                        <p className="text-sm text-indigo-600">No passage for this list yet.</p>
                       )}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {listsWithPassages.map(list => (
-                    <button
-                      key={list.id}
-                      onClick={() => setViewingList(list)}
-                      className="p-3 rounded-lg border-2 border-gray-200 hover:border-blue-300 hover:bg-blue-50 text-left transition-all"
-                    >
-                      <div className="font-bold text-sm">{list.name}</div>
-                      <div className="text-xs text-blue-600 italic mb-1">{list.feature}</div>
-                      <div className="text-xs text-gray-600">{list.words.length} words</div>
-                      <div className="text-xs mt-1">
-                        {list.words.slice(0, 3).join(', ')}...
-                      </div>
-                      {list.passage && (
-                        <div className="text-[11px] text-indigo-600 mt-1">
-                          📖 {list.passage.level}
-                        </div>
-                      )}
-                    </button>
-                  ))}
+                <div>
+                  <div className="flex gap-1 mb-4 bg-gray-100 rounded-2xl p-1">
+                    {['1','2','3','4'].map(lvl => (
+                      <button
+                        key={lvl}
+                        onClick={() => setSelectedLevel(lvl)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-semibold transition ${selectedLevel === lvl ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        Level {lvl}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {levelLists.map(list => (
+                      <button
+                        key={list.id}
+                        onClick={() => setViewingList(list)}
+                        className="p-3 rounded-2xl border-2 border-gray-100 hover:border-indigo-200 hover:bg-indigo-50 text-left transition-all"
+                      >
+                        <div className="font-bold text-sm text-gray-800">{list.id}</div>
+                        <div className="text-xs text-gray-500 mt-0.5 leading-tight">{list.feature}</div>
+                        <div className="text-xs text-indigo-600 mt-1.5">{list.words.length} words</div>
+                        {list.passage && <div className="text-xs text-purple-500 mt-0.5">📖 Passage available</div>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1516,261 +1599,28 @@ const SpellingProgram = ({
         </div>
       )}
 
-      {/* Unassigned Students */}
-      {unassignedStudents.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <h3 className="font-bold text-yellow-800 mb-3">👤 Unassigned Students ({unassignedStudents.length})</h3>
-          <p className="text-sm text-yellow-700 mb-3">Click "Assign Students" above to quickly assign students to groups</p>
-          <div className="flex flex-wrap gap-2">
-            {unassignedStudents.slice(0, 5).map(student => (
-              <div key={student.id} className="bg-white border border-yellow-300 rounded-lg p-2">
-                <span className="text-sm font-medium">{student.firstName} {student.lastName}</span>
-              </div>
-            ))}
-            {unassignedStudents.length > 5 && (
-              <div className="bg-white border border-yellow-300 rounded-lg p-2">
-                <span className="text-sm text-gray-500">+{unassignedStudents.length - 5} more</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Groups Display */}
-      <div className={`grid gap-4 ${
-        groups.length === 1 ? 'grid-cols-1' :
-        groups.length === 2 ? 'grid-cols-2' :
-        groups.length === 3 ? 'grid-cols-3' :
-        groups.length === 4 ? 'grid-cols-4' :
-        'grid-cols-5'
-      }`}>
-        {groups.map(group => (
-          <div key={group.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200">
-            {/* Group Header */}
-            <div className={`${group.color} text-white p-3 rounded-t-xl`}>
-              <div className="flex items-center justify-between">
-                <input
-                  type="text"
-                  value={group.name}
-                  onChange={(e) => updateGroupName(group.id, e.target.value)}
-                  className={`bg-transparent text-white font-bold border-none outline-none ${
-                    groups.length >= 4 ? 'text-sm' : 'text-lg'
-                  }`}
-                />
-                <button
-                  onClick={() => removeGroup(group.id)}
-                  className="text-white hover:text-red-200 text-lg"
-                >
-                  ×
-                </button>
-              </div>
-              <p className={`opacity-90 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
-                {group.students.length} students
-              </p>
-            </div>
-
-            <div className={`${groups.length >= 4 ? 'p-3' : 'p-4'}`}>
-              {/* Students */}
-              <div className="mb-3">
-                <h4 className={`font-bold text-gray-700 mb-2 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
-                  Students:
-                </h4>
-                <div className="space-y-1 max-h-24 overflow-y-auto">
-                  {group.students.map(student => (
-                    <div key={student.id} className="flex items-center justify-between bg-gray-50 p-1 rounded">
-                      <span className={`${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
-                        {student.firstName} {student.lastName}
-                      </span>
-                      <button
-                        onClick={() => assignStudentToGroup(student.id, null)}
-                        className="text-red-500 hover:text-red-700 text-xs"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                  {group.students.length === 0 && (
-                    <p className={`text-gray-500 italic ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
-                      No students assigned
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Assigned Lists */}
-              <div className="mb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className={`font-bold text-gray-700 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
-                    Lists:
-                  </h4>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => printLists(group.assignedLists)}
-                      disabled={group.assignedLists.length === 0}
-                      className={`bg-blue-500 text-white rounded disabled:opacity-50 hover:bg-blue-600 ${
-                        groups.length >= 4 ? 'text-xs px-1 py-1' : 'text-xs px-2 py-1'
-                      }`}
-                    >
-                      🖨️
-                    </button>
-                    <button
-                      onClick={() => printPassages(group.assignedLists)}
-                      disabled={group.assignedLists.length === 0}
-                      className={`bg-purple-500 text-white rounded disabled:opacity-50 hover:bg-purple-600 ${
-                        groups.length >= 4 ? 'text-xs px-1 py-1' : 'text-xs px-2 py-1'
-                      }`}
-                    >
-                      📚
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="space-y-1 mb-2 max-h-32 overflow-y-auto">
-                  {group.assignedLists.map(listId => {
-                    const list = listsWithPassages.find(l => l.id === listId);
-                    if (!list) return null;
-                    const passage = list.passage;
-                    return (
-                      <div key={listId} className="bg-gradient-to-r from-blue-50 via-sky-50 to-indigo-50 border border-blue-200 rounded p-2 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className={`font-medium text-blue-800 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
-                            {list.name}
-                          </span>
-                          <button
-                            onClick={() => assignListsToGroup(group.id, group.assignedLists.filter(id => id !== listId))}
-                            className="text-red-500 hover:text-red-700 text-xs"
-                          >
-                            ×
-                          </button>
-                        </div>
-                        <div className={`text-blue-600 italic ${groups.length >= 5 ? 'text-xs' : 'text-xs'}`}>
-                          {list.feature}
-                        </div>
-                        <div className={`text-blue-700 ${groups.length >= 5 ? 'text-[11px]' : 'text-xs'}`}>
-                          {groups.length >= 5 ? `${list.words.slice(0, 3).join(', ')}...` : list.words.join(', ')}
-                        </div>
-                        {passage && (
-                          <div className={`text-indigo-700 ${groups.length >= 5 ? 'text-[11px]' : 'text-xs'}`}>
-                            📖 {passage.level}{passage.texts?.[0] ? ` – ${passage.texts[0].title}` : ''}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <select
-                  onChange={(e) => {
-                    if (e.target.value && !group.assignedLists.includes(e.target.value)) {
-                      if (group.assignedLists.length < 5) {
-                        assignListsToGroup(group.id, [...group.assignedLists, e.target.value]);
-                      } else {
-                        showToast('Maximum 5 lists per group', 'error');
-                      }
-                    }
-                    e.target.value = '';
-                  }}
-                  className={`w-full border border-gray-300 rounded p-1 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}
-                  defaultValue=""
-                >
-                  <option value="">Add list...</option>
-                  {listsWithPassages.filter(list => !group.assignedLists.includes(list.id)).map(list => (
-                    <option key={list.id} value={list.id}>{list.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Assigned Activity */}
-              <div>
-                <h4 className={`font-bold text-gray-700 mb-2 ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>
-                  Activity:
-                </h4>
-                {group.assignedActivity ? (
-                  <div 
-                    className="flex items-center justify-between bg-green-50 border border-green-200 rounded p-2 cursor-pointer hover:bg-green-100 transition-colors"
-                    onClick={() => setShowActivityInstructions(ACTIVITIES.find(a => a.id === group.assignedActivity))}
-                  >
-                    <div className="flex items-center">
-                      <span className={`mr-2 ${groups.length >= 4 ? 'text-lg' : 'text-xl'}`}>
-                        {ACTIVITIES.find(a => a.id === group.assignedActivity)?.icon}
-                      </span>
-                      <span className={`font-medium text-green-800 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}>
-                        {ACTIVITIES.find(a => a.id === group.assignedActivity)?.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        assignActivityToGroup(group.id, null);
-                      }}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <select
-                    onChange={(e) => e.target.value && assignActivityToGroup(group.id, e.target.value)}
-                    className={`w-full border border-gray-300 rounded p-1 ${groups.length >= 4 ? 'text-xs' : 'text-sm'}`}
-                    defaultValue=""
-                  >
-                    <option value="">Select activity...</option>
-                    {ACTIVITIES.map(activity => (
-                      <option key={activity.id} value={activity.id}>
-                        {activity.icon} {activity.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Add Group Button */}
-        {groups.length < 5 && (
-          <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center min-h-[300px]">
-            <button
-              onClick={addGroup}
-              className="text-gray-600 hover:text-gray-800 text-center"
-            >
-              <div className={`mb-2 ${groups.length >= 4 ? 'text-2xl' : 'text-4xl'}`}>+</div>
-              <div className={`font-bold ${groups.length >= 4 ? 'text-sm' : 'text-base'}`}>Add Group</div>
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Student Assignment Modal */}
+      {/* ── STUDENT ASSIGNMENT MODAL ── */}
       {showStudentAssignment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">👥 Assign Students to Groups</h2>
-                <button
-                  onClick={() => setShowStudentAssignment(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[88vh] flex flex-col shadow-2xl">
+            <div className="p-5 border-b flex items-center justify-between flex-shrink-0">
+              <h2 className="text-xl font-bold text-gray-800">👥 Assign Students to Groups</h2>
+              <button onClick={() => setShowStudentAssignment(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
             </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Available Students */}
+            <div className="p-5 overflow-y-auto flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <h3 className="text-lg font-bold mb-4">Available Students</h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <h3 className="text-base font-bold mb-3 text-gray-800">Unassigned Students ({unassignedStudents.length})</h3>
+                  <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                     {unassignedStudents.map(student => (
-                      <div key={student.id} className="bg-gray-50 border rounded-lg p-3">
-                        <div className="font-medium">{student.firstName} {student.lastName}</div>
-                        <div className="flex gap-2 mt-2">
+                      <div key={student.id} className="bg-gray-50 border border-gray-200 rounded-2xl p-3">
+                        <div className="font-medium text-sm text-gray-800">{student.firstName} {student.lastName}</div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
                           {groups.map(group => (
                             <button
                               key={group.id}
                               onClick={() => assignStudentToGroup(student.id, group.id)}
-                              className={`${group.color} text-white text-xs px-3 py-1 rounded hover:opacity-80`}
+                              className={`${group.color} text-white text-xs px-2.5 py-1 rounded-lg hover:opacity-80 transition`}
                             >
                               → {group.name}
                             </button>
@@ -1778,36 +1628,23 @@ const SpellingProgram = ({
                         </div>
                       </div>
                     ))}
-                    {unassignedStudents.length === 0 && (
-                      <p className="text-gray-500 italic">All students are assigned to groups!</p>
-                    )}
+                    {unassignedStudents.length === 0 && <p className="text-gray-400 italic text-sm">All students are assigned!</p>}
                   </div>
                 </div>
-
-                {/* Groups with Students */}
                 <div>
-                  <h3 className="text-lg font-bold mb-4">Groups</h3>
-                  <div className="space-y-4 max-h-64 overflow-y-auto">
+                  <h3 className="text-base font-bold mb-3 text-gray-800">Groups</h3>
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                     {groups.map(group => (
-                      <div key={group.id} className="border rounded-lg">
-                        <div className={`${group.color} text-white p-2 rounded-t-lg`}>
-                          <h4 className="font-bold">{group.name} ({group.students.length})</h4>
-                        </div>
+                      <div key={group.id} className="border border-gray-200 rounded-2xl overflow-hidden">
+                        <div className={`${group.color} text-white px-3 py-2 font-bold text-sm`}>{group.name} ({group.students.length})</div>
                         <div className="p-2 space-y-1">
                           {group.students.map(student => (
-                            <div key={student.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                              <span className="text-sm">{student.firstName} {student.lastName}</span>
-                              <button
-                                onClick={() => assignStudentToGroup(student.id, null)}
-                                className="text-red-500 hover:text-red-700 text-xs"
-                              >
-                                Remove
-                              </button>
+                            <div key={student.id} className="flex items-center justify-between bg-gray-50 px-3 py-1.5 rounded-xl">
+                              <span className="text-sm text-gray-700">{student.firstName} {student.lastName}</span>
+                              <button onClick={() => assignStudentToGroup(student.id, null)} className="text-red-400 hover:text-red-600 text-xs font-medium">Remove</button>
                             </div>
                           ))}
-                          {group.students.length === 0 && (
-                            <p className="text-gray-400 text-sm italic">No students assigned</p>
-                          )}
+                          {group.students.length === 0 && <p className="text-gray-400 text-xs italic px-2">No students assigned</p>}
                         </div>
                       </div>
                     ))}
@@ -1819,35 +1656,24 @@ const SpellingProgram = ({
         </div>
       )}
 
-      {/* Activity Instructions Modal */}
+      {/* ── ACTIVITY INSTRUCTIONS MODAL ── */}
       {showActivityInstructions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-            <div className={`${showActivityInstructions.color} text-white p-6 rounded-t-xl`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-4xl mr-4">{showActivityInstructions.icon}</span>
-                  <h2 className="text-2xl font-bold">{showActivityInstructions.name}</h2>
-                </div>
-                <button
-                  onClick={() => setShowActivityInstructions(null)}
-                  className="text-white hover:text-gray-200 text-2xl"
-                >
-                  ×
-                </button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl">
+            <div className={`${showActivityInstructions.color} text-white p-5 rounded-t-2xl flex items-center justify-between flex-shrink-0`}>
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{showActivityInstructions.icon}</span>
+                <h2 className="text-xl font-bold">{showActivityInstructions.name}</h2>
               </div>
+              <button onClick={() => setShowActivityInstructions(null)} className="text-white/70 hover:text-white text-2xl leading-none">×</button>
             </div>
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-4">📋 Instructions for Students:</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans">
-                  {showActivityInstructions.instructions}
-                </pre>
+            <div className="p-5 overflow-y-auto flex-1">
+              <h3 className="font-bold mb-3 text-gray-800">📋 Instructions for Students:</h3>
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans text-sm">{showActivityInstructions.instructions}</pre>
               </div>
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  💡 <strong>Teacher Tip:</strong> You can display these instructions to the class or print them out for student reference.
-                </p>
+              <div className="mt-4 p-3 bg-blue-50 rounded-2xl">
+                <p className="text-sm text-blue-800">💡 <strong>Teacher Tip:</strong> Display these instructions to the class or print them for student reference.</p>
               </div>
             </div>
           </div>
