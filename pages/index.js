@@ -650,7 +650,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
                   title: 'Integer Ocean',
@@ -681,6 +681,16 @@ export default function Home() {
                   file: '/free-resources/Video_Game_Comprehension.pdf',
                   bg: '#F0FDF4',
                   border: '#A7F3D0',
+                },
+                {
+                  title: 'Zones of Regulation',
+                  subtitle: 'Social-Emotional Learning',
+                  desc: 'Help students identify and manage their emotions using the four colour zones framework.',
+                  gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                  icon: '🧠',
+                  file: '/free-resources/Zones_of_Regulation.pdf',
+                  bg: '#FFFBEB',
+                  border: '#FDE68A',
                 },
               ].map((resource, i) => (
                 <div key={i}

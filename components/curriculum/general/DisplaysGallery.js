@@ -64,7 +64,12 @@ const displayCategories = [
           { name: 'Spelling - Rhyming', file: 'Spelling/Rhyming.png' },
           { name: 'Spelling - Sound It Out', file: 'Spelling/SoundItOut.png' },
           { name: 'Spelling Rule - Double the Final Consonant', file: 'Spelling/Spelling Rule Double the final consonant.png' },
-          { name: 'Spelling Rule - Drop the E', file: 'Spelling/Spelling Rule Drop the e.png' }
+          { name: 'Spelling Rule - Drop the E', file: 'Spelling/Spelling Rule Drop the e.png' },
+          { name: 'Spelling Rule 1', file: 'Spelling/Spelling Rule 1.png' },
+          { name: 'Spelling Rule 2', file: 'Spelling/Spelling Rule 2.png' },
+          { name: 'Spelling Rule 3', file: 'Spelling/Spelling Rule 3.png' },
+          { name: 'Spelling Rule 4', file: 'Spelling/Spelling Rule 4.png' },
+          { name: 'Spelling Rule 5', file: 'Spelling/Spelling Rule 5.png' }
         ]
       },
       {
@@ -224,6 +229,16 @@ const displayCategories = [
           { name: 'Simple Sentence Mat', file: 'Simple Sentence Mat.png' },
           { name: 'Verb Mat', file: 'Verb Mat.png' },
           { name: 'Word of the Day Mat', file: 'Word of the Day Mat.png' }
+        ]
+      },
+      {
+        name: 'Young Readers',
+        images: [
+          { name: 'Young Readers - Bunny', file: 'YoungReaders/Young Readers 1.png' },
+          { name: 'Young Readers - Elephant', file: 'YoungReaders/Young Readers 2.png' },
+          { name: 'Young Readers - Giraffe', file: 'YoungReaders/Young Readers 3.png' },
+          { name: 'Young Readers - Dolphin', file: 'YoungReaders/Young Readers 4.png' },
+          { name: 'Young Readers - Penguin', file: 'YoungReaders/Young Readers 5.png' }
         ]
       }
     ]
