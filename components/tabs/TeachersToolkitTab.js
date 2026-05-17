@@ -1,8 +1,8 @@
-// components/tabs/TeachersToolkitTab.js - UPDATED TOOLKIT GRID
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+// components/tabs/TeachersToolkitTab.js
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { DEFAULT_NOTICE_ITEMS } from '../../services/noticeBoard';
 
-// Import tool components from the tools folder
+// Classroom management tools
 import StudentHelpQueue from '../tools/StudentHelpQueue';
 import GroupMaker from '../tools/GroupMaker';
 import NamePicker from '../tools/NamePicker';
@@ -14,6 +14,17 @@ import TimetableCreator from '../tools/TimetableCreator';
 import BrainBreaks from '../tools/BrainBreaks';
 import VisualChecklist from '../tools/VisualChecklist';
 import ReportCommentGenerator from '../tools/ReportCommentGenerator';
+
+// Curriculum program sections (lazy-loaded)
+const LiteracySection    = lazy(() => import('../curriculum/sections/LiteracySection'));
+const MathematicsSection = lazy(() => import('../curriculum/sections/MathematicsSection'));
+const ScienceSection     = lazy(() => import('../curriculum/sections/ScienceSection'));
+
+const SectionLoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-[300px]">
+    <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+  </div>
+);
 
 // ===============================================
 // NOTICE BOARD MANAGER (inline — no page navigation)
@@ -688,14 +699,49 @@ const AnalyticsComponent = ({ students }) => {
 // ===============================================
 // MAIN TEACHERS TOOLKIT COMPONENT
 // ===============================================
+// Curriculum subject cards for the Teaching Programs section
+const CURRICULUM_SUBJECTS = [
+  {
+    id: 'english',
+    name: 'English & Literacy',
+    emoji: '📚',
+    gradient: 'from-blue-500 to-indigo-600',
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    description: 'Spelling programs, reading, writing, phonics & vocabulary',
+    highlights: ['Spelling & Fluency Studio', 'Reading Comprehension', 'Morphology Master', 'Vocabulary Builder'],
+  },
+  {
+    id: 'mathematics',
+    name: 'Mathematics',
+    emoji: '🔢',
+    gradient: 'from-emerald-500 to-teal-600',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    description: 'Number, geometry, measurement, times tables & daily challenges',
+    highlights: ['Math Mentals', 'Times Tables Master', 'Interactive Clock', 'Daily Challenges'],
+  },
+  {
+    id: 'science',
+    name: 'Science',
+    emoji: '🔬',
+    gradient: 'from-violet-500 to-purple-600',
+    bg: 'bg-violet-50',
+    border: 'border-violet-200',
+    description: 'Space exploration, life science, food chains & investigations',
+    highlights: ['Solar System Explorer', 'Food Chain Builder'],
+  },
+];
+
 const TeachersToolkitTab = ({
   students,
+  showToast,
   onUpdateStudent,
   onAwardXP,
   onAwardCoins,
   saveClassroomDataToFirebase,
-  saveToolkitData, // NEW: For saving toolkit data to Firebase
-  loadedData = {}, // NEW: For loading toolkit data from Firebase
+  saveToolkitData,
+  loadedData = {},
   currentClassId,
   getAvatarImage,
   calculateAvatarLevel,
@@ -703,14 +749,11 @@ const TeachersToolkitTab = ({
   groupData,
   teacherId
 }) => {
-  const [activeToolkitTab, setActiveToolkitTab] = useState(null);
-  const [notifications, setNotifications] = useState([]);
-  const [analytics, setAnalytics] = useState({ totalStudents: students.length });
-  const [timerSettings, setTimerSettings] = useState({
-    isRunning: false,
-    timeLeft: 0,
-    mode: 'countdown'
-  });
+  const [activeSection, setActiveSection]             = useState('classroom'); // 'classroom' | 'curriculum'
+  const [activeToolkitTab, setActiveToolkitTab]       = useState(null);
+  const [activeCurriculumSubject, setActiveCurriculumSubject] = useState(null); // 'english' | 'mathematics' | 'science'
+  const [notifications, setNotifications]             = useState([]);
+  const [timerSettings, setTimerSettings]             = useState({ isRunning: false, timeLeft: 0, mode: 'countdown' });
 
   const showNotification = (message, type = 'success') => {
     const id = Date.now();
@@ -720,16 +763,42 @@ const TeachersToolkitTab = ({
     }, 3000);
   };
 
-  // If a specific tool is active, render it
+  // ── Curriculum Programs: subject open ─────────────────────────────────────
+  if (activeSection === 'curriculum' && activeCurriculumSubject) {
+    const curriculumProps = {
+      onBack: () => setActiveCurriculumSubject(null),
+      showToast: showToast || showNotification,
+      students,
+      saveData: saveToolkitData,
+      loadedData,
+    };
+    return (
+      <div className="space-y-4">
+        <button
+          onClick={() => setActiveCurriculumSubject(null)}
+          className="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 transition font-semibold text-sm shadow-sm"
+        >
+          ← Back to Teaching Programs
+        </button>
+        <Suspense fallback={<SectionLoadingSpinner />}>
+          {activeCurriculumSubject === 'english'     && <LiteracySection    {...curriculumProps} />}
+          {activeCurriculumSubject === 'mathematics' && <MathematicsSection {...curriculumProps} />}
+          {activeCurriculumSubject === 'science'     && <ScienceSection     {...curriculumProps} />}
+        </Suspense>
+      </div>
+    );
+  }
+
+  // ── Classroom tool active ─────────────────────────────────────────────────
   if (activeToolkitTab) {
     return (
       <div className="space-y-6">
         {/* Back button */}
         <button
           onClick={() => setActiveToolkitTab(null)}
-          className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-all font-semibold flex items-center gap-2"
+          className="bg-gray-100 border border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-200 transition font-semibold flex items-center gap-2 text-sm"
         >
-          ← Back to Toolkit
+          ← Back to Teaching Tools
         </button>
 
         {/* Render the selected tool */}
@@ -833,32 +902,73 @@ const TeachersToolkitTab = ({
     );
   }
 
-  // Main toolkit interface with all tools as big buttons
+  // ── Main hub ──────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       {/* Notifications */}
       {notifications.map(notification => (
-        <AutoNotification 
-          key={notification.id} 
-          message={notification.message} 
-          type={notification.type} 
+        <AutoNotification
+          key={notification.id}
+          message={notification.message}
+          type={notification.type}
         />
       ))}
 
       {/* Header */}
-      <div className="text-center bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-        <div className="relative z-10">
-          <h2 className="text-5xl font-bold mb-4 flex items-center justify-center">
-            <span className="text-4xl mr-4 animate-bounce">🛠️</span>
-            Teachers Toolkit
-            <span className="text-4xl ml-4 animate-bounce">⚙️</span>
-          </h2>
-          <p className="text-xl opacity-90">Professional classroom management tools</p>
+      <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-2xl px-7 py-6 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-black flex items-center gap-2">🛠️ Teaching Tools</h2>
+          <p className="text-white/75 text-sm mt-0.5">Classroom management &amp; interactive curriculum programs</p>
+        </div>
+        {/* Section switcher pills */}
+        <div className="flex gap-2 bg-white/15 p-1 rounded-xl flex-shrink-0">
+          <button
+            onClick={() => setActiveSection('classroom')}
+            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${activeSection === 'classroom' ? 'bg-white text-indigo-700 shadow' : 'text-white/80 hover:text-white'}`}
+          >
+            🏫 Classroom Tools
+          </button>
+          <button
+            onClick={() => setActiveSection('curriculum')}
+            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${activeSection === 'curriculum' ? 'bg-white text-indigo-700 shadow' : 'text-white/80 hover:text-white'}`}
+          >
+            📚 Teaching Programs
+          </button>
         </div>
       </div>
 
-      {/* All Tools as Big Colorful Buttons */}
+      {/* ── TEACHING PROGRAMS SECTION ── */}
+      {activeSection === 'curriculum' && (
+        <div className="space-y-5">
+          <p className="text-sm text-gray-500">Select a subject to open interactive teaching programs. Student assignments and group data are synced to your class.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {CURRICULUM_SUBJECTS.map(subj => (
+              <button
+                key={subj.id}
+                onClick={() => setActiveCurriculumSubject(subj.id)}
+                className={`group text-left rounded-2xl border-2 ${subj.border} ${subj.bg} p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer`}
+              >
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${subj.gradient} flex items-center justify-center text-3xl mb-4 shadow-md group-hover:scale-110 transition-transform`}>
+                  {subj.emoji}
+                </div>
+                <h3 className="text-lg font-black text-gray-800 mb-1">{subj.name}</h3>
+                <p className="text-xs text-gray-500 mb-3 leading-snug">{subj.description}</p>
+                <div className="flex flex-wrap gap-1">
+                  {subj.highlights.map(h => (
+                    <span key={h} className="text-xs bg-white border border-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{h}</span>
+                  ))}
+                </div>
+                <div className="mt-4 text-xs font-bold text-indigo-600 flex items-center gap-1 group-hover:gap-2 transition-all">
+                  Open programs <span className="group-hover:translate-x-1 transition-transform">→</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── CLASSROOM TOOLS SECTION ── */}
+      {activeSection === 'classroom' && (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <button
           onClick={() => setActiveToolkitTab('classroom-jobs')}
@@ -930,7 +1040,7 @@ const TeachersToolkitTab = ({
         >
           <div className="text-4xl mb-3">📊</div>
           <div className="text-lg font-bold mb-1">Analytics</div>
-          <div className="text-sm opacity-90">{analytics.totalStudents} students</div>
+          <div className="text-sm opacity-90">{students.length} students</div>
         </button>
 
         <button
@@ -957,7 +1067,7 @@ const TeachersToolkitTab = ({
         >
           <div className="text-4xl mb-3">⏰</div>
           <div className="text-lg font-bold mb-1">Timer Tools</div>
-          <div className="text-sm opacity-90">Countdown & stopwatch</div>
+          <div className="text-sm opacity-90">Countdown &amp; stopwatch</div>
         </button>
 
         <button
@@ -988,6 +1098,7 @@ const TeachersToolkitTab = ({
           <div className="text-sm opacity-90">Post messages to students</div>
         </button>
       </div>
+      )} {/* end classroom section */}
     </div>
   );
 };

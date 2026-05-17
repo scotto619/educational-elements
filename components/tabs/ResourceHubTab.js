@@ -2,10 +2,7 @@
 // Unified Resource Hub - combines all curriculum tools, displays, and resources in one place
 import React, { useState, Suspense, lazy, useMemo } from 'react';
 
-// Lazy-load all section components for performance
-const LiteracyTools = lazy(() => import('../curriculum/sections/LiteracySection'));
-const MathematicsTools = lazy(() => import('../curriculum/sections/MathematicsSection'));
-const ScienceTools = lazy(() => import('../curriculum/sections/ScienceSection'));
+// Lazy-load section components for performance
 const DisplaysGallery = lazy(() => import('../curriculum/general/DisplaysGallery'));
 const EnglishNewSection = lazy(() => import('../curriculum/new/EnglishNewSection'));
 const MathNewSection = lazy(() => import('../curriculum/new/MathNewSection'));
@@ -79,27 +76,8 @@ const resourcesBySubject = {
   ],
 };
 
-// Flat search index for all tools
-const toolsSearchIndex = [
-  // English tools
-  { id: 'beginner-readers', title: 'Beginner Readers', description: 'Early reading activities for beginning readers', subject: 'english', section: 'tools', icon: '🔤' },
-  { id: 'morphology', title: 'Morphology Master', description: 'Prefixes, suffixes, and base words', subject: 'english', section: 'tools', icon: '🔤' },
-  { id: 'literacy-warmup', title: 'Literacy Warmup', description: 'Interactive phonics activities', subject: 'english', section: 'tools', icon: '🔥' },
-  { id: 'spelling-program', title: 'Spelling & Fluency Studio', description: 'Spelling lists with reading passages', subject: 'english', section: 'tools', icon: '🌀' },
-  { id: 'reading-comprehension', title: 'Reading Comprehension', description: 'Text analysis and understanding', subject: 'english', section: 'tools', icon: '🧠' },
-  { id: 'visual-writing-prompts', title: 'Visual Writing Prompts', description: 'Visual storytelling prompts', subject: 'english', section: 'tools', icon: '🖼️' },
-  { id: 'reading-for-fun', title: 'Reading for Fun', description: 'Engaging texts for advanced readers', subject: 'english', section: 'tools', icon: '🎉' },
-  { id: 'readers-theatre', title: 'Readers Theatre', description: 'Drama scripts with character roles', subject: 'english', section: 'tools', icon: '🎭' },
-  { id: 'vocabulary-builder', title: 'Vocabulary Builder', description: 'Definitions, synonyms, and word lists', subject: 'english', section: 'tools', icon: '📖' },
-  // Maths tools
-  { id: 'daily-math-challenges', title: 'Daily Math Challenges', description: 'Rich daily challenges for classroom display', subject: 'mathematics', section: 'tools', icon: '🎯' },
-  { id: 'interactive-angles', title: 'Interactive Angles', description: 'Learn, measure, create, and play with angles', subject: 'mathematics', section: 'tools', icon: '📐' },
-  { id: 'interactive-clock', title: 'Interactive Clock', description: 'Learn to tell time with draggable hands', subject: 'mathematics', section: 'tools', icon: '🕒' },
-  { id: 'numbers-board', title: 'Numbers Board', description: 'Interactive hundreds board for patterns', subject: 'mathematics', section: 'tools', icon: '💯' },
-  { id: 'math-mentals', title: 'Math Mentals', description: 'Daily number facts practice', subject: 'mathematics', section: 'tools', icon: '🧮' },
-  // Science tools
-  { id: 'solar-system-explorer', title: 'Solar System Explorer', description: 'Explore planets and space', subject: 'science', section: 'tools', icon: '🪐' },
-];
+// Flat search index for resources only
+const toolsSearchIndex = [];
 
 // Subject configuration
 const subjects = [
@@ -114,7 +92,6 @@ const subjects = [
     ringColor: 'ring-blue-300',
     banner: '/Displays/Banners/Literacy.png',
     description: 'Reading, writing, phonics & language',
-    hasTools: true,
     hasCurriculum: true,
   },
   {
@@ -128,7 +105,6 @@ const subjects = [
     ringColor: 'ring-emerald-300',
     banner: '/Displays/Banners/Mathematics.png',
     description: 'Numbers, patterns & problem solving',
-    hasTools: true,
     hasCurriculum: true,
   },
   {
@@ -142,7 +118,6 @@ const subjects = [
     ringColor: 'ring-violet-300',
     banner: '/Displays/Banners/Science.png',
     description: 'Experiments, nature & discovery',
-    hasTools: true,
     hasCurriculum: true,
   },
   {
@@ -156,20 +131,19 @@ const subjects = [
     ringColor: 'ring-amber-300',
     banner: '/Displays/Banners/HISTORY.png',
     description: 'History, geography & social sciences',
-    hasTools: false,
     hasCurriculum: true,
   },
 ];
 
-// Sections per subject
+// Sections per subject — Resources, Curriculum Domains, Displays only
 const getSections = (subject) => [
   {
-    id: 'tools',
-    name: 'Learning Tools',
-    icon: '🛠️',
-    description: 'Interactive digital tools for the classroom',
-    available: subject.hasTools,
-    gradient: 'from-indigo-500 to-blue-600',
+    id: 'resources',
+    name: 'Worksheets & Resources',
+    icon: '📁',
+    description: 'PDFs, PowerPoints & downloadable worksheets',
+    available: (resourcesBySubject[subject.id] || []).length > 0,
+    gradient: 'from-rose-500 to-pink-600',
   },
   {
     id: 'curriculum',
@@ -180,18 +154,10 @@ const getSections = (subject) => [
     gradient: 'from-teal-500 to-cyan-600',
   },
   {
-    id: 'resources',
-    name: 'Unit Resources',
-    icon: '📁',
-    description: 'PDFs, PowerPoints & downloadable worksheets',
-    available: (resourcesBySubject[subject.id] || []).length > 0,
-    gradient: 'from-rose-500 to-pink-600',
-  },
-  {
     id: 'displays',
-    name: 'Displays',
+    name: 'Classroom Displays',
     icon: '🖼️',
-    description: 'Printable classroom posters & wall displays',
+    description: 'Printable posters & wall displays',
     available: true,
     gradient: 'from-fuchsia-500 to-violet-600',
   },
@@ -448,13 +414,6 @@ const ResourceHubTab = ({
     setActiveResource(null);
   };
 
-  const commonSectionProps = {
-    onBack: handleBackToSubject,
-    showToast,
-    students,
-    saveData,
-    loadedData,
-  };
 
   // ── LEVEL 3: Resource Viewer ──────────────────────────────────────────────
   if (activeResource) {
@@ -478,13 +437,6 @@ const ResourceHubTab = ({
     const renderSectionContent = () => {
       const { id: sectionId } = activeSection;
       const { id: subjectId } = activeSubject;
-
-      if (sectionId === 'tools') {
-        if (subjectId === 'english') return <LiteracyTools {...commonSectionProps} />;
-        if (subjectId === 'mathematics') return <MathematicsTools {...commonSectionProps} />;
-        if (subjectId === 'science') return <ScienceTools {...commonSectionProps} />;
-        return <ComingSoonSection name="Learning Tools" />;
-      }
 
       if (sectionId === 'curriculum') {
         if (subjectId === 'english') {
@@ -623,7 +575,7 @@ const ResourceHubTab = ({
             Resource Hub
           </h1>
           <p className="text-indigo-200/80 text-base md:text-lg max-w-xl font-light">
-            Displays, unit resources, learning tools and curriculum content — organised by subject and easy to find.
+            Printable displays, worksheets, PDFs and curriculum domains — all organised by subject.
           </p>
 
           {/* Search Bar */}
@@ -718,12 +670,11 @@ const ResourceHubTab = ({
           {/* Quick Access Row */}
           <div>
             <h2 className="text-xl font-bold text-slate-700 mb-4">Quick Access</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { label: 'All Displays', icon: '🖼️', gradient: 'from-fuchsia-500 to-violet-600', action: () => { setActiveSubject(subjects[0]); setActiveSection(getSections(subjects[0]).find(s => s.id === 'displays')); } },
-                { label: 'Learning Tools', icon: '🛠️', gradient: 'from-indigo-500 to-blue-600', action: () => { setActiveSubject(subjects[0]); setActiveSection(getSections(subjects[0]).find(s => s.id === 'tools')); } },
-                { label: 'Unit Resources', icon: '📁', gradient: 'from-rose-500 to-pink-600', action: () => { setActiveSubject(subjects[0]); setActiveSection(getSections(subjects[0]).find(s => s.id === 'resources')); } },
-                { label: 'Curriculum Domains', icon: '🎓', gradient: 'from-teal-500 to-cyan-600', action: () => { setActiveSubject(subjects[0]); setActiveSection(getSections(subjects[0]).find(s => s.id === 'curriculum')); } },
+                { label: 'Classroom Displays', icon: '🖼️', gradient: 'from-fuchsia-500 to-violet-600', desc: 'Printable posters & wall displays', action: () => { setActiveSubject(subjects[0]); setActiveSection(getSections(subjects[0]).find(s => s.id === 'displays')); } },
+                { label: 'Worksheets & Resources', icon: '📁', gradient: 'from-rose-500 to-pink-600', desc: 'PDFs, PowerPoints & printables', action: () => { setActiveSubject(subjects[0]); setActiveSection(getSections(subjects[0]).find(s => s.id === 'resources')); } },
+                { label: 'Curriculum Domains', icon: '🎓', gradient: 'from-teal-500 to-cyan-600', desc: 'Framework topics & content', action: () => { setActiveSubject(subjects[0]); setActiveSection(getSections(subjects[0]).find(s => s.id === 'curriculum')); } },
               ].map(item => (
                 <button
                   key={item.label}
@@ -732,7 +683,7 @@ const ResourceHubTab = ({
                 >
                   <div className="text-3xl mb-2">{item.icon}</div>
                   <div className="font-bold text-sm">{item.label}</div>
-                  <div className="text-white/70 text-xs mt-0.5">English →</div>
+                  <div className="text-white/70 text-xs mt-0.5">{item.desc}</div>
                 </button>
               ))}
             </div>

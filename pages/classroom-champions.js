@@ -1098,8 +1098,11 @@ const ClassroomChampions = () => {
         );
 
       case 'resource-hub':
-        router.push('/curriculum');
-        return null;
+        return <ResourceHubTab
+          {...commonProps}
+          saveData={(data) => saveClassData({ resourceHubData: { ...currentClassData?.resourceHubData, ...data } })}
+          loadedData={currentClassData?.resourceHubData || {}}
+        />;
 
       case 'toolkit':
         return <TeachersToolkitTab
