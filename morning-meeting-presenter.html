@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning Meeting Presenter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #f5f0ff;
+  --slide-bg: #ffffff;
+  --header-bg: #ddd0f5;
+  --accent1: #b5ead7;
+  --accent2: #ffd7ba;
+  --accent3: #c7ceea;
+  --accent4: #ffdfd3;
+  --accent5: #fff3ba;
+  --accent6: #b5d8eb;
+  --text: #1a1a2e;
+  --border: #1a1a2e;
+  --sidebar-bg: #ede5ff;
+  --nav-bg: #ddd0f5;
+  --choice-bg: #ffffff;
+  --choice-hover: #ede5ff;
+  --section-welcome: #ddd0f5;
+  --section-calendar: #b5d8eb;
+  --section-game: #b5ead7;
+  --section-word: #ffd7ba;
+  --section-grammar: #c7ceea;
+  --section-math: #ffdfd3;
+  --section-spelling: #fff3ba;
+  --section-qod: #d4f0b5;
+  --section-announce: #ffd7e3;
+  --section-schedule: #e0f0ff;
+}
+
+[data-theme="ocean"] {
+  --bg: #dff4ff; --slide-bg: #f0faff; --header-bg: #a8d8ea;
+  --accent1: #7ec8d4; --accent2: #a8d8ea; --accent3: #5b9bd5;
+  --accent4: #b3cde0; --accent5: #d4eaf7; --accent6: #e8f4f8;
+  --sidebar-bg: #c8e8f4; --nav-bg: #a8d8ea;
+  --choice-bg: #f0faff; --choice-hover: #c8e8f4;
+  --section-welcome: #a8d8ea; --section-calendar: #7ec8d4;
+  --section-game: #b3cde0; --section-word: #a8d8ea;
+  --section-grammar: #5b9bd5; --section-math: #d4eaf7;
+  --section-spelling: #e8f4f8; --section-qod: #c8e8f4;
+  --section-announce: #b3cde0; --section-schedule: #7ec8d4;
+}
+
+[data-theme="sunrise"] {
+  --bg: #fff5e6; --slide-bg: #fffaf5; --header-bg: #ffd7ba;
+  --accent1: #ffb347; --accent2: #ff8c69; --accent3: #ffa07a;
+  --accent4: #ffd700; --accent5: #ffc0cb; --accent6: #ffe4b5;
+  --sidebar-bg: #ffe4cc; --nav-bg: #ffd7ba;
+  --choice-bg: #fffaf5; --choice-hover: #ffe4cc;
+  --section-welcome: #ffd7ba; --section-calendar: #ffe4b5;
+  --section-game: #ffb347; --section-word: #ffa07a;
+  --section-grammar: #ffd700; --section-math: #ffc0cb;
+  --section-spelling: #ff8c69; --section-qod: #ffe4cc;
+  --section-announce: #ffd7ba; --section-schedule: #ffe4b5;
+}
+
+[data-theme="forest"] {
+  --bg: #e8f5e9; --slide-bg: #f5fff5; --header-bg: #c8e6c9;
+  --accent1: #a5d6a7; --accent2: #80cbc4; --accent3: #b2dfdb;
+  --accent4: #dce8d0; --accent5: #f0f4c3; --accent6: #c5e1a5;
+  --sidebar-bg: #d4edd5; --nav-bg: #c8e6c9;
+  --choice-bg: #f5fff5; --choice-hover: #d4edd5;
+  --section-welcome: #c8e6c9; --section-calendar: #a5d6a7;
+  --section-game: #80cbc4; --section-word: #b2dfdb;
+  --section-grammar: #dce8d0; --section-math: #f0f4c3;
+  --section-spelling: #c5e1a5; --section-qod: #a5d6a7;
+  --section-announce: #b2dfdb; --section-schedule: #dce8d0;
+}
+
+[data-theme="night"] {
+  --bg: #0d1117; --slide-bg: #161b22; --header-bg: #1f2d3d;
+  --accent1: #2d5a3d; --accent2: #5a3d2d; --accent3: #2d3d5a;
+  --accent4: #5a2d3d; --accent5: #3d5a2d; --accent6: #2d4a5a;
+  --text: #e6edf3; --border: #58a6ff;
+  --sidebar-bg: #0d1117; --nav-bg: #1f2d3d;
+  --choice-bg: #21262d; --choice-hover: #2d333b;
+  --section-welcome: #1f2d3d; --section-calendar: #2d4a5a;
+  --section-game: #2d5a3d; --section-word: #5a3d2d;
+  --section-grammar: #2d3d5a; --section-math: #5a2d3d;
+  --section-spelling: #3d5a2d; --section-qod: #2d5a4a;
+  --section-announce: #5a2d4a; --section-schedule: #2d3d5a;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* HEADER */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--header-bg);
+  border-bottom: 3px solid var(--border);
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+#header-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hbtn {
+  background: var(--choice-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  color: var(--text);
+  transition: transform 0.1s;
+  white-space: nowrap;
+}
+.hbtn:hover { transform: scale(1.05); }
+
+/* MAIN */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+#sidebar {
+  width: 70px;
+  background: var(--sidebar-bg);
+  border-right: 3px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  gap: 5px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+#sidebar::-webkit-scrollbar { width: 4px; }
+#sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; opacity: 0.3; }
+
+.sbtn {
+  width: 54px;
+  min-height: 54px;
+  border: 2.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--choice-bg);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  transition: transform 0.1s, background 0.15s;
+  padding: 4px 2px;
+}
+.sbtn:hover { transform: scale(1.08); }
+.sbtn.active { background: var(--header-bg); border-width: 3px; }
+.sbtn.off { opacity: 0.3; pointer-events: none; }
+.sbtn-label {
+  font-size: 0.38rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.1;
+  margin-top: 3px;
+  max-width: 52px;
+}
+
+/* SLIDE AREA */
+#slide-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#slide-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* NAV BAR */
+#nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  background: var(--nav-bg);
+  border-top: 3px solid var(--border);
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.nbtn {
+  background: var(--choice-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  color: var(--text);
+  transition: transform 0.1s;
+}
+.nbtn:hover { transform: scale(1.05); }
+.nbtn:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+#slide-counter {
+  font-weight: 900;
+  font-size: 0.95rem;
+  min-width: 70px;
+  text-align: center;
+}
+
+/* SLIDE */
+.slide {
+  width: 100%;
+  max-width: 860px;
+  animation: fadein 0.2s ease;
+}
+@keyframes fadein { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+
+/* SHARED SLIDE ELEMENTS */
+.sec-header {
+  border: 3.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.sec-icon { font-size: 2rem; }
+
+.q-card {
+  background: var(--slide-bg);
+  border: 3.5px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  line-height: 1.35;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.choice {
+  background: var(--choice-bg);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.1s;
+}
+.choice:hover { background: var(--choice-hover); transform: scale(1.02); }
+.choice.correct { background: #b5ead7 !important; border-color: #2a9d70 !important; }
+.choice.wrong   { background: #ffd7d7 !important; border-color: #c0392b !important; }
+
+.choice-letter {
+  background: var(--border);
+  color: var(--slide-bg);
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.abtn {
+  background: var(--slide-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: 'Nunito', sans-serif;
+  color: var(--text);
+  transition: transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.abtn:hover { transform: scale(1.05); }
+.abtn.reveal-btn { background: var(--accent6); }
+
+.reveal-box {
+  display: none;
+  background: var(--accent1);
+  border: 3px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 900;
+  margin-top: 12px;
+}
+
+/* TRUE / FALSE */
+.tf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.tf-card {
+  border: 3.5px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.tf-card:hover { transform: scale(1.03); }
+.tf-true { background: #b5ead7; }
+.tf-false { background: #ffd7d7; }
+
+/* THIS OR THAT / WOULD I RATHER */
+.tot-grid { display: grid; grid-template-columns: 1fr 56px 1fr; gap: 14px; align-items: center; margin-bottom: 16px; }
+.tot-card {
+  border: 3.5px solid var(--border);
+  border-radius: 14px;
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.12s;
+  line-height: 1.3;
+}
+.tot-card:hover { transform: scale(1.05); }
+.tot-or { font-size: 1.6rem; font-weight: 900; text-align: center; }
+
+/* WORD OF DAY */
+.word-card {
+  border: 3.5px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 14px;
+  background: var(--section-word);
+}
+.word-title { font-size: 3rem; font-weight: 900; text-align: center; margin-bottom: 6px; }
+.word-pos { text-align: center; font-style: italic; font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; opacity: 0.75; }
+.word-def { font-size: 1.25rem; font-weight: 700; text-align: center; margin-bottom: 14px; line-height: 1.4; }
+.word-ex {
+  background: var(--slide-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-style: italic;
+  text-align: center;
+}
+
+/* MATH */
+.math-problem {
+  border: 3.5px solid var(--border);
+  border-radius: 18px;
+  padding: 36px;
+  text-align: center;
+  font-size: 2.4rem;
+  font-weight: 900;
+  margin-bottom: 14px;
+  background: var(--section-math);
+}
+.math-hint {
+  background: var(--slide-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+/* SPELLING */
+.spelling-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.spell-word {
+  background: var(--section-spelling);
+  border: 2.5px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+/* QOD */
+.qod-card {
+  border: 3.5px solid var(--border);
+  border-radius: 18px;
+  padding: 36px;
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  background: var(--section-qod);
+}
+
+/* EDITABLE */
+.edit-box {
+  background: var(--slide-bg);
+  border: 2.5px dashed var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 10px;
+}
+.edit-label {
+  font-weight: 900;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  opacity: 0.65;
+  margin-bottom: 7px;
+}
+textarea.edit-ta {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  resize: vertical;
+  min-height: 80px;
+}
+textarea.edit-ta:focus { outline: none; }
+.edit-note { font-size: 0.78rem; font-weight: 700; opacity: 0.55; text-align: center; margin-top: 4px; }
+
+.blank-input {
+  display: inline-block;
+  border: none;
+  border-bottom: 3.5px solid var(--border);
+  background: transparent;
+  font-size: 1.7rem;
+  font-weight: 900;
+  font-family: 'Nunito', sans-serif;
+  width: 180px;
+  text-align: center;
+  color: var(--text);
+  padding: 0 4px;
+}
+.blank-input:focus { outline: none; }
+
+/* FINISH THE SENTENCE */
+.fts-prompt {
+  border: 3.5px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.45;
+  background: var(--section-announce);
+}
+
+/* LIST IT */
+.list-box {
+  border: 3.5px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 14px;
+  background: var(--section-spelling);
+}
+.list-challenge { font-size: 1.5rem; font-weight: 900; text-align: center; margin-bottom: 16px; }
+.list-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.list-item {
+  background: var(--slide-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.list-num {
+  background: var(--border);
+  color: var(--slide-bg);
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 900; flex-shrink: 0;
+}
+.list-item input {
+  border: none; background: transparent;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.95rem;
+  color: var(--text); flex: 1;
+}
+.list-item input:focus { outline: none; }
+
+/* GUESS MY FAVORITE */
+.gmf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-bottom: 14px; }
+.gmf-card {
+  border: 3px solid var(--border);
+  border-radius: 13px;
+  padding: 22px 14px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: 800;
+  transition: transform 0.1s;
+  background: var(--section-announce);
+}
+.gmf-card:hover { transform: scale(1.04); }
+.gmf-card.gmf-right { background: #b5ead7 !important; border-color: #2a9d70 !important; }
+.gmf-card.gmf-wrong { background: #ffd7d7 !important; border-color: #c0392b !important; opacity: 0.7; }
+
+/* SCHEDULE */
+.sched-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--slide-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+.sched-time {
+  font-weight: 900; font-size: 0.9rem; min-width: 65px;
+  border: none; background: transparent;
+  font-family: 'Nunito', sans-serif; color: var(--text);
+}
+.sched-subj {
+  flex: 1; font-size: 1rem; font-weight: 800;
+  border: none; background: transparent;
+  font-family: 'Nunito', sans-serif; color: var(--text);
+}
+.sched-time:focus, .sched-subj:focus { outline: none; background: var(--choice-hover); border-radius: 6px; padding: 2px 4px; }
+
+/* WELCOME */
+.welcome-slide {
+  background: var(--section-welcome);
+  border: 4px solid var(--border);
+  border-radius: 22px;
+  padding: 40px 32px;
+  text-align: center;
+  min-height: 380px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+}
+.welcome-date { font-size: 2.6rem; font-weight: 900; line-height: 1.2; }
+.welcome-edit {
+  background: var(--slide-bg);
+  border: 2.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-size: 1.5rem; font-weight: 900; text-align: center;
+  min-width: 300px;
+}
+.welcome-edit:focus { outline: 3px solid var(--border); }
+
+/* SETTINGS OVERLAY */
+#settings-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 200;
+  align-items: center; justify-content: center;
+}
+#settings-overlay.open { display: flex; }
+#settings-panel {
+  background: var(--slide-bg); border: 3.5px solid var(--border);
+  border-radius: 22px; padding: 28px;
+  max-width: 520px; width: 92%; max-height: 88vh; overflow-y: auto;
+}
+#settings-panel h2 { font-size: 1.6rem; font-weight: 900; text-align: center; margin-bottom: 22px; }
+.stg-sec { margin-bottom: 22px; }
+.stg-sec h3 { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 2px solid var(--border); }
+
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid rgba(128,128,128,0.15);
+}
+.toggle-label { font-weight: 800; display: flex; align-items: center; gap: 7px; }
+.switch { position: relative; width: 50px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.track {
+  position: absolute; inset: 0; background: #ccc; border-radius: 26px;
+  border: 2px solid var(--border); cursor: pointer; transition: background 0.2s;
+}
+.switch input:checked + .track { background: #6c5ce7; }
+.track::after {
+  content: ''; position: absolute; width: 18px; height: 18px;
+  left: 2px; top: 2px; background: white; border-radius: 50%; transition: transform 0.2s;
+}
+.switch input:checked + .track::after { transform: translateX(24px); }
+
+.theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tbtn {
+  border: 2.5px solid var(--border); border-radius: 10px; padding: 10px 6px;
+  cursor: pointer; text-align: center; font-weight: 800; font-size: 0.8rem;
+  font-family: 'Nunito', sans-serif; transition: transform 0.1s; color: inherit;
+}
+.tbtn:hover { transform: scale(1.05); }
+.tbtn.active { border-width: 4px; }
+
+.day-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.day-row input[type=number] {
+  width: 58px; padding: 7px; border: 2px solid var(--border); border-radius: 8px;
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem; text-align: center;
+  background: var(--slide-bg); color: var(--text);
+}
+.stg-close {
+  width: 100%; margin-top: 14px; padding: 13px;
+  background: var(--header-bg); border: 2.5px solid var(--border); border-radius: 12px;
+  font-size: 1rem; font-weight: 900; cursor: pointer;
+  font-family: 'Nunito', sans-serif; color: var(--text);
+}
+
+/* FULLSCREEN */
+:fullscreen body { height: 100vh; }
+
+@media (min-height: 750px) {
+  .welcome-date { font-size: 3.2rem; }
+  .q-card { font-size: 1.9rem; }
+  .math-problem { font-size: 2.8rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- SETTINGS -->
+<div id="settings-overlay">
+  <div id="settings-panel">
+    <h2>⚙️ Presentation Settings</h2>
+
+    <div class="stg-sec">
+      <h3>🎨 Theme</h3>
+      <div class="theme-grid">
+        <button class="tbtn active" style="background:#ddd0f5;" data-theme="pastel">🌸 Pastel</button>
+        <button class="tbtn" style="background:#a8d8ea;" data-theme="ocean">🌊 Ocean</button>
+        <button class="tbtn" style="background:#ffd7ba;" data-theme="sunrise">🌅 Sunrise</button>
+        <button class="tbtn" style="background:#c8e6c9;" data-theme="forest">🌿 Forest</button>
+        <button class="tbtn" style="background:#1f2d3d;color:#e6edf3;" data-theme="night">🌙 Night</button>
+      </div>
+    </div>
+
+    <div class="stg-sec">
+      <h3>📋 Sections (toggle on/off)</h3>
+      <div id="toggle-list"></div>
+    </div>
+
+    <div class="stg-sec">
+      <h3>📅 Day Override</h3>
+      <p style="font-size:0.85rem;font-weight:700;opacity:0.7;margin-bottom:6px;">Content auto-rotates daily through 20 days. Override manually if needed.</p>
+      <div class="day-row">
+        <label style="font-weight:800;">Day (1–20):</label>
+        <input type="number" id="day-input" min="1" max="20" value="1">
+        <button class="hbtn" onclick="applyDay()">Apply</button>
+        <button class="hbtn" onclick="clearDay()">Auto</button>
+      </div>
+    </div>
+
+    <button class="stg-close" onclick="closeSettings()">✅ Close Settings</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div id="header">
+  <button class="hbtn" onclick="openSettings()">⚙️ Settings</button>
+  <div id="header-title">🌟 Morning Meeting Presenter</div>
+  <div style="display:flex;gap:7px;align-items:center;">
+    <button class="hbtn" onclick="toggleFS()" id="fs-btn">⛶ Fullscreen</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="sidebar"></div>
+  <div id="slide-area">
+    <div id="slide-wrap"></div>
+    <div id="nav-bar">
+      <button class="nbtn" id="prev-btn" onclick="nav(-1)">◀ Prev</button>
+      <span id="slide-counter">1 / 8</span>
+      <button class="nbtn" id="next-btn" onclick="nav(1)">Next ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 20 DAYS OF CONTENT — Upper Elementary (Grades 3–5)
+// ============================================================
+const DAYS = [
+  { // Day 1
+    game: { type:'mc', q:"Which planet is closest to the Sun?", opts:['Mercury','Venus','Earth','Mars'], ans:0 },
+    word: { w:'Abundant', pos:'adjective', def:'Existing in large quantities; more than enough.', ex:'"The garden had an abundant supply of fresh vegetables."' },
+    grammar: { type:'mc', q:'Which sentence is punctuated correctly?', opts:['I went to the store, and I bought milk.','I went to the store, and, I bought milk.','I, went to the store and I bought milk.','I went, to the store and I bought milk.'], ans:0 },
+    math: { q:'48 ÷ 6 + 5 = ?', a:'13', hint:'💡 Divide first, then add!' },
+    spell: { words:['necessary','separate','definitely','occurred','receive'], challenge:'Use "necessary" in a sentence about school.' },
+    qod: 'If you could have any superpower, what would it be and why?',
+    fact: '📅 The word "January" comes from Janus — the Roman god of new beginnings!'
+  },
+  { // Day 2
+    game: { type:'tf', q:'A spider is classified as an insect.', ans:false, explain:"Spiders are arachnids — they have 8 legs, while insects have only 6!" },
+    word: { w:'Benevolent', pos:'adjective', def:'Well-meaning and kind toward others.', ex:'"The benevolent teacher always made time to help every student."' },
+    grammar: { type:'tf', q:'A proper noun should always be capitalized.', ans:true, explain:'Correct! Proper nouns name specific people, places, or things — always capitalize them.' },
+    math: { q:'7 × 8 − 14 = ?', a:'42', hint:'💡 Multiply first, then subtract!' },
+    spell: { words:['believe','friend','because','weird','caught'], challenge:'Write a sentence using both "believe" and "because".' },
+    qod: 'What is one thing you want to learn this year, and why?',
+    fact: '📅 The average person takes about 7,500 steps per day — roughly 4 miles!'
+  },
+  { // Day 3
+    game: { type:'tot', opt1:'🏔️ Mountains', opt2:'🏖️ Beach', prompt:'Where would you rather spend a vacation?' },
+    word: { w:'Cautious', pos:'adjective', def:'Being careful to avoid potential problems or danger.', ex:'"She was cautious when crossing the busy intersection."' },
+    grammar: { type:'fitb', q:'The dog wagged ___ tail excitedly.', ans:'its', opts:['its',"it's",'their','his'] },
+    math: { q:'What is 25% of 80?', a:'20', hint:'💡 25% = ¼. What is ¼ of 80?' },
+    spell: { words:['calendar','library','February','Wednesday','surprise'], challenge:'Which word contains a hidden smaller word?' },
+    qod: 'Describe your perfect weekend. What would you do?',
+    fact: '📅 Wednesday is named after the Norse god Odin (also called Woden)!'
+  },
+  { // Day 4
+    game: { type:'wir', opt1:'🦁 Be able to talk to animals', opt2:'🚀 Travel to outer space', prompt:'Would I rather...' },
+    word: { w:'Diligent', pos:'adjective', def:'Showing careful and steady effort in work or duties.', ex:'"The diligent student reviewed her notes every single evening."' },
+    grammar: { type:'mc', q:'Which word is an adverb?', opts:['quickly','quick','quickness','quicker'], ans:0 },
+    math: { q:'132 ÷ 4 = ?', a:'33', hint:'💡 Try breaking 132 into 120 + 12!' },
+    spell: { words:['conscience','privilege','rhythm','gauge','lieutenant'], challenge:'These are tricky! Circle the one you find hardest to remember.' },
+    qod: 'What is the most important quality in a good friend?',
+    fact: '📅 Your heart beats about 100,000 times every single day!'
+  },
+  { // Day 5
+    game: { type:'gmf', q:"Guess my favorite season!", opts:['🌸 Spring','☀️ Summer','🍂 Fall','❄️ Winter'], ans:1 },
+    word: { w:'Eloquent', pos:'adjective', def:'Expressing ideas fluently and powerfully in speech or writing.', ex:'"Her eloquent speech moved the entire audience to tears."' },
+    grammar: { type:'tf', q:'An adjective describes a verb.', ans:false, explain:'Adjectives describe nouns. Adverbs describe verbs! (Example: "she runs quickly" — quickly is the adverb)' },
+    math: { q:'3.5 × 4 = ?', a:'14', hint:'💡 Think: (3 × 4) + (0.5 × 4)' },
+    spell: { words:['environment','government','parliament','committee','necessary'], challenge:'Find the word that has a double letter.' },
+    qod: 'If you could live in any time period in history, when would you choose?',
+    fact: '📅 Honey never spoils! Archaeologists found 3,000-year-old honey in Egyptian tombs. 🍯'
+  },
+  { // Day 6
+    game: { type:'fts', prompt:'If I were the principal of this school, I would...', ph:'Share your ideas!' },
+    word: { w:'Fortunate', pos:'adjective', def:'Having good luck; favored by chance or circumstances.', ex:'"We were fortunate to find shelter just before the storm arrived."' },
+    grammar: { type:'mc', q:'Which is a compound sentence?', opts:['I like cats.','I like cats and dogs.','I like cats, but my sister prefers dogs.','I really, really like cats.'], ans:2 },
+    math: { q:'Find the area: rectangle 9 cm × 6 cm', a:'54 cm²', hint:'💡 Area = length × width' },
+    spell: { words:['beautiful','different','finally','natural','special'], challenge:'Write antonyms (opposites) for 3 of these words.' },
+    qod: 'What invention do you think has changed the world the most?',
+    fact: '📅 A group of flamingos is called a "flamboyance"! 🦩'
+  },
+  { // Day 7
+    game: { type:'list', challenge:'Name 6 countries in South America!', count:6, hint:'There are 12 total — you can do it!' },
+    word: { w:'Genuine', pos:'adjective', def:'Truly what it claims to be; authentic and sincere.', ex:'"Her genuine smile made everyone in the room feel welcome."' },
+    grammar: { type:'fitb', q:'Neither the cats nor the dog ___ happy about bath time.', ans:'was', opts:['was','were','is','are'] },
+    math: { q:'5² + 3² = ?', a:'34', hint:'💡 5² means 5 × 5. Calculate each, then add!' },
+    spell: { words:['argument','beginning','disappear','knowledge','marriage'], challenge:'Sort these five words alphabetically.' },
+    qod: "What is something you're really good at that you could teach to others?",
+    fact: '📅 Octopuses have three hearts and blue blood! 🐙'
+  },
+  { // Day 8
+    game: { type:'mc', q:'How many sides does a hexagon have?', opts:['5','6','7','8'], ans:1 },
+    word: { w:'Humble', pos:'adjective', def:'Having a modest view of oneself; not proud or arrogant.', ex:'"Despite winning the award, she remained humble and thanked her whole team."' },
+    grammar: { type:'mc', q:'Which sentence uses the correct verb tense?', opts:['Yesterday, she run to the store.','Yesterday, she runs to the store.','Yesterday, she ran to the store.','Yesterday, she running to the store.'], ans:2 },
+    math: { q:'A pizza has 8 slices. You eat ³⁄₈ of it. How many slices?', a:'3 slices', hint:'💡 ³⁄₈ of 8 = ?' },
+    spell: { words:['achieve','apparent','conscience','colleague','occurrence'], challenge:'Which word means "a fellow worker or coworker"?' },
+    qod: 'If you could talk to any animal for a day, which would you choose and why?',
+    fact: '📅 The Great Wall of China took over 1,000 years to build!'
+  },
+  { // Day 9
+    game: { type:'tot', opt1:'📚 Reading', opt2:'🎨 Art', prompt:'Which do you enjoy more?' },
+    word: { w:'Inspire', pos:'verb', def:'To fill someone with the urge or ability to do something creative.', ex:'"Her courage inspired the whole community to take action together."' },
+    grammar: { type:'tf', q:'"Their" and "there" are homophones (same sound, different meaning).', ans:true, explain:'Correct! "Their" shows possession, "there" is a place, and "they\'re" = they are.' },
+    math: { q:'Perimeter of a square with sides of 7 cm?', a:'28 cm', hint:'💡 A square has 4 equal sides — add them all!' },
+    spell: { words:['throughout','although','enough','thought','thorough'], challenge:'All these words contain "ough" — say each one aloud! Notice how different they sound.' },
+    qod: 'What does "success" mean to you?',
+    fact: '📅 A day on Venus is longer than a full year on Venus! 🌎'
+  },
+  { // Day 10
+    game: { type:'wir', opt1:'🧠 Be the smartest person in the world', opt2:'😂 Make everyone around you laugh all the time', prompt:'Would I rather...' },
+    word: { w:'Jubilant', pos:'adjective', def:'Feeling or expressing great happiness and triumph.', ex:'"The jubilant crowd erupted in cheers when their team scored the winning goal."' },
+    grammar: { type:'mc', q:'What type of sentence is: "Wow, what a beautiful rainbow!"', opts:['Declarative','Interrogative','Imperative','Exclamatory'], ans:3 },
+    math: { q:'15% of 60 = ?', a:'9', hint:'💡 Find 10% of 60 first, then add half of that.' },
+    spell: { words:['mischievous','millennium','pronunciation','fascinate','necessary'], challenge:'Which word has the most syllables? Count carefully!' },
+    qod: 'Would you rather have more time or more money? Explain your answer.',
+    fact: '📅 Sharks are older than trees — they\'ve been swimming for 450 million years! 🦈'
+  },
+  { // Day 11
+    game: { type:'mc', q:'Which continent is the largest by area?', opts:['Africa','Asia','North America','Antarctica'], ans:1 },
+    word: { w:'Knowledgeable', pos:'adjective', def:'Intelligent and well-informed about a particular subject.', ex:'"The knowledgeable guide answered every question visitors had about the museum."' },
+    grammar: { type:'fitb', q:'She ___ been waiting two hours when the bus finally arrived.', ans:'had', opts:['had','has','have','was'] },
+    math: { q:'144 ÷ 12 × 3 = ?', a:'36', hint:'💡 Work left to right — divide first, then multiply!' },
+    spell: { words:['scissors','Wednesday','acknowledge','guarantee','embarrass'], challenge:'Find the word with a completely silent letter.' },
+    qod: 'What is something you wish adults understood better about kids your age?',
+    fact: '📅 A group of owls is called a parliament! 🦉'
+  },
+  { // Day 12
+    game: { type:'tf', q:'The Amazon River is the longest river in the world.', ans:false, explain:"The Nile River in Africa is longer! However, the Amazon carries more water than any other river." },
+    word: { w:'Luminous', pos:'adjective', def:'Full of light; bright, glowing, and radiant.', ex:'"The luminous full moon lit up the entire snowy field below."' },
+    grammar: { type:'tf', q:'A simile compares two things using "like" or "as".', ans:true, explain:'Exactly right! Example: "She was as fast as lightning." That\'s a simile!' },
+    math: { q:'3 books at $12.50 each. Change from $40?', a:'$2.50', hint:'💡 Total cost first, then subtract from $40.' },
+    spell: { words:['ancient','familiar','category','peculiar','curious'], challenge:'Write the plural form of each word.' },
+    qod: 'If you could create your own school subject, what would you teach?',
+    fact: '📅 There are more possible chess games than atoms in the observable universe! ♟️'
+  },
+  { // Day 13
+    game: { type:'fts', prompt:'The world would be a better place if everyone...', ph:'Be creative and thoughtful!' },
+    word: { w:'Magnificent', pos:'adjective', def:'Impressively beautiful, elaborate, or extravagant.', ex:'"The magnificent waterfall took everyone\'s breath away the moment they saw it."' },
+    grammar: { type:'mc', q:'Which of these is a metaphor?', opts:['"She ran like the wind."','"Life is a journey."','"The bag was very heavy."','"He walked quickly."'], ans:1 },
+    math: { q:'Pattern: 2, 6, 18, 54, ___ = ?', a:'162', hint:'💡 What are you multiplying each time?' },
+    spell: { words:['aggressive','commission','recommend','accommodate','apparent'], challenge:'These all have double letters — find and circle them in each word!' },
+    qod: 'What fictional world would you most like to visit?',
+    fact: '📅 Butterflies taste with their feet! 🦋'
+  },
+  { // Day 14
+    game: { type:'gmf', q:"Guess my favorite school subject!", opts:['📐 Math','📖 Reading','🔬 Science','🎨 Art'], ans:2 },
+    word: { w:'Nimble', pos:'adjective', def:'Quick and light in movement; agile and clever.', ex:'"The nimble gymnast leaped effortlessly over the vault."' },
+    grammar: { type:'fitb', q:'She is ___ than her brother at chess.', ans:'better', opts:['more good','gooder','better','bestest'] },
+    math: { q:'Write ³⁄₅ as a decimal AND a percentage.', a:'0.6 and 60%', hint:'💡 Divide numerator ÷ denominator: 3 ÷ 5' },
+    spell: { words:['experience','explanation','experiment','excellent','exception'], challenge:'All start with "ex"! Write one sentence using two of them.' },
+    qod: 'What is one thing you could do today to be kinder to someone?',
+    fact: '📅 The human nose can detect about 1 trillion different smells! 👃'
+  },
+  { // Day 15
+    game: { type:'tot', opt1:'🎵 Music', opt2:'🎬 Movies', prompt:'Which do you prefer?' },
+    word: { w:'Optimistic', pos:'adjective', def:'Hopeful and confident about the future, even in tough times.', ex:'"Despite the challenges, she remained optimistic that things would soon improve."' },
+    grammar: { type:'mc', q:'Which sentence contains an oxymoron?', opts:['"The fire was very hot."','"It was a deafening silence."','"She was extremely tired."','"He ate the entire pizza."'], ans:1 },
+    math: { q:'A car travels at 60 mph for 2.5 hours. How far?', a:'150 miles', hint:'💡 Distance = Speed × Time' },
+    spell: { words:['unfortunately','immediately','frequently','approximately','particularly'], challenge:'What suffix do all 5 of these words share?' },
+    qod: "What is the bravest thing you've ever done?",
+    fact: '📅 A snail can sleep for up to 3 years! 🐌'
+  },
+  { // Day 16
+    game: { type:'list', challenge:'Name 6 types of clouds!', count:6, hint:'Hint: cumulus, cirrus, stratus...' },
+    word: { w:'Persevere', pos:'verb', def:'To continue steadily despite difficulty, delay, or disappointment.', ex:'"She chose to persevere through the difficult problems rather than give up."' },
+    grammar: { type:'tf', q:'The subject of a sentence always comes after the verb.', ans:false, explain:'In English, the subject usually comes BEFORE the verb. Example: "The cat (subject) ran (verb)."' },
+    math: { q:'What is √144?', a:'12', hint:'💡 What number multiplied by itself equals 144?' },
+    spell: { words:['parallel','personnel','possession','persistent','permanent'], challenge:'Find all the words with double letters — there are more than you think!' },
+    qod: 'If you could have dinner with any historical figure, who would you choose?',
+    fact: '📅 The Great Barrier Reef is the world\'s largest living structure — visible from space! 🪸'
+  },
+  { // Day 17
+    game: { type:'wir', opt1:'🌮 Only eat tacos forever', opt2:'🍕 Only eat pizza forever', prompt:'Would I rather...' },
+    word: { w:'Resilient', pos:'adjective', def:'Able to recover quickly from difficulties; tougher than adversity.', ex:'"The resilient community rebuilt their town stronger than ever after the flood."' },
+    grammar: { type:'mc', q:'What is the direct object in: "Maria threw the ball."', opts:['Maria','threw','the ball','There is none'], ans:2 },
+    math: { q:'What fraction of an hour is 45 minutes?', a:'¾ (three-quarters)', hint:'💡 How many minutes are in a full hour?' },
+    spell: { words:['beautiful','magnificent','gorgeous','radiant','dazzling'], challenge:'These are all synonyms for "pretty"! Can you add two more to the list?' },
+    qod: 'What problem in your school or community would you like to help solve?',
+    fact: '📅 Wombats produce cube-shaped poop — the only animal in the world that does! 🐨'
+  },
+  { // Day 18
+    game: { type:'mc', q:'In which organ does most digestion occur?', opts:['Stomach','Small intestine','Large intestine','Liver'], ans:1 },
+    word: { w:'Serene', pos:'adjective', def:'Calm, peaceful, and free from disturbance or worry.', ex:'"The serene mountain lake reflected the peaks perfectly in the still water."' },
+    grammar: { type:'fitb', q:'The team celebrated ___ victory with a big parade.', ans:'their', opts:['its','their',"it's","they're"] },
+    math: { q:'Round 4,738 to the nearest hundred.', a:'4,700', hint:'💡 Look at the tens digit — is it 5 or more?' },
+    spell: { words:['sufficient','efficient','proficient','deficient','ancient'], challenge:'These all contain "-cient" or "-ficient." Say them aloud — do you notice anything?' },
+    qod: 'What does "home" mean to you? Describe it in detail.',
+    fact: '📅 A group of crows is called a "murder." A group of cats is a "clowder." 🐦‍⬛'
+  },
+  { // Day 19
+    game: { type:'tf', q:'Light travels faster than sound.', ans:true, explain:"Yes! Light travels 186,000 miles per second. That's why you see lightning before you hear thunder!" },
+    word: { w:'Tenacious', pos:'adjective', def:'Holding firmly to something; very determined and persistent.', ex:'"The tenacious athlete practiced every single day for two years to earn her spot on the team."' },
+    grammar: { type:'mc', q:"Which sentence uses apostrophes correctly?", opts:["The cat's toys are lost.","The cats toys are lost.","The cat's are lost.","The cats' toy is his."], ans:0 },
+    math: { q:'If x + 15 = 42, what is x?', a:'x = 27', hint:'💡 What do you subtract from both sides to isolate x?' },
+    spell: { words:['thorough','borough','through','although','dough'], challenge:'All have "ough" but sound completely different! Try to match each to its sound.' },
+    qod: "What are three things you're grateful for today?",
+    fact: '📅 A shrimp\'s heart is located in its head! 🦐'
+  },
+  { // Day 20
+    game: { type:'fts', prompt:"Something I've learned this year that surprised me was...", ph:'Think carefully — what changed your mind about something?' },
+    word: { w:'Vivid', pos:'adjective', def:'Producing powerful feelings or very clear images in the mind.', ex:'"She wrote such a vivid description of the sunset that I felt like I was standing right there."' },
+    grammar: { type:'mc', q:'Which sentence uses passive voice?', opts:['The dog chased the cat.','The cat was chased by the dog.','The cat ran from the dog.','The dog was fast.'], ans:1 },
+    math: { q:'What is 20% of 350?', a:'70', hint:'💡 Find 10% first (= 35), then double it!' },
+    spell: { words:['congratulations','Mediterranean','conscientious','reconnaissance','miscellaneous'], challenge:'Challenge round! Try to spell all 5 from memory. These are master-level words!' },
+    qod: "What is something you're proud of accomplishing this year? Big or small!",
+    fact: '📅 You\'ve made it to Day 20! The word "school" comes from the Greek word "scholē" meaning "leisure." 📚'
+  }
+];
+
+// ============================================================
+// SECTIONS CONFIG
+// ============================================================
+const SECTIONS = [
+  { id:'welcome',      label:'Welcome',         icon:'🌟', colorVar:'--section-welcome',  enabled:true,  alwaysOn:true },
+  { id:'calendar',     label:'Calendar',        icon:'📅', colorVar:'--section-calendar', enabled:true  },
+  { id:'game',         label:'Morning Game',    icon:'🎮', colorVar:'--section-game',     enabled:true  },
+  { id:'word',         label:'Word of the Day', icon:'📖', colorVar:'--section-word',     enabled:true  },
+  { id:'grammar',      label:'Grammar',         icon:'✏️', colorVar:'--section-grammar',  enabled:true  },
+  { id:'math',         label:'Math Warm-Up',    icon:'🔢', colorVar:'--section-math',     enabled:true  },
+  { id:'spell',        label:'Spelling',        icon:'🔤', colorVar:'--section-spelling', enabled:true  },
+  { id:'qod',          label:'Question of Day', icon:'💬', colorVar:'--section-qod',      enabled:true  },
+  { id:'announcements',label:'Announcements',   icon:'📢', colorVar:'--section-announce', enabled:true  },
+  { id:'schedule',     label:'Schedule',        icon:'🗓️', colorVar:'--section-schedule', enabled:false },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let cur = 0;
+let active = [];
+let dayIdx = 0;
+let day = null;
+let theme = 'pastel';
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  const s = safeLoad('mmSettings', {});
+  if (s.theme) applyTheme(s.theme, false);
+  if (s.sections) SECTIONS.forEach(sec => { if (!sec.alwaysOn && s.sections[sec.id] != null) sec.enabled = s.sections[sec.id]; });
+
+  const override = parseInt(safeLoad('mmDayOverride', 0));
+  if (override >= 1 && override <= 20) {
+    dayIdx = override - 1;
+  } else {
+    const now = new Date();
+    const doy = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
+    dayIdx = Math.max(0, (doy - 1)) % 20;
+  }
+  day = DAYS[dayIdx];
+
+  buildSidebar();
+  buildToggles();
+  refreshActive();
+  render();
+}
+
+function safeLoad(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch(e) { return def; } }
+function safeSave(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
+
+function getDay() { const o = parseInt(safeLoad('mmDayOverride', 0)); if (o >= 1 && o <= 20) return o; const n = new Date(); return Math.max(0,(Math.floor((n - new Date(n.getFullYear(),0,0))/86400000)-1)) % 20 + 1; }
+
+// ============================================================
+// SIDEBAR
+// ============================================================
+function buildSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '';
+  SECTIONS.forEach(sec => {
+    const b = document.createElement('button');
+    b.className = 'sbtn' + (sec.enabled ? '' : ' off');
+    b.dataset.sid = sec.id;
+    b.title = sec.label;
+    b.innerHTML = `<span>${sec.icon}</span><span class="sbtn-label">${sec.label}</span>`;
+    b.onclick = () => goTo(sec.id);
+    sb.appendChild(b);
+  });
+}
+
+function syncSidebar() {
+  const c = active[cur];
+  document.querySelectorAll('.sbtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.sid === c?.id);
+    const sec = SECTIONS.find(s => s.id === b.dataset.sid);
+    b.classList.toggle('off', !sec?.enabled);
+  });
+}
+
+function goTo(id) { const i = active.findIndex(s => s.id === id); if (i >= 0) { cur = i; render(); } }
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function nav(d) { cur = Math.max(0, Math.min(active.length - 1, cur + d)); render(); }
+
+function refreshActive() { active = SECTIONS.filter(s => s.enabled); cur = Math.min(cur, Math.max(0, active.length - 1)); }
+
+function updateNav() {
+  document.getElementById('prev-btn').disabled = cur === 0;
+  document.getElementById('next-btn').disabled = cur === active.length - 1;
+  document.getElementById('slide-counter').textContent = `${cur + 1} / ${active.length}`;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  const wrap = document.getElementById('slide-wrap');
+  const sec = active[cur];
+  if (!sec) return;
+  wrap.innerHTML = '';
+  const slide = document.createElement('div');
+  slide.className = 'slide';
+  slide.innerHTML = builders[sec.id] ? builders[sec.id]() : `<p>Section: ${sec.label}</p>`;
+  wrap.appendChild(slide);
+  updateNav();
+  syncSidebar();
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function sColor(id) {
+  const sec = SECTIONS.find(s => s.id === id);
+  return sec ? `var(${sec.colorVar})` : 'var(--accent1)';
+}
+
+function secHeader(id) {
+  const sec = SECTIONS.find(s => s.id === id);
+  return `<div class="sec-header" style="background:${sColor(id)};"><span class="sec-icon">${sec.icon}</span><span>${sec.label}</span></div>`;
+}
+
+function fmtDate() {
+  const d = new Date();
+  return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()] + ', ' +
+    ['January','February','March','April','May','June','July','August','September','October','November','December'][d.getMonth()] + ' ' +
+    d.getDate() + ', ' + d.getFullYear();
+}
+
+function ge(key, def='') { const e = safeLoad('mmEdits', {}); return e[key] !== undefined ? e[key] : def; }
+function se(key, val) { const e = safeLoad('mmEdits', {}); e[key] = val; safeSave('mmEdits', e); }
+
+// ============================================================
+// SLIDE BUILDERS
+// ============================================================
+const builders = {
+
+  welcome() {
+    const greeting = ge('welcome_greeting', '✨ Good Morning, Class!');
+    return `
+      <div class="welcome-slide">
+        <div style="font-size:4rem;">☀️</div>
+        <div class="welcome-date">${fmtDate()}</div>
+        <div class="welcome-edit" contenteditable="true"
+             onblur="se('welcome_greeting',this.textContent)">${greeting}</div>
+        <div class="edit-note">✏️ Click the greeting above to edit it</div>
+        <div style="font-size:1rem;font-weight:700;opacity:0.65;margin-top:6px;">Day ${getDay()} of 20</div>
+      </div>`;
+  },
+
+  calendar() {
+    const weather = ge('weather','☀️ Sunny');
+    const temp = ge('temp','72°F');
+    return `
+      ${secHeader('calendar')}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div style="background:${sColor('calendar')};border:3px solid var(--border);border-radius:14px;padding:22px;text-align:center;">
+          <div style="font-size:0.85rem;font-weight:900;text-transform:uppercase;opacity:0.7;margin-bottom:8px;">📅 Today</div>
+          <div style="font-size:1.3rem;font-weight:900;line-height:1.3;">${fmtDate()}</div>
+        </div>
+        <div style="background:${sColor('calendar')};border:3px solid var(--border);border-radius:14px;padding:22px;text-align:center;">
+          <div style="font-size:0.85rem;font-weight:900;text-transform:uppercase;opacity:0.7;margin-bottom:6px;">🌡️ Temperature</div>
+          <input style="border:none;background:transparent;font-family:Nunito,sans-serif;font-weight:900;font-size:1.8rem;text-align:center;color:var(--text);width:100%;"
+                 value="${temp}" onblur="se('temp',this.value)" placeholder="72°F">
+        </div>
+        <div style="grid-column:1/-1;background:var(--slide-bg);border:3px solid var(--border);border-radius:14px;padding:18px;text-align:center;">
+          <div style="font-size:0.85rem;font-weight:900;text-transform:uppercase;opacity:0.7;margin-bottom:6px;">⛅ Weather</div>
+          <input style="border:none;background:transparent;font-family:Nunito,sans-serif;font-weight:900;font-size:1.4rem;text-align:center;color:var(--text);width:100%;"
+                 value="${weather}" onblur="se('weather',this.value)" placeholder="☀️ Sunny and warm">
+        </div>
+      </div>
+      <div style="background:${sColor('calendar')};border:3px solid var(--border);border-radius:12px;padding:18px;font-size:1.05rem;font-weight:700;text-align:center;">
+        ${day.fact}
+      </div>`;
+  },
+
+  game() {
+    const g = day.game;
+    const typeNames = { mc:'🔲 Multiple Choice', tf:'✅ True or False', tot:'🤔 This or That', wir:'💭 Would I Rather', fts:'✏️ Finish the Sentence', list:'📝 List It!', fitb:'🔤 Fill in the Blank', gmf:'❤️ Guess My Favorite' };
+    let body = '';
+
+    if (g.type === 'mc') {
+      body = `<div class="q-card">${g.q}</div>
+        <div class="choices">
+          ${['A','B','C','D'].map((l,i)=>`<div class="choice" onclick="revealMC(this,${i===g.ans})" data-ok="${i===g.ans}"><div class="choice-letter">${l}</div><span>${g.opts[i]}</span></div>`).join('')}
+        </div>`;
+    } else if (g.type === 'tf') {
+      body = `<div class="q-card">${g.q}</div>
+        <div class="tf-grid">
+          <div class="tf-card tf-true" onclick="revealTF(this,true,${g.ans},'game-explain')">✅ TRUE</div>
+          <div class="tf-card tf-false" onclick="revealTF(this,false,${g.ans},'game-explain')">❌ FALSE</div>
+        </div>
+        <div id="game-explain" class="reveal-box" style="background:var(--accent1);">${g.explain}</div>`;
+    } else if (g.type === 'tot') {
+      body = `<div class="q-card" style="font-size:1.4rem;">${g.prompt}</div>
+        <div class="tot-grid">
+          <div class="tot-card" style="background:var(--accent4);" onclick="this.style.boxShadow='0 0 0 5px var(--border)'">${g.opt1}</div>
+          <div class="tot-or">OR</div>
+          <div class="tot-card" style="background:var(--accent6);" onclick="this.style.boxShadow='0 0 0 5px var(--border)'">${g.opt2}</div>
+        </div>`;
+    } else if (g.type === 'wir') {
+      body = `<div class="q-card" style="font-size:1.3rem;">${g.prompt}</div>
+        <div class="tot-grid">
+          <div class="tot-card" style="background:var(--accent4);" onclick="this.style.boxShadow='0 0 0 5px var(--border)'">${g.opt1}</div>
+          <div class="tot-or">OR</div>
+          <div class="tot-card" style="background:var(--accent6);" onclick="this.style.boxShadow='0 0 0 5px var(--border)'">${g.opt2}</div>
+        </div>
+        <div style="text-align:center;margin-top:8px;">
+          <button class="abtn reveal-btn" onclick="document.getElementById('wir-ans').style.display='block';this.style.display='none'">🔍 Reveal My Answer</button>
+          <div id="wir-ans" class="reveal-box">My answer: ${g.opt2} 🎉</div>
+        </div>`;
+    } else if (g.type === 'fts') {
+      body = `<div class="fts-prompt">${g.prompt}</div>
+        <div class="edit-box">
+          <textarea class="edit-ta" rows="4" placeholder="${g.ph}" onblur="se('game_fts',this.value)">${ge('game_fts')}</textarea>
+        </div>`;
+    } else if (g.type === 'list') {
+      body = `<div class="list-box">
+        <div class="list-challenge">${g.challenge}</div>
+        ${g.hint ? `<div style="text-align:center;font-weight:700;opacity:0.65;margin-bottom:14px;">💡 ${g.hint}</div>` : ''}
+        <div class="list-grid">
+          ${Array.from({length:g.count},(_,i)=>`<div class="list-item"><div class="list-num">${i+1}</div><input type="text" placeholder="Type here…" value="${ge('list_'+i)}" onblur="se('list_${i}',this.value)"></div>`).join('')}
+        </div>
+      </div>`;
+    } else if (g.type === 'fitb') {
+      body = `<div class="q-card" style="font-size:1.5rem;line-height:1.8;">
+          ${g.q.replace('___','<input class="blank-input" type="text" placeholder="______">')}
+        </div>
+        <div style="text-align:center;">
+          <button class="abtn reveal-btn" onclick="document.getElementById('fitb-ans').style.display='block';this.style.display='none'">🔍 Show Answer</button>
+          <div id="fitb-ans" class="reveal-box">✅ Answer: "${g.ans}"</div>
+        </div>`;
+    } else if (g.type === 'gmf') {
+      body = `<div class="q-card">${g.q}</div>
+        <div class="gmf-grid">
+          ${g.opts.map((o,i)=>`<div class="gmf-card" onclick="revealGMF(this,${i===g.ans})">${o}</div>`).join('')}
+        </div>`;
+    }
+
+    return `<div class="sec-header" style="background:${sColor('game')};"><span class="sec-icon">🎮</span><span>${typeNames[g.type]||'Morning Game'}</span></div>${body}`;
+  },
+
+  word() {
+    const w = day.word;
+    return `${secHeader('word')}
+      <div class="word-card">
+        <div class="word-title">${w.w}</div>
+        <div class="word-pos"><em>${w.pos}</em></div>
+        <div class="word-def">${w.def}</div>
+        <div class="word-ex">💬 ${w.ex}</div>
+      </div>
+      <div class="edit-box">
+        <div class="edit-label">✏️ Use it in your own sentence:</div>
+        <textarea class="edit-ta" rows="3" placeholder="Write your sentence here…" onblur="se('word_sent',this.value)">${ge('word_sent')}</textarea>
+      </div>`;
+  },
+
+  grammar() {
+    const g = day.grammar;
+    let body = '';
+    if (g.type === 'mc') {
+      body = `<div class="q-card">${g.q}</div>
+        <div class="choices">
+          ${['A','B','C','D'].map((l,i)=>`<div class="choice" onclick="revealGramMC(this,${i===g.ans})" data-ok="${i===g.ans}"><div class="choice-letter">${l}</div><span>${g.opts[i]}</span></div>`).join('')}
+        </div>`;
+    } else if (g.type === 'tf') {
+      body = `<div class="q-card">${g.q}</div>
+        <div class="tf-grid">
+          <div class="tf-card tf-true" onclick="revealTF(this,true,${g.ans},'gram-explain')">✅ TRUE</div>
+          <div class="tf-card tf-false" onclick="revealTF(this,false,${g.ans},'gram-explain')">❌ FALSE</div>
+        </div>
+        <div id="gram-explain" class="reveal-box" style="background:var(--accent3);">${g.explain}</div>`;
+    } else if (g.type === 'fitb') {
+      body = `<div class="q-card" style="font-size:1.5rem;line-height:1.8;">
+          ${g.q.replace('___','<input class="blank-input" type="text" placeholder="______">')}
+        </div>
+        <div style="text-align:center;">
+          <button class="abtn reveal-btn" onclick="document.getElementById('gram-ans').style.display='block';this.style.display='none'">🔍 Show Answer</button>
+          <div id="gram-ans" class="reveal-box" style="background:var(--accent3);">✅ Answer: "${g.ans}"</div>
+        </div>`;
+    }
+    return `${secHeader('grammar')}${body}`;
+  },
+
+  math() {
+    const m = day.math;
+    return `${secHeader('math')}
+      <div class="math-problem">${m.q}</div>
+      ${m.hint ? `<div class="math-hint">${m.hint}</div>` : ''}
+      <div class="edit-box">
+        <div class="edit-label">📝 Work space:</div>
+        <textarea class="edit-ta" rows="3" placeholder="Show your work here…" onblur="se('math_work',this.value)">${ge('math_work')}</textarea>
+      </div>
+      <div style="text-align:center;margin-top:6px;">
+        <button class="abtn reveal-btn" onclick="document.getElementById('math-ans').style.display='block';this.style.display='none'">🔍 Reveal Answer</button>
+        <div id="math-ans" class="reveal-box" style="font-size:2rem;">✅ ${m.a}</div>
+      </div>`;
+  },
+
+  spell() {
+    const s = day.spell;
+    return `${secHeader('spell')}
+      <div class="spelling-grid">
+        ${s.words.map((w,i)=>`<div class="spell-word">${i+1}. ${w}</div>`).join('')}
+      </div>
+      <div class="edit-box">
+        <div class="edit-label">📌 Challenge: ${s.challenge}</div>
+        <textarea class="edit-ta" rows="3" placeholder="Write your answer…" onblur="se('spell_ans',this.value)">${ge('spell_ans')}</textarea>
+      </div>`;
+  },
+
+  qod() {
+    return `${secHeader('qod')}
+      <div class="qod-card">${day.qod}</div>
+      <div class="edit-box">
+        <div class="edit-label">💭 Class discussion notes:</div>
+        <textarea class="edit-ta" rows="4" placeholder="Record student responses here…" onblur="se('qod_notes',this.value)">${ge('qod_notes')}</textarea>
+      </div>`;
+  },
+
+  announcements() {
+    return `${secHeader('announcements')}
+      <div class="edit-box" style="border-style:dashed;">
+        <div class="edit-label">📝 Today's Announcements</div>
+        <textarea class="edit-ta" rows="9" placeholder="Type your announcements here…&#10;• &#10;• &#10;• " onblur="se('announcements',this.value)">${ge('announcements')}</textarea>
+      </div>
+      <div class="edit-note">✏️ Click to edit — changes are saved automatically</div>`;
+  },
+
+  schedule() {
+    const def = [
+      {t:'8:00 AM',s:'Morning Meeting'},{t:'8:30 AM',s:'Math'},{t:'9:30 AM',s:'Reading / ELA'},
+      {t:'10:30 AM',s:'Snack & Break'},{t:'11:00 AM',s:'Writing'},{t:'12:00 PM',s:'Lunch & Recess'},
+      {t:'1:00 PM',s:'Science / Social Studies'},{t:'2:00 PM',s:'Specials'},{t:'3:00 PM',s:'Pack Up & Dismissal'},
+    ];
+    const sched = safeLoad('mmSchedule', def);
+    return `${secHeader('schedule')}
+      ${sched.map((p,i)=>`
+        <div class="sched-row">
+          <input class="sched-time" type="text" value="${p.t}" onblur="saveSchedule(${i},'t',this.value)">
+          <span style="font-weight:900;opacity:0.4;">→</span>
+          <input class="sched-subj" type="text" value="${p.s}" onblur="saveSchedule(${i},'s',this.value)">
+        </div>`).join('')}
+      <div class="edit-note" style="margin-top:8px;">✏️ Click any field to edit</div>`;
+  }
+};
+
+// ============================================================
+// INTERACTION HELPERS
+// ============================================================
+function revealMC(el, isOk) {
+  document.querySelectorAll('.choice[data-ok]').forEach(c => {
+    c.classList.remove('correct','wrong');
+    c.classList.add(c.dataset.ok === 'true' ? 'correct' : 'wrong');
+    c.onclick = null;
+  });
+}
+
+function revealGramMC(el, isOk) {
+  document.querySelectorAll('.choice[data-ok]').forEach(c => {
+    c.classList.remove('correct','wrong');
+    c.classList.add(c.dataset.ok === 'true' ? 'correct' : 'wrong');
+    c.onclick = null;
+  });
+}
+
+function revealTF(el, clicked, correct, explainId) {
+  el.style.border = (clicked === correct) ? '4px solid #2a9d70' : '4px solid #c0392b';
+  document.querySelectorAll('.tf-card').forEach(c => { c.style.opacity = '0.75'; c.onclick = null; });
+  el.style.opacity = '1';
+  const box = document.getElementById(explainId);
+  if (box) box.style.display = 'block';
+}
+
+function revealGMF(el, isOk) {
+  document.querySelectorAll('.gmf-card').forEach(c => { c.onclick = null; c.style.opacity = '0.65'; });
+  el.style.opacity = '1';
+  el.classList.add(isOk ? 'gmf-right' : 'gmf-wrong');
+  // Also highlight the correct one
+  const cards = document.querySelectorAll('.gmf-card');
+  const ansIdx = day.game.ans;
+  cards[ansIdx].classList.add('gmf-right');
+  cards[ansIdx].style.opacity = '1';
+}
+
+// ============================================================
+// SCHEDULE SAVE
+// ============================================================
+function saveSchedule(i, field, val) {
+  const def = [
+    {t:'8:00 AM',s:'Morning Meeting'},{t:'8:30 AM',s:'Math'},{t:'9:30 AM',s:'Reading / ELA'},
+    {t:'10:30 AM',s:'Snack & Break'},{t:'11:00 AM',s:'Writing'},{t:'12:00 PM',s:'Lunch & Recess'},
+    {t:'1:00 PM',s:'Science / Social Studies'},{t:'2:00 PM',s:'Specials'},{t:'3:00 PM',s:'Pack Up & Dismissal'},
+  ];
+  const sched = safeLoad('mmSchedule', def);
+  sched[i][field] = val;
+  safeSave('mmSchedule', sched);
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function buildToggles() {
+  const container = document.getElementById('toggle-list');
+  container.innerHTML = '';
+  SECTIONS.filter(s => !s.alwaysOn).forEach(sec => {
+    const row = document.createElement('div');
+    row.className = 'toggle-row';
+    row.innerHTML = `
+      <div class="toggle-label"><span>${sec.icon}</span><span>${sec.label}</span></div>
+      <label class="switch">
+        <input type="checkbox" ${sec.enabled ? 'checked' : ''} onchange="toggleSec('${sec.id}',this.checked)">
+        <div class="track"></div>
+      </label>`;
+    container.appendChild(row);
+  });
+}
+
+function toggleSec(id, on) {
+  const s = SECTIONS.find(x => x.id === id);
+  if (s) { s.enabled = on; }
+  const btn = document.querySelector(`.sbtn[data-sid="${id}"]`);
+  if (btn) btn.classList.toggle('off', !on);
+  saveSettings();
+}
+
+function saveSettings() {
+  const secs = {};
+  SECTIONS.forEach(s => { secs[s.id] = s.enabled; });
+  safeSave('mmSettings', { theme, sections: secs });
+}
+
+function openSettings() {
+  document.getElementById('day-input').value = getDay();
+  document.getElementById('settings-overlay').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open');
+  refreshActive();
+  render();
+}
+
+function applyDay() {
+  const v = parseInt(document.getElementById('day-input').value);
+  if (v >= 1 && v <= 20) { safeSave('mmDayOverride', v); dayIdx = v-1; day = DAYS[dayIdx]; render(); }
+}
+
+function clearDay() {
+  localStorage.removeItem('mmDayOverride');
+  const n = new Date();
+  dayIdx = Math.max(0,(Math.floor((n-new Date(n.getFullYear(),0,0))/86400000)-1)) % 20;
+  day = DAYS[dayIdx];
+  document.getElementById('day-input').value = dayIdx + 1;
+  render();
+}
+
+// ============================================================
+// THEMES
+// ============================================================
+function applyTheme(t, save=true) {
+  theme = t;
+  document.documentElement.dataset.theme = (t === 'pastel' ? '' : t);
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('active', b.dataset.theme === t));
+  if (save) saveSettings();
+}
+
+document.querySelectorAll('.tbtn').forEach(b => b.onclick = () => applyTheme(b.dataset.theme));
+
+// ============================================================
+// FULLSCREEN
+// ============================================================
+function toggleFS() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(()=>{});
+    document.getElementById('fs-btn').textContent = '⊠ Exit Full';
+  } else {
+    document.exitFullscreen();
+    document.getElementById('fs-btn').textContent = '⛶ Fullscreen';
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) document.getElementById('fs-btn').textContent = '⛶ Fullscreen';
+});
+
+// ============================================================
+// KEYBOARD
+// ============================================================
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.contentEditable === 'true') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); nav(1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); nav(-1); }
+  if (e.key === 'f' || e.key === 'F') toggleFS();
+  if (e.key === 'Escape') { if (document.getElementById('settings-overlay').classList.contains('open')) closeSettings(); }
+});
+
+// Close overlay on background click
+document.getElementById('settings-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings();
+});
+
+// ============================================================
+// GO
+// ============================================================
+init();
+</script>
+</body>
+</html>
