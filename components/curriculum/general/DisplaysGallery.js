@@ -384,7 +384,24 @@ const displayCategories = [
           { name: 'Zones of Regulation - Blue', file: 'Zones of Regulation Blue.png' },
           { name: 'Zones of Regulation - Green', file: 'Zones of Regulation Green.png' },
           { name: 'Zones of Regulation - Red', file: 'Zones of Regulation Red.png' },
-          { name: 'Zones of Regulation - Yellow', file: 'Zones of Regulation Yellow.png' }
+          { name: 'Zones of Regulation - Yellow', file: 'Zones of Regulation Yellow.png' },
+          { name: 'Classroom Rules', file: 'Classroom Rules.png' },
+          { name: 'Classroom Rules 2', file: 'Classroom Rules 2.png' },
+          { name: 'Zones Display', file: 'Zones.png' },
+          { name: 'Zones Display 2', file: 'Zones 2.png' },
+          { name: 'Zones Display 3', file: 'Zones 3.png' },
+          { name: 'Zones - Blue', file: 'Zones Blue.png' },
+          { name: 'Zones - Blue 2', file: 'Zones Blue 2.png' },
+          { name: 'Zones - Blue 3', file: 'Zones Blue 3.png' },
+          { name: 'Zones - Green', file: 'Zones Green.png' },
+          { name: 'Zones - Green 2', file: 'Zones Geen 2.png' },
+          { name: 'Zones - Green 3', file: 'Zones Green 3.png' },
+          { name: 'Zones - Red', file: 'Zones Red.png' },
+          { name: 'Zones - Red 2', file: 'Zones Red 2.png' },
+          { name: 'Zones - Red 3', file: 'Zones Red 3.png' },
+          { name: 'Zones - Yellow', file: 'Zones Yellow.png' },
+          { name: 'Zones - Yellow 2', file: 'Zones Yellow 2.png' },
+          { name: 'Zones - Yellow 3', file: 'Zones Yellow 3.png' }
         ]
       }
     ]

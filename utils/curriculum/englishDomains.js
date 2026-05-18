@@ -958,6 +958,10 @@ export const englishDomains = [{
           title: "SoundItOut",
           src: "/Displays/English/Spelling/SoundItOut.png",
           extra: true
+        }, {
+          type: "image",
+          title: "Alphabet Mnemonic",
+          src: "/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Display/Alphabet Mnemonic.png"
         }],
         learn: [{
           type: 'pdf',
@@ -965,6 +969,38 @@ export const englishDomains = [{
           src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf',
           pptxSrc: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pptx',
           thumbnail: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/cover.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - MAT',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/MAT.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - PAT',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/PAT.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - PIN',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/PIN.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - PIT',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/PIT.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - SAT',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/SAT.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - SIT',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/SIT.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - TAP',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/TAP.png'
+        }, {
+          type: 'image',
+          title: 'CVC Blending Card - TIP',
+          src: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/TIP.png'
         }]
       }
     }, {
@@ -1610,6 +1646,21 @@ export const englishDomains = [{
       name: 'Comprehension Strategies (Predicting, Questioning, Summarising, Inferring, Visualising, Clarifying)',
       resources: {
         practice: [{
+          type: "image",
+          title: "Delulu Comprehension",
+          src: "/Curriculum/New Literacy/Comprehension/Delulu Comprehension.png",
+          extra: true
+        }, {
+          type: "image",
+          title: "Rizz Comprehension",
+          src: "/Curriculum/New Literacy/Comprehension/Rizz Comprehension.png",
+          extra: true
+        }, {
+          type: "image",
+          title: "Slay Comprehension",
+          src: "/Curriculum/New Literacy/Comprehension/Slay Comprehension.png",
+          extra: true
+        }, {
           type: "image",
           title: "Bees Comprehension",
           src: "/Curriculum/Literacy/Comprehension Pages/Non Fiction/Bees.png",

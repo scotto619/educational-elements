@@ -709,10 +709,22 @@ export default function CurriculumPage() {
               </div>
             </div>
 
-            {/* ── Brain Breaks tile ── */}
-            <div className="mt-2">
+            {/* ── Classroom Tools row ── */}
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {/* Morning Meeting Presenter */}
+              <button onClick={() => router.push('/morning-meeting')}
+                className="group rounded-3xl border-2 border-rose-300 bg-rose-100 hover:bg-rose-200 p-7 flex items-center gap-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-md cursor-pointer">
+                <span className="text-6xl group-hover:scale-110 transition-transform duration-200">🌅</span>
+                <div>
+                  <h3 className="text-3xl font-black text-rose-900">Morning Meeting</h3>
+                  <p className="text-gray-500 text-sm mt-1">Daily greeting, review & reflection presenter</p>
+                </div>
+                <div className="ml-auto text-rose-700 font-black text-sm group-hover:translate-x-1 transition-transform">Open →</div>
+              </button>
+
+              {/* Brain Breaks */}
               <button onClick={() => { setDisplayCat(ALL_DISPLAY_CATEGORIES.find(c => c.id === 'games')); }}
-                className="group w-full rounded-3xl border-2 border-fuchsia-300 bg-fuchsia-200 hover:bg-fuchsia-300 p-7 flex items-center gap-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-md cursor-pointer">
+                className="group rounded-3xl border-2 border-fuchsia-300 bg-fuchsia-200 hover:bg-fuchsia-300 p-7 flex items-center gap-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-md cursor-pointer">
                 <span className="text-6xl group-hover:scale-110 transition-transform duration-200">🎲</span>
                 <div>
                   <h3 className="text-3xl font-black text-fuchsia-900">Brain Breaks</h3>
