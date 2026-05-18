@@ -21,9 +21,13 @@ const LoadingSpinner = () => (
 
 // ─── Resource Data ───────────────────────────────────────────────────────────
 const resourcesBySubject = {
+  behaviour: [
+    { id: 'zones-of-regulation', title: 'Zones of Regulation', description: 'A framework for self-regulation — understanding and managing emotions in the classroom', pdfPath: '/free-resources/Zones_of_Regulation.pdf', icon: '🌈' },
+  ],
   english: [
     { id: 'wilds-of-writing', title: 'The Wilds of Writing: A Field Guide', description: 'A comprehensive guide to creative writing techniques', pdfPath: '/Unit Resources/Literacy/The_Wilds_of_Writing_A_Field_Guide.pdf', icon: '✍️' },
     { id: 'blend-friends', title: 'Blend Friends Adventure', description: 'Phonics and blending adventure', pdfPath: '/Unit Resources/Literacy/Blend_Friends_Adventure.pdf', icon: '🔤' },
+    { id: 'phonics-superpowers', title: 'Phonics Superpowers Guide', description: 'CVC blending cards and phonics patterns guide — includes MAT, PAT, PIN, SAT, SIT, TAP, TIP and more', pdfPath: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf', icon: '🔡' },
     { id: 'comprehension-info-texts', title: 'Comprehension Information Texts', description: 'Developing comprehension skills with information texts', pdfPath: '/Unit Resources/Literacy/Comprehension Information Texts.pdf', icon: '📖' },
     { id: 'leveled-comprehension-pack-1', title: 'Leveled Comprehension PACK 1', description: 'First collection of leveled reading comprehension tasks', pdfPath: '/Unit Resources/Literacy/Leveled Comprehension PACK 1.pdf', icon: '📖' },
     { id: 'leveled-comprehension-pack-2', title: 'Leveled Comprehension PACK 2', description: 'Second collection of leveled reading comprehension tasks', pdfPath: '/Unit Resources/Literacy/Leveled Comprehension PACK 2.pdf', icon: '📖' },
@@ -81,6 +85,19 @@ const toolsSearchIndex = [];
 
 // Subject configuration
 const subjects = [
+  {
+    id: 'behaviour',
+    name: 'Behaviour & Wellbeing',
+    icon: '🌈',
+    gradient: 'from-amber-500 to-rose-500',
+    lightBg: 'bg-amber-50',
+    accentColor: 'text-amber-600',
+    borderColor: 'border-amber-200',
+    ringColor: 'ring-amber-300',
+    banner: null,
+    description: 'Zones of regulation, classroom rules & wellbeing displays',
+    hasCurriculum: false,
+  },
   {
     id: 'english',
     name: 'English',
@@ -459,11 +476,19 @@ const ResourceHubTab = ({
       }
 
       if (sectionId === 'displays') {
+        // Map ResourceHub subject IDs to DisplaysGallery category IDs
+        const displayFilterMap = {
+          english: 'english',
+          mathematics: 'maths',
+          science: 'science',
+          hass: 'hass',
+          behaviour: 'behaviour',
+        };
         return (
           <DisplaysGallery
             showToast={showToast}
             students={students}
-            subjectFilter={subjectId === 'hass' ? 'history' : subjectId}
+            subjectFilter={displayFilterMap[subjectId] || subjectId}
           />
         );
       }
@@ -612,7 +637,7 @@ const ResourceHubTab = ({
           {/* Subject Cards */}
           <div>
             <h2 className="text-xl font-bold text-slate-700 mb-4">Choose a Subject</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
               {subjects.map(subject => (
                 <button
                   key={subject.id}

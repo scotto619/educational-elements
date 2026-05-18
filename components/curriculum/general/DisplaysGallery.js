@@ -451,8 +451,15 @@ const buildImageUrl = (folder, file) => {
   return `/Displays/${folder}/${encodedPath}`;
 };
 
-const DisplaysGallery = () => {
-  const [selectedCategoryId, setSelectedCategoryId] = useState(displayCategories[0].id);
+const DisplaysGallery = ({ subjectFilter } = {}) => {
+  const defaultCategoryId = React.useMemo(() => {
+    if (subjectFilter) {
+      const match = displayCategories.find(c => c.id === subjectFilter);
+      if (match) return match.id;
+    }
+    return displayCategories[0].id;
+  }, [subjectFilter]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(defaultCategoryId);
   const [selectedImage, setSelectedImage] = useState(null);
 
   const getCategoryImageCount = category =>
