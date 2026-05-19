@@ -155,6 +155,11 @@ const ClassroomChampions = () => {
   useEffect(() => {
     if (router.query.tab) {
       const tabParam = router.query.tab.toLowerCase();
+      // Redirect resource-hub directly to the new curriculum page
+      if (tabParam === 'resource-hub') {
+        router.replace('/curriculum');
+        return;
+      }
       // Check if the tab exists in either of our tab lists
       const isValidTab = [...CLASSROOM_CHAMPIONS_TABS, ...EDUCATIONAL_ELEMENTS_TABS]
         .some(t => t.id === tabParam);
@@ -164,6 +169,13 @@ const ClassroomChampions = () => {
       }
     }
   }, [router.query.tab]);
+
+  // Redirect away from resource-hub tab if it ever gets set
+  useEffect(() => {
+    if (activeTab === 'resource-hub') {
+      router.push('/curriculum');
+    }
+  }, [activeTab, router]);
 
   // Class and student data
   const [currentClassId, setCurrentClassId] = useState(null);
@@ -1098,11 +1110,7 @@ const ClassroomChampions = () => {
         );
 
       case 'resource-hub':
-        return <ResourceHubTab
-          {...commonProps}
-          saveData={(data) => saveClassData({ resourceHubData: { ...currentClassData?.resourceHubData, ...data } })}
-          loadedData={currentClassData?.resourceHubData || {}}
-        />;
+        return null; // handled by useEffect — redirects to /curriculum
 
       case 'toolkit':
         return <TeachersToolkitTab
