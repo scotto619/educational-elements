@@ -97,6 +97,7 @@ const ALL_DISPLAY_CATEGORIES = [
       { id: 'classroom-rules',  name: 'Classroom Rules',   emoji: '📋', bg: 'bg-amber-100',  border: 'border-amber-300',  hover: 'hover:bg-amber-200',  text: 'text-amber-900',  images: [{ name: 'Classroom Rules', file: 'Classroom Rules.png' },{ name: 'Classroom Rules 2', file: 'Classroom Rules 2.png' }] },
       { id: 'behaviour-cues',   name: 'Behaviour Cues',    emoji: '🎨', bg: 'bg-rose-100',   border: 'border-rose-300',   hover: 'hover:bg-rose-200',   text: 'text-rose-900',   images: [{ name: 'Blue', file: 'Blue.png' },{ name: 'Colours', file: 'Colours.png' },{ name: 'Green', file: 'Green.png' },{ name: 'Red', file: 'Red.png' },{ name: 'Yellow', file: 'Yellow.png' }] },
       { id: 'zones-regulation', name: 'Zones of Regulation', emoji: '🌈', bg: 'bg-sky-100',  border: 'border-sky-300',    hover: 'hover:bg-sky-200',    text: 'text-sky-900',    images: [{ name: 'Zones of Regulation', file: 'Zones of Regulation.png' },{ name: 'Zones', file: 'Zones.png' },{ name: 'Zones 2', file: 'Zones 2.png' },{ name: 'Zones 3', file: 'Zones 3.png' },{ name: 'Zones - Blue', file: 'Zones of Regulation Blue.png' },{ name: 'Zones - Blue 2', file: 'Zones Blue 2.png' },{ name: 'Zones - Blue 3', file: 'Zones Blue 3.png' },{ name: 'Zones - Green', file: 'Zones of Regulation Green.png' },{ name: 'Zones - Green 2', file: 'Zones Geen 2.png' },{ name: 'Zones - Green 3', file: 'Zones Green 3.png' },{ name: 'Zones - Red', file: 'Zones of Regulation Red.png' },{ name: 'Zones - Red 2', file: 'Zones Red 2.png' },{ name: 'Zones - Red 3', file: 'Zones Red 3.png' },{ name: 'Zones - Yellow', file: 'Zones of Regulation Yellow.png' },{ name: 'Zones - Yellow 2', file: 'Zones Yellow 2.png' },{ name: 'Zones - Yellow 3', file: 'Zones Yellow 3.png' }] },
+      { id: 'mood-modes', name: 'Mood Modes', emoji: '🐾', bg: 'bg-purple-100', border: 'border-purple-300', hover: 'hover:bg-purple-200', text: 'text-purple-900', images: [{ name: 'Mood Modes Overview', file: 'Mood Modes/Mood Modes Overview.png' },{ name: 'Recharge Mode', file: 'Mood Modes/Recharge Mode.png' },{ name: 'Ready Mode', file: 'Mood Modes/Ready Mode.png' },{ name: 'Alert Mode', file: 'Mood Modes/Alert Mode.png' },{ name: 'Overload Mode', file: 'Mood Modes/Overload Mode.png' }] },
     ],
   },
   {
@@ -176,6 +177,7 @@ const resourcesBySubject = {
   ],
   behaviour: [
     { id: 'zones-of-regulation', title: 'Zones of Regulation', icon: '🌈', pdfPath: '/free-resources/Zones_of_Regulation.pdf' },
+    { id: 'mood-modes-pack', title: 'Mood Modes Pack (All Posters)', icon: '🐾', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Pack.pdf' },
   ],
   hass: [
     { id: 'historical-figures',  title: 'Historical Figures',                          icon: '🏛️', pdfPath: '/Unit Resources/HASS/Historical Figures.pptx' },
