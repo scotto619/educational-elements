@@ -1,4 +1,4 @@
-// pages/curriculum.js — Resource Hub (standalone, no class required)
+// pages/curriculum.js — Resource Hub (the main resource area)
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
