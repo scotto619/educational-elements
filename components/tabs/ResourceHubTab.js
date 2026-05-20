@@ -316,7 +316,7 @@ const SearchResults = ({ query, onNavigate }) => {
     // Add resources
     Object.entries(resourcesBySubject).forEach(([subjectId, resources]) => {
       resources.forEach(r => {
-        items.push({ ...r, subject: subjectId, section: 'resources', type: 'resource', sectionLabel: 'Unit Resources' });
+        items.push({ ...r, subject: subjectId, section: 'resources', type: 'resource', sectionLabel: 'Bundles' });
       });
     });
     return items;
