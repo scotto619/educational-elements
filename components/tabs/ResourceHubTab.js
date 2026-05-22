@@ -25,6 +25,7 @@ const resourcesBySubject = {
     { id: 'zones-of-regulation', title: 'Zones of Regulation', description: 'A framework for self-regulation — understanding and managing emotions in the classroom', pdfPath: '/free-resources/Zones_of_Regulation.pdf', icon: '🌈' },
   ],
   english: [
+    { id: 'informative-ocean-theme', title: 'Informative Writing — Ocean Theme Learning Wall', description: 'A full ocean-themed learning wall set for informative writing — 24 display posters covering planning, research, writing and editing', pdfPath: '/Unit Resources/English/Informative_Ocean_Theme_Learning_Wall.pdf', icon: '🌊' },
     { id: 'wilds-of-writing', title: 'The Wilds of Writing: A Field Guide', description: 'A comprehensive guide to creative writing techniques', pdfPath: '/Unit Resources/Literacy/The_Wilds_of_Writing_A_Field_Guide.pdf', icon: '✍️' },
     { id: 'blend-friends', title: 'Blend Friends Adventure', description: 'Phonics and blending adventure', pdfPath: '/Unit Resources/Literacy/Blend_Friends_Adventure.pdf', icon: '🔤' },
     { id: 'phonics-superpowers', title: 'Phonics Superpowers Guide', description: 'CVC blending cards and phonics patterns guide — includes MAT, PAT, PIN, SAT, SIT, TAP, TIP and more', pdfPath: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf', icon: '🔡' },
@@ -49,6 +50,7 @@ const resourcesBySubject = {
     { id: 'world-cup', title: 'World Cup History: The Global Game', description: 'Reading comprehension about the World Cup', pdfPath: '/Unit Resources/Literacy/World_Cup_History_The_Global_Game.pdf', icon: '⚽' },
   ],
   mathematics: [
+    { id: 'math-mentals', title: 'Math Mentals', description: '15-page collection of mental maths worksheets for regular classroom practice', pdfPath: '/Unit Resources/Maths/Math_Mentals.pdf', icon: '🧠' },
     { id: 'coins-notes', title: 'Australian Coins and Notes', description: 'Understanding Australian currency and money skills', pdfPath: '/Unit Resources/Mathematics/Australian Coins and Notes.pdf', icon: '💰' },
     { id: 'fraction-blocks', title: 'Fraction Building Blocks', description: 'Foundational concepts for understanding fractions', pdfPath: '/Unit Resources/Mathematics/Fraction_Building_Blocks.pdf', icon: '½' },
     { id: 'integer-ocean', title: 'Integer Ocean Adventure', description: 'Exploring positive and negative integers', pdfPath: '/Unit Resources/Mathematics/Integer_Ocean_Adventure.pdf', icon: '🌊' },
