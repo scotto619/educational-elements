@@ -6,36 +6,36 @@ import Image from 'next/image';
 
 // ── Resource gallery images (auto-scrolling showcase) ──
 const GALLERY_ROW_1 = [
-  { src: '/Displays/English/Writing/Narrative Writing Structure.png', alt: 'Narrative Writing Structure' },
-  { src: '/Displays/English/Phonics/BL Blend.png', alt: 'BL Blend Phonics' },
-  { src: '/Displays/English/Phonics/BR Blend.png', alt: 'BR Blend Phonics' },
-  { src: '/Displays/English/Writing/Persuasive Writing Structure.png', alt: 'Persuasive Writing Structure' },
-  { src: '/Displays/English/Worksheets/VerbsWorksheet.png', alt: 'Verbs Worksheet' },
-  { src: '/Displays/English/Writing/Informative Writing Structure.png', alt: 'Informative Writing Structure' },
-  { src: '/Displays/English/Worksheets/PersuasiveWritingWorksheet.png', alt: 'Persuasive Writing Worksheet' },
-  { src: '/Displays/English/Worksheets/TEELParagraphWorksheet.png', alt: 'TEEL Worksheet' },
+  { src: '/Displays/English/Writing/Narrative/Narrative Writing Structure.png', alt: 'Narrative Writing Structure' },
+  { src: '/Displays/English/Phonics/Blends/BL Blend.png', alt: 'BL Blend Phonics' },
+  { src: '/Displays/English/Phonics/Blends/BR Blend.png', alt: 'BR Blend Phonics' },
+  { src: '/Displays/English/Writing/Persuasive/Persuasive Writing Structure.png', alt: 'Persuasive Writing Structure' },
+  { src: '/Displays/English/Worksheets/Grammar/VerbsWorksheet.png', alt: 'Verbs Worksheet' },
+  { src: '/Displays/English/Writing/Informative/Informative Writing Structure.png', alt: 'Informative Writing Structure' },
+  { src: '/Displays/English/Worksheets/Writing/PersuasiveWritingWorksheet.png', alt: 'Persuasive Writing Worksheet' },
+  { src: '/Displays/English/Worksheets/Writing/TEELParagraphWorksheet.png', alt: 'TEEL Worksheet' },
 ];
 
 const GALLERY_ROW_2 = [
   { src: '/Displays/Maths/Worksheets/AustralianCurrencyWorksheet.png', alt: 'Australian Currency' },
-  { src: '/Displays/Maths/Addition.png', alt: 'Addition' },
+  { src: '/Displays/Maths/Number/Addition.png', alt: 'Addition' },
   { src: '/Displays/Science/Space/SolarSystem.png', alt: 'Solar System' },
-  { src: '/Displays/English/Worksheets/ComprehensionWorksheet4.png', alt: 'Reading Comprehension' },
-  { src: '/Displays/English/Worksheets/ComprehensionWorksheet.png', alt: 'Reading Comprehension' },
+  { src: '/Displays/English/Worksheets/Comprehension/Ancient History/ComprehensionWorksheet4.png', alt: 'Reading Comprehension' },
+  { src: '/Displays/English/Worksheets/Comprehension/Young Readers/ComprehensionWorksheet.png', alt: 'Reading Comprehension' },
   { src: '/Displays/Maths/Worksheets/CountingWorksheet.png', alt: 'Counting Worksheet' },
   { src: '/Displays/Science/Space/Earth.png', alt: 'Earth Our Blue Marble' },
-  { src: '/Displays/English/Worksheets/ComprehensionWorksheet5.png', alt: 'Comprehension' },
+  { src: '/Displays/English/Worksheets/Comprehension/Ancient History/ComprehensionWorksheet5.png', alt: 'Comprehension' },
 ];
 
 const GALLERY_ROW_3 = [
-  { src: '/Displays/English/Phonics/SH Blend.png', alt: 'SH Blend' },
+  { src: '/Displays/English/Phonics/Blends/SH Blend.png', alt: 'SH Blend' },
   { src: '/Displays/Maths/Worksheets/Multiplication Worksheet.png', alt: 'Multiplication Worksheet' },
-  { src: '/Displays/English/Phonics/TR Blend.png', alt: 'TR Blend' },
+  { src: '/Displays/English/Phonics/Blends/TR Blend.png', alt: 'TR Blend' },
   { src: '/Displays/Maths/Worksheets/SkipCountingWorksheet.png', alt: 'Skip Counting Worksheet' },
-  { src: '/Displays/English/Writing/Poetry Writing Structure.png', alt: 'Poetry Structure' },
+  { src: '/Displays/English/Writing/Poetry/Poetry Writing Structure.png', alt: 'Poetry Structure' },
   { src: '/Displays/Maths/Worksheets/PlaceValueWorksheet.png', alt: 'Place Value' },
-  { src: '/Displays/English/Worksheets/ComprehensionWorksheet2.png', alt: 'Comprehension Worksheet' },
-  { src: '/Displays/English/Worksheets/NarrativeWritingWorksheet.png', alt: 'Narrative Worksheet' },
+  { src: '/Displays/English/Worksheets/Comprehension/Young Readers/ComprehensionWorksheet2.png', alt: 'Comprehension Worksheet' },
+  { src: '/Displays/English/Worksheets/Writing/NarrativeWritingWorksheet.png', alt: 'Narrative Worksheet' },
 ];
 
 // ── Avatar showcase for Classroom Champions ──
