@@ -1,5 +1,5 @@
 // pages/curriculum.js — Standalone Resource Hub, no class required
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -57,6 +57,8 @@ const ALL_DISPLAY_CATEGORIES = [
       { id: 'spelling-rules',   name: 'Spelling Rules',            emoji: '📏', bg: 'bg-emerald-100', border: 'border-emerald-300', hover: 'hover:bg-emerald-200', text: 'text-emerald-900', images: [{ name: 'Double the Final Consonant', file: 'Spelling/Spelling Rule Double the final consonant.png' },{ name: 'Drop the E', file: 'Spelling/Spelling Rule Drop the e.png' },{ name: 'Spelling Rule 1', file: 'Spelling/Spelling Rules/Spelling Rule 1.png' },{ name: 'Spelling Rule 2', file: 'Spelling/Spelling Rules/Spelling Rule 2.png' },{ name: 'Spelling Rule 3', file: 'Spelling/Spelling Rules/Spelling Rule 3.png' },{ name: 'Spelling Rule 4', file: 'Spelling/Spelling Rules/Spelling Rule 4.png' },{ name: 'Spelling Rule 5', file: 'Spelling/Spelling Rules/Spelling Rule 5.png' }] },
       { id: 'spelling-strats',  name: 'Spelling Strategies',       emoji: '🔡', bg: 'bg-green-100',   border: 'border-green-300',   hover: 'hover:bg-green-200',   text: 'text-green-900',   images: [{ name: 'Chunking', file: 'Spelling/Spelling Strategies/Chunking.png' },{ name: 'Letter Sounds', file: 'Spelling/Spelling Strategies/LetterSound.png' },{ name: 'Phonetic Strategies', file: 'Spelling/Spelling Strategies/Phonetic Strategies.png' },{ name: 'Rhyming', file: 'Spelling/Spelling Strategies/Rhyming.png' },{ name: 'Sound It Out', file: 'Spelling/Spelling Strategies/SoundItOut.png' }] },
       { id: 'writing-narrative', name: 'Narrative Writing',        emoji: '📖', bg: 'bg-pink-100',    border: 'border-pink-300',    hover: 'hover:bg-pink-200',    text: 'text-pink-900',    images: [{ name: 'Fantasy Narratives', file: 'Writing/Narrative/Fantasy Narratives.png' },{ name: 'Narrative Writing Structure', file: 'Writing/Narrative/Narrative Writing Structure.png' },{ name: 'Science Fiction Narratives', file: 'Writing/Narrative/SciFi Narratives.png' }] },
+      { id: 'writing-narrative-forest', name: 'Narrative — Forest Themed Learning Wall', emoji: '🌲', bg: 'bg-green-100', border: 'border-green-300', hover: 'hover:bg-green-200', text: 'text-green-900', images: [{ name: 'Overview', file: 'Writing/Narrative/Forest Themed Learning Wall/1. Overview.png' },{ name: 'Orientation', file: 'Writing/Narrative/Forest Themed Learning Wall/2. Orientation.png' },{ name: 'Complication', file: 'Writing/Narrative/Forest Themed Learning Wall/3. Complication.png' },{ name: 'Events', file: 'Writing/Narrative/Forest Themed Learning Wall/4. Events.png' },{ name: 'Resolution', file: 'Writing/Narrative/Forest Themed Learning Wall/5. Resolution.png' },{ name: 'Conclusion', file: 'Writing/Narrative/Forest Themed Learning Wall/6. Conclusion.png' },{ name: 'Characters', file: 'Writing/Narrative/Forest Themed Learning Wall/7. Characters.png' },{ name: 'Setting 1', file: 'Writing/Narrative/Forest Themed Learning Wall/8. Setting.png' },{ name: 'Setting 2', file: 'Writing/Narrative/Forest Themed Learning Wall/9. Setting.png' },{ name: 'Hook', file: 'Writing/Narrative/Forest Themed Learning Wall/10. Hook.png' },{ name: 'Problem', file: 'Writing/Narrative/Forest Themed Learning Wall/11. Problem.png' },{ name: 'Tension', file: 'Writing/Narrative/Forest Themed Learning Wall/12. Tension.png' },{ name: 'Reactions', file: 'Writing/Narrative/Forest Themed Learning Wall/13. Reactions.png' },{ name: 'Keep it Moving', file: 'Writing/Narrative/Forest Themed Learning Wall/14. Keep it Moving.png' },{ name: 'Sequence', file: 'Writing/Narrative/Forest Themed Learning Wall/15. Sequence.png' },{ name: 'Actions', file: 'Writing/Narrative/Forest Themed Learning Wall/16. Actions.png' },{ name: 'Build Excitement', file: 'Writing/Narrative/Forest Themed Learning Wall/17. Build Excitement.png' },{ name: 'Develop the Plot', file: 'Writing/Narrative/Forest Themed Learning Wall/18. Develop the Plot.png' },{ name: 'Solve the Problem', file: 'Writing/Narrative/Forest Themed Learning Wall/19. Solve the Problem.png' },{ name: 'Show the Results', file: 'Writing/Narrative/Forest Themed Learning Wall/20. Show the Results.png' },{ name: 'End on a Positive Note', file: 'Writing/Narrative/Forest Themed Learning Wall/21. End on a Positive Note.png' },{ name: 'Reflect or Learn', file: 'Writing/Narrative/Forest Themed Learning Wall/22. Reflect or Learn.png' },{ name: 'Wrap Things Up', file: 'Writing/Narrative/Forest Themed Learning Wall/23. Wrap Things Up.png' },{ name: 'Show the Change', file: 'Writing/Narrative/Forest Themed Learning Wall/24. Show the Change.png' },{ name: 'Leave a Final Impression', file: 'Writing/Narrative/Forest Themed Learning Wall/25. Leave a Final Impression.png' },{ name: 'Make the Reader Feel', file: 'Writing/Narrative/Forest Themed Learning Wall/26. Make the Reader Feel.png' },{ name: 'Template', file: 'Writing/Narrative/Forest Themed Learning Wall/27. Template.png' },{ name: 'Checklist', file: 'Writing/Narrative/Forest Themed Learning Wall/28. Checklist.png' },{ name: 'Vocabulary', file: 'Writing/Narrative/Forest Themed Learning Wall/29. Vocabulary.png' },{ name: 'Example', file: 'Writing/Narrative/Forest Themed Learning Wall/30. Example.png' }] },
+      { id: 'writing-procedure', name: 'Procedure Writing',          emoji: '📋', bg: 'bg-slate-100',   border: 'border-slate-300',   hover: 'hover:bg-slate-200',   text: 'text-slate-900',   images: [{ name: 'Procedure 1', file: 'Writing/Procedure/1..png' },{ name: 'Procedure 2', file: 'Writing/Procedure/2..png' },{ name: 'Procedure 3', file: 'Writing/Procedure/3..png' }] },
       { id: 'writing-informative', name: 'Informative Writing',    emoji: '📰', bg: 'bg-blue-100',    border: 'border-blue-300',    hover: 'hover:bg-blue-200',    text: 'text-blue-900',    images: [{ name: 'Information Reports', file: 'Writing/Informative/InfoReports.png' },{ name: 'Informative Writing Structure', file: 'Writing/Informative/Informative Writing Structure.png' },{ name: 'Informative Text Display 2', file: 'Writing/Informative/InformativeTextDisplay2.png' },{ name: 'TEEL Paragraph Display', file: 'Writing/Informative/TEELParagraphDisplay.png' },{ name: 'TEEL Paragraph Display 2', file: 'Writing/Informative/TEELParagraphDisplay2.png' }] },
       { id: 'writing-informative-ocean', name: 'Informative — Ocean Theme Learning Wall', emoji: '🌊', bg: 'bg-cyan-100', border: 'border-cyan-300', hover: 'hover:bg-cyan-200', text: 'text-cyan-900', images: [{ name: 'Overview', file: 'Writing/Informative/Ocean Theme Learning Wall/Overview.png' },{ name: 'Anchor Chart', file: 'Writing/Informative/Ocean Theme Learning Wall/Anchor Chart.png' },{ name: 'Brainstorm', file: 'Writing/Informative/Ocean Theme Learning Wall/Brainstorm.png' },{ name: 'Plan', file: 'Writing/Informative/Ocean Theme Learning Wall/Plan.png' },{ name: 'Research', file: 'Writing/Informative/Ocean Theme Learning Wall/Research.png' },{ name: 'Organise', file: 'Writing/Informative/Ocean Theme Learning Wall/Organise.png' },{ name: 'Write', file: 'Writing/Informative/Ocean Theme Learning Wall/Write.png' },{ name: 'Add Details', file: 'Writing/Informative/Ocean Theme Learning Wall/Add Details.png' },{ name: 'Key Facts', file: 'Writing/Informative/Ocean Theme Learning Wall/Key Facts.png' },{ name: 'Key Points', file: 'Writing/Informative/Ocean Theme Learning Wall/Key Points.png' },{ name: 'Headings', file: 'Writing/Informative/Ocean Theme Learning Wall/Headings.png' },{ name: 'Use Facts', file: 'Writing/Informative/Ocean Theme Learning Wall/Use Facts.png' },{ name: 'Use Technical Words', file: 'Writing/Informative/Ocean Theme Learning Wall/Use Technical Words.png' },{ name: 'Use Clear Sentences', file: 'Writing/Informative/Ocean Theme Learning Wall/Use Clear Sentences.png' },{ name: 'Vocabulary', file: 'Writing/Informative/Ocean Theme Learning Wall/Vocabulary.png' },{ name: 'Notes Template', file: 'Writing/Informative/Ocean Theme Learning Wall/Notes Template.png' },{ name: 'Checklist', file: 'Writing/Informative/Ocean Theme Learning Wall/Checklist.png' },{ name: 'Check Your Writing', file: 'Writing/Informative/Ocean Theme Learning Wall/Check Your Writing.png' },{ name: 'Check Facts', file: 'Writing/Informative/Ocean Theme Learning Wall/Check Facts.png' },{ name: 'Check Language', file: 'Writing/Informative/Ocean Theme Learning Wall/Check Language.png' },{ name: 'Check Organisation', file: 'Writing/Informative/Ocean Theme Learning Wall/Check Organisation.png' },{ name: 'Check and Improve', file: 'Writing/Informative/Ocean Theme Learning Wall/Check and Improve.png' },{ name: 'Improve Your Work', file: 'Writing/Informative/Ocean Theme Learning Wall/Improve Your Work.png' },{ name: 'Read Through', file: 'Writing/Informative/Ocean Theme Learning Wall/Read Through.png' }] },
       { id: 'writing-persuasive', name: 'Persuasive Writing',      emoji: '💬', bg: 'bg-amber-100',   border: 'border-amber-300',   hover: 'hover:bg-amber-200',   text: 'text-amber-900',   images: [{ name: 'Persuasive Display', file: 'Writing/Persuasive/Persuasive.png' },{ name: 'Persuasive Display 2', file: 'Writing/Persuasive/Persuasive 2.png' },{ name: 'Persuasive Writing Display', file: 'Writing/Persuasive/PersuasiveWritingDisplay.png' },{ name: 'Persuasive Checklist', file: 'Writing/Persuasive/Persuasive Checklist.png' },{ name: 'Persuasive Devices', file: 'Writing/Persuasive/Persuasive Devices.png' },{ name: 'Persuasive Elements', file: 'Writing/Persuasive/Persuasive Elements.png' },{ name: 'Persuasive Structure', file: 'Writing/Persuasive/Persuasive Structure.png' },{ name: 'Persuasive Writing Structure', file: 'Writing/Persuasive/Persuasive Writing Structure.png' }] },
@@ -77,11 +79,11 @@ const ALL_DISPLAY_CATEGORIES = [
     id: 'maths', name: 'Maths Displays', emoji: '🧮', folder: 'Maths',
     bg: 'bg-green-100', border: 'border-green-300', hover: 'hover:bg-green-200', text: 'text-green-900',
     sections: [
-      { id: 'number-ops',             name: 'Number & Operations',         emoji: '🔢', bg: 'bg-lime-100',    border: 'border-lime-300',    hover: 'hover:bg-lime-200',    text: 'text-lime-900',    images: [{ name: 'Addition', file: 'Number/Addition.png' },{ name: 'Subtraction', file: 'Number/Subtraction.png' },{ name: 'Multiplication', file: 'Number/Multiplication.png' },{ name: 'Division', file: 'Number/Division.png' },{ name: 'Integers', file: 'Number/Integers.png' },{ name: 'Comparing Fractions', file: 'Number/ComparingFractions.png' }] },
+      { id: 'number-ops',             name: 'Number & Operations',         emoji: '🔢', bg: 'bg-lime-100',    border: 'border-lime-300',    hover: 'hover:bg-lime-200',    text: 'text-lime-900',    images: [{ name: 'Addition', file: 'Number/Addition.png' },{ name: 'Subtraction', file: 'Number/Subtraction.png' },{ name: 'Multiplication', file: 'Number/Multiplication.png' },{ name: 'Division', file: 'Number/Division.png' },{ name: 'Integers', file: 'Number/Integers.png' },{ name: 'Comparing Fractions', file: 'Number/ComparingFractions.png' },{ name: 'Prime Numbers', file: 'Number/Prime Numbers.png' },{ name: 'Composite Numbers', file: 'Number/Composite Numbers.png' },{ name: 'Factors', file: 'Number/factors.png' },{ name: 'Multiples', file: 'Number/multiples.png' }] },
       { id: 'shapes',                 name: '2D & 3D Shapes',              emoji: '📐', bg: 'bg-sky-100',     border: 'border-sky-300',     hover: 'hover:bg-sky-200',     text: 'text-sky-900',     images: [{ name: '2D Shapes', file: 'Shape/2D Shapes.png' },{ name: '3D Shapes', file: 'Shape/3D Shapes.png' }] },
       { id: 'location-transform',     name: 'Location & Transformation',   emoji: '🔄', bg: 'bg-teal-100',    border: 'border-teal-300',    hover: 'hover:bg-teal-200',    text: 'text-teal-900',    images: [{ name: 'Flip', file: 'Location and Transformation/Flip.png' },{ name: 'Flip Turn Slide', file: 'Location and Transformation/FlipTurnSlide.png' },{ name: 'Slide', file: 'Location and Transformation/Slide.png' },{ name: 'Symmetry', file: 'Location and Transformation/Symmetry.png' },{ name: 'Tessellating Patterns', file: 'Location and Transformation/TessellatingPaterns.png' },{ name: 'Turn', file: 'Location and Transformation/Turn.png' }] },
       { id: 'measurement-d',          name: 'Measurement',                 emoji: '📏', bg: 'bg-amber-100',   border: 'border-amber-300',   hover: 'hover:bg-amber-200',   text: 'text-amber-900',   images: [{ name: 'Length', file: 'Measurement/Length.png' },{ name: 'Mass', file: 'Measurement/Mass.png' },{ name: 'Volume', file: 'Measurement/Volume.png' }] },
-      { id: 'maths-sheets',           name: 'Worksheets',                  emoji: '📄', bg: 'bg-orange-100',  border: 'border-orange-300',  hover: 'hover:bg-orange-200',  text: 'text-orange-900',  images: [{ name: 'Australian Currency', file: 'Worksheets/AustralianCurrencyWorksheet.png' },{ name: 'BODMAS', file: 'Worksheets/BODMAS Worksheet.png' },{ name: 'Column Addition', file: 'Worksheets/Column Addition Worksheet.png' },{ name: 'Column Subtraction', file: 'Worksheets/Column Subtraction Worksheet.png' },{ name: 'Counting', file: 'Worksheets/CountingWorksheet.png' },{ name: 'Division', file: 'Worksheets/Division Worksheet.png' },{ name: 'Expanded Form', file: 'Worksheets/ExpandedFormWorksheet.png' },{ name: 'Multiplication', file: 'Worksheets/Multiplication Worksheet.png' },{ name: 'Place Value', file: 'Worksheets/PlaceValueWorksheet.png' },{ name: 'Skip Counting', file: 'Worksheets/SkipCountingWorksheet.png' },{ name: 'Whole Numbers', file: 'Worksheets/WholeNumbersWorksheet.png' }] },
+      { id: 'maths-sheets',           name: 'Worksheets',                  emoji: '📄', bg: 'bg-orange-100',  border: 'border-orange-300',  hover: 'hover:bg-orange-200',  text: 'text-orange-900',  images: [{ name: 'Australian Currency', file: 'Worksheets/AustralianCurrencyWorksheet.png' },{ name: 'BODMAS', file: 'Worksheets/BODMAS Worksheet.png' },{ name: 'Column Addition', file: 'Worksheets/Column Addition Worksheet.png' },{ name: 'Column Subtraction', file: 'Worksheets/Column Subtraction Worksheet.png' },{ name: 'Counting', file: 'Worksheets/CountingWorksheet.png' },{ name: 'Division', file: 'Worksheets/Division Worksheet.png' },{ name: 'Expanded Form', file: 'Worksheets/ExpandedFormWorksheet.png' },{ name: 'Multiplication', file: 'Worksheets/Multiplication Worksheet.png' },{ name: 'Place Value', file: 'Worksheets/PlaceValueWorksheet.png' },{ name: 'Skip Counting', file: 'Worksheets/SkipCountingWorksheet.png' },{ name: 'Whole Numbers', file: 'Worksheets/WholeNumbersWorksheet.png' },{ name: 'Factors', file: 'Worksheets/factors worksheet.png' },{ name: 'Multiples', file: 'Worksheets/multiples worksheet.png' },{ name: 'Fractions', file: 'Worksheets/fractions worksheet.png' }] },
       { id: 'maths-mentals',          name: 'Math Mentals',                emoji: '🧠', bg: 'bg-yellow-100',  border: 'border-yellow-300',  hover: 'hover:bg-yellow-200',  text: 'text-yellow-900',  images: [{ name: 'Math Mentals 1', file: 'Worksheets/Math Mentals/1.png' },{ name: 'Math Mentals 2', file: 'Worksheets/Math Mentals/2.png' },{ name: 'Math Mentals 3', file: 'Worksheets/Math Mentals/3.png' },{ name: 'Math Mentals 4', file: 'Worksheets/Math Mentals/4.png' },{ name: 'Math Mentals 5', file: 'Worksheets/Math Mentals/5.png' },{ name: 'Math Mentals 6', file: 'Worksheets/Math Mentals/6.png' },{ name: 'Math Mentals 7', file: 'Worksheets/Math Mentals/7.png' },{ name: 'Math Mentals 8', file: 'Worksheets/Math Mentals/8.png' },{ name: 'Math Mentals 9', file: 'Worksheets/Math Mentals/9.png' },{ name: 'Math Mentals 10', file: 'Worksheets/Math Mentals/10.png' },{ name: 'Math Mentals 11', file: 'Worksheets/Math Mentals/11.png' },{ name: 'Math Mentals 12', file: 'Worksheets/Math Mentals/12.png' },{ name: 'Math Mentals 13', file: 'Worksheets/Math Mentals/13.png' },{ name: 'Math Mentals 14', file: 'Worksheets/Math Mentals/14.png' },{ name: 'Math Mentals 15', file: 'Worksheets/Math Mentals/15.png' }] },
       { id: 'maths-mats',             name: 'Maths Mats',                  emoji: '🗂️', bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  images: [{ name: 'Multiplication Mat', file: 'Mats/Multiplication Mat.png' },{ name: 'Number Fact Mat', file: 'Mats/Number Fact Mat.png' },{ name: 'Number of the Day Mat', file: 'Mats/Number of the Day Mat.png' }] },
     ],
@@ -120,9 +122,14 @@ const ALL_DISPLAY_CATEGORIES = [
       { id: 'mood-modes-lower',   name: 'Mood Modes — Lower Primary',         emoji: '🐨', bg: 'bg-blue-100',    border: 'border-blue-300',    hover: 'hover:bg-blue-200',    text: 'text-blue-900',    images: [{ name: 'Overview', file: 'Mood Modes/Lower Primary/Mood Modes Overview.png' },{ name: 'Recharge Mode', file: 'Mood Modes/Lower Primary/Recharge Mode.png' },{ name: 'Ready Mode', file: 'Mood Modes/Lower Primary/Ready Mode.png' },{ name: 'Alert Mode', file: 'Mood Modes/Lower Primary/Alert Mode.png' },{ name: 'Overload Mode', file: 'Mood Modes/Lower Primary/Overload Mode.png' }] },
       { id: 'mood-modes-middle',  name: 'Mood Modes — Middle Primary',        emoji: '🦊', bg: 'bg-green-100',   border: 'border-green-300',   hover: 'hover:bg-green-200',   text: 'text-green-900',   images: [{ name: 'Overview', file: 'Mood Modes/Middle Primary/Mood Mode Overview.png' },{ name: 'Recharge Mode', file: 'Mood Modes/Middle Primary/Recharge Mode.png' },{ name: 'Ready Mode', file: 'Mood Modes/Middle Primary/Ready Mode.png' },{ name: 'Alert Mode', file: 'Mood Modes/Middle Primary/Alert Mode.png' },{ name: 'Overload Mode', file: 'Mood Modes/Middle Primary/Overload Mode.png' }] },
       { id: 'mood-modes-upper-f', name: 'Mood Modes — Upper Primary (Female)', emoji: '🌸', bg: 'bg-pink-100',   border: 'border-pink-300',    hover: 'hover:bg-pink-200',    text: 'text-pink-900',    images: [{ name: 'Overview', file: 'Mood Modes/Upper Primary Female/Mood Mode Overview.png' },{ name: 'Recharge Mode', file: 'Mood Modes/Upper Primary Female/Recharge Mode.png' },{ name: 'Ready Mode', file: 'Mood Modes/Upper Primary Female/Ready Mode.png' },{ name: 'Alert Mode', file: 'Mood Modes/Upper Primary Female/Alert Mode.png' },{ name: 'Overload Mode', file: 'Mood Modes/Upper Primary Female/Overload Mode.png' }] },
+      { id: 'mood-modes-upper-f2', name: 'Mood Modes — Upper Primary (Female) v2', emoji: '💜', bg: 'bg-purple-100', border: 'border-purple-300', hover: 'hover:bg-purple-200', text: 'text-purple-900', images: [{ name: 'Overview', file: 'Mood Modes/Upper Primary Female 2/1. Overview.png' },{ name: 'Recharge Mode', file: 'Mood Modes/Upper Primary Female 2/2. Recharge Mode.png' },{ name: 'Ready Mode', file: 'Mood Modes/Upper Primary Female 2/3. Ready Mode.png' },{ name: 'Alert Mode', file: 'Mood Modes/Upper Primary Female 2/4. Alert Mode.png' },{ name: 'Overload Mode', file: 'Mood Modes/Upper Primary Female 2/5. Overload Mode.png' }] },
       { id: 'mood-modes-upper-m', name: 'Mood Modes — Upper Primary (Male)',   emoji: '🦒', bg: 'bg-orange-100', border: 'border-orange-300',  hover: 'hover:bg-orange-200',  text: 'text-orange-900',  images: [{ name: 'Overview', file: 'Mood Modes/Upper Primary Male/Mood Mode Overview.png' },{ name: 'Recharge Mode', file: 'Mood Modes/Upper Primary Male/Recharge Mode.png' },{ name: 'Ready Mode', file: 'Mood Modes/Upper Primary Male/Ready Mode.png' },{ name: 'Alert Mode', file: 'Mood Modes/Upper Primary Male/Alert Mode.png' },{ name: 'Overload Mode', file: 'Mood Modes/Upper Primary Male/Overload Mode.png' }] },
+      { id: 'mood-modes-upper-mixed', name: 'Mood Modes — Upper Primary (Mixed)', emoji: '🌟', bg: 'bg-yellow-100', border: 'border-yellow-300', hover: 'hover:bg-yellow-200', text: 'text-yellow-900', images: [{ name: 'Overview', file: 'Mood Modes/Upper Primary Mixed/1. Overview.png' },{ name: 'Recharge Mode', file: 'Mood Modes/Upper Primary Mixed/2. Recharge Mode.png' },{ name: 'Ready Mode', file: 'Mood Modes/Upper Primary Mixed/3. Ready Mode.png' },{ name: 'Alert Mode', file: 'Mood Modes/Upper Primary Mixed/4. Alert Mode.png' },{ name: 'Overdrive Mode', file: 'Mood Modes/Upper Primary Mixed/5. Overdrive Mode.png' }] },
       { id: 'size-of-problem',    name: 'Size of the Problem',                 emoji: '📏', bg: 'bg-indigo-100',  border: 'border-indigo-300',  hover: 'hover:bg-indigo-200',  text: 'text-indigo-900',  images: [{ name: 'Overview', file: 'Size of the Problem/Overview.png' },{ name: 'Tiny', file: 'Size of the Problem/Tiny.png' },{ name: 'Small', file: 'Size of the Problem/Small.png' },{ name: 'Medium', file: 'Size of the Problem/Medium.png' },{ name: 'Big', file: 'Size of the Problem/Big.png' }] },
       { id: 'social-skills',      name: 'Social Skills',                       emoji: '🤝', bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  images: [{ name: 'Overview', file: 'Social Skills/OVerview.png' },{ name: 'Be Honest', file: 'Social Skills/Be Honest.png' },{ name: 'Be Kind', file: 'Social Skills/Be Kind.png' },{ name: 'Include Others', file: 'Social Skills/Include Others.png' },{ name: 'Listen', file: 'Social Skills/Listen.png' },{ name: 'Manage Emotions', file: 'Social Skills/Manage Emotions.png' },{ name: 'Respect Others', file: 'Social Skills/Respect Others.png' },{ name: 'Take Turns', file: 'Social Skills/Take Turns.png' },{ name: 'Use Good Manners', file: 'Social Skills/Use Good Manners.png' }] },
+      { id: 'conflict-resolution-boys',  name: 'Conflict Resolution (Boys)',   emoji: '🤜', bg: 'bg-blue-100',    border: 'border-blue-300',    hover: 'hover:bg-blue-200',    text: 'text-blue-900',    images: [{ name: 'Overview', file: 'Conflict Resolution Boys/1. Overview.png' },{ name: 'Pause and Calm Down', file: 'Conflict Resolution Boys/2. Pause and Calm Down.png' },{ name: 'Understand the Situation', file: 'Conflict Resolution Boys/3. Understand the Situation.png' },{ name: 'Talk it Out Respectfully', file: 'Conflict Resolution Boys/4. Talk it Out Respectfully.png' },{ name: 'Find Solutions Together', file: 'Conflict Resolution Boys/5. Find Solutions Together.png' },{ name: 'Agree and Make a Plan', file: 'Conflict Resolution Boys/6. Agree and Make a Plan.png' },{ name: 'Reflect and Grow', file: 'Conflict Resolution Boys/7. Reflect and Grow.png' }] },
+      { id: 'conflict-resolution-girls', name: 'Conflict Resolution (Girls)',  emoji: '🤛', bg: 'bg-rose-100',    border: 'border-rose-300',    hover: 'hover:bg-rose-200',    text: 'text-rose-900',    images: [{ name: 'Overview', file: 'Conflict Resolution Girls/1. Overview.png' },{ name: 'Pause and Calm Down', file: 'Conflict Resolution Girls/2. Pause and Calm Down.png' },{ name: 'Understand the Situation', file: 'Conflict Resolution Girls/3. Understand the Situation.png' },{ name: 'Talk it Out Respectfully', file: 'Conflict Resolution Girls/4. Talk it Out Respectfully.png' },{ name: 'Find Solutions Together', file: 'Conflict Resolution Girls/5. Find Solutions Together.png' },{ name: 'Agree and Make a Plan', file: 'Conflict Resolution Girls/6. Agree and Make a Plan.png' },{ name: 'Reflect and Grow', file: 'Conflict Resolution Girls/7. Reflect and Grow.png' }] },
+      { id: 'sensory-options',           name: 'Sensory Options',              emoji: '🌀', bg: 'bg-teal-100',    border: 'border-teal-300',    hover: 'hover:bg-teal-200',    text: 'text-teal-900',    images: [{ name: 'Sensory Options 1', file: 'Sensory Options/1..png' },{ name: 'Sensory Options 2', file: 'Sensory Options/2..png' }] },
     ],
   },
   {
@@ -134,6 +141,94 @@ const ALL_DISPLAY_CATEGORIES = [
     ],
   },
 ];
+
+// ─── Recently Added images (shown in the scrolling showcase on the subject picker) ──
+const RECENTLY_ADDED = [
+  { src: '/Displays/Behaviour/Conflict Resolution Boys/1. Overview.png',           label: 'Conflict Resolution — Boys',             subject: 'Behaviour' },
+  { src: '/Displays/Behaviour/Conflict Resolution Boys/2. Pause and Calm Down.png',label: 'Pause and Calm Down',                    subject: 'Behaviour' },
+  { src: '/Displays/Behaviour/Conflict Resolution Girls/1. Overview.png',          label: 'Conflict Resolution — Girls',            subject: 'Behaviour' },
+  { src: '/Displays/Behaviour/Conflict Resolution Girls/5. Find Solutions Together.png', label: 'Find Solutions Together',           subject: 'Behaviour' },
+  { src: '/Displays/Behaviour/Mood Modes/Upper Primary Female 2/1. Overview.png',  label: 'Mood Modes — Upper Primary Female v2',  subject: 'Behaviour' },
+  { src: '/Displays/Behaviour/Mood Modes/Upper Primary Mixed/1. Overview.png',     label: 'Mood Modes — Upper Primary Mixed',       subject: 'Behaviour' },
+  { src: '/Displays/Behaviour/Sensory Options/1..png',                             label: 'Sensory Options',                        subject: 'Behaviour' },
+  { src: '/Displays/Maths/Number/Prime Numbers.png',                               label: 'Prime Numbers',                          subject: 'Maths' },
+  { src: '/Displays/Maths/Number/Composite Numbers.png',                           label: 'Composite Numbers',                      subject: 'Maths' },
+  { src: '/Displays/Maths/Number/factors.png',                                     label: 'Factors',                                subject: 'Maths' },
+  { src: '/Displays/Maths/Number/multiples.png',                                   label: 'Multiples',                              subject: 'Maths' },
+  { src: '/Displays/Maths/Worksheets/factors worksheet.png',                       label: 'Factors Worksheet',                      subject: 'Maths' },
+  { src: '/Displays/Maths/Worksheets/multiples worksheet.png',                     label: 'Multiples Worksheet',                    subject: 'Maths' },
+  { src: '/Displays/Maths/Worksheets/fractions worksheet.png',                     label: 'Fractions Worksheet',                    subject: 'Maths' },
+  { src: '/Displays/English/Writing/Narrative/Forest Themed Learning Wall/1. Overview.png',  label: 'Narrative Forest Wall — Overview', subject: 'English' },
+  { src: '/Displays/English/Writing/Narrative/Forest Themed Learning Wall/7. Characters.png', label: 'Narrative — Characters',        subject: 'English' },
+  { src: '/Displays/English/Writing/Narrative/Forest Themed Learning Wall/10. Hook.png',      label: 'Narrative — Hook',              subject: 'English' },
+  { src: '/Displays/English/Writing/Narrative/Forest Themed Learning Wall/28. Checklist.png', label: 'Narrative Checklist',           subject: 'English' },
+  { src: '/Displays/English/Writing/Procedure/1..png',                             label: 'Procedure Writing',                      subject: 'English' },
+];
+
+// Seeded shuffle — different order every page load, stable within the session
+const shuffled = [...RECENTLY_ADDED].sort(() => Math.random() - 0.5);
+const RECENT_DISPLAY = [...shuffled, ...shuffled]; // duplicate for seamless loop
+
+// ─── Scrolling showcase component ────────────────────────────────────────────
+const SUBJECT_BADGE = {
+  English:   'bg-blue-100 text-blue-800',
+  Maths:     'bg-green-100 text-green-800',
+  Behaviour: 'bg-rose-100 text-rose-800',
+};
+
+const RecentlyAddedShowcase = () => {
+  const trackRef = useRef(null);
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    let pos = 0;
+    let rafId;
+    const speed = 0.6; // px per frame
+    const step = () => {
+      pos += speed;
+      const half = el.scrollWidth / 2;
+      if (pos >= half) pos -= half;
+      el.style.transform = `translateX(-${pos}px)`;
+      rafId = requestAnimationFrame(step);
+    };
+    rafId = requestAnimationFrame(step);
+    const pause  = () => cancelAnimationFrame(rafId);
+    const resume = () => { rafId = requestAnimationFrame(step); };
+    el.parentElement.addEventListener('mouseenter', pause);
+    el.parentElement.addEventListener('mouseleave', resume);
+    return () => {
+      cancelAnimationFrame(rafId);
+      el.parentElement?.removeEventListener('mouseenter', pause);
+      el.parentElement?.removeEventListener('mouseleave', resume);
+    };
+  }, []);
+
+  return (
+    <div className="mt-2 mb-2">
+      <div className="flex items-center gap-3 mb-3 px-1">
+        <span className="text-lg">✨</span>
+        <h3 className="text-base font-black text-gray-700">Recently Added</h3>
+        <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full">New</span>
+      </div>
+      <div className="overflow-hidden rounded-2xl" style={{ cursor: 'grab' }}>
+        <div ref={trackRef} className="flex gap-3 will-change-transform" style={{ width: 'max-content' }}>
+          {RECENT_DISPLAY.map((img, i) => (
+            <div key={i} className="flex-shrink-0 w-44 rounded-xl overflow-hidden bg-white border-2 border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all group">
+              <div className="h-32 overflow-hidden bg-gray-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img.src} alt={img.label} className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300" />
+              </div>
+              <div className="p-2">
+                <p className="text-xs font-bold text-gray-700 leading-tight truncate">{img.label}</p>
+                <span className={`mt-1 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full ${SUBJECT_BADGE[img.subject] || 'bg-gray-100 text-gray-600'}`}>{img.subject}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Build a flat search index from everything ────────────────────────────────
 const buildSearchIndex = (subjects, resourcesBySubject) => {
@@ -168,6 +263,8 @@ const buildSearchIndex = (subjects, resourcesBySubject) => {
 const resourcesBySubject = {
   english: [
     { id: 'informative-ocean-theme',  title: 'Informative Writing — Ocean Theme Learning Wall', icon: '🌊', pdfPath: '/Unit Resources/English/Informative_Ocean_Theme_Learning_Wall.pdf' },
+    { id: 'narrative-forest-wall',    title: 'Narrative Writing — Forest Themed Learning Wall', icon: '🌲', pdfPath: '/Unit Resources/English/Narrative_Forest_Themed_Learning_Wall.pdf' },
+    { id: 'procedure-writing',        title: 'Procedure Writing',                               icon: '📋', pdfPath: '/Unit Resources/English/Procedure_Writing.pdf' },
     { id: 'wilds-of-writing',         title: 'The Wilds of Writing: A Field Guide',      icon: '✍️', pdfPath: '/Unit Resources/Literacy/The_Wilds_of_Writing_A_Field_Guide.pdf' },
     { id: 'blend-friends',            title: 'Blend Friends Adventure',                  icon: '🔤', pdfPath: '/Unit Resources/Literacy/Blend_Friends_Adventure.pdf' },
     { id: 'phonics-superpowers',        title: 'Phonics Superpowers Guide',                icon: '🔡', pdfPath: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf' },
@@ -205,6 +302,10 @@ const resourcesBySubject = {
   ],
   behaviour: [
     { id: 'zones-of-regulation',             title: 'Zones of Regulation',                      icon: '🌈', pdfPath: '/free-resources/Zones_of_Regulation.pdf' },
+    { id: 'conflict-resolution-boys',        title: 'Conflict Resolution (Boys)',                icon: '🤜', pdfPath: '/Unit Resources/Behaviour/Conflict_Resolution_Boys.pdf' },
+    { id: 'conflict-resolution-girls',       title: 'Conflict Resolution (Girls)',               icon: '🤛', pdfPath: '/Unit Resources/Behaviour/Conflict_Resolution_Girls.pdf' },
+    { id: 'mood-modes-upper-primary-female-2', title: 'Mood Modes — Upper Primary (Female) v2', icon: '💜', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Female_2.pdf' },
+    { id: 'mood-modes-upper-primary-mixed',  title: 'Mood Modes — Upper Primary (Mixed)',       icon: '🌟', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Mixed.pdf' },
     { id: 'mood-modes-lower-primary',        title: 'Mood Modes — Lower Primary',               icon: '🐨', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Lower_Primary.pdf' },
     { id: 'mood-modes-middle-primary',       title: 'Mood Modes — Middle Primary',              icon: '🦊', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Middle_Primary.pdf' },
     { id: 'mood-modes-upper-primary-female', title: 'Mood Modes — Upper Primary (Female)',      icon: '🌸', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Female.pdf' },
@@ -767,6 +868,9 @@ export default function CurriculumPage() {
                 ))}
               </div>
             </div>
+
+            {/* ── Recently Added showcase ── */}
+            <RecentlyAddedShowcase />
 
             {/* ── Brain Breaks tile ── */}
             <div className="mt-2">
