@@ -1,5 +1,6 @@
 // components/tabs/TeachersToolkitTab.js
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
+import { useRouter } from 'next/router';
 import { DEFAULT_NOTICE_ITEMS } from '../../services/noticeBoard';
 
 // Classroom management tools
@@ -749,6 +750,7 @@ const TeachersToolkitTab = ({
   groupData,
   teacherId
 }) => {
+  const router = useRouter();
   const [activeSection, setActiveSection]             = useState('classroom'); // 'classroom' | 'curriculum'
   const [activeToolkitTab, setActiveToolkitTab]       = useState(null);
   const [activeCurriculumSubject, setActiveCurriculumSubject] = useState(null); // 'english' | 'mathematics' | 'science'
@@ -969,7 +971,50 @@ const TeachersToolkitTab = ({
 
       {/* ── CLASSROOM TOOLS SECTION ── */}
       {activeSection === 'classroom' && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="space-y-6">
+
+        {/* ── Classroom Screen Launch Banner ── */}
+        <div
+          onClick={() => router.push('/teacher-tools')}
+          className="relative overflow-hidden rounded-2xl cursor-pointer group"
+          style={{ background: 'linear-gradient(135deg,#4F46E5 0%,#7C3AED 40%,#DB2777 100%)' }}
+        >
+          {/* Decorative blobs */}
+          <div style={{ position:'absolute', width:300, height:300, borderRadius:'50%', background:'rgba(255,255,255,0.06)', top:-80, right:-60, pointerEvents:'none' }} />
+          <div style={{ position:'absolute', width:200, height:200, borderRadius:'50%', background:'rgba(255,255,255,0.05)', bottom:-60, left:60, pointerEvents:'none' }} />
+
+          <div className="relative flex items-center gap-6 px-8 py-6">
+            <div style={{ fontSize:56, filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.3))', flexShrink:0, transition:'transform 0.3s' }} className="group-hover:scale-110">
+              🖥️
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-1 flex-wrap">
+                <h2 style={{ fontWeight:900, fontSize:22, color:'white', letterSpacing:'-0.5px', lineHeight:1.1 }}>
+                  Classroom Screen
+                </h2>
+                <span style={{ background:'rgba(255,255,255,0.2)', color:'white', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:800, letterSpacing:'0.5px', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.25)' }}>
+                  ✨ NEW EXPERIENCE
+                </span>
+              </div>
+              <p style={{ color:'rgba(255,255,255,0.82)', fontSize:14, fontWeight:500, lineHeight:1.5 }}>
+                Open all your tools on one beautiful screen — drag, arrange and use multiple tools at once, just like Classroom Screen.
+              </p>
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {['⏰ Timer','🎯 Name Picker','🎲 Dice','👥 Groups','✅ Checklist','🧠 Brain Break','+ more'].map(t => (
+                  <span key={t} style={{ background:'rgba(255,255,255,0.15)', color:'white', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:700, border:'1px solid rgba(255,255,255,0.2)' }}>{t}</span>
+                ))}
+              </div>
+            </div>
+            <div style={{ flexShrink:0, background:'rgba(255,255,255,0.18)', borderRadius:14, padding:'12px 22px', color:'white', fontWeight:800, fontSize:14, border:'1px solid rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', transition:'all 0.2s', whiteSpace:'nowrap' }} className="group-hover:bg-white/30">
+              Open Screen →
+            </div>
+          </div>
+        </div>
+
+        {/* ── Individual Tools Grid ── */}
+        <div>
+          <p style={{ fontSize:13, fontWeight:700, color:'#6B7280', letterSpacing:'0.3px', marginBottom:12 }}>OR OPEN A SINGLE TOOL</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <button
           onClick={() => setActiveToolkitTab('classroom-jobs')}
           className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-xl hover:shadow-lg transition-all text-center"
@@ -1097,6 +1142,10 @@ const TeachersToolkitTab = ({
           <div className="text-lg font-bold mb-1">Notice Board</div>
           <div className="text-sm opacity-90">Post messages to students</div>
         </button>
+      </div>
+        </div>
+        </div>
+        </div>
       </div>
       )} {/* end classroom section */}
     </div>
