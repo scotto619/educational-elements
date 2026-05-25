@@ -1144,10 +1144,8 @@ const TeachersToolkitTab = ({
         </button>
       </div>
         </div>
-        </div>
-        </div>
       </div>
-      )} {/* end classroom section */}
+      )}
     </div>
   );
 };
