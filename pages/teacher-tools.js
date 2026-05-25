@@ -911,8 +911,13 @@ export default function TeacherToolsPage(){
         const classes=data.classes||[];
         if(classes.length>0){
           const names=[];
-          (classes[0].students||[]).forEach(s=>names.push(typeof s==='string'?s:s.name||s));
-          setStudents(names.filter(Boolean));
+          (classes[0].students||[]).forEach(s=>{
+            if(typeof s==='string') names.push(s);
+            else if(s.firstName||s.lastName) names.push([s.firstName,s.lastName].filter(Boolean).join(' '));
+            else if(s.name) names.push(s.name);
+            else if(s.displayName) names.push(s.displayName);
+          });
+          setStudents(names.filter(n=>typeof n==='string'&&n.trim()));
         }
       }catch(e){}
     });
