@@ -990,14 +990,14 @@ const TeachersToolkitTab = ({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1 flex-wrap">
                 <h2 style={{ fontWeight:900, fontSize:22, color:'white', letterSpacing:'-0.5px', lineHeight:1.1 }}>
-                  Classroom Screen
+                  Teacher Toolkit
                 </h2>
                 <span style={{ background:'rgba(255,255,255,0.2)', color:'white', borderRadius:20, padding:'3px 10px', fontSize:11, fontWeight:800, letterSpacing:'0.5px', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.25)' }}>
-                  ✨ NEW EXPERIENCE
+                  🛠️ ALL TOOLS IN ONE
                 </span>
               </div>
               <p style={{ color:'rgba(255,255,255,0.82)', fontSize:14, fontWeight:500, lineHeight:1.5 }}>
-                Open all your tools on one beautiful screen — drag, arrange and use multiple tools at once, just like Classroom Screen.
+                Open every tool on one screen — drag, stack, and use them all at once. Timer, Dice, Name Picker, Groups and more.
               </p>
               <div className="flex gap-2 mt-3 flex-wrap">
                 {['⏰ Timer','🎯 Name Picker','🎲 Dice','👥 Groups','✅ Checklist','🧠 Brain Break','+ more'].map(t => (
@@ -1006,7 +1006,7 @@ const TeachersToolkitTab = ({
               </div>
             </div>
             <div style={{ flexShrink:0, background:'rgba(255,255,255,0.18)', borderRadius:14, padding:'12px 22px', color:'white', fontWeight:800, fontSize:14, border:'1px solid rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', transition:'all 0.2s', whiteSpace:'nowrap' }} className="group-hover:bg-white/30">
-              Open Screen →
+              Open Toolkit →
             </div>
           </div>
         </div>
