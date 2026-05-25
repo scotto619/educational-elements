@@ -650,7 +650,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
                   title: 'Integer Ocean',
@@ -691,6 +691,26 @@ export default function Home() {
                   file: '/free-resources/Zones_of_Regulation.pdf',
                   bg: '#FFFBEB',
                   border: '#FDE68A',
+                },
+                {
+                  title: 'Wellbeing',
+                  subtitle: 'Health & Wellbeing',
+                  desc: 'Breathing, stretches, movements, affirmations, sleep tips and journalling prompts to support student wellbeing.',
+                  gradient: 'linear-gradient(135deg, #10B981, #34D399)',
+                  icon: '💚',
+                  file: '/free-resources/Wellbeing.pdf',
+                  bg: '#ECFDF5',
+                  border: '#A7F3D0',
+                },
+                {
+                  title: 'Paragraph Writing',
+                  subtitle: 'Writing Skills',
+                  desc: 'A clear overview, worked example, writing template and checklist to help students master paragraph structure.',
+                  gradient: 'linear-gradient(135deg, #84CC16, #22C55E)',
+                  icon: '¶',
+                  file: '/free-resources/Paragraph_Writing.pdf',
+                  bg: '#F7FEE7',
+                  border: '#D9F99D',
                 },
               ].map((resource, i) => (
                 <div key={i}
