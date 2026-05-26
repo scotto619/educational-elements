@@ -23,9 +23,11 @@ const LoadingSpinner = () => (
 const resourcesBySubject = {
   behaviour: [
     { id: 'zones-of-regulation', title: 'Zones of Regulation', description: 'A framework for self-regulation — understanding and managing emotions in the classroom', pdfPath: '/free-resources/Zones_of_Regulation.pdf', icon: '🌈' },
+    { id: 'journal', title: 'Journal', description: 'Boys and girls journal prompt posters to encourage student reflection and self-expression', pdfPath: '/Unit Resources/Behaviour/Journal.pdf', icon: '📓' },
   ],
   english: [
     { id: 'informative-ocean-theme', title: 'Informative Writing — Ocean Theme Learning Wall', description: 'A full ocean-themed learning wall set for informative writing — 24 display posters covering planning, research, writing and editing', pdfPath: '/Unit Resources/English/Informative_Ocean_Theme_Learning_Wall.pdf', icon: '🌊' },
+    { id: 'sentence-writing', title: 'Sentence Writing', description: 'Overview, template, sentence starters and sentence upgrade posters to help students write stronger, more varied sentences', pdfPath: '/Unit Resources/English/Sentence_Writing.pdf', icon: '✏️' },
     { id: 'wilds-of-writing', title: 'The Wilds of Writing: A Field Guide', description: 'A comprehensive guide to creative writing techniques', pdfPath: '/Unit Resources/Literacy/The_Wilds_of_Writing_A_Field_Guide.pdf', icon: '✍️' },
     { id: 'blend-friends', title: 'Blend Friends Adventure', description: 'Phonics and blending adventure', pdfPath: '/Unit Resources/Literacy/Blend_Friends_Adventure.pdf', icon: '🔤' },
     { id: 'phonics-superpowers', title: 'Phonics Superpowers Guide', description: 'CVC blending cards and phonics patterns guide — includes MAT, PAT, PIN, SAT, SIT, TAP, TIP and more', pdfPath: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf', icon: '🔡' },
