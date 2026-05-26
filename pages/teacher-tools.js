@@ -139,6 +139,8 @@ function GroupMakerTool({students=[]}){
   const [mode,setMode]=useState('size');
   const [val,setVal]=useState(3);
   const [groups,setGroups]=useState([]);
+  const [dragOver,setDragOver]=useState(null);
+  const dragInfo=useRef(null);
   const make=()=>{
     const shuffled=[...names].sort(()=>Math.random()-0.5);
     const gs=[];
@@ -149,6 +151,22 @@ function GroupMakerTool({students=[]}){
       for(let i=0;i<val&&i*sz<shuffled.length;i++)gs.push(shuffled.slice(i*sz,i*sz+sz));
     }
     setGroups(gs);
+  };
+  const moveStudent=(name,fromIdx,toIdx)=>{
+    if(fromIdx===toIdx)return;
+    setGroups(prev=>{
+      const next=prev.map(g=>[...g]);
+      next[fromIdx]=next[fromIdx].filter(n=>n!==name);
+      next[toIdx]=[...next[toIdx],name];
+      return next.filter(g=>g.length>0);
+    });
+  };
+  const removeStudent=(name,fromIdx)=>{
+    setGroups(prev=>{
+      const next=prev.map(g=>[...g]);
+      next[fromIdx]=next[fromIdx].filter(n=>n!==name);
+      return next.filter(g=>g.length>0);
+    });
   };
   return(
     <div style={{display:'flex',flexDirection:'column',gap:12,padding:'18px 16px'}}>
@@ -161,11 +179,35 @@ function GroupMakerTool({students=[]}){
         <button onClick={()=>setVal(v=>v+1)} style={{width:36,height:36,borderRadius:10,border:'2px solid #E5E7EB',background:'#F9FAFB',fontSize:20,fontWeight:900,cursor:'pointer',color:'#6B7280'}}>+</button>
       </div>
       <button onClick={make} style={{background:'#BBF7D0',border:'2px solid #86EFAC',borderRadius:14,padding:'12px 0',fontSize:15,fontWeight:800,cursor:'pointer',color:'#14532D'}}>🔀 Make Groups</button>
+      {groups.length>0&&<div style={{fontSize:11,color:'#9CA3AF',textAlign:'center',fontWeight:600}}>✦ Drag students between groups · × to remove</div>}
       <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-        {groups.map((g,i)=><div key={i} style={{background:GPAL[i%GPAL.length],borderRadius:12,padding:'8px 12px',minWidth:90}}>
-          <div style={{fontSize:11,fontWeight:800,color:'#374151',marginBottom:4}}>Group {i+1}</div>
-          {g.map(n=><div key={n} style={{fontSize:13,fontWeight:600,color:'#1F2937'}}>{n}</div>)}
-        </div>)}
+        {groups.map((g,i)=>(
+          <div key={i}
+            onDragOver={e=>{e.preventDefault();setDragOver(i);}}
+            onDragEnter={e=>{e.preventDefault();setDragOver(i);}}
+            onDragLeave={()=>setDragOver(null)}
+            onDrop={e=>{
+              e.preventDefault();
+              setDragOver(null);
+              if(dragInfo.current){
+                moveStudent(dragInfo.current.name,dragInfo.current.fromIdx,i);
+                dragInfo.current=null;
+              }
+            }}
+            style={{background:dragOver===i?'#E0E7FF':GPAL[i%GPAL.length],borderRadius:12,padding:'8px 10px',minWidth:90,border:dragOver===i?'2px dashed #818CF8':'2px solid transparent',transition:'all 0.15s'}}>
+            <div style={{fontSize:11,fontWeight:800,color:'#374151',marginBottom:6}}>Group {i+1} <span style={{color:'#9CA3AF',fontWeight:600}}>({g.length})</span></div>
+            {g.map(n=>(
+              <div key={n}
+                draggable
+                onDragStart={()=>{dragInfo.current={name:n,fromIdx:i};}}
+                onDragEnd={()=>{dragInfo.current=null;setDragOver(null);}}
+                style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:4,fontSize:13,fontWeight:600,color:'#1F2937',padding:'3px 4px',borderRadius:7,background:'rgba(255,255,255,0.55)',marginBottom:2,cursor:'grab',userSelect:'none'}}>
+                <span>{n}</span>
+                <button onClick={()=>removeStudent(n,i)} style={{width:16,height:16,borderRadius:50,border:'none',background:'rgba(0,0,0,0.12)',color:'#374151',fontSize:11,fontWeight:900,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1,padding:0,flexShrink:0}}>×</button>
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -937,6 +979,122 @@ function MorningMeetingTool(){
 }
 
 
+// ════════ MUSIC PLAYER ════════════════════════════════════════════════════════
+const MUSIC_TRACKS=[
+  {file:'Heart-Of-The-Ocean(chosic.com).mp3',        title:'Heart of the Ocean',     artist:'Chosic'},
+  {file:'Lovely-Long-Version-chosic.com_.mp3',        title:'Lovely',                 artist:'Chosic'},
+  {file:'Morning-Routine-Lofi-Study-Music(chosic.com).mp3', title:'Morning Routine',  artist:'Lofi Study'},
+  {file:'Roa-Beloved(chosic.com).mp3',                title:'Beloved',                artist:'Roa'},
+  {file:'Roa-Embrace-chosic.com_.mp3',                title:'Embrace',                artist:'Roa'},
+  {file:'The-Open-Sky-chosic.com_.mp3',               title:'The Open Sky',           artist:'Chosic'},
+  {file:'Transcendence-chosic.com_.mp3',              title:'Transcendence',          artist:'Chosic'},
+  {file:'When-I-Was-A-Boy(chosic.com).mp3',           title:'When I Was A Boy',       artist:'Chosic'},
+  {file:'keys-of-moon-white-petals(chosic.com).mp3',  title:'White Petals',           artist:'Keys of Moon'},
+];
+function MusicPlayerTool(){
+  const [trackIdx,setTrackIdx]=useState(0);
+  const [playing,setPlaying]=useState(false);
+  const [progress,setProgress]=useState(0);
+  const [duration,setDuration]=useState(0);
+  const [volume,setVolume]=useState(0.7);
+  const [draggingVol,setDraggingVol]=useState(false);
+  const audioRef=useRef(null);
+  const track=MUSIC_TRACKS[trackIdx];
+
+  useEffect(()=>{
+    const a=new Audio('/music/'+encodeURIComponent(track.file));
+    a.volume=volume;
+    audioRef.current=a;
+    const onMeta=()=>setDuration(a.duration||0);
+    const onTime=()=>setProgress(a.currentTime);
+    const onEnd=()=>{ setTrackIdx(i=>(i+1)%MUSIC_TRACKS.length); };
+    a.addEventListener('loadedmetadata',onMeta);
+    a.addEventListener('timeupdate',onTime);
+    a.addEventListener('ended',onEnd);
+    if(playing) a.play().catch(()=>{});
+    return()=>{a.pause();a.removeEventListener('loadedmetadata',onMeta);a.removeEventListener('timeupdate',onTime);a.removeEventListener('ended',onEnd);};
+  },[trackIdx]);// eslint-disable-line
+
+  useEffect(()=>{
+    const a=audioRef.current;
+    if(!a)return;
+    if(playing){a.play().catch(()=>{});}else{a.pause();}
+  },[playing]);
+
+  useEffect(()=>{
+    if(audioRef.current)audioRef.current.volume=volume;
+  },[volume]);
+
+  const fmt=s=>{if(!s||isNaN(s))return'0:00';const m=Math.floor(s/60);const sec=Math.floor(s%60);return`${m}:${sec.toString().padStart(2,'0')}`;};
+  const seek=e=>{
+    if(!audioRef.current||!duration)return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    const pct=(e.clientX-rect.left)/rect.width;
+    audioRef.current.currentTime=pct*duration;
+    setProgress(pct*duration);
+  };
+  const prev=()=>setTrackIdx(i=>(i-1+MUSIC_TRACKS.length)%MUSIC_TRACKS.length);
+  const next=()=>setTrackIdx(i=>(i+1)%MUSIC_TRACKS.length);
+
+  const pct=duration?progress/duration*100:0;
+  const PASTEL=['#FDE68A','#BBF7D0','#BFDBFE','#FBCFE8','#DDD6FE','#A5F3FC','#FEF08A','#D9F99D','#C7D2FE'];
+
+  return(
+    <div style={{display:'flex',flexDirection:'column',gap:0,padding:'16px 14px 14px',height:'100%',boxSizing:'border-box'}}>
+      {/* Now playing card */}
+      <div style={{background:PASTEL[trackIdx%PASTEL.length],borderRadius:18,padding:'18px 16px 16px',marginBottom:12,textAlign:'center',flexShrink:0}}>
+        <div style={{fontSize:44,marginBottom:8}}>🎵</div>
+        <div style={{fontSize:15,fontWeight:900,color:'#1F2937',lineHeight:1.2,marginBottom:3}}>{track.title}</div>
+        <div style={{fontSize:12,fontWeight:600,color:'#6B7280'}}>{track.artist}</div>
+      </div>
+      {/* Progress bar */}
+      <div style={{marginBottom:4,flexShrink:0}}>
+        <div onClick={seek} style={{height:6,background:'#E5E7EB',borderRadius:99,cursor:'pointer',overflow:'hidden'}}>
+          <div style={{width:`${pct}%`,height:'100%',background:'#818CF8',borderRadius:99,transition:'width 0.3s'}}/>
+        </div>
+        <div style={{display:'flex',justifyContent:'space-between',marginTop:3}}>
+          <span style={{fontSize:10,color:'#9CA3AF',fontWeight:600}}>{fmt(progress)}</span>
+          <span style={{fontSize:10,color:'#9CA3AF',fontWeight:600}}>{fmt(duration)}</span>
+        </div>
+      </div>
+      {/* Controls */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:12,flexShrink:0}}>
+        <button onClick={prev} style={{width:38,height:38,borderRadius:'50%',border:'2px solid #E5E7EB',background:'#F9FAFB',fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>⏮</button>
+        <button onClick={()=>setPlaying(p=>!p)} style={{width:52,height:52,borderRadius:'50%',border:'none',background:'#818CF8',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 14px #818CF844',color:'white'}}>
+          {playing?'⏸':'▶'}
+        </button>
+        <button onClick={next} style={{width:38,height:38,borderRadius:'50%',border:'2px solid #E5E7EB',background:'#F9FAFB',fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>⏭</button>
+      </div>
+      {/* Volume */}
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,flexShrink:0}}>
+        <span style={{fontSize:14}}>🔈</span>
+        <input type="range" min={0} max={1} step={0.01} value={volume}
+          onChange={e=>setVolume(Number(e.target.value))}
+          style={{flex:1,accentColor:'#818CF8',cursor:'pointer'}}/>
+        <span style={{fontSize:14}}>🔊</span>
+      </div>
+      {/* Track list */}
+      <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:4}}>
+        <div style={{fontSize:10,fontWeight:800,color:'#9CA3AF',letterSpacing:0.5,marginBottom:4}}>PLAYLIST</div>
+        {MUSIC_TRACKS.map((t,i)=>(
+          <div key={i} onClick={()=>{setTrackIdx(i);setPlaying(true);}}
+            style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',borderRadius:10,background:i===trackIdx?PASTEL[i%PASTEL.length]:'#F9FAFB',border:i===trackIdx?'1.5px solid #C4B5FD':'1.5px solid transparent',cursor:'pointer',transition:'all 0.12s'}}>
+            <div style={{width:22,height:22,borderRadius:'50%',background:i===trackIdx?'#818CF8':'#E5E7EB',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              {i===trackIdx&&playing
+                ?<span style={{fontSize:9,color:'white'}}>▶</span>
+                :<span style={{fontSize:10,color:i===trackIdx?'white':'#9CA3AF',fontWeight:800}}>{i+1}</span>}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:700,color:i===trackIdx?'#4338CA':'#374151',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{t.title}</div>
+              <div style={{fontSize:10,color:'#9CA3AF',fontWeight:600}}>{t.artist}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ════════ TOOL WINDOW (with resize + maximize) ════════════════════════════════
 function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize,onToggleMax,onToggleMin}){
   const isMax=win.maximized;
@@ -946,7 +1104,7 @@ function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize
   const boxStyle=isMax
     ?{position:'absolute',inset:0,zIndex:win.zIndex,display:'flex',flexDirection:'column',borderRadius:0,border:'none',boxShadow:'none',background:tool.bg,overflow:'hidden'}
     :{position:'absolute',left:win.x,top:win.y,width:win.w,height:isMin?44:win.h,zIndex:win.zIndex,display:'flex',flexDirection:'column',borderRadius:18,border:'2px solid #E5E7EB',boxShadow:'0 8px 32px rgba(0,0,0,0.13)',background:tool.bg,overflow:'hidden',transition:'height 0.2s',minWidth:200,minHeight:isMin?44:120};
-  const ToolComp={timer:TimerTool,dice:DiceTool,namepicker:NamePickerTool,groupmaker:GroupMakerTool,checklist:ChecklistTool,brainbreak:BrainBreakTool,helpqueue:HelpQueueTool,classjobs:ClassJobsTool,clock:ClockTool,randomnum:RandomNumberTool,noise:NoiseTool,spinner:SpinnerWheelTool,scoreboard:ScoreboardTool,breathing:BreathingTool,maths:MathsChallengeTool,morning:MorningMeetingTool}[tool.id];
+  const ToolComp={timer:TimerTool,dice:DiceTool,namepicker:NamePickerTool,groupmaker:GroupMakerTool,checklist:ChecklistTool,brainbreak:BrainBreakTool,helpqueue:HelpQueueTool,classjobs:ClassJobsTool,clock:ClockTool,randomnum:RandomNumberTool,noise:NoiseTool,spinner:SpinnerWheelTool,scoreboard:ScoreboardTool,breathing:BreathingTool,maths:MathsChallengeTool,morning:MorningMeetingTool,music:MusicPlayerTool}[tool.id];
   return(
     <div style={boxStyle} onMouseDown={onFocus}>
       {/* Header / title bar */}
@@ -1009,6 +1167,7 @@ const TOOLS=[
   {id:'breathing',  label:'Breathing',    emoji:'🌬️', header:'#BFDBFE', text:'#1E3A5F', bg:'#EFF6FF',  w:340, h:440},
   {id:'maths',      label:'Maths',        emoji:'🧮', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:440},
   {id:'morning',    label:'Morning Meet', emoji:'☀️', header:'#EDE9FE', text:'#4C1D95', bg:'#F5F3FF',  w:340, h:440},
+  {id:'music',      label:'Music Player', emoji:'🎵', header:'#DDD6FE', text:'#4338CA', bg:'#F5F3FF',  w:340, h:520},
 ];
 const MIN_W=220, MIN_H=160;
 let MAX_Z=10;
@@ -1024,22 +1183,17 @@ export default function TeacherToolsPage(){
   const layoutLoaded=useRef(false);
   const [isFullscreen,setIsFullscreen]=useState(false);
 
-  // Auth + load students
   useEffect(()=>{
     const unsub=onAuthStateChanged(auth,async u=>{
       if(!u){router.push('/login');return;}
       setUser(u);
       userRef.current=u;
-      // Restore saved layout
       try{
         const saved=localStorage.getItem('toolkit_layout_'+u.uid);
         if(saved){
           const parsed=JSON.parse(saved);
           const valid=parsed.filter(w=>TOOLS.some(t=>t.id===w.toolId));
-          if(valid.length>0){
-            MAX_Z=Math.max(MAX_Z,...valid.map(w=>w.zIndex||10));
-            setWindows(valid);
-          }
+          if(valid.length>0){MAX_Z=Math.max(MAX_Z,...valid.map(w=>w.zIndex||10));setWindows(valid);}
         }
         layoutLoaded.current=true;
       }catch(e){layoutLoaded.current=true;}
@@ -1062,7 +1216,6 @@ export default function TeacherToolsPage(){
     return unsub;
   },[]);
 
-  // Mouse move + up handlers
   useEffect(()=>{
     const onMove=e=>{
       if(drag.current.active){
@@ -1089,13 +1242,11 @@ export default function TeacherToolsPage(){
     return()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);};
   },[]);
 
-  // Persist layout to localStorage
   useEffect(()=>{
     if(!layoutLoaded.current||!userRef.current)return;
     try{localStorage.setItem('toolkit_layout_'+userRef.current.uid,JSON.stringify(windows));}catch(e){}
   },[windows]);
 
-  // Fullscreen change listener
   useEffect(()=>{
     const onFSChange=()=>setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange',onFSChange);
@@ -1145,7 +1296,6 @@ export default function TeacherToolsPage(){
         ::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:4px}
       `}</style>
       <div style={{display:'flex',flexDirection:'column',height:'100dvh',background:'#F8FAFC',fontFamily:'-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif',overflow:'hidden'}}>
-        {/* Top bar */}
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 20px',height:52,background:'white',borderBottom:'2px solid #F1F5F9',flexShrink:0,zIndex:9999}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:22}}>🛠️</span>
@@ -1157,8 +1307,6 @@ export default function TeacherToolsPage(){
             <button onClick={()=>router.back()} style={{background:'#F1F5F9',border:'1.5px solid #E2E8F0',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#64748B'}}>← Back</button>
           </div>
         </div>
-
-        {/* Canvas */}
         <div style={{flex:1,position:'relative',overflow:'hidden'}}>
           {windows.length===0&&(
             <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:8,pointerEvents:'none'}}>
@@ -1186,8 +1334,6 @@ export default function TeacherToolsPage(){
             );
           })}
         </div>
-
-        {/* Dock */}
         <div style={{flexShrink:0,background:'white',borderTop:'2px solid #F1F5F9',padding:'8px 12px',display:'flex',justifyContent:'center',zIndex:9999}}>
           <div style={{display:'flex',gap:2,flexWrap:'wrap',justifyContent:'center',maxWidth:'100%'}}>
             {TOOLS.map(tool=>{
