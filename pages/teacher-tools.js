@@ -306,7 +306,8 @@ function BrainBreakTool(){
 }
 
 // ════════ HELP QUEUE ══════════════════════════════════════════════════════════
-const HELP_CATS=[{id:'help',label:'Need Help',emoji:'🙋',color:'#BFDBFE'},{id:'check',label:'Check Work',emoji:'✅',color:'#BBF7D0'},{id:'toilet',label:'Bathroom',emoji:'🚻',color:'#FDE68A'},{id:'done',label:'Finished',emoji:'🎉',color:'#DDD6FE'}];
+const HELP_CATS=[{id:'help',label:'Need Help',emoji:'🙋',color:'#BFDBFE'},{id:'check',label:'Check Work',emoji:'✅',color:'#BBF7D0'},{id:'toilet',label:'Bathroom',emoji:'🚻',color:'#FDE68A'}];
+const ACTION_LABEL={help:'✅ Help Next',check:'✅ Checked',toilet:'🚻 Returned'};
 function QueueTimer({since}){
   const [elapsed,setElapsed]=useState(0);
   useEffect(()=>{const iv=setInterval(()=>setElapsed(Math.floor((Date.now()-since)/1000)),1000);return()=>clearInterval(iv);},[since]);
@@ -317,16 +318,25 @@ function QueueTimer({since}){
 function HelpQueueTool({students=[]}){
   const names=students.length>0?students:['Alex','Bailey','Casey','Dana','Elliot'];
   const [queue,setQueue]=useState([]);
+  const [log,setLog]=useState([]);
   const [sel,setSel]=useState('');
   const [selCat,setSelCat]=useState('help');
   const [custom,setCustom]=useState('');
+  const [showLog,setShowLog]=useState(false);
   const add=(name,catId)=>{
-    if(!name)return;
-    setQueue(q=>[...q,{id:Date.now(),name,catId,since:Date.now()}]);
+    if(!name.trim())return;
+    setQueue(q=>[...q,{id:Date.now(),name:name.trim(),catId,since:Date.now()}]);
     setSel('');setCustom('');
   };
-  const helpNext=()=>setQueue(q=>q.slice(1));
+  const dismiss=(item)=>{
+    const cat=HELP_CATS.find(c=>c.id===item.catId)||HELP_CATS[0];
+    setLog(l=>[{name:item.name,catId:item.catId,catLabel:cat.label,emoji:cat.emoji,time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})},...l]);
+    setQueue(q=>q.filter(x=>x.id!==item.id));
+  };
   const remove=id=>setQueue(q=>q.filter(x=>x.id!==id));
+  const next=queue[0];
+  const nextCat=next?HELP_CATS.find(c=>c.id===next.catId)||HELP_CATS[0]:null;
+  const nextLabel=next?ACTION_LABEL[next.catId]||'✅ Done':'';
   return(
     <div style={{display:'flex',flexDirection:'column',gap:10,padding:'14px 14px'}}>
       <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
@@ -343,8 +353,9 @@ function HelpQueueTool({students=[]}){
         <input value={custom} onChange={e=>setCustom(e.target.value)} placeholder="Or type a name…" onKeyDown={e=>e.key==='Enter'&&add(custom,selCat)} style={{flex:1,border:'2px solid #E5E7EB',borderRadius:10,padding:'8px 11px',fontSize:13,outline:'none',fontFamily:'inherit'}}/>
         <button onClick={()=>add(custom,selCat)} disabled={!custom.trim()} style={{background:'#BFDBFE',border:'2px solid #93C5FD',borderRadius:10,padding:'8px 14px',fontWeight:800,fontSize:14,cursor:'pointer',color:'#1E40AF',opacity:custom.trim()?1:0.4}}>Add</button>
       </div>
-      <div style={{display:'flex',flexDirection:'column',gap:5,maxHeight:160,overflowY:'auto'}}>
-        {queue.length===0&&<div style={{textAlign:'center',color:'#9CA3AF',fontSize:13,padding:'20px 0',fontWeight:600}}>Queue is empty 🎉</div>}
+      {/* Queue */}
+      <div style={{display:'flex',flexDirection:'column',gap:5,maxHeight:150,overflowY:'auto'}}>
+        {queue.length===0&&<div style={{textAlign:'center',color:'#9CA3AF',fontSize:13,padding:'16px 0',fontWeight:600}}>Queue is empty 🎉</div>}
         {queue.map((item,i)=>{
           const cat=HELP_CATS.find(c=>c.id===item.catId)||HELP_CATS[0];
           return(
@@ -352,12 +363,37 @@ function HelpQueueTool({students=[]}){
               <span style={{fontSize:16}}>{cat.emoji}</span>
               <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:'#1F2937'}}>{item.name}</div><div style={{fontSize:11,color:'#6B7280',fontWeight:600}}>{cat.label} · <QueueTimer since={item.since}/></div></div>
               {i===0&&<span style={{background:'#FDE68A',borderRadius:8,padding:'2px 7px',fontSize:10,fontWeight:800,color:'#78350F'}}>NEXT</span>}
-              <button onClick={()=>remove(item.id)} style={{background:'none',border:'none',color:'#D1D5DB',cursor:'pointer',fontSize:15,padding:0}}>×</button>
+              <button onClick={()=>remove(item.id)} style={{background:'none',border:'none',color:'#D1D5DB',cursor:'pointer',fontSize:15,padding:0,lineHeight:1}}>×</button>
             </div>
           );
         })}
       </div>
-      {queue.length>0&&<button onClick={helpNext} style={{background:'#BBF7D0',border:'2px solid #86EFAC',borderRadius:12,padding:'11px 0',fontSize:14,fontWeight:800,cursor:'pointer',color:'#14532D'}}>✅ Help Next ({queue[0]?.name})</button>}
+      {/* Action button — label changes based on category */}
+      {next&&<button onClick={()=>dismiss(next)} style={{background:nextCat.color,border:`2px solid ${nextCat.color}CC`,borderRadius:12,padding:'11px 0',fontSize:14,fontWeight:800,cursor:'pointer',color:'#1F2937'}}>
+        {nextLabel} ({next.name})
+      </button>}
+      {/* History log */}
+      <div style={{borderTop:'1.5px solid #F3F4F6',paddingTop:8}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:showLog?8:0}}>
+          <button onClick={()=>setShowLog(s=>!s)} style={{background:'none',border:'none',fontSize:12,fontWeight:700,color:'#9CA3AF',cursor:'pointer',padding:0}}>
+            {showLog?'▲':'▼'} History ({log.length})
+          </button>
+          {showLog&&log.length>0&&<button onClick={()=>setLog([])} style={{background:'#FEE2E2',border:'1.5px solid #FECACA',borderRadius:8,padding:'3px 9px',fontSize:11,fontWeight:700,cursor:'pointer',color:'#991B1B'}}>Clear</button>}
+        </div>
+        {showLog&&(
+          <div style={{display:'flex',flexDirection:'column',gap:4,maxHeight:120,overflowY:'auto'}}>
+            {log.length===0&&<div style={{textAlign:'center',color:'#D1D5DB',fontSize:12,padding:'8px 0'}}>No history yet</div>}
+            {log.map((entry,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:7,padding:'5px 8px',borderRadius:8,background:'#F9FAFB',border:'1px solid #F3F4F6'}}>
+                <span style={{fontSize:13}}>{entry.emoji}</span>
+                <div style={{flex:1,fontSize:12,fontWeight:700,color:'#374151'}}>{entry.name}</div>
+                <span style={{fontSize:11,color:'#9CA3AF',fontWeight:600}}>{entry.catLabel}</span>
+                <span style={{fontSize:11,color:'#D1D5DB',fontWeight:600,marginLeft:4}}>{entry.time}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
