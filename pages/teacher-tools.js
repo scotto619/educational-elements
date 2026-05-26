@@ -161,7 +161,7 @@ function GroupMakerTool({students=[]}){
         <button onClick={()=>setVal(v=>v+1)} style={{width:36,height:36,borderRadius:10,border:'2px solid #E5E7EB',background:'#F9FAFB',fontSize:20,fontWeight:900,cursor:'pointer',color:'#6B7280'}}>+</button>
       </div>
       <button onClick={make} style={{background:'#BBF7D0',border:'2px solid #86EFAC',borderRadius:14,padding:'12px 0',fontSize:15,fontWeight:800,cursor:'pointer',color:'#14532D'}}>🔀 Make Groups</button>
-      <div style={{display:'flex',flexWrap:'wrap',gap:8,maxHeight:180,overflowY:'auto'}}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
         {groups.map((g,i)=><div key={i} style={{background:GPAL[i%GPAL.length],borderRadius:12,padding:'8px 12px',minWidth:90}}>
           <div style={{fontSize:11,fontWeight:800,color:'#374151',marginBottom:4}}>Group {i+1}</div>
           {g.map(n=><div key={n} style={{fontSize:13,fontWeight:600,color:'#1F2937'}}>{n}</div>)}
