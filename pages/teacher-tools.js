@@ -857,6 +857,86 @@ function SpinnerWheelTool({students=[]}){
 }
 
 
+// ════════ MORNING MEETING ═════════════════════════════════════════════════════
+const MM_DAYS_CONTENT=[
+  {greeting:'Silent Movie Stars!',value:'INTEGRITY',maths:['9 × 8 + 14 = ?','³⁄₈ of 240 = ?','40% of 75 = ?'],word:'resilient',riddle:'The more you take, the more you leave behind.'},
+  {greeting:'Two Truths and a Lie!',value:'RESILIENCE',maths:['6² − 4 × 5 = ?','²⁄₅ of 350 = ?','35% of 60 = ?'],word:'tenacious',riddle:'I speak without a mouth and hear without ears.'},
+  {greeting:'Question Tennis!',value:'EMPATHY',maths:['(12 + 8) × 3 − 14 = ?','³⁄₄ of 360 = ?','15% of 80 = ?'],word:'eloquent',riddle:'I have cities, but no houses live there.'},
+  {greeting:'Compliment Circle!',value:'COURAGE',maths:['7² + 3 × 6 = ?','⁴⁄₅ of 200 = ?','60% of 45 = ?'],word:'persevere',riddle:'The more you have of it, the less you see.'},
+  {greeting:'Mirror Movement!',value:'RESPECT',maths:['48 ÷ 6 + 5² = ?','³⁄₇ of 490 = ?','25% of 96 = ?'],word:'audacious',riddle:'I go up but never come down.'},
+];
+function MorningMeetingTool(){
+  const safeLS=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}};
+  const getDayIdx=()=>{
+    const ov=safeLS('mm_dayOverride',null);
+    if(ov!==null)return ov;
+    const doy=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0).getTime())/86400000);
+    return(doy-1)%20;
+  };
+  const [dayIdx,setDayIdx]=useState(()=>getDayIdx());
+  const [className,setClassName]=useState(()=>safeLS('mm_className',''));
+  const [greeting,setGreeting]=useState(()=>safeLS('mm_greeting','Good Morning!'));
+  const [sections,setSections]=useState(()=>{
+    const saved=safeLS('mm_sections',{});
+    const defs={greeting:true,value:true,announcements:true,game:true,grammar:true,spelling:true,word:true,maths:true,literacy:true,riddle:true,reflection:true};
+    return Object.fromEntries(Object.entries(defs).map(([k,v])=>[k,saved[k]!==undefined?saved[k]:v]));
+  });
+  const preview=MM_DAYS_CONTENT[dayIdx%MM_DAYS_CONTENT.length];
+  const enabledCount=Object.values(sections).filter(Boolean).length;
+  const SECTION_ICONS={greeting:'👋',value:'⭐',announcements:'📢',game:'🎮',grammar:'✏️',spelling:'🔤',word:'📖',maths:'🔢',literacy:'✍️',riddle:'🧩',reflection:'💭'};
+  return(
+    <div style={{display:'flex',flexDirection:'column',gap:12,padding:'16px 14px'}}>
+      {/* Day header */}
+      <div style={{background:'#EDE9FE',border:'2.5px solid #C4B5FD',borderRadius:16,padding:'14px 16px',textAlign:'center'}}>
+        <div style={{fontSize:11,fontWeight:800,color:'#7C3AED',letterSpacing:1,marginBottom:4}}>DAY {dayIdx+1} OF 20</div>
+        <div style={{fontSize:16,fontWeight:900,color:'#4C1D95'}}>{greeting}</div>
+        {className&&<div style={{fontSize:12,color:'#7C3AED',fontWeight:600,marginTop:2}}>{className}</div>}
+      </div>
+      {/* Quick preview */}
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        <div style={{fontSize:11,fontWeight:800,color:'#9CA3AF',letterSpacing:0.5}}>TODAY'S HIGHLIGHTS</div>
+        {sections.greeting&&<div style={{display:'flex',gap:8,alignItems:'flex-start',padding:'7px 10px',background:'#FFFBEB',borderRadius:10,border:'1.5px solid #FDE68A'}}>
+          <span style={{fontSize:15,flexShrink:0}}>👋</span>
+          <div><div style={{fontSize:10,fontWeight:800,color:'#92400E'}}>GREETING</div><div style={{fontSize:12,fontWeight:600,color:'#78350F'}}>{preview.greeting}</div></div>
+        </div>}
+        {sections.value&&<div style={{display:'flex',gap:8,alignItems:'flex-start',padding:'7px 10px',background:'#F0FDF4',borderRadius:10,border:'1.5px solid #BBF7D0'}}>
+          <span style={{fontSize:15,flexShrink:0}}>⭐</span>
+          <div><div style={{fontSize:10,fontWeight:800,color:'#14532D'}}>VALUE</div><div style={{fontSize:12,fontWeight:600,color:'#14532D'}}>{preview.value}</div></div>
+        </div>}
+        {sections.maths&&<div style={{display:'flex',gap:8,alignItems:'flex-start',padding:'7px 10px',background:'#EFF6FF',borderRadius:10,border:'1.5px solid #BFDBFE'}}>
+          <span style={{fontSize:15,flexShrink:0}}>🔢</span>
+          <div><div style={{fontSize:10,fontWeight:800,color:'#1E3A5F'}}>MATHS</div><div style={{fontSize:11,fontWeight:600,color:'#1E40AF'}}>{preview.maths[0]}</div></div>
+        </div>}
+        {sections.word&&<div style={{display:'flex',gap:8,alignItems:'flex-start',padding:'7px 10px',background:'#FDF2F8',borderRadius:10,border:'1.5px solid #FBCFE8'}}>
+          <span style={{fontSize:15,flexShrink:0}}>📖</span>
+          <div><div style={{fontSize:10,fontWeight:800,color:'#831843'}}>WORD OF THE DAY</div><div style={{fontSize:12,fontWeight:700,color:'#831843',fontStyle:'italic'}}>{preview.word}</div></div>
+        </div>}
+      </div>
+      {/* Sections indicator */}
+      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+        {Object.entries(SECTION_ICONS).map(([k,icon])=>(
+          <span key={k} style={{fontSize:14,opacity:sections[k]?1:0.2}} title={k}>{icon}</span>
+        ))}
+        <span style={{fontSize:11,color:'#9CA3AF',fontWeight:600,alignSelf:'center',marginLeft:4}}>{enabledCount} sections</span>
+      </div>
+      {/* Launch button */}
+      <button
+        onClick={()=>window.open('/morning-meeting','_blank')}
+        style={{background:'#7C3AED',border:'none',borderRadius:14,padding:'14px 0',fontSize:15,fontWeight:800,cursor:'pointer',color:'white',boxShadow:'0 4px 14px #7C3AED44',letterSpacing:0.2}}
+      >
+        ▶ Launch Presentation
+      </button>
+      <button
+        onClick={()=>window.open('/morning-meeting','_blank')}
+        style={{background:'#F5F3FF',border:'2px solid #DDD6FE',borderRadius:12,padding:'9px 0',fontSize:12,fontWeight:700,cursor:'pointer',color:'#7C3AED'}}
+      >
+        ⚙ Edit & Configure
+      </button>
+    </div>
+  );
+}
+
+
 // ════════ TOOL WINDOW (with resize + maximize) ════════════════════════════════
 function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize,onToggleMax,onToggleMin}){
   const isMax=win.maximized;
@@ -866,7 +946,7 @@ function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize
   const boxStyle=isMax
     ?{position:'absolute',inset:0,zIndex:win.zIndex,display:'flex',flexDirection:'column',borderRadius:0,border:'none',boxShadow:'none',background:tool.bg,overflow:'hidden'}
     :{position:'absolute',left:win.x,top:win.y,width:win.w,height:isMin?44:win.h,zIndex:win.zIndex,display:'flex',flexDirection:'column',borderRadius:18,border:'2px solid #E5E7EB',boxShadow:'0 8px 32px rgba(0,0,0,0.13)',background:tool.bg,overflow:'hidden',transition:'height 0.2s',minWidth:200,minHeight:isMin?44:120};
-  const ToolComp={timer:TimerTool,dice:DiceTool,namepicker:NamePickerTool,groupmaker:GroupMakerTool,checklist:ChecklistTool,brainbreak:BrainBreakTool,helpqueue:HelpQueueTool,classjobs:ClassJobsTool,clock:ClockTool,randomnum:RandomNumberTool,noise:NoiseTool,spinner:SpinnerWheelTool,scoreboard:ScoreboardTool,breathing:BreathingTool,maths:MathsChallengeTool}[tool.id];
+  const ToolComp={timer:TimerTool,dice:DiceTool,namepicker:NamePickerTool,groupmaker:GroupMakerTool,checklist:ChecklistTool,brainbreak:BrainBreakTool,helpqueue:HelpQueueTool,classjobs:ClassJobsTool,clock:ClockTool,randomnum:RandomNumberTool,noise:NoiseTool,spinner:SpinnerWheelTool,scoreboard:ScoreboardTool,breathing:BreathingTool,maths:MathsChallengeTool,morning:MorningMeetingTool}[tool.id];
   return(
     <div style={boxStyle} onMouseDown={onFocus}>
       {/* Header / title bar */}
@@ -928,6 +1008,7 @@ const TOOLS=[
   {id:'scoreboard', label:'Scoreboard',   emoji:'🏆', header:'#FDE68A', text:'#92400E', bg:'#FFFBEB',  w:340, h:440},
   {id:'breathing',  label:'Breathing',    emoji:'🌬️', header:'#BFDBFE', text:'#1E3A5F', bg:'#EFF6FF',  w:340, h:440},
   {id:'maths',      label:'Maths',        emoji:'🧮', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:440},
+  {id:'morning',    label:'Morning Meet', emoji:'☀️', header:'#EDE9FE', text:'#4C1D95', bg:'#F5F3FF',  w:340, h:440},
 ];
 const MIN_W=220, MIN_H=160;
 let MAX_Z=10;
