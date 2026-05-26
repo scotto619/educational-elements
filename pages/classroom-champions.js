@@ -1113,42 +1113,9 @@ const ClassroomChampions = () => {
         return null; // handled by useEffect — redirects to /curriculum
 
       case 'toolkit':
-        return <TeachersToolkitTab
-          {...commonProps}
-          onUpdateStudent={handleUpdateStudent}
-          userData={userData}
-          teacherId={user?.uid}
-          saveGroupDataToFirebase={(data) => saveClassData({ groupData: data })}
-          saveClassroomDataToFirebase={(data) => {
-            if (Array.isArray(data)) {
-              // Handle student array updates
-              setStudents(data);
-            } else {
-              saveClassData({ classroomData: data });
-            }
-          }}
-          onAwardXP={awardXPToStudent}
-          onAwardCoins={awardCoinsToStudent}
-          onBulkAward={handleBulkAward}
-          activeQuests={currentClassData?.activeQuests || []}
-          attendanceData={currentClassData?.attendanceData || {}}
-          markAttendance={(studentId, status) => {
-            const today = new Date().toISOString().split('T')[0];
-            const updatedAttendance = {
-              ...currentClassData?.attendanceData,
-              [today]: {
-                ...(currentClassData?.attendanceData?.[today] || {}),
-                [studentId]: status,
-              },
-            };
-            saveClassData({ attendanceData: updatedAttendance });
-          }}
-          completeQuest={() => showToast('Quest completed!', 'success')}
-          setShowQuestManagement={() => showToast('Quest management opened!', 'info')}
-          saveToolkitData={(data) => saveClassData({ toolkitData: { ...currentClassData?.toolkitData, ...data } })}
-          loadedData={currentClassData?.toolkitData || {}}
-          groupData={currentClassData?.groupData}
-        />;
+        // Redirect straight to the full toolkit page
+        router.push('/teacher-tools');
+        return null;
 
       case 'settings':
         return (

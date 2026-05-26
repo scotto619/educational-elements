@@ -280,9 +280,9 @@ export default function MainMenu() {
                         </div>
                     </div>
 
-                    {/* Teacher Toolkit — needs a class → go to dashboard */}
+                    {/* Teacher Toolkit — goes straight to toolkit */}
                     <div
-                        onClick={() => handleNavigation('/dashboard')}
+                        onClick={() => handleNavigation('/teacher-tools')}
                         className="group cursor-pointer"
                     >
                         <div className="relative bg-white rounded-3xl overflow-hidden shadow-lg border-2 border-emerald-100 hover:border-emerald-300 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-2xl h-full">

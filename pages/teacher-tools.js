@@ -846,8 +846,10 @@ function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize
       </div>
       {/* Content */}
       {!isMin&&(
-        <div style={{flex:1,overflowY:'auto',overflowX:'hidden'}}>
-          {ToolComp?<ToolComp students={students}/>:<div style={{padding:20,color:'#9CA3AF',fontSize:14}}>Tool coming soon…</div>}
+        <div style={{flex:1,overflow:'hidden',position:'relative'}}>
+          <div style={{zoom:isMax?1:Math.max(0.4,win.w/340),overflowY:'auto',overflowX:'hidden',height:'100%'}}>
+            {ToolComp?<ToolComp students={students}/>:<div style={{padding:20,color:'#9CA3AF',fontSize:14}}>Tool coming soon…</div>}
+          </div>
         </div>
       )}
       {/* Resize handles (bottom-right corner, right edge, bottom edge) – hidden when maximised or minimised */}
@@ -873,21 +875,21 @@ function DockIcon({tool,isOpen,isMinimized,onClick}){
 
 // ════════ MAIN PAGE ═══════════════════════════════════════════════════════════
 const TOOLS=[
-  {id:'timer',      label:'Timer',         emoji:'⏰', header:'#FDE68A', text:'#92400E', bg:'#FFFBEB',  w:360, h:460},
-  {id:'dice',       label:'Dice',          emoji:'🎲', header:'#BFDBFE', text:'#1E3A5F', bg:'#EFF6FF',  w:400, h:400},
-  {id:'namepicker', label:'Name Picker',   emoji:'🎯', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:360, h:440},
-  {id:'groupmaker', label:'Group Maker',   emoji:'👥', header:'#DDD6FE', text:'#4C1D95', bg:'#F5F3FF',  w:360, h:420},
-  {id:'checklist',  label:'Checklist',     emoji:'✅', header:'#A7F3D0', text:'#064E3B', bg:'#ECFDF5',  w:360, h:460},
-  {id:'brainbreak', label:'Brain Break',   emoji:'🧠', header:'#FBCFE8', text:'#831843', bg:'#FDF2F8',  w:380, h:480},
-  {id:'helpqueue',  label:'Help Queue',    emoji:'🙋', header:'#A5F3FC', text:'#164E63', bg:'#ECFEFF',  w:380, h:460},
-  {id:'classjobs',  label:'Class Jobs',    emoji:'⭐', header:'#FEF08A', text:'#713F12', bg:'#FEFCE8',  w:360, h:420},
-  {id:'clock',      label:'Clock',         emoji:'🕐', header:'#E0F2FE', text:'#0C4A6E', bg:'#F0F9FF',  w:320, h:380},
-  {id:'randomnum',  label:'Random Number', emoji:'🔢', header:'#DDD6FE', text:'#3B0764', bg:'#FAF5FF',  w:320, h:360},
-  {id:'noise',      label:'Noise Monitor', emoji:'🔊', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:320, h:420},
-  {id:'spinner',    label:'Spinner Wheel', emoji:'🎡', header:'#DDD6FE', text:'#4C1D95', bg:'#F5F3FF',  w:340, h:520},
-  {id:'scoreboard', label:'Scoreboard',   emoji:'🏆', header:'#FDE68A', text:'#92400E', bg:'#FFFBEB',  w:360, h:460},
-  {id:'breathing',  label:'Breathing',    emoji:'🌬️', header:'#BFDBFE', text:'#1E3A5F', bg:'#EFF6FF',  w:320, h:480},
-  {id:'maths',      label:'Maths',        emoji:'🧮', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:420},
+  {id:'timer',      label:'Timer',         emoji:'⏰', header:'#FDE68A', text:'#92400E', bg:'#FFFBEB',  w:340, h:440},
+  {id:'dice',       label:'Dice',          emoji:'🎲', header:'#BFDBFE', text:'#1E3A5F', bg:'#EFF6FF',  w:340, h:440},
+  {id:'namepicker', label:'Name Picker',   emoji:'🎯', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:440},
+  {id:'groupmaker', label:'Group Maker',   emoji:'👥', header:'#DDD6FE', text:'#4C1D95', bg:'#F5F3FF',  w:340, h:440},
+  {id:'checklist',  label:'Checklist',     emoji:'✅', header:'#A7F3D0', text:'#064E3B', bg:'#ECFDF5',  w:340, h:440},
+  {id:'brainbreak', label:'Brain Break',   emoji:'🧠', header:'#FBCFE8', text:'#831843', bg:'#FDF2F8',  w:340, h:440},
+  {id:'helpqueue',  label:'Help Queue',    emoji:'🙋', header:'#A5F3FC', text:'#164E63', bg:'#ECFEFF',  w:340, h:440},
+  {id:'classjobs',  label:'Class Jobs',    emoji:'⭐', header:'#FEF08A', text:'#713F12', bg:'#FEFCE8',  w:340, h:440},
+  {id:'clock',      label:'Clock',         emoji:'🕐', header:'#E0F2FE', text:'#0C4A6E', bg:'#F0F9FF',  w:340, h:440},
+  {id:'randomnum',  label:'Random Number', emoji:'🔢', header:'#DDD6FE', text:'#3B0764', bg:'#FAF5FF',  w:340, h:440},
+  {id:'noise',      label:'Noise Monitor', emoji:'🔊', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:440},
+  {id:'spinner',    label:'Spinner Wheel', emoji:'🎡', header:'#DDD6FE', text:'#4C1D95', bg:'#F5F3FF',  w:340, h:440},
+  {id:'scoreboard', label:'Scoreboard',   emoji:'🏆', header:'#FDE68A', text:'#92400E', bg:'#FFFBEB',  w:340, h:440},
+  {id:'breathing',  label:'Breathing',    emoji:'🌬️', header:'#BFDBFE', text:'#1E3A5F', bg:'#EFF6FF',  w:340, h:440},
+  {id:'maths',      label:'Maths',        emoji:'🧮', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:440},
 ];
 const MIN_W=220, MIN_H=160;
 let MAX_Z=10;
@@ -899,12 +901,29 @@ export default function TeacherToolsPage(){
   const [windows,setWindows]=useState([]);
   const drag=useRef({active:false,id:null,startX:0,startY:0,winX:0,winY:0});
   const resize=useRef({active:false,id:null,dir:'se',startX:0,startY:0,startW:0,startH:0});
+  const userRef=useRef(null);
+  const layoutLoaded=useRef(false);
+  const [isFullscreen,setIsFullscreen]=useState(false);
 
   // Auth + load students
   useEffect(()=>{
     const unsub=onAuthStateChanged(auth,async u=>{
       if(!u){router.push('/login');return;}
       setUser(u);
+      userRef.current=u;
+      // Restore saved layout
+      try{
+        const saved=localStorage.getItem('toolkit_layout_'+u.uid);
+        if(saved){
+          const parsed=JSON.parse(saved);
+          const valid=parsed.filter(w=>TOOLS.some(t=>t.id===w.toolId));
+          if(valid.length>0){
+            MAX_Z=Math.max(MAX_Z,...valid.map(w=>w.zIndex||10));
+            setWindows(valid);
+          }
+        }
+        layoutLoaded.current=true;
+      }catch(e){layoutLoaded.current=true;}
       try{
         const snap=await getDoc(doc(firestore,'users',u.uid));
         const data=snap.data()||{};
@@ -951,6 +970,24 @@ export default function TeacherToolsPage(){
     return()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);};
   },[]);
 
+  // Persist layout to localStorage
+  useEffect(()=>{
+    if(!layoutLoaded.current||!userRef.current)return;
+    try{localStorage.setItem('toolkit_layout_'+userRef.current.uid,JSON.stringify(windows));}catch(e){}
+  },[windows]);
+
+  // Fullscreen change listener
+  useEffect(()=>{
+    const onFSChange=()=>setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange',onFSChange);
+    return()=>document.removeEventListener('fullscreenchange',onFSChange);
+  },[]);
+
+  const toggleFullscreen=()=>{
+    if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen();
+  };
+
   const focusWindow=id=>{MAX_Z++;setWindows(ws=>ws.map(w=>w.id===id?{...w,zIndex:MAX_Z}:w));};
   const startDrag=(e,id)=>{e.preventDefault();const w=windows.find(x=>x.id===id);if(!w)return;drag.current={active:true,id,startX:e.clientX,startY:e.clientY,winX:w.x,winY:w.y};focusWindow(id);};
   const startResize=(e,id,dir)=>{e.preventDefault();e.stopPropagation();const w=windows.find(x=>x.id===id);if(!w)return;resize.current={active:true,id,dir,startX:e.clientX,startY:e.clientY,startW:w.w,startH:w.h};focusWindow(id);};
@@ -996,7 +1033,8 @@ export default function TeacherToolsPage(){
             <span style={{fontWeight:900,fontSize:17,color:'#1F2937',letterSpacing:-0.5}}>Teacher Toolkit</span>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            {windows.length>0&&<button onClick={()=>setWindows([])} style={{background:'#FEE2E2',border:'1.5px solid #FECACA',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#991B1B'}}>Close All</button>}
+            {windows.length>0&&<button onClick={()=>{setWindows([]);try{if(userRef.current)localStorage.removeItem('toolkit_layout_'+userRef.current.uid);}catch(e){};}} style={{background:'#FEE2E2',border:'1.5px solid #FECACA',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#991B1B'}}>Close All</button>}
+            <button onClick={toggleFullscreen} title={isFullscreen?'Exit fullscreen':'Enter fullscreen'} style={{background:'#F1F5F9',border:'1.5px solid #E2E8F0',borderRadius:8,padding:'5px 12px',fontSize:14,fontWeight:700,cursor:'pointer',color:'#64748B'}}>{isFullscreen?'⊡':'⛶'}</button>
             <button onClick={()=>router.back()} style={{background:'#F1F5F9',border:'1.5px solid #E2E8F0',borderRadius:8,padding:'5px 12px',fontSize:12,fontWeight:700,cursor:'pointer',color:'#64748B'}}>← Back</button>
           </div>
         </div>
