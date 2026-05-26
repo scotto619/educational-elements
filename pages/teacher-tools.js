@@ -997,75 +997,103 @@ function MusicPlayerTool(){
   const [progress,setProgress]=useState(0);
   const [duration,setDuration]=useState(0);
   const [volume,setVolume]=useState(0.7);
-  const [draggingVol,setDraggingVol]=useState(false);
   const audioRef=useRef(null);
+  const playingRef=useRef(false);
   const track=MUSIC_TRACKS[trackIdx];
+  const PASTEL=['#FDE68A','#BBF7D0','#BFDBFE','#FBCFE8','#DDD6FE','#A5F3FC','#FEF08A','#D9F99D','#C7D2FE'];
 
+  // Create ONE persistent Audio element on mount
   useEffect(()=>{
-    const a=new Audio('/music/'+encodeURIComponent(track.file));
-    a.volume=volume;
+    const a=new Audio();
+    a.volume=0.7;
     audioRef.current=a;
-    const onMeta=()=>setDuration(a.duration||0);
     const onTime=()=>setProgress(a.currentTime);
-    const onEnd=()=>{ setTrackIdx(i=>(i+1)%MUSIC_TRACKS.length); };
-    a.addEventListener('loadedmetadata',onMeta);
+    const onMeta=()=>setDuration(isFinite(a.duration)?a.duration:0);
+    const onEnd=()=>{
+      const next=(playingRef.current===false)?0:undefined;
+      setTrackIdx(i=>{
+        const ni=(i+1)%MUSIC_TRACKS.length;
+        const nextSrc='/music/'+MUSIC_TRACKS[ni].file;
+        a.src=nextSrc;
+        a.load();
+        a.play().catch(()=>{});
+        return ni;
+      });
+    };
     a.addEventListener('timeupdate',onTime);
+    a.addEventListener('loadedmetadata',onMeta);
+    a.addEventListener('durationchange',onMeta);
     a.addEventListener('ended',onEnd);
-    if(playing) a.play().catch(()=>{});
-    return()=>{a.pause();a.removeEventListener('loadedmetadata',onMeta);a.removeEventListener('timeupdate',onTime);a.removeEventListener('ended',onEnd);};
-  },[trackIdx]);// eslint-disable-line
+    return()=>{
+      a.pause();
+      a.src='';
+      a.removeEventListener('timeupdate',onTime);
+      a.removeEventListener('loadedmetadata',onMeta);
+      a.removeEventListener('durationchange',onMeta);
+      a.removeEventListener('ended',onEnd);
+    };
+  },[]);
 
-  useEffect(()=>{
+  useEffect(()=>{if(audioRef.current)audioRef.current.volume=volume;},[volume]);
+
+  const loadAndPlay=(idx)=>{
     const a=audioRef.current;
     if(!a)return;
-    if(playing){a.play().catch(()=>{});}else{a.pause();}
-  },[playing]);
-
-  useEffect(()=>{
-    if(audioRef.current)audioRef.current.volume=volume;
-  },[volume]);
-
-  const fmt=s=>{if(!s||isNaN(s))return'0:00';const m=Math.floor(s/60);const sec=Math.floor(s%60);return`${m}:${sec.toString().padStart(2,'0')}`;};
-  const seek=e=>{
-    if(!audioRef.current||!duration)return;
-    const rect=e.currentTarget.getBoundingClientRect();
-    const pct=(e.clientX-rect.left)/rect.width;
-    audioRef.current.currentTime=pct*duration;
-    setProgress(pct*duration);
+    a.src='/music/'+MUSIC_TRACKS[idx].file;
+    a.load();
+    setProgress(0);
+    setDuration(0);
+    a.play().catch(e=>console.warn('Play blocked:',e));
+    playingRef.current=true;
+    setPlaying(true);
+    setTrackIdx(idx);
   };
-  const prev=()=>setTrackIdx(i=>(i-1+MUSIC_TRACKS.length)%MUSIC_TRACKS.length);
-  const next=()=>setTrackIdx(i=>(i+1)%MUSIC_TRACKS.length);
-
-  const pct=duration?progress/duration*100:0;
-  const PASTEL=['#FDE68A','#BBF7D0','#BFDBFE','#FBCFE8','#DDD6FE','#A5F3FC','#FEF08A','#D9F99D','#C7D2FE'];
+  const togglePlay=()=>{
+    const a=audioRef.current;
+    if(!a)return;
+    if(!a.src||a.src===window.location.href){
+      loadAndPlay(trackIdx);
+      return;
+    }
+    if(playing){a.pause();playingRef.current=false;setPlaying(false);}
+    else{a.play().catch(e=>console.warn(e));playingRef.current=true;setPlaying(true);}
+  };
+  const prev=()=>loadAndPlay((trackIdx-1+MUSIC_TRACKS.length)%MUSIC_TRACKS.length);
+  const next=()=>loadAndPlay((trackIdx+1)%MUSIC_TRACKS.length);
+  const seek=e=>{
+    const a=audioRef.current;
+    if(!a||!duration)return;
+    const rect=e.currentTarget.getBoundingClientRect();
+    const t=(e.clientX-rect.left)/rect.width*duration;
+    a.currentTime=t;
+    setProgress(t);
+  };
+  const fmt=s=>{if(!s||!isFinite(s))return'0:00';const m=Math.floor(s/60);return`${m}:${Math.floor(s%60).toString().padStart(2,'0')}`;};
+  const pct=duration>0?Math.min(100,progress/duration*100):0;
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:0,padding:'16px 14px 14px',height:'100%',boxSizing:'border-box'}}>
-      {/* Now playing card */}
       <div style={{background:PASTEL[trackIdx%PASTEL.length],borderRadius:18,padding:'18px 16px 16px',marginBottom:12,textAlign:'center',flexShrink:0}}>
-        <div style={{fontSize:44,marginBottom:8}}>🎵</div>
+        <div style={{fontSize:44,marginBottom:8}}>{playing?'🎶':'🎵'}</div>
         <div style={{fontSize:15,fontWeight:900,color:'#1F2937',lineHeight:1.2,marginBottom:3}}>{track.title}</div>
         <div style={{fontSize:12,fontWeight:600,color:'#6B7280'}}>{track.artist}</div>
       </div>
-      {/* Progress bar */}
       <div style={{marginBottom:4,flexShrink:0}}>
-        <div onClick={seek} style={{height:6,background:'#E5E7EB',borderRadius:99,cursor:'pointer',overflow:'hidden'}}>
-          <div style={{width:`${pct}%`,height:'100%',background:'#818CF8',borderRadius:99,transition:'width 0.3s'}}/>
+        <div onClick={seek} style={{height:8,background:'#E5E7EB',borderRadius:99,cursor:'pointer',overflow:'hidden',position:'relative'}}>
+          <div style={{width:`${pct}%`,height:'100%',background:'#818CF8',borderRadius:99}}/>
         </div>
         <div style={{display:'flex',justifyContent:'space-between',marginTop:3}}>
           <span style={{fontSize:10,color:'#9CA3AF',fontWeight:600}}>{fmt(progress)}</span>
           <span style={{fontSize:10,color:'#9CA3AF',fontWeight:600}}>{fmt(duration)}</span>
         </div>
       </div>
-      {/* Controls */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,marginBottom:12,flexShrink:0}}>
         <button onClick={prev} style={{width:38,height:38,borderRadius:'50%',border:'2px solid #E5E7EB',background:'#F9FAFB',fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>⏮</button>
-        <button onClick={()=>setPlaying(p=>!p)} style={{width:52,height:52,borderRadius:'50%',border:'none',background:'#818CF8',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 14px #818CF844',color:'white'}}>
+        <button onClick={togglePlay} style={{width:52,height:52,borderRadius:'50%',border:'none',background:'#818CF8',fontSize:22,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 4px 14px #818CF844',color:'white'}}>
           {playing?'⏸':'▶'}
         </button>
         <button onClick={next} style={{width:38,height:38,borderRadius:'50%',border:'2px solid #E5E7EB',background:'#F9FAFB',fontSize:16,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>⏭</button>
       </div>
-      {/* Volume */}
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:14,flexShrink:0}}>
         <span style={{fontSize:14}}>🔈</span>
         <input type="range" min={0} max={1} step={0.01} value={volume}
@@ -1073,11 +1101,10 @@ function MusicPlayerTool(){
           style={{flex:1,accentColor:'#818CF8',cursor:'pointer'}}/>
         <span style={{fontSize:14}}>🔊</span>
       </div>
-      {/* Track list */}
       <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:4}}>
         <div style={{fontSize:10,fontWeight:800,color:'#9CA3AF',letterSpacing:0.5,marginBottom:4}}>PLAYLIST</div>
         {MUSIC_TRACKS.map((t,i)=>(
-          <div key={i} onClick={()=>{setTrackIdx(i);setPlaying(true);}}
+          <div key={i} onClick={()=>loadAndPlay(i)}
             style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',borderRadius:10,background:i===trackIdx?PASTEL[i%PASTEL.length]:'#F9FAFB',border:i===trackIdx?'1.5px solid #C4B5FD':'1.5px solid transparent',cursor:'pointer',transition:'all 0.12s'}}>
             <div style={{width:22,height:22,borderRadius:'50%',background:i===trackIdx?'#818CF8':'#E5E7EB',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               {i===trackIdx&&playing
