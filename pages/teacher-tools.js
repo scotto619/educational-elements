@@ -679,7 +679,11 @@ const SCORE_COLS=[
   {bg:'#DDD6FE',border:'#C4B5FD',text:'#4C1D95',btn:'#8B5CF6'},
 ];
 function ScoreboardTool(){
-  const [teams,setTeams]=useState([{id:1,name:'Team 1',score:0,editing:false},{id:2,name:'Team 2',score:0,editing:false}]);
+  const [teams,setTeams]=useState(()=>{
+    try{const s=localStorage.getItem('toolkit_scoreboard');if(s)return JSON.parse(s);}catch(e){}
+    return [{id:1,name:'Team 1',score:0,editing:false},{id:2,name:'Team 2',score:0,editing:false}];
+  });
+  useEffect(()=>{try{localStorage.setItem('toolkit_scoreboard',JSON.stringify(teams));}catch(e){};},[teams]);
   const [flash,setFlash]=useState({});
   const addScore=(id,delta)=>{
     setTeams(t=>t.map(tm=>tm.id===id?{...tm,score:Math.max(0,tm.score+delta)}:tm));
@@ -768,9 +772,9 @@ function SpinnerWheelTool({students=[]}){
     const x0=CX+R*Math.cos(a0),y0=CY+R*Math.sin(a0);
     const x1=CX+R*Math.cos(a1),y1=CY+R*Math.sin(a1);
     const large=(1/n)>0.5?1:0;
-    const ma=(a0+a1)/2,tr=R*0.62;
+    const ma=(a0+a1)/2,tr=R*0.66;
     const tx=CX+tr*Math.cos(ma),ty=CY+tr*Math.sin(ma);
-    const tDeg=ma*180/Math.PI+90;
+    const tDeg=Math.cos(ma)>=0?ma*180/Math.PI:ma*180/Math.PI+180;
     const d=n===1?`M ${CX-R} ${CY} a ${R} ${R} 0 1 1 0.001 0 Z`:`M ${CX} ${CY} L ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1} Z`;
     return{name,color:WHEEL_COLS[i%WHEEL_COLS.length],d,tx,ty,tDeg};
   });
@@ -844,14 +848,12 @@ function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize
         </button>
         <button onClick={onClose} title="Close" style={{width:24,height:24,borderRadius:'50%',border:'none',background:'#FCA5A5',cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontWeight:900,color:'#7F1D1D'}}>×</button>
       </div>
-      {/* Content */}
-      {!isMin&&(
-        <div style={{flex:1,overflow:'hidden',position:'relative'}}>
-          <div style={{zoom:isMax?1:Math.max(0.4,win.w/340),overflowY:'auto',overflowX:'hidden',height:'100%'}}>
-            {ToolComp?<ToolComp students={students}/>:<div style={{padding:20,color:'#9CA3AF',fontSize:14}}>Tool coming soon…</div>}
-          </div>
+      {/* Content — always mounted (display:none when minimised) so tool state is preserved */}
+      <div style={{flex:1,overflow:'hidden',position:'relative',display:isMin?'none':'flex',flexDirection:'column'}}>
+        <div style={{zoom:isMax?1:Math.max(0.4,win.w/340),overflowY:'auto',overflowX:'hidden',flex:1}}>
+          {ToolComp?<ToolComp students={students}/>:<div style={{padding:20,color:'#9CA3AF',fontSize:14}}>Tool coming soon…</div>}
         </div>
-      )}
+      </div>
       {/* Resize handles (bottom-right corner, right edge, bottom edge) – hidden when maximised or minimised */}
       {!isMax&&!isMin&&<>
         <div onMouseDown={e=>onStartResize(e,win.id,'se')} style={{position:'absolute',right:0,bottom:0,width:18,height:18,cursor:'se-resize',zIndex:10,borderRadius:'0 0 16px 0'}}/>
