@@ -981,15 +981,15 @@ function MorningMeetingTool(){
 
 // ════════ MUSIC PLAYER ════════════════════════════════════════════════════════
 const MUSIC_TRACKS=[
-  {file:'Heart-Of-The-Ocean(chosic.com).mp3',        title:'Heart of the Ocean',     artist:'Chosic'},
-  {file:'Lovely-Long-Version-chosic.com_.mp3',        title:'Lovely',                 artist:'Chosic'},
-  {file:'Morning-Routine-Lofi-Study-Music(chosic.com).mp3', title:'Morning Routine',  artist:'Lofi Study'},
-  {file:'Roa-Beloved(chosic.com).mp3',                title:'Beloved',                artist:'Roa'},
-  {file:'Roa-Embrace-chosic.com_.mp3',                title:'Embrace',                artist:'Roa'},
-  {file:'The-Open-Sky-chosic.com_.mp3',               title:'The Open Sky',           artist:'Chosic'},
-  {file:'Transcendence-chosic.com_.mp3',              title:'Transcendence',          artist:'Chosic'},
-  {file:'When-I-Was-A-Boy(chosic.com).mp3',           title:'When I Was A Boy',       artist:'Chosic'},
-  {file:'keys-of-moon-white-petals(chosic.com).mp3',  title:'White Petals',           artist:'Keys of Moon'},
+  {file:'heart-of-the-ocean.mp3',  title:'Heart of the Ocean', artist:'Chosic'},
+  {file:'lovely.mp3',              title:'Lovely',             artist:'Chosic'},
+  {file:'morning-routine.mp3',     title:'Morning Routine',    artist:'Lofi Study'},
+  {file:'beloved.mp3',             title:'Beloved',            artist:'Roa'},
+  {file:'embrace.mp3',             title:'Embrace',            artist:'Roa'},
+  {file:'the-open-sky.mp3',        title:'The Open Sky',       artist:'Chosic'},
+  {file:'transcendence.mp3',       title:'Transcendence',      artist:'Chosic'},
+  {file:'when-i-was-a-boy.mp3',    title:'When I Was A Boy',   artist:'Chosic'},
+  {file:'white-petals.mp3',        title:'White Petals',       artist:'Keys of Moon'},
 ];
 function MusicPlayerTool(){
   const [trackIdx,setTrackIdx]=useState(0);
