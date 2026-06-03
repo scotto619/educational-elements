@@ -979,6 +979,293 @@ function MorningMeetingTool(){
 }
 
 
+// ════════ REWARD JAR ══════════════════════════════════════════════════════════
+const TOKEN_TYPES = [
+  { id:'star',   label:'⭐ Stars',   emoji:'⭐', colors:['#FBBF24','#F59E0B','#FDE68A'] },
+  { id:'heart',  label:'❤️ Hearts',  emoji:'❤️', colors:['#F87171','#EF4444','#FECACA'] },
+  { id:'gem',    label:'💎 Gems',    emoji:'💎', colors:['#60A5FA','#3B82F6','#BFDBFE'] },
+  { id:'coin',   label:'🪙 Coins',   emoji:'🪙', colors:['#FCD34D','#F59E0B','#FEF3C7'] },
+  { id:'flower', label:'🌸 Flowers', emoji:'🌸', colors:['#F9A8D4','#EC4899','#FCE7F3'] },
+  { id:'bolt',   label:'⚡ Bolts',   emoji:'⚡', colors:['#A78BFA','#7C3AED','#EDE9FE'] },
+];
+
+function RewardJarTool() {
+  const STORE_KEY = 'rewardjar_v1';
+  const load = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)||'null'); } catch(e){return null;} };
+  const initState = load() || { tokens:[], goal:20, tokenType:'star', prizeName:'Free Choice Time' };
+
+  const [tokens,    setTokens]    = useState(initState.tokens);
+  const [goal,      setGoal]      = useState(initState.goal);
+  const [tokenType, setTokenType] = useState(initState.tokenType);
+  const [prizeName, setPrizeName] = useState(initState.prizeName);
+  const [burst,     setBurst]     = useState(false);
+  const [editGoal,  setEditGoal]  = useState(false);
+  const [editPrize, setEditPrize] = useState(false);
+  const [removing,  setRemoving]  = useState(null);
+  const animRef = useRef(null);
+
+  // persist
+  useEffect(() => {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({tokens,goal,tokenType,prizeName})); } catch(e){}
+  }, [tokens, goal, tokenType, prizeName]);
+
+  const tt = TOKEN_TYPES.find(t => t.id === tokenType) || TOKEN_TYPES[0];
+  const count = tokens.length;
+  const pct = Math.min(count / goal, 1);
+  const full = count >= goal;
+
+  // celebrate when jar fills
+  useEffect(() => {
+    if (full) { setBurst(true); const t = setTimeout(()=>setBurst(false),3000); return ()=>clearTimeout(t); }
+  }, [full]);
+
+  const addToken = () => {
+    if (count >= goal * 2) return; // soft cap at 2x goal
+    const id = Date.now() + Math.random();
+    // random x in jar (10–90%), random rotation
+    const x = 12 + Math.random()*76;
+    const rot = -25 + Math.random()*50;
+    const wobble = Math.random() > 0.5;
+    setTokens(prev => [...prev, {id, x, rot, wobble}]);
+    if (full) { setBurst(true); setTimeout(()=>setBurst(false),2500); }
+  };
+
+  const removeToken = () => {
+    if (count === 0) return;
+    const id = tokens[tokens.length-1].id;
+    setRemoving(id);
+    setTimeout(()=>{ setTokens(prev=>prev.filter(t=>t.id!==id)); setRemoving(null); },320);
+  };
+
+  const reset = () => { if(!window.confirm('Clear all tokens?')) return; setTokens([]); };
+
+  // jar dimensions (within ~320px card)
+  const JAR_W = 180, JAR_H = 220;
+  // fill height in px
+  const fillH = Math.round(pct * (JAR_H - 30)); // leave 30px headroom at top
+
+  // render tokens stacked inside jar (up to 30 visible icons)
+  const visibleTokens = tokens.slice(-30);
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14,padding:'16px 14px',userSelect:'none'}}>
+      {/* Prize label */}
+      <div style={{textAlign:'center'}}>
+        {editPrize
+          ? <input autoFocus value={prizeName} onChange={e=>setPrizeName(e.target.value)}
+              onBlur={()=>setEditPrize(false)} onKeyDown={e=>e.key==='Enter'&&setEditPrize(false)}
+              style={{textAlign:'center',border:'2px solid #A78BFA',borderRadius:10,padding:'4px 10px',
+                      fontSize:14,fontWeight:800,color:'#4C1D95',outline:'none',background:'#F5F3FF',width:200}}/>
+          : <div onClick={()=>setEditPrize(true)} title="Click to edit prize"
+              style={{fontSize:14,fontWeight:800,color:'#6D28D9',cursor:'pointer',background:'#EDE9FE',
+                      borderRadius:20,padding:'4px 14px',display:'inline-block'}}>
+              🎁 {prizeName} <span style={{fontSize:11,color:'#A78BFA'}}>✏️</span>
+            </div>
+        }
+      </div>
+
+      {/* Jar SVG + tokens */}
+      <div style={{position:'relative',width:JAR_W,height:JAR_H+20}}>
+        {/* Burst confetti */}
+        {burst && Array.from({length:18}).map((_,i)=>{
+          const angle = (i/18)*360;
+          const dist = 60+Math.random()*50;
+          const dx = Math.cos(angle*Math.PI/180)*dist;
+          const dy = Math.sin(angle*Math.PI/180)*dist;
+          return <div key={i} style={{
+            position:'absolute', left:'50%', top:'40%',
+            width:8, height:8, borderRadius:'50%',
+            background:['#FBBF24','#F87171','#60A5FA','#34D399','#F472B6','#A78BFA'][i%6],
+            animation:`confettiBurst 0.9s ease-out forwards`,
+            '--dx': `${dx}px`, '--dy': `${dy}px`,
+            transform:'translate(-50%,-50%)', zIndex:20,
+            animationDelay:`${i*0.04}s`
+          }}/>;
+        })}
+
+        <svg width={JAR_W} height={JAR_H} viewBox={`0 0 ${JAR_W} ${JAR_H}`}
+          style={{position:'absolute',top:0,left:0,filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.12))'}}>
+          <defs>
+            <clipPath id="jarClip">
+              {/* jar body shape */}
+              <path d="M30,40 Q20,50 18,80 L14,190 Q13,210 90,212 Q167,210 166,190 L162,80 Q160,50 150,40 Z"/>
+            </clipPath>
+            <linearGradient id="jarGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.55)"/>
+              <stop offset="40%" stopColor="rgba(255,255,255,0.08)"/>
+              <stop offset="100%" stopColor="rgba(255,255,255,0.3)"/>
+            </linearGradient>
+            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={tt.colors[0]} stopOpacity="0.9"/>
+              <stop offset="100%" stopColor={tt.colors[1]} stopOpacity="0.7"/>
+            </linearGradient>
+          </defs>
+
+          {/* jar body fill (animated height) */}
+          <g clipPath="url(#jarClip)">
+            <rect x="0" y="0" width={JAR_W} height={JAR_H} fill="rgba(240,249,255,0.6)"/>
+            {/* fill */}
+            <rect x="0" y={JAR_H - fillH} width={JAR_W} height={fillH + 4} fill="url(#fillGrad)"
+              style={{transition:'y 0.5s ease, height 0.5s ease'}}/>
+            {/* shimmer on fill */}
+            {fillH > 0 && <rect x="10" y={JAR_H - fillH + 4} width="12" height={Math.max(fillH-10,0)} rx="6"
+              fill="rgba(255,255,255,0.35)"/>}
+          </g>
+
+          {/* jar body outline */}
+          <path d="M30,40 Q20,50 18,80 L14,190 Q13,210 90,212 Q167,210 166,190 L162,80 Q160,50 150,40 Z"
+            fill="none" stroke="#CBD5E1" strokeWidth="2.5" strokeLinejoin="round"/>
+
+          {/* jar neck */}
+          <path d="M40,40 L40,18 Q40,10 50,10 L130,10 Q140,10 140,18 L140,40"
+            fill="rgba(226,232,240,0.8)" stroke="#CBD5E1" strokeWidth="2.5"/>
+
+          {/* glass shine */}
+          <path d="M30,40 Q20,50 18,80 L14,190 Q13,210 90,212 Q167,210 166,190 L162,80 Q160,50 150,40 Z"
+            fill="url(#jarGrad)" pointerEvents="none"/>
+
+          {/* lid */}
+          <rect x="32" y="4" width="116" height="12" rx="5"
+            fill={full ? tt.colors[0] : '#94A3B8'} stroke="#CBD5E1" strokeWidth="1.5"
+            style={{transition:'fill 0.4s'}}/>
+        </svg>
+
+        {/* Emoji tokens rendered over jar */}
+        <div style={{position:'absolute',left:20,top:20,width:JAR_W-40,height:JAR_H-40,
+                     overflow:'hidden',pointerEvents:'none',clipPath:'inset(0 0 0 0)'}}>
+          {visibleTokens.map((tok,i) => {
+            // stack from bottom
+            const row = Math.floor(i / 5);
+            const col = i % 5;
+            const baseY = JAR_H - 50 - row * 28;
+            const baseX = col * 26 + (row%2)*13;
+            const isFading = tok.id === removing;
+            return (
+              <div key={tok.id} style={{
+                position:'absolute',
+                left: baseX,
+                top: baseY,
+                fontSize: 18,
+                transform: `rotate(${tok.rot}deg)`,
+                opacity: isFading ? 0 : 1,
+                transition: isFading ? 'opacity 0.3s' : 'opacity 0.25s, top 0.4s',
+                animation: i === tokens.length-1 && !isFading ? 'tokenDrop 0.35s ease-out' : 'none',
+              }}>
+                {tt.emoji}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Count badge */}
+        <div style={{
+          position:'absolute', top:0, right:-8,
+          background: full ? tt.colors[1] : '#1E3A5F',
+          color:'white', borderRadius:20, padding:'3px 10px',
+          fontSize:13, fontWeight:900, letterSpacing:'0.02em',
+          boxShadow:'0 2px 8px rgba(0,0,0,0.18)',
+          transition:'background 0.4s'
+        }}>
+          {count} / {goal}
+        </div>
+
+        {/* Full banner */}
+        {full && (
+          <div style={{
+            position:'absolute', bottom:-18, left:'50%', transform:'translateX(-50%)',
+            background: tt.colors[1], color:'white', borderRadius:12, padding:'4px 16px',
+            fontSize:13, fontWeight:900, whiteSpace:'nowrap',
+            boxShadow:'0 3px 10px rgba(0,0,0,0.2)', animation:'popIn 0.3s ease-out'
+          }}>
+            🎉 Jar Full!
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{width:'100%',background:'#F1F5F9',borderRadius:999,height:10,overflow:'hidden',marginTop:4}}>
+        <div style={{
+          height:'100%', borderRadius:999,
+          background:`linear-gradient(90deg, ${tt.colors[1]}, ${tt.colors[0]})`,
+          width:`${Math.round(pct*100)}%`,
+          transition:'width 0.5s ease',
+          boxShadow:`0 0 6px ${tt.colors[0]}`
+        }}/>
+      </div>
+
+      {/* Token type picker */}
+      <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center'}}>
+        {TOKEN_TYPES.map(t=>(
+          <button key={t.id} onClick={()=>setTokenType(t.id)} style={{
+            background: tokenType===t.id ? t.colors[2] : '#F8FAFC',
+            border: `2px solid ${tokenType===t.id ? t.colors[1] : '#E2E8F0'}`,
+            borderRadius:10, padding:'4px 9px', fontSize:12, fontWeight:700,
+            cursor:'pointer', transition:'all 0.15s',
+            color: tokenType===t.id ? '#1F2937' : '#64748B'
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Controls */}
+      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',justifyContent:'center'}}>
+        <button onClick={addToken} style={{
+          background:`linear-gradient(135deg,${tt.colors[0]},${tt.colors[1]})`,
+          color:'white', border:'none', borderRadius:14, padding:'10px 22px',
+          fontSize:15, fontWeight:900, cursor:'pointer',
+          boxShadow:`0 4px 14px ${tt.colors[1]}55`,
+          transition:'transform 0.1s, box-shadow 0.1s',
+        }} onMouseDown={e=>e.currentTarget.style.transform='scale(0.96)'}
+           onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}>
+          {tt.emoji} Add Token
+        </button>
+        <button onClick={removeToken} disabled={count===0} style={{
+          background:'#F8FAFC', border:'2px solid #E2E8F0', borderRadius:14,
+          padding:'10px 14px', fontSize:15, fontWeight:800, cursor:count===0?'not-allowed':'pointer',
+          color:'#94A3B8', opacity:count===0?0.45:1
+        }}>−</button>
+        <button onClick={reset} disabled={count===0} style={{
+          background:'#FEF2F2', border:'2px solid #FECACA', borderRadius:14,
+          padding:'10px 14px', fontSize:13, fontWeight:700, cursor:count===0?'not-allowed':'pointer',
+          color:'#EF4444', opacity:count===0?0.45:1
+        }}>Reset</button>
+      </div>
+
+      {/* Goal editor */}
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <span style={{fontSize:12,fontWeight:700,color:'#94A3B8'}}>Goal:</span>
+        {editGoal
+          ? <input autoFocus type="number" min={1} max={200} value={goal}
+              onChange={e=>setGoal(Math.max(1,parseInt(e.target.value)||1))}
+              onBlur={()=>setEditGoal(false)} onKeyDown={e=>e.key==='Enter'&&setEditGoal(false)}
+              style={{width:60,textAlign:'center',border:'2px solid #A78BFA',borderRadius:8,
+                      padding:'3px 6px',fontSize:14,fontWeight:800,outline:'none'}}/>
+          : <button onClick={()=>setEditGoal(true)} style={{
+              background:'#F5F3FF',border:'2px solid #DDD6FE',borderRadius:8,
+              padding:'3px 12px',fontSize:13,fontWeight:800,color:'#7C3AED',cursor:'pointer'
+            }}>{goal} tokens ✏️</button>
+        }
+      </div>
+
+      <style>{`
+        @keyframes tokenDrop {
+          0%  { transform: translateY(-60px) rotate(0deg) scale(1.3); opacity:0; }
+          60% { transform: translateY(6px) rotate(var(--rot,10deg)) scale(0.95); opacity:1; }
+          100%{ transform: translateY(0) rotate(var(--rot,10deg)) scale(1); opacity:1; }
+        }
+        @keyframes confettiBurst {
+          0%   { transform: translate(-50%,-50%) scale(1); opacity:1; }
+          100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity:0; }
+        }
+        @keyframes popIn {
+          0%  { transform: translateX(-50%) scale(0.7); opacity:0; }
+          100%{ transform: translateX(-50%) scale(1);   opacity:1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
 // ════════ MUSIC PLAYER ════════════════════════════════════════════════════════
 const MUSIC_TRACKS=[
   {file:'heart-of-the-ocean.mp3',  title:'Heart of the Ocean', artist:'Chosic'},
@@ -1123,6 +1410,7 @@ function MusicPlayerTool(){
 }
 
 // ════════ TOOL WINDOW (with resize + maximize) ════════════════════════════════
+
 function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize,onToggleMax,onToggleMin}){
   const isMax=win.maximized;
   const isMin=win.minimized;
@@ -1131,7 +1419,7 @@ function ToolWindow({win,tool,students,onClose,onFocus,onStartDrag,onStartResize
   const boxStyle=isMax
     ?{position:'absolute',inset:0,zIndex:win.zIndex,display:'flex',flexDirection:'column',borderRadius:0,border:'none',boxShadow:'none',background:tool.bg,overflow:'hidden'}
     :{position:'absolute',left:win.x,top:win.y,width:win.w,height:isMin?44:win.h,zIndex:win.zIndex,display:'flex',flexDirection:'column',borderRadius:18,border:'2px solid #E5E7EB',boxShadow:'0 8px 32px rgba(0,0,0,0.13)',background:tool.bg,overflow:'hidden',transition:'height 0.2s',minWidth:200,minHeight:isMin?44:120};
-  const ToolComp={timer:TimerTool,dice:DiceTool,namepicker:NamePickerTool,groupmaker:GroupMakerTool,checklist:ChecklistTool,brainbreak:BrainBreakTool,helpqueue:HelpQueueTool,classjobs:ClassJobsTool,clock:ClockTool,randomnum:RandomNumberTool,noise:NoiseTool,spinner:SpinnerWheelTool,scoreboard:ScoreboardTool,breathing:BreathingTool,maths:MathsChallengeTool,morning:MorningMeetingTool,music:MusicPlayerTool}[tool.id];
+  const ToolComp={timer:TimerTool,dice:DiceTool,namepicker:NamePickerTool,groupmaker:GroupMakerTool,checklist:ChecklistTool,brainbreak:BrainBreakTool,helpqueue:HelpQueueTool,classjobs:ClassJobsTool,clock:ClockTool,randomnum:RandomNumberTool,noise:NoiseTool,spinner:SpinnerWheelTool,scoreboard:ScoreboardTool,breathing:BreathingTool,maths:MathsChallengeTool,morning:MorningMeetingTool,music:MusicPlayerTool,rewardjar:RewardJarTool}[tool.id];
   return(
     <div style={boxStyle} onMouseDown={onFocus}>
       {/* Header / title bar */}
@@ -1195,6 +1483,7 @@ const TOOLS=[
   {id:'maths',      label:'Maths',        emoji:'🧮', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:440},
   {id:'morning',    label:'Morning Meet', emoji:'☀️', header:'#EDE9FE', text:'#4C1D95', bg:'#F5F3FF',  w:340, h:440},
   {id:'music',      label:'Music Player', emoji:'🎵', header:'#DDD6FE', text:'#4338CA', bg:'#F5F3FF',  w:340, h:520},
+  {id:'rewardjar',  label:'Reward Jar',  emoji:'🫙', header:'#FDE68A', text:'#713F12', bg:'#FFFBEB',  w:340, h:620},
 ];
 const MIN_W=220, MIN_H=160;
 let MAX_Z=10;
