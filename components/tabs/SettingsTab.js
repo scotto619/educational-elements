@@ -341,14 +341,14 @@ const SettingsTab = ({
   const exportPasswordList = () => {
     const passwordData = students.map(student => {
       const password = getStudentPassword(student);
-      return \`\${student.firstName} \${student.lastName}: \${password}\`;
+      return `${student.firstName} ${student.lastName}: ${password}`;
     }).join('\n');
 
     const blob = new Blob([passwordData], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = \`\${currentClassData?.name || 'Class'}_Passwords.txt\`;
+    a.download = `${currentClassData?.name || 'Class'}_Passwords.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
