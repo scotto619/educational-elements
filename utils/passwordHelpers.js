@@ -147,6 +147,7 @@ export async function updateStudentPasswordDirect(studentId, newPassword, classC
     const passwordHash = simpleHash(newPassword);
     const updateData = {
       simplePasswordHash: passwordHash,
+      currentPassword: newPassword,
       passwordLastUpdated: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

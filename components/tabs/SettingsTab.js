@@ -47,6 +47,8 @@ const SettingsTab = ({
   const [showPasswords, setShowPasswords] = useState({});
   const [bulkAction, setBulkAction] = useState('');
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [showClassList, setShowClassList] = useState(false);
+  const [generatedPasswords, setGeneratedPasswords] = useState({});
 
   // Form states
   const [newStudentForm, setNewStudentForm] = useState({
@@ -111,13 +113,14 @@ const SettingsTab = ({
 
       showToast('Password updated successfully!', 'success');
 
-      // Update local state to reflect the change
+      // Update local state to reflect the change (including plaintext for teacher view)
       setStudents(prevStudents =>
         prevStudents.map(student =>
           student.id === studentId
             ? {
               ...student,
-              simplePasswordHash: 'set', // Indicate password is custom
+              simplePasswordHash: 'set',
+              currentPassword: password,
               passwordLastUpdated: new Date().toISOString()
             }
             : student
@@ -151,6 +154,7 @@ const SettingsTab = ({
     try {
 
       let successCount = 0;
+      const newPasswordMap = {};
 
       // Update each student directly (like your XP system)
       for (const student of students) {
@@ -168,23 +172,31 @@ const SettingsTab = ({
 
           if (result.success) {
             successCount++;
+            newPasswordMap[student.id] = password;
           }
         } catch (error) {
           console.error('Error updating password for', student.firstName, error);
         }
       }
 
+      // Update local state with new passwords
+      setStudents(prevStudents =>
+        prevStudents.map(student => {
+          const newPw = newPasswordMap[student.id];
+          if (newPw) {
+            return {
+              ...student,
+              simplePasswordHash: 'set',
+              currentPassword: newPw,
+              passwordLastUpdated: new Date().toISOString()
+            };
+          }
+          return student;
+        })
+      );
+
       showToast(`Updated passwords for ${successCount} students!`, 'success');
       setBulkAction('');
-
-      // Update local state for all students
-      setStudents(prevStudents =>
-        prevStudents.map(student => ({
-          ...student,
-          simplePasswordHash: 'set',
-          passwordLastUpdated: new Date().toISOString()
-        }))
-      );
 
     } catch (error) {
       console.error('❌ Bulk password update error:', error);
@@ -202,20 +214,141 @@ const SettingsTab = ({
     }));
   };
 
-  // Export passwords to printable format
+  // Get the actual usable password for a student
+  const getStudentPassword = (student) => {
+    return student.currentPassword || getDefaultPassword(student.firstName);
+  };
+
+  // Print class password list as cut-out slips
+  const printClassPasswordList = () => {
+    const className = currentClassData?.name || 'Class';
+    const classCode = currentClassData?.classCode || '';
+    const slips = students.map(student => {
+      const pw = getStudentPassword(student);
+      return `
+        <div class="slip">
+          <div class="slip-inner">
+            <div class="school-name">${className}</div>
+            <div class="student-name">${student.firstName} ${student.lastName || ''}</div>
+            <div class="password-label">Student Portal Password</div>
+            <div class="password-value">${pw}</div>
+            ${classCode ? `<div class="class-code">Class Code: ${classCode}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+<!DOCTYPE html>
+<html>
+<head>
+  <title>${className} - Student Passwords</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #fff; }
+    .page-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 16px;
+      color: #333;
+      border-bottom: 2px solid #ccc;
+      margin-bottom: 8px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0;
+      padding: 8px;
+    }
+    .slip {
+      border: 2px dashed #aaa;
+      padding: 20px 24px;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      page-break-inside: avoid;
+    }
+    .slip-inner {
+      width: 100%;
+    }
+    .school-name {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .student-name {
+      font-size: 22px;
+      font-weight: bold;
+      color: #222;
+      margin-bottom: 10px;
+    }
+    .password-label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .password-value {
+      font-size: 26px;
+      font-weight: bold;
+      color: #1a56db;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+    .class-code {
+      font-size: 11px;
+      color: #888;
+    }
+    @media print {
+      .no-print { display: none; }
+      body { margin: 0; }
+    }
+    .print-btn {
+      display: block;
+      margin: 16px auto;
+      padding: 10px 32px;
+      background: #1a56db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <div class="page-title">${className} — Student Password Slips</div>
+    <button class="print-btn" onclick="window.print()">🖨️ Print</button>
+  </div>
+  <div class="grid">${slips}</div>
+  <script>
+    // Auto-trigger print dialog
+    window.onload = function() { window.print(); };
+  <\/script>
+</body>
+</html>`);
+    printWindow.document.close();
+  };
+
+  // Export passwords to printable format (text file)
   const exportPasswordList = () => {
     const passwordData = students.map(student => {
-      const password = student.simplePasswordHash && student.passwordLastUpdated
-        ? '(Custom password - check with teacher)'
-        : getDefaultPassword(student.firstName);
-      return `${student.firstName} ${student.lastName}: ${password}`;
+      const password = getStudentPassword(student);
+      return \`\${student.firstName} \${student.lastName}: \${password}\`;
     }).join('\n');
 
     const blob = new Blob([passwordData], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${currentClassData?.name || 'Class'}_Passwords.txt`;
+    a.download = \`\${currentClassData?.name || 'Class'}_Passwords.txt\`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -725,15 +858,25 @@ Time: ${new Date().toISOString()}
 
               {/* Current Student Status */}
               <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-xl font-semibold mb-4">Student Password Status</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Student Password Status</h3>
+                  <button
+                    onClick={printClassPasswordList}
+                    disabled={students.length === 0}
+                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                  >
+                    <span>🖨️</span>
+                    <span>Print Class Password List</span>
+                  </button>
+                </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
                         <th className="text-left py-2 px-3">Student</th>
-                        <th className="text-left py-2 px-3">Password Status</th>
-                        <th className="text-left py-2 px-3">Password</th>
+                        <th className="text-left py-2 px-3">Status</th>
+                        <th className="text-left py-2 px-3">Current Password</th>
                         <th className="text-left py-2 px-3">Last Updated</th>
                         <th className="text-left py-2 px-3">Actions</th>
                       </tr>
@@ -741,9 +884,7 @@ Time: ${new Date().toISOString()}
                     <tbody>
                       {students.map(student => {
                         const hasCustomPassword = student.simplePasswordHash && student.passwordLastUpdated;
-                        const displayPassword = hasCustomPassword
-                          ? '(Custom password set)'
-                          : getDefaultPassword(student.firstName);
+                        const actualPassword = getStudentPassword(student);
 
                         return (
                           <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
@@ -763,23 +904,21 @@ Time: ${new Date().toISOString()}
                                 ? 'bg-green-100 text-green-700'
                                 : 'bg-yellow-100 text-yellow-700'
                                 }`}>
-                                {hasCustomPassword ? 'Custom Set' : 'Using Default'}
+                                {hasCustomPassword ? 'Custom Set' : 'Default'}
                               </span>
                             </td>
                             <td className="py-3 px-3">
                               <div className="flex items-center space-x-2">
-                                <code className="px-2 py-1 bg-gray-100 rounded text-xs">
-                                  {showPasswords[student.id] ? displayPassword : '••••••••'}
+                                <code className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                                  {showPasswords[student.id] ? actualPassword : '••••••••'}
                                 </code>
-                                {!hasCustomPassword && (
-                                  <button
-                                    onClick={() => togglePasswordVisibility(student.id)}
-                                    className="text-gray-500 hover:text-gray-700"
-                                    title={showPasswords[student.id] ? 'Hide' : 'Show'}
-                                  >
-                                    {showPasswords[student.id] ? '👁️' : '👁️‍🗨️'}
-                                  </button>
-                                )}
+                                <button
+                                  onClick={() => togglePasswordVisibility(student.id)}
+                                  className="text-gray-500 hover:text-gray-700 text-base"
+                                  title={showPasswords[student.id] ? 'Hide password' : 'Show password'}
+                                >
+                                  {showPasswords[student.id] ? '👁️' : '👁️‍🗨️'}
+                                </button>
                               </div>
                             </td>
                             <td className="py-3 px-3 text-gray-600">
@@ -792,11 +931,11 @@ Time: ${new Date().toISOString()}
                               <button
                                 onClick={() => {
                                   setSelectedStudentId(student.id);
-                                  setNewPassword(hasCustomPassword ? '' : getDefaultPassword(student.firstName));
+                                  setNewPassword('');
                                 }}
                                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                               >
-                                Reset
+                                Change
                               </button>
                             </td>
                           </tr>
@@ -811,6 +950,10 @@ Time: ${new Date().toISOString()}
                     No students in this class yet.
                   </div>
                 )}
+
+                <p className="mt-3 text-xs text-gray-500">
+                  💡 Tip: Custom passwords only appear here if they were set after this update. For older custom passwords, try resetting them to see the password.
+                </p>
               </div>
 
               {/* Bulk Operations */}
@@ -839,14 +982,7 @@ Time: ${new Date().toISOString()}
                       disabled={!bulkAction || isBulkUpdating}
                       className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
-                      {isBulkUpdating ? 'Updating...' : 'Apply to All Students (Direct)'}
-                    </button>
-
-                    <button
-                      onClick={exportPasswordList}
-                      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 font-medium"
-                    >
-                      Export List
+                      {isBulkUpdating ? 'Updating...' : 'Apply to All Students'}
                     </button>
                   </div>
                 </div>
