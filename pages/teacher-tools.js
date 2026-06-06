@@ -1293,7 +1293,7 @@ function MusicPlayerTool(){
     const t=(e.clientX-rect.left)/rect.width*duration;
     a.currentTime=t; setProgress(t);
   };
-  const fmt=s=>{ if(!s||!isFinite(s))return'0:00'; const m=Math.floor(s/60); return\`\${m}:\${Math.floor(s%60).toString().padStart(2,'0')}\`; };
+  const fmt=s=>{ if(!s||!isFinite(s))return'0:00'; const m=Math.floor(s/60); return`${m}:${Math.floor(s%60).toString().padStart(2,'0')}`; };
   const pct=duration>0?Math.min(100,progress/duration*100):0;
 
   return(
