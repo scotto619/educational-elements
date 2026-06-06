@@ -752,8 +752,8 @@ function BreathingTool(){
 // ════════ SCOREBOARD ══════════════════════════════════════════════════════════
 const SCORE_COLS=[
   {bg:'#FDE68A',border:'#FCD34D',text:'#92400E',btn:'#F59E0B'},
-  {bg:'#BFDBFE',border:'#93C5FD',text:'#1E3A5F',btn:'#3B82F6'},
   {bg:'#BBF7D0',border:'#86EFAC',text:'#14532D',btn:'#22C55E'},
+  {bg:'#BFDBFE',border:'#93C5FD',text:'#1E3A5F',btn:'#3B82F6'},
   {bg:'#DDD6FE',border:'#C4B5FD',text:'#4C1D95',btn:'#8B5CF6'},
 ];
 function ScoreboardTool(){
@@ -984,7 +984,7 @@ const TOKEN_TYPES = [
   { id:'star',   label:'⭐ Stars',   emoji:'⭐', colors:['#FBBF24','#F59E0B','#FDE68A'] },
   { id:'heart',  label:'❤️ Hearts',  emoji:'❤️', colors:['#F87171','#EF4444','#FECACA'] },
   { id:'gem',    label:'💎 Gems',    emoji:'💎', colors:['#60A5FA','#3B82F6','#BFDBFE'] },
-  { id:'coin',   label:'🪙 Coins',   emoji:'🪙', colors:['#FCD34D','#F59E0B','#FEF3C7'] },
+  { id:'coin',   label:'💰 Coins',   emoji:'💰', colors:['#FCD34D','#F59E0B','#FEF3C7'] },
   { id:'flower', label:'🌸 Flowers', emoji:'🌸', colors:['#F9A8D4','#EC4899','#FCE7F3'] },
   { id:'bolt',   label:'⚡ Bolts',   emoji:'⚡', colors:['#A78BFA','#7C3AED','#EDE9FE'] },
 ];
@@ -1002,54 +1002,46 @@ function RewardJarTool() {
   const [editGoal,  setEditGoal]  = useState(false);
   const [editPrize, setEditPrize] = useState(false);
   const [removing,  setRemoving]  = useState(null);
-  const animRef = useRef(null);
 
-  // persist
   useEffect(() => {
     try { localStorage.setItem(STORE_KEY, JSON.stringify({tokens,goal,tokenType,prizeName})); } catch(e){}
   }, [tokens, goal, tokenType, prizeName]);
 
-  const tt = TOKEN_TYPES.find(t => t.id === tokenType) || TOKEN_TYPES[0];
+  const tt    = TOKEN_TYPES.find(t => t.id === tokenType) || TOKEN_TYPES[0];
   const count = tokens.length;
-  const pct = Math.min(count / goal, 1);
-  const full = count >= goal;
+  const pct   = Math.min(count / goal, 1);
+  const full  = count >= goal;
 
-  // celebrate when jar fills
   useEffect(() => {
-    if (full) { setBurst(true); const t = setTimeout(()=>setBurst(false),3000); return ()=>clearTimeout(t); }
+    if (full) { setBurst(true); const t = setTimeout(()=>setBurst(false), 3200); return ()=>clearTimeout(t); }
   }, [full]);
 
   const addToken = () => {
-    if (count >= goal * 2) return; // soft cap at 2x goal
-    const id = Date.now() + Math.random();
-    // random x in jar (10–90%), random rotation
-    const x = 12 + Math.random()*76;
-    const rot = -25 + Math.random()*50;
-    const wobble = Math.random() > 0.5;
-    setTokens(prev => [...prev, {id, x, rot, wobble}]);
-    if (full) { setBurst(true); setTimeout(()=>setBurst(false),2500); }
+    if (count >= goal * 2) return;
+    const rot = -22 + Math.random()*44;
+    setTokens(prev => [...prev, {id: Date.now()+Math.random(), rot}]);
+    if (full) { setBurst(true); setTimeout(()=>setBurst(false), 2600); }
   };
 
   const removeToken = () => {
     if (count === 0) return;
     const id = tokens[tokens.length-1].id;
     setRemoving(id);
-    setTimeout(()=>{ setTokens(prev=>prev.filter(t=>t.id!==id)); setRemoving(null); },320);
+    setTimeout(()=>{ setTokens(prev=>prev.filter(t=>t.id!==id)); setRemoving(null); }, 320);
   };
 
   const reset = () => { if(!window.confirm('Clear all tokens?')) return; setTokens([]); };
 
-  // jar dimensions (within ~320px card)
   const JAR_W = 180, JAR_H = 220;
-  // fill height in px
-  const fillH = Math.round(pct * (JAR_H - 30)); // leave 30px headroom at top
+  // Fill the full SVG height — clipPath clips it to the jar shape
+  const fillH = Math.round(pct * JAR_H);
 
-  // render tokens stacked inside jar (up to 30 visible icons)
+  // Tokens in SVG space: 5 per row, stacked from bottom, clipped to jar body
+  const COLS = 5, ROW_H = 28, COL_W = 26;
   const visibleTokens = tokens.slice(-30);
 
   return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14,padding:'16px 14px',userSelect:'none'}}>
-      {/* Prize label */}
       <div style={{textAlign:'center'}}>
         {editPrize
           ? <input autoFocus value={prizeName} onChange={e=>setPrizeName(e.target.value)}
@@ -1064,173 +1056,146 @@ function RewardJarTool() {
         }
       </div>
 
-      {/* Jar SVG + tokens */}
-      <div style={{position:'relative',width:JAR_W,height:JAR_H+20}}>
-        {/* Burst confetti */}
-        {burst && Array.from({length:18}).map((_,i)=>{
-          const angle = (i/18)*360;
-          const dist = 60+Math.random()*50;
-          const dx = Math.cos(angle*Math.PI/180)*dist;
-          const dy = Math.sin(angle*Math.PI/180)*dist;
+      <div style={{position:'relative',width:JAR_W,height:JAR_H+24}}>
+        {burst && Array.from({length:20}).map((_,i)=>{
+          const angle=(i/20)*360;
+          const dist=55+Math.random()*55;
           return <div key={i} style={{
-            position:'absolute', left:'50%', top:'40%',
-            width:8, height:8, borderRadius:'50%',
+            position:'absolute',left:'50%',top:'45%',
+            width:7,height:7,borderRadius:'50%',
             background:['#FBBF24','#F87171','#60A5FA','#34D399','#F472B6','#A78BFA'][i%6],
-            animation:`confettiBurst 0.9s ease-out forwards`,
-            '--dx': `${dx}px`, '--dy': `${dy}px`,
-            transform:'translate(-50%,-50%)', zIndex:20,
-            animationDelay:`${i*0.04}s`
+            animation:'rjBurst 1s ease-out forwards',
+            '--dx':`${Math.cos(angle*Math.PI/180)*dist}px`,
+            '--dy':`${Math.sin(angle*Math.PI/180)*dist}px`,
+            transform:'translate(-50%,-50%)',zIndex:20,
+            animationDelay:`${i*0.035}s`,
           }}/>;
         })}
 
         <svg width={JAR_W} height={JAR_H} viewBox={`0 0 ${JAR_W} ${JAR_H}`}
-          style={{position:'absolute',top:0,left:0,filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.12))'}}>
+          style={{position:'absolute',top:0,left:0,filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.13))'}}>
           <defs>
-            <clipPath id="jarClip">
-              {/* jar body shape */}
-              <path d="M30,40 Q20,50 18,80 L14,190 Q13,210 90,212 Q167,210 166,190 L162,80 Q160,50 150,40 Z"/>
+            <clipPath id="jarBodyClip">
+              <path d="M30,40 Q20,52 18,82 L14,192 Q13,212 90,213 Q167,212 166,192 L162,82 Q160,52 150,40 Z"/>
             </clipPath>
-            <linearGradient id="jarGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.55)"/>
-              <stop offset="40%" stopColor="rgba(255,255,255,0.08)"/>
-              <stop offset="100%" stopColor="rgba(255,255,255,0.3)"/>
+            <linearGradient id="jarShine" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%"   stopColor="rgba(255,255,255,0.6)"/>
+              <stop offset="38%"  stopColor="rgba(255,255,255,0.04)"/>
+              <stop offset="100%" stopColor="rgba(255,255,255,0.28)"/>
             </linearGradient>
-            <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={tt.colors[0]} stopOpacity="0.9"/>
-              <stop offset="100%" stopColor={tt.colors[1]} stopOpacity="0.7"/>
+            <linearGradient id="rjFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stopColor={tt.colors[0]} stopOpacity="0.88"/>
+              <stop offset="100%" stopColor={tt.colors[1]} stopOpacity="0.72"/>
             </linearGradient>
           </defs>
 
-          {/* jar body fill (animated height) */}
-          <g clipPath="url(#jarClip)">
-            <rect x="0" y="0" width={JAR_W} height={JAR_H} fill="rgba(240,249,255,0.6)"/>
-            {/* fill */}
-            <rect x="0" y={JAR_H - fillH} width={JAR_W} height={fillH + 4} fill="url(#fillGrad)"
-              style={{transition:'y 0.5s ease, height 0.5s ease'}}/>
-            {/* shimmer on fill */}
-            {fillH > 0 && <rect x="10" y={JAR_H - fillH + 4} width="12" height={Math.max(fillH-10,0)} rx="6"
-              fill="rgba(255,255,255,0.35)"/>}
+          <g clipPath="url(#jarBodyClip)">
+            <rect x="0" y="0" width={JAR_W} height={JAR_H} fill="rgba(236,246,255,0.55)"/>
+            <rect x="0" y={JAR_H - fillH} width={JAR_W} height={fillH + 10}
+              fill="url(#rjFill)"
+              style={{transition:'y 0.55s cubic-bezier(.4,0,.2,1), height 0.55s cubic-bezier(.4,0,.2,1)'}}/>
+            {fillH > 6 && <rect x="12" y={JAR_H - fillH + 6} width="11"
+              height={Math.max(fillH - 14, 0)} rx="5" fill="rgba(255,255,255,0.38)"/>}
           </g>
 
-          {/* jar body outline */}
-          <path d="M30,40 Q20,50 18,80 L14,190 Q13,210 90,212 Q167,210 166,190 L162,80 Q160,50 150,40 Z"
+          <g clipPath="url(#jarBodyClip)">
+            {visibleTokens.map((tok, i) => {
+              const row = Math.floor(i / COLS);
+              const col = i % COLS;
+              const tx  = 22 + col * COL_W + (row % 2) * 13;
+              const ty  = 205 - row * ROW_H;
+              const isFading = tok.id === removing;
+              const isNewest = i === tokens.length - 1 && !isFading;
+              return (
+                <text key={tok.id} x={tx} y={ty} fontSize="17"
+                  style={{
+                    opacity: isFading ? 0 : 1,
+                    transition: isFading ? 'opacity 0.3s' : 'opacity 0.18s',
+                    animation: isNewest ? 'rjDrop 0.38s cubic-bezier(.22,.68,0,1.18) both' : 'none',
+                    transformOrigin: `${tx}px ${ty}px`,
+                    transform: `rotate(${tok.rot}deg)`,
+                  }}>
+                  {tt.emoji}
+                </text>
+              );
+            })}
+          </g>
+
+          <path d="M30,40 Q20,52 18,82 L14,192 Q13,212 90,213 Q167,212 166,192 L162,82 Q160,52 150,40 Z"
             fill="none" stroke="#CBD5E1" strokeWidth="2.5" strokeLinejoin="round"/>
-
-          {/* jar neck */}
           <path d="M40,40 L40,18 Q40,10 50,10 L130,10 Q140,10 140,18 L140,40"
-            fill="rgba(226,232,240,0.8)" stroke="#CBD5E1" strokeWidth="2.5"/>
-
-          {/* glass shine */}
-          <path d="M30,40 Q20,50 18,80 L14,190 Q13,210 90,212 Q167,210 166,190 L162,80 Q160,50 150,40 Z"
-            fill="url(#jarGrad)" pointerEvents="none"/>
-
-          {/* lid */}
-          <rect x="32" y="4" width="116" height="12" rx="5"
+            fill="rgba(222,232,240,0.8)" stroke="#CBD5E1" strokeWidth="2.5"/>
+          <path d="M30,40 Q20,52 18,82 L14,192 Q13,212 90,213 Q167,212 166,192 L162,82 Q160,52 150,40 Z"
+            fill="url(#jarShine)" pointerEvents="none"/>
+          <rect x="33" y="4" width="114" height="12" rx="5"
             fill={full ? tt.colors[0] : '#94A3B8'} stroke="#CBD5E1" strokeWidth="1.5"
-            style={{transition:'fill 0.4s'}}/>
+            style={{transition:'fill 0.45s'}}/>
         </svg>
 
-        {/* Emoji tokens rendered over jar */}
-        <div style={{position:'absolute',left:20,top:20,width:JAR_W-40,height:JAR_H-40,
-                     overflow:'hidden',pointerEvents:'none',clipPath:'inset(0 0 0 0)'}}>
-          {visibleTokens.map((tok,i) => {
-            // stack from bottom
-            const row = Math.floor(i / 5);
-            const col = i % 5;
-            const baseY = JAR_H - 50 - row * 28;
-            const baseX = col * 26 + (row%2)*13;
-            const isFading = tok.id === removing;
-            return (
-              <div key={tok.id} style={{
-                position:'absolute',
-                left: baseX,
-                top: baseY,
-                fontSize: 18,
-                transform: `rotate(${tok.rot}deg)`,
-                opacity: isFading ? 0 : 1,
-                transition: isFading ? 'opacity 0.3s' : 'opacity 0.25s, top 0.4s',
-                animation: i === tokens.length-1 && !isFading ? 'tokenDrop 0.35s ease-out' : 'none',
-              }}>
-                {tt.emoji}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Count badge */}
-        <div style={{
-          position:'absolute', top:0, right:-8,
+        <div style={{position:'absolute',top:0,right:-10,
           background: full ? tt.colors[1] : '#1E3A5F',
-          color:'white', borderRadius:20, padding:'3px 10px',
-          fontSize:13, fontWeight:900, letterSpacing:'0.02em',
-          boxShadow:'0 2px 8px rgba(0,0,0,0.18)',
-          transition:'background 0.4s'
-        }}>
+          color:'white',borderRadius:20,padding:'3px 11px',
+          fontSize:13,fontWeight:900,letterSpacing:'0.02em',
+          boxShadow:'0 2px 8px rgba(0,0,0,0.2)',transition:'background 0.4s'}}>
           {count} / {goal}
         </div>
 
-        {/* Full banner */}
         {full && (
-          <div style={{
-            position:'absolute', bottom:-18, left:'50%', transform:'translateX(-50%)',
-            background: tt.colors[1], color:'white', borderRadius:12, padding:'4px 16px',
-            fontSize:13, fontWeight:900, whiteSpace:'nowrap',
-            boxShadow:'0 3px 10px rgba(0,0,0,0.2)', animation:'popIn 0.3s ease-out'
-          }}>
+          <div style={{position:'absolute',bottom:-20,left:'50%',transform:'translateX(-50%)',
+            background:tt.colors[1],color:'white',borderRadius:12,padding:'4px 18px',
+            fontSize:13,fontWeight:900,whiteSpace:'nowrap',
+            boxShadow:'0 3px 10px rgba(0,0,0,0.22)',animation:'rjPop 0.3s ease-out'}}>
             🎉 Jar Full!
           </div>
         )}
       </div>
 
-      {/* Progress bar */}
-      <div style={{width:'100%',background:'#F1F5F9',borderRadius:999,height:10,overflow:'hidden',marginTop:4}}>
-        <div style={{
-          height:'100%', borderRadius:999,
+      <div style={{width:'100%',background:'#F1F5F9',borderRadius:999,height:10,overflow:'hidden',marginTop:6}}>
+        <div style={{height:'100%',borderRadius:999,
           background:`linear-gradient(90deg, ${tt.colors[1]}, ${tt.colors[0]})`,
           width:`${Math.round(pct*100)}%`,
-          transition:'width 0.5s ease',
-          boxShadow:`0 0 6px ${tt.colors[0]}`
-        }}/>
+          transition:'width 0.55s ease',
+          boxShadow:`0 0 6px ${tt.colors[0]}`}}/>
       </div>
 
-      {/* Token type picker */}
       <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center'}}>
         {TOKEN_TYPES.map(t=>(
           <button key={t.id} onClick={()=>setTokenType(t.id)} style={{
             background: tokenType===t.id ? t.colors[2] : '#F8FAFC',
-            border: `2px solid ${tokenType===t.id ? t.colors[1] : '#E2E8F0'}`,
-            borderRadius:10, padding:'4px 9px', fontSize:12, fontWeight:700,
-            cursor:'pointer', transition:'all 0.15s',
-            color: tokenType===t.id ? '#1F2937' : '#64748B'
-          }}>{t.label}</button>
+            border:`2px solid ${tokenType===t.id ? t.colors[1] : '#E2E8F0'}`,
+            borderRadius:10,padding:'4px 9px',fontSize:12,fontWeight:700,
+            cursor:'pointer',transition:'all 0.15s',
+            color: tokenType===t.id ? '#1F2937' : '#64748B'}}>
+            {t.label}
+          </button>
         ))}
       </div>
 
-      {/* Controls */}
       <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',justifyContent:'center'}}>
         <button onClick={addToken} style={{
           background:`linear-gradient(135deg,${tt.colors[0]},${tt.colors[1]})`,
-          color:'white', border:'none', borderRadius:14, padding:'10px 22px',
-          fontSize:15, fontWeight:900, cursor:'pointer',
-          boxShadow:`0 4px 14px ${tt.colors[1]}55`,
-          transition:'transform 0.1s, box-shadow 0.1s',
-        }} onMouseDown={e=>e.currentTarget.style.transform='scale(0.96)'}
-           onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}>
+          color:'white',border:'none',borderRadius:14,padding:'10px 22px',
+          fontSize:15,fontWeight:900,cursor:'pointer',
+          boxShadow:`0 4px 14px ${tt.colors[1]}55`,transition:'transform 0.1s'}}
+          onMouseDown={e=>e.currentTarget.style.transform='scale(0.95)'}
+          onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
+          onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}>
           {tt.emoji} Add Token
         </button>
         <button onClick={removeToken} disabled={count===0} style={{
-          background:'#F8FAFC', border:'2px solid #E2E8F0', borderRadius:14,
-          padding:'10px 14px', fontSize:15, fontWeight:800, cursor:count===0?'not-allowed':'pointer',
-          color:'#94A3B8', opacity:count===0?0.45:1
-        }}>−</button>
+          background:'#F8FAFC',border:'2px solid #E2E8F0',borderRadius:14,
+          padding:'10px 14px',fontSize:15,fontWeight:800,
+          cursor:count===0?'not-allowed':'pointer',color:'#94A3B8',opacity:count===0?0.45:1}}>
+          −
+        </button>
         <button onClick={reset} disabled={count===0} style={{
-          background:'#FEF2F2', border:'2px solid #FECACA', borderRadius:14,
-          padding:'10px 14px', fontSize:13, fontWeight:700, cursor:count===0?'not-allowed':'pointer',
-          color:'#EF4444', opacity:count===0?0.45:1
-        }}>Reset</button>
+          background:'#FEF2F2',border:'2px solid #FECACA',borderRadius:14,
+          padding:'10px 14px',fontSize:13,fontWeight:700,
+          cursor:count===0?'not-allowed':'pointer',color:'#EF4444',opacity:count===0?0.45:1}}>
+          Reset
+        </button>
       </div>
 
-      {/* Goal editor */}
       <div style={{display:'flex',alignItems:'center',gap:8}}>
         <span style={{fontSize:12,fontWeight:700,color:'#94A3B8'}}>Goal:</span>
         {editGoal
@@ -1241,24 +1206,25 @@ function RewardJarTool() {
                       padding:'3px 6px',fontSize:14,fontWeight:800,outline:'none'}}/>
           : <button onClick={()=>setEditGoal(true)} style={{
               background:'#F5F3FF',border:'2px solid #DDD6FE',borderRadius:8,
-              padding:'3px 12px',fontSize:13,fontWeight:800,color:'#7C3AED',cursor:'pointer'
-            }}>{goal} tokens ✏️</button>
+              padding:'3px 12px',fontSize:13,fontWeight:800,color:'#7C3AED',cursor:'pointer'}}>
+              {goal} tokens ✏️
+            </button>
         }
       </div>
 
       <style>{`
-        @keyframes tokenDrop {
-          0%  { transform: translateY(-60px) rotate(0deg) scale(1.3); opacity:0; }
-          60% { transform: translateY(6px) rotate(var(--rot,10deg)) scale(0.95); opacity:1; }
-          100%{ transform: translateY(0) rotate(var(--rot,10deg)) scale(1); opacity:1; }
+        @keyframes rjDrop {
+          0%   { transform: rotate(0deg) translateY(-55px) scale(1.35); opacity: 0; }
+          65%  { transform: rotate(var(--r,10deg)) translateY(5px) scale(0.9); opacity: 1; }
+          100% { transform: rotate(var(--r,10deg)) translateY(0) scale(1); opacity: 1; }
         }
-        @keyframes confettiBurst {
-          0%   { transform: translate(-50%,-50%) scale(1); opacity:1; }
-          100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity:0; }
+        @keyframes rjBurst {
+          0%   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.2); opacity: 0; }
         }
-        @keyframes popIn {
-          0%  { transform: translateX(-50%) scale(0.7); opacity:0; }
-          100%{ transform: translateX(-50%) scale(1);   opacity:1; }
+        @keyframes rjPop {
+          0%   { transform: translateX(-50%) scale(0.65); opacity: 0; }
+          100% { transform: translateX(-50%) scale(1);    opacity: 1; }
         }
       `}</style>
     </div>
@@ -1285,81 +1251,63 @@ function MusicPlayerTool(){
   const [duration,setDuration]=useState(0);
   const [volume,setVolume]=useState(0.7);
   const audioRef=useRef(null);
-  const playingRef=useRef(false);
+  const autoPlay=useRef(false);
   const track=MUSIC_TRACKS[trackIdx];
   const PASTEL=['#FDE68A','#BBF7D0','#BFDBFE','#FBCFE8','#DDD6FE','#A5F3FC','#FEF08A','#D9F99D','#C7D2FE'];
 
-  // Create ONE persistent Audio element on mount
+  // Load new track whenever trackIdx changes
   useEffect(()=>{
-    const a=new Audio();
-    a.volume=0.7;
-    audioRef.current=a;
-    const onTime=()=>setProgress(a.currentTime);
-    const onMeta=()=>setDuration(isFinite(a.duration)?a.duration:0);
-    const onEnd=()=>{
-      const next=(playingRef.current===false)?0:undefined;
-      setTrackIdx(i=>{
-        const ni=(i+1)%MUSIC_TRACKS.length;
-        const nextSrc='/music/'+MUSIC_TRACKS[ni].file;
-        a.src=nextSrc;
-        a.load();
-        a.play().catch(()=>{});
-        return ni;
-      });
-    };
-    a.addEventListener('timeupdate',onTime);
-    a.addEventListener('loadedmetadata',onMeta);
-    a.addEventListener('durationchange',onMeta);
-    a.addEventListener('ended',onEnd);
-    return()=>{
-      a.pause();
-      a.src='';
-      a.removeEventListener('timeupdate',onTime);
-      a.removeEventListener('loadedmetadata',onMeta);
-      a.removeEventListener('durationchange',onMeta);
-      a.removeEventListener('ended',onEnd);
-    };
-  },[]);
-
-  useEffect(()=>{if(audioRef.current)audioRef.current.volume=volume;},[volume]);
-
-  const loadAndPlay=(idx)=>{
     const a=audioRef.current;
     if(!a)return;
-    a.src='/music/'+MUSIC_TRACKS[idx].file;
+    a.pause();
+    a.src='/music/'+MUSIC_TRACKS[trackIdx].file;
     a.load();
     setProgress(0);
     setDuration(0);
-    a.play().catch(e=>console.warn('Play blocked:',e));
-    playingRef.current=true;
-    setPlaying(true);
-    setTrackIdx(idx);
-  };
+    if(autoPlay.current){
+      a.play().catch(e=>{ console.warn('Play blocked:',e); setPlaying(false); autoPlay.current=false; });
+    }
+  },[trackIdx]);
+
+  // Sync volume
+  useEffect(()=>{ const a=audioRef.current; if(a) a.volume=volume; },[volume]);
+
   const togglePlay=()=>{
     const a=audioRef.current;
     if(!a)return;
-    if(!a.src||a.src===window.location.href){
-      loadAndPlay(trackIdx);
-      return;
+    if(playing){ a.pause(); autoPlay.current=false; }
+    else{
+      autoPlay.current=true;
+      a.play().catch(e=>{ console.warn('Play blocked:',e); setPlaying(false); autoPlay.current=false; });
     }
-    if(playing){a.pause();playingRef.current=false;setPlaying(false);}
-    else{a.play().catch(e=>console.warn(e));playingRef.current=true;setPlaying(true);}
   };
-  const prev=()=>loadAndPlay((trackIdx-1+MUSIC_TRACKS.length)%MUSIC_TRACKS.length);
-  const next=()=>loadAndPlay((trackIdx+1)%MUSIC_TRACKS.length);
+
+  const goToTrack=(idx)=>{ autoPlay.current=true; setPlaying(false); setTrackIdx(idx); };
+  const prev=()=>goToTrack((trackIdx-1+MUSIC_TRACKS.length)%MUSIC_TRACKS.length);
+  const next=()=>goToTrack((trackIdx+1)%MUSIC_TRACKS.length);
+
   const seek=e=>{
     const a=audioRef.current;
     if(!a||!duration)return;
     const rect=e.currentTarget.getBoundingClientRect();
     const t=(e.clientX-rect.left)/rect.width*duration;
-    a.currentTime=t;
-    setProgress(t);
+    a.currentTime=t; setProgress(t);
   };
-  const fmt=s=>{if(!s||!isFinite(s))return'0:00';const m=Math.floor(s/60);return`${m}:${Math.floor(s%60).toString().padStart(2,'0')}`;};
+  const fmt=s=>{ if(!s||!isFinite(s))return'0:00'; const m=Math.floor(s/60); return\`\${m}:\${Math.floor(s%60).toString().padStart(2,'0')}\`; };
   const pct=duration>0?Math.min(100,progress/duration*100):0;
 
   return(
     <div style={{display:'flex',flexDirection:'column',gap:0,padding:'16px 14px 14px',height:'100%',boxSizing:'border-box'}}>
+      <audio
+        ref={audioRef}
+        onTimeUpdate={e=>setProgress(e.target.currentTime)}
+        onDurationChange={e=>setDuration(isFinite(e.target.duration)?e.target.duration:0)}
+        onLoadedMetadata={e=>setDuration(isFinite(e.target.duration)?e.target.duration:0)}
+        onPlay={()=>setPlaying(true)}
+        onPause={()=>setPlaying(false)}
+        onEnded={()=>{ autoPlay.current=true; setTrackIdx(i=>(i+1)%MUSIC_TRACKS.length); }}
+        style={{display:'none'}}
+      />
       <div style={{background:PASTEL[trackIdx%PASTEL.length],borderRadius:18,padding:'18px 16px 16px',marginBottom:12,textAlign:'center',flexShrink:0}}>
         <div style={{fontSize:44,marginBottom:8}}>{playing?'🎶':'🎵'}</div>
         <div style={{fontSize:15,fontWeight:900,color:'#1F2937',lineHeight:1.2,marginBottom:3}}>{track.title}</div>
@@ -1367,7 +1315,7 @@ function MusicPlayerTool(){
       </div>
       <div style={{marginBottom:4,flexShrink:0}}>
         <div onClick={seek} style={{height:8,background:'#E5E7EB',borderRadius:99,cursor:'pointer',overflow:'hidden',position:'relative'}}>
-          <div style={{width:`${pct}%`,height:'100%',background:'#818CF8',borderRadius:99}}/>
+          <div style={{width:\`\${pct}%\`,height:'100%',background:'#818CF8',borderRadius:99}}/>
         </div>
         <div style={{display:'flex',justifyContent:'space-between',marginTop:3}}>
           <span style={{fontSize:10,color:'#9CA3AF',fontWeight:600}}>{fmt(progress)}</span>
@@ -1391,7 +1339,7 @@ function MusicPlayerTool(){
       <div style={{flex:1,overflowY:'auto',display:'flex',flexDirection:'column',gap:4}}>
         <div style={{fontSize:10,fontWeight:800,color:'#9CA3AF',letterSpacing:0.5,marginBottom:4}}>PLAYLIST</div>
         {MUSIC_TRACKS.map((t,i)=>(
-          <div key={i} onClick={()=>loadAndPlay(i)}
+          <div key={i} onClick={()=>goToTrack(i)}
             style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',borderRadius:10,background:i===trackIdx?PASTEL[i%PASTEL.length]:'#F9FAFB',border:i===trackIdx?'1.5px solid #C4B5FD':'1.5px solid transparent',cursor:'pointer',transition:'all 0.12s'}}>
             <div style={{width:22,height:22,borderRadius:'50%',background:i===trackIdx?'#818CF8':'#E5E7EB',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
               {i===trackIdx&&playing
