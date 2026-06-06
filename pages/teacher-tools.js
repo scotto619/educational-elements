@@ -1315,7 +1315,7 @@ function MusicPlayerTool(){
       </div>
       <div style={{marginBottom:4,flexShrink:0}}>
         <div onClick={seek} style={{height:8,background:'#E5E7EB',borderRadius:99,cursor:'pointer',overflow:'hidden',position:'relative'}}>
-          <div style={{width:\`\${pct}%\`,height:'100%',background:'#818CF8',borderRadius:99}}/>
+          <div style={{width:`${pct}%`,height:'100%',background:'#818CF8',borderRadius:99}}/>
         </div>
         <div style={{display:'flex',justifyContent:'space-between',marginTop:3}}>
           <span style={{fontSize:10,color:'#9CA3AF',fontWeight:600}}>{fmt(progress)}</span>
