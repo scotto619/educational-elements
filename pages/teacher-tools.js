@@ -1260,7 +1260,6 @@ function MusicPlayerTool(){
     const a=audioRef.current;
     if(!a)return;
     a.pause();
-    a.src='/music/'+MUSIC_TRACKS[trackIdx].file;
     a.load();
     setProgress(0);
     setDuration(0);
@@ -1300,6 +1299,7 @@ function MusicPlayerTool(){
     <div style={{display:'flex',flexDirection:'column',gap:0,padding:'16px 14px 14px',height:'100%',boxSizing:'border-box'}}>
       <audio
         ref={audioRef}
+        src={'/music/'+track.file}
         onTimeUpdate={e=>setProgress(e.target.currentTime)}
         onDurationChange={e=>setDuration(isFinite(e.target.duration)?e.target.duration:0)}
         onLoadedMetadata={e=>setDuration(isFinite(e.target.duration)?e.target.duration:0)}
@@ -1431,7 +1431,7 @@ const TOOLS=[
   {id:'maths',      label:'Maths',        emoji:'🧮', header:'#BBF7D0', text:'#14532D', bg:'#F0FDF4',  w:340, h:440},
   {id:'morning',    label:'Morning Meet', emoji:'☀️', header:'#EDE9FE', text:'#4C1D95', bg:'#F5F3FF',  w:340, h:440},
   {id:'music',      label:'Music Player', emoji:'🎵', header:'#DDD6FE', text:'#4338CA', bg:'#F5F3FF',  w:340, h:520},
-  {id:'rewardjar',  label:'Reward Jar',  emoji:'🫙', header:'#FDE68A', text:'#713F12', bg:'#FFFBEB',  w:340, h:620},
+  {id:'rewardjar',  label:'Reward Jar',  emoji:'🏺', header:'#FDE68A', text:'#713F12', bg:'#FFFBEB',  w:340, h:620},
 ];
 const MIN_W=220, MIN_H=160;
 let MAX_Z=10;

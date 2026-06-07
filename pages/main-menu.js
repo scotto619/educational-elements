@@ -24,7 +24,10 @@ export default function MainMenu() {
                     if (snap.exists()) {
                         const data = snap.data();
                         setUserData(data);
-                        setShowWelcomePopup(true);
+                        if (!sessionStorage.getItem('welcomePopupShown')) {
+                            setShowWelcomePopup(true);
+                            sessionStorage.setItem('welcomePopupShown', 'true');
+                        }
 
                         // Try to find the active class name
                         if (data.activeClassId) {
