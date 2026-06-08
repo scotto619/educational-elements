@@ -64,6 +64,7 @@ import GamesTab from '../components/tabs/GamesTab';
 import SettingsTab from '../components/tabs/SettingsTab';
 import TeachersToolkitTab from '../components/tabs/TeachersToolkitTab';
 import ResourceHubTab from '../components/tabs/ResourceHubTab';
+import ResourcesTab from '../components/tabs/ResourcesTab';
 import QuizShowTab from '../components/tabs/QuizShowTab';
 import LootWellTab from '../components/tabs/LootWellTab';
 
@@ -124,7 +125,7 @@ const CLASSROOM_CHAMPIONS_TABS = [
 
 const EDUCATIONAL_ELEMENTS_TABS = [
   { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games', mobileIcon: '🎮' },
-  { id: 'resource-hub', name: 'Resource Hub', icon: '📖', shortName: 'Resources', mobileIcon: '📖' },
+  { id: 'resources', name: 'Resources', icon: '📚', shortName: 'Resources', mobileIcon: '📚' },
   { id: 'toolkit', name: 'Teachers Toolkit', icon: '🛠️', shortName: 'Toolkit', mobileIcon: '🛠️' },
   { id: 'settings', name: 'Settings', icon: '⚙️', shortName: 'Settings', mobileIcon: '⚙️' }
 ];
@@ -155,11 +156,6 @@ const ClassroomChampions = () => {
   useEffect(() => {
     if (router.query.tab) {
       const tabParam = router.query.tab.toLowerCase();
-      // Redirect resource-hub directly to the new curriculum page
-      if (tabParam === 'resource-hub') {
-        router.replace('/curriculum');
-        return;
-      }
       // Check if the tab exists in either of our tab lists
       const isValidTab = [...CLASSROOM_CHAMPIONS_TABS, ...EDUCATIONAL_ELEMENTS_TABS]
         .some(t => t.id === tabParam);
@@ -169,13 +165,6 @@ const ClassroomChampions = () => {
       }
     }
   }, [router.query.tab]);
-
-  // Redirect away from resource-hub tab if it ever gets set
-  useEffect(() => {
-    if (activeTab === 'resource-hub') {
-      router.push('/curriculum');
-    }
-  }, [activeTab, router]);
 
   // Class and student data
   const [currentClassId, setCurrentClassId] = useState(null);
@@ -506,6 +495,18 @@ const ClassroomChampions = () => {
       console.error('❌ Error saving class data:', error);
       showToast('Error saving data', 'error');
       throw error;
+    }
+  };
+
+  // Save a key/value pair into the class toolkitData object
+  // Used by ResourcesTab → SpellingProgram (and future curriculum tools)
+  const saveToolkitData = async (key, value) => {
+    try {
+      const existing = currentClassData?.toolkitData || {};
+      await saveClassData({ toolkitData: { ...existing, [key]: value } });
+    } catch (error) {
+      console.error('❌ Error saving toolkit data:', error);
+      showToast('Error saving data', 'error');
     }
   };
 
@@ -1109,8 +1110,15 @@ const ClassroomChampions = () => {
           />
         );
 
-      case 'resource-hub':
-        return null; // handled by useEffect — redirects to /curriculum
+      case 'resources':
+        return (
+          <ResourcesTab
+            students={students}
+            showToast={showToast}
+            saveClassData={saveClassData}
+            currentClassData={currentClassData}
+          />
+        );
 
       case 'toolkit':
         // Redirect straight to the full toolkit page
@@ -1402,10 +1410,6 @@ const ClassroomChampions = () => {
                 <button
                   key={tab.id}
                   onClick={() => {
-                    if (tab.id === 'resource-hub') {
-                      router.push('/curriculum');
-                      return;
-                    }
                     setActiveTab(tab.id);
                     setShowMobileMenu(false);
                   }}

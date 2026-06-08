@@ -9,11 +9,11 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 // ─── Lazy-load tool / section components ─────────────────────────────────────
 const BeginnerReaders      = lazy(() => import('../components/curriculum/literacy/BeginnerReaders'));
 const ReadingForFun        = lazy(() => import('../components/curriculum/literacy/ReadingForFun'));
-const ReadersTheatre       = lazy(() => import('../components/curriculum/literacy/ReadersTheatre'));
+// ReadersTheatre moved to ResourcesTab (Classroom Champions → Resources)
 const Morphology           = lazy(() => import('../components/curriculum/literacy/Morphology'));
 const LiteracyWarmup       = lazy(() => import('../components/curriculum/literacy/LiteracyWarmup'));
 const PrepLiteracyWarmup   = lazy(() => import('../components/curriculum/literacy/PrepLiteracyWarmUp'));
-const SpellingProgram      = lazy(() => import('../components/curriculum/literacy/SpellingProgram'));
+// SpellingProgram moved to ResourcesTab (Classroom Champions → Resources)
 const ReadingComprehension = lazy(() => import('../components/curriculum/literacy/ReadingComprehension'));
 const VisualWritingPrompts = lazy(() => import('../components/curriculum/literacy/VisualWritingPrompts'));
 const VocabularyCorner     = lazy(() => import('../components/curriculum/literacy/VocabularyCorner'));
@@ -32,14 +32,13 @@ const FractionVisualiser   = lazy(() => import('../components/curriculum/mathema
 const TimesTablesMaster    = lazy(() => import('../components/curriculum/mathematics/TimesTablesMaster'));
 const SolarSystemExplorer  = lazy(() => import('../components/curriculum/science/SolarSystemExplorer'));
 const FoodChainBuilder     = lazy(() => import('../components/curriculum/science/FoodChainBuilder'));
-const EnglishNewSection    = lazy(() => import('../components/curriculum/new/EnglishNewSection'));
-const MathNewSection       = lazy(() => import('../components/curriculum/new/MathNewSection'));
-const ScienceNewSection    = lazy(() => import('../components/curriculum/new/ScienceNewSection'));
-const HassNewSection       = lazy(() => import('../components/curriculum/new/HassNewSection'));
 
 // ─── Display section data (sourced from DisplaysGallery) ──────────────────────
-const buildImageUrl = (folder, file) =>
-  `/Displays/${folder}/${file.split('/').map(encodeURIComponent).join('/')}`;
+const buildImageUrl = (folder, file) => {
+  if (!file) return '';
+  if (file.startsWith('/')) return file;
+  return `/Displays/${folder}/${file.split('/').map(encodeURIComponent).join('/')}`;
+};
 
 // All display categories — used for search index + "All Displays"
 const ALL_DISPLAY_CATEGORIES = [
@@ -75,9 +74,18 @@ const ALL_DISPLAY_CATEGORIES = [
       { id: 'ws-comprehension-yr2', name: 'Comprehension — Young Readers 2',  emoji: '📄', bg: 'bg-yellow-100',  border: 'border-yellow-300',  hover: 'hover:bg-yellow-200',  text: 'text-yellow-900',  images: [{ name: 'Young Readers 1', file: 'Worksheets/Comprehension/Young Readers 2/Young Readers 1.png' },{ name: 'Young Readers 2', file: 'Worksheets/Comprehension/Young Readers 2/Young Readers 2.png' },{ name: 'Young Readers 3', file: 'Worksheets/Comprehension/Young Readers 2/Young Readers 3.png' },{ name: 'Young Readers 4', file: 'Worksheets/Comprehension/Young Readers 2/Young Readers 4.png' },{ name: 'Young Readers 5', file: 'Worksheets/Comprehension/Young Readers 2/Young Readers 5.png' }] },
       { id: 'ws-comprehension-ah',  name: 'Comprehension — Ancient History',  emoji: '🏛️', bg: 'bg-stone-100',   border: 'border-stone-300',   hover: 'hover:bg-stone-200',   text: 'text-stone-900',   images: [{ name: 'Ancient History 4', file: 'Worksheets/Comprehension/Ancient History/ComprehensionWorksheet4.png' },{ name: 'Ancient History 5', file: 'Worksheets/Comprehension/Ancient History/ComprehensionWorksheet5.png' },{ name: 'Ancient History 6', file: 'Worksheets/Comprehension/Ancient History/ComprehensionWorksheet6.png' }] },
       { id: 'ws-comprehension-slang', name: 'Comprehension — Slang',          emoji: '😎', bg: 'bg-purple-100',  border: 'border-purple-300',  hover: 'hover:bg-purple-200',  text: 'text-purple-900',  images: [{ name: 'Delulu', file: 'Worksheets/Comprehension/Slang/Delulu Comprehension.png' },{ name: 'Rizz', file: 'Worksheets/Comprehension/Slang/Rizz Comprehension.png' },{ name: 'Skibidi', file: 'Worksheets/Comprehension/Slang/Skibidi Comprehension.png' },{ name: 'Slay', file: 'Worksheets/Comprehension/Slang/Slay Comprehension.png' },{ name: 'Yeet', file: 'Worksheets/Comprehension/Slang/Yeet Comprehension.png' }] },
-      { id: 'ws-grammar',       name: 'Grammar Worksheets',         emoji: '✏️', bg: 'bg-lime-100',    border: 'border-lime-300',    hover: 'hover:bg-lime-200',    text: 'text-lime-900',    images: [{ name: 'Verbs Worksheet', file: 'Worksheets/Grammar/VerbsWorksheet.png' }] },
+      { id: 'grammar-displays',  name: 'Grammar Displays',           emoji: '🔤', bg: 'bg-indigo-100',  border: 'border-indigo-300',  hover: 'hover:bg-indigo-200',  text: 'text-indigo-900',  images: [{ name: 'Nouns Display', file: '/Curriculum/New Literacy/Grammar/Nouns/Displays/Nouns.png' },{ name: 'Verbs Display', file: '/Curriculum/New Literacy/Grammar/Verbs/Display/Verbs.png' },{ name: 'Adjectives Display', file: '/Curriculum/New Literacy/Grammar/Adjectives/Display/Adjectives.png' },{ name: 'Adverbs Display', file: '/Curriculum/New Literacy/Grammar/Adverbs/Display/Adverbs.png' },{ name: 'Pronouns Display', file: '/Curriculum/New Literacy/Grammar/Pronouns/Display/Pronouns.png' },{ name: 'Prepositions Display', file: '/Curriculum/New Literacy/Grammar/Prepositions/Display/Prepositions.png' },{ name: 'Conjunctions Display', file: '/Curriculum/New Literacy/Grammar/Conjunctions/Display/Conjunctions.png' },{ name: 'Interjections Display', file: '/Curriculum/New Literacy/Grammar/Interjections/Displays/Interjections.png' },{ name: 'Sentence Types Display', file: '/Curriculum/New Literacy/Grammar/Simple Compound Complex Sentences/Display/SentenceTypes.png' },{ name: 'Clauses Display', file: '/Curriculum/New Literacy/Grammar/Clauses/Display/Clauses.png' },{ name: 'Subjects and Predicates Display', file: '/Curriculum/New Literacy/Grammar/Subject and Predicate/Display/SubjectandPredicate.png' },{ name: 'Active vs Passive Voice Display', file: '/Curriculum/New Literacy/Grammar/Active vs Passive Voice/Display/ActiveVsPassive.png' },{ name: 'Fragments and Run-Ons Display', file: '/Curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Display/FragmentsandRunons.png' },{ name: 'Past, Present, Future Display', file: '/Curriculum/New Literacy/Grammar/Past Present Future/Display/PastPresentFuture.png' },{ name: 'Irregular Verbs Display', file: '/Curriculum/New Literacy/Grammar/Irreguluar Verbs/Display/IrregularVerbs.png' },{ name: 'Consistent Tense Use Display', file: '/Curriculum/New Literacy/Grammar/Consistent Tense Use/Display/ConsistentTenseUse.png' }] },
+      { id: 'ws-grammar',       name: 'Grammar Worksheets',         emoji: '✏️', bg: 'bg-lime-100',    border: 'border-lime-300',    hover: 'hover:bg-lime-200',    text: 'text-lime-900',    images: [{ name: 'Verbs Worksheet', file: 'Worksheets/Grammar/VerbsWorksheet.png' },{ name: 'Nouns Worksheet', file: '/Curriculum/New Literacy/Grammar/Nouns/Learning/NounWorksheet.png' },{ name: 'Verbs Worksheet (Curriculum)', file: '/Curriculum/New Literacy/Grammar/Verbs/Learning/VerbsWorksheet.png' },{ name: 'Adjectives Worksheet', file: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/AdjectivesWorksheet.png' },{ name: 'Adverbs Worksheet', file: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs Worksheet.png' },{ name: 'Pronouns Worksheet', file: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/PronounsWorksheet.png' },{ name: 'Prepositions Worksheet', file: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/PrepositionsWorksheet.png' },{ name: 'Conjunctions Worksheet', file: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/ConjunctionsWorksheet.png' },{ name: 'Interjections Worksheet', file: '/Curriculum/New Literacy/Grammar/Interjections/Learning/InterjectionsWorksheet.png' }] },
+      { id: 'punctuation-displays', name: 'Punctuation Displays',     emoji: '❕', bg: 'bg-purple-100',  border: 'border-purple-300',  hover: 'hover:bg-purple-200',  text: 'text-purple-900',  images: [{ name: 'Capital Letters Display', file: '/Curriculum/New Literacy/Punctuation/Capital Letters/Display/Capitals.png' },{ name: 'Capital Letters Worksheet', file: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/CapitallettersWorksheet.png' },{ name: 'Full Stops Display', file: '/Curriculum/New Literacy/Punctuation/Full Stops/Display/FullStops.png' },{ name: 'Full Stops Worksheet', file: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullstopsWorksheet.png' },{ name: 'Question Marks Display', file: '/Curriculum/New Literacy/Punctuation/Question Marks/Display/QuestionMarks.png' },{ name: 'Question Marks Worksheet', file: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionmarksWorksheet.png' },{ name: 'Exclamation Marks Display', file: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Display/ExclamationMarks.png' },{ name: 'Exclamation Marks Worksheet', file: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Learning/ExclamationmarksWorksheet.png' },{ name: 'Commas Worksheet', file: '/Curriculum/New Literacy/Punctuation/Commas/Learning/CommasWorksheet.png' }] },
       { id: 'ws-writing',       name: 'Writing Worksheets',         emoji: '✍️', bg: 'bg-rose-100',    border: 'border-rose-300',    hover: 'hover:bg-rose-200',    text: 'text-rose-900',    images: [{ name: 'Complex Sentences', file: 'Worksheets/Writing/ComplexSentencesWorksheet.png' },{ name: 'Narrative Writing', file: 'Worksheets/Writing/NarrativeWritingWorksheet.png' },{ name: 'Persuasive Writing', file: 'Worksheets/Writing/PersuasiveWritingWorksheet.png' },{ name: 'Persuasive Writing 2', file: 'Worksheets/Writing/PersuasiveWritingWorksheet2.png' },{ name: 'TEEL Paragraph', file: 'Worksheets/Writing/TEELParagraphWorksheet.png' }] },
       { id: 'eng-mats',         name: 'Classroom Mats',             emoji: '🗂️', bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  images: [{ name: 'Adjective Mat', file: 'Mats/Adjective Mat.png' },{ name: 'Noun Mat', file: 'Mats/Noun Mat.png' },{ name: 'Simple Sentence Mat', file: 'Mats/Simple Sentence Mat.png' },{ name: 'Verb Mat', file: 'Mats/Verb Mat.png' },{ name: 'Word of the Day Mat', file: 'Mats/Word of the Day Mat.png' }] },
+    ],
+    groups: [
+      { id: 'eng-displays',        name: 'Displays',         emoji: '🖼️', sectionIds: ['grammar-displays','punctuation-displays','letters','alphabet-2','vowels','phonics-blends-2','spelling-rules','spelling-strats','english-anchor-charts'] },
+      { id: 'eng-writing-displays',name: 'Writing Displays', emoji: '✍️', sectionIds: ['writing-narrative','writing-narrative-forest','writing-procedure','writing-paragraph','writing-creative','writing-sentence','writing-informative','writing-informative-ocean','writing-persuasive','writing-poetry','writing-recount','literary-devices','book-review','writing-research-skills'] },
+      { id: 'eng-worksheets',      name: 'Worksheets',       emoji: '📄', sectionIds: ['ws-grammar','ws-writing'] },
+      { id: 'eng-comprehension',   name: 'Comprehension',    emoji: '📖', sectionIds: ['ws-comprehension-yr','ws-comprehension-yr2','ws-comprehension-ah','ws-comprehension-slang'] },
+      { id: 'eng-cards',           name: 'Cards & Mats',     emoji: '🃏', sectionIds: ['eye-spy','cvc-cards','phonics-blends','eng-mats'] },
     ],
   },
   {
@@ -93,6 +101,11 @@ const ALL_DISPLAY_CATEGORIES = [
       { id: 'maths-mats',             name: 'Maths Mats',                  emoji: '🗂️', bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  images: [{ name: 'Multiplication Mat', file: 'Mats/Multiplication Mat.png' },{ name: 'Number Fact Mat', file: 'Mats/Number Fact Mat.png' },{ name: 'Number of the Day Mat', file: 'Mats/Number of the Day Mat.png' }] },
       { id: 'maths-anchor-charts',    name: 'Anchor Charts',               emoji: '⚓', bg: 'bg-sky-100',     border: 'border-sky-300',     hover: 'hover:bg-sky-200',     text: 'text-sky-900',     images: [{ name: 'Area and Perimeter', file: 'Anchor Charts/Area and Perimeter.png' },{ name: 'Decimal Basics', file: 'Anchor Charts/Decimal Basics.png' },{ name: 'Fractions', file: 'Anchor Charts/Fractions.png' },{ name: 'Measurement Conversions', file: 'Anchor Charts/Measurement Conversions.png' },{ name: 'Measuring in the Metric System', file: 'Anchor Charts/Measuring in the Metric System.png' },{ name: 'Multiplication', file: 'Anchor Charts/Multiplication.png' },{ name: 'Place Value', file: 'Anchor Charts/Place Value.png' },{ name: 'Reading Graphs and Tables', file: 'Anchor Charts/Reading Graphs and Tables.png' },{ name: 'Rounding Numbers', file: 'Anchor Charts/Rounding Numbers.png' }] },
     ],
+    groups: [
+      { id: 'maths-displays',   name: 'Displays',    emoji: '🖼️', sectionIds: ['number-ops','shapes','location-transform','measurement-d','maths-anchor-charts'] },
+      { id: 'maths-worksheets', name: 'Worksheets',  emoji: '📄', sectionIds: ['maths-sheets','maths-mentals'] },
+      { id: 'maths-mats-grp',   name: 'Mats',        emoji: '🗂️', sectionIds: ['maths-mats'] },
+    ],
   },
   {
     id: 'science', name: 'Science Displays', emoji: '🔬', folder: 'Science',
@@ -101,6 +114,13 @@ const ALL_DISPLAY_CATEGORIES = [
       { id: 'experiments',  name: 'Experiments',           emoji: '🧪', bg: 'bg-green-100',  border: 'border-green-300',  hover: 'hover:bg-green-200',  text: 'text-green-900',  images: [{ name: 'Bottle Rocket Experiment', file: 'Experiments/Bottle Rocket.png' },{ name: 'Elephant Toothpaste Experiment', file: 'Experiments/Elephant Toothpaste.png' }] },
       { id: 'space-displays', name: 'Space',               emoji: '🪐', bg: 'bg-indigo-100', border: 'border-indigo-300', hover: 'hover:bg-indigo-200', text: 'text-indigo-900', images: [{ name: 'Earth', file: 'Space/Earth.png' },{ name: 'Jupiter', file: 'Space/Jupiter.png' },{ name: 'Mars', file: 'Space/Mars.png' },{ name: 'Mercury', file: 'Space/Mercury.png' },{ name: 'Neptune', file: 'Space/Neptune.png' },{ name: 'Saturn', file: 'Space/Saturn.png' },{ name: 'Solar System', file: 'Space/SolarSystem.png' },{ name: 'Space Vocabulary', file: 'Space/SpaceVocab.png' },{ name: 'Space Vocabulary Display', file: 'Space/SpaceVocabDisplay.png' },{ name: 'Uranus', file: 'Space/Uranus.png' },{ name: 'Venus', file: 'Space/Venus.png' },{ name: 'NASA Fact File', file: 'Space/NASA Fact File.png' }] },
       { id: 'env-change',   name: 'Environmental Change',  emoji: '🌿', bg: 'bg-emerald-100',border: 'border-emerald-300',hover: 'hover:bg-emerald-200',text: 'text-emerald-900',images: [{ name: 'Environmental Change Vocabulary', file: 'EnvironmentalChange/EnvironmentalChangeVocab.png' }] },
+      { id: 'forces-motion', name: 'Forces & Motion',      emoji: '⚡', bg: 'bg-blue-100',   border: 'border-blue-300',   hover: 'hover:bg-blue-200',   text: 'text-blue-900',   images: [{ name: 'Pushes and Pulls', file: '/Curriculum/New Science/Forces and Motion/Pushes and pulls/Display/PushesAndPulls.png' },{ name: 'Contact vs Non-Contact Forces', file: '/Curriculum/New Science/Forces and Motion/Contact Vs Non Contact/Display/ContactVsNonContact.png' },{ name: 'Gravity', file: '/Curriculum/New Science/Forces and Motion/Gravity/Display/Gravity.png' },{ name: 'Friction', file: '/Curriculum/New Science/Forces and Motion/Friction/Display/Friction.png' },{ name: 'Air Resistance', file: '/Curriculum/New Science/Forces and Motion/Air Resistance/Display/AirResistance.png' },{ name: 'Magnetic Forces', file: '/Curriculum/New Science/Forces and Motion/Magnetic Forces/Display/Magnetic Forces.png' },{ name: 'Simple Machines', file: '/Curriculum/New Science/Forces and Motion/Simple Machines/Display/Simple Machines.png' }] },
+    ],
+    groups: [
+      { id: 'sci-space',       name: 'Space & Astronomy',   emoji: '🪐', sectionIds: ['space-displays'] },
+      { id: 'sci-forces',      name: 'Forces & Motion',     emoji: '⚡', sectionIds: ['forces-motion'] },
+      { id: 'sci-environment', name: 'Environment & Life',  emoji: '🌿', sectionIds: ['env-change'] },
+      { id: 'sci-experiments', name: 'Experiments',         emoji: '🧪', sectionIds: ['experiments'] },
     ],
   },
   {
@@ -138,6 +158,13 @@ const ALL_DISPLAY_CATEGORIES = [
       { id: 'conflict-resolution-girls', name: 'Conflict Resolution (Girls)',  emoji: '🤛', bg: 'bg-rose-100',    border: 'border-rose-300',    hover: 'hover:bg-rose-200',    text: 'text-rose-900',    images: [{ name: 'Overview', file: 'Conflict Resolution Girls/1. Overview.png' },{ name: 'Pause and Calm Down', file: 'Conflict Resolution Girls/2. Pause and Calm Down.png' },{ name: 'Understand the Situation', file: 'Conflict Resolution Girls/3. Understand the Situation.png' },{ name: 'Talk it Out Respectfully', file: 'Conflict Resolution Girls/4. Talk it Out Respectfully.png' },{ name: 'Find Solutions Together', file: 'Conflict Resolution Girls/5. Find Solutions Together.png' },{ name: 'Agree and Make a Plan', file: 'Conflict Resolution Girls/6. Agree and Make a Plan.png' },{ name: 'Reflect and Grow', file: 'Conflict Resolution Girls/7. Reflect and Grow.png' }] },
       { id: 'sensory-options',           name: 'Sensory Options',              emoji: '🌀', bg: 'bg-teal-100',    border: 'border-teal-300',    hover: 'hover:bg-teal-200',    text: 'text-teal-900',    images: [{ name: 'Sensory Options 1', file: 'Sensory Options/1..png' },{ name: 'Sensory Options 2', file: 'Sensory Options/2..png' }] },
       { id: 'behaviour-journal',         name: 'Journal',                      emoji: '📓', bg: 'bg-amber-100',   border: 'border-amber-300',   hover: 'hover:bg-amber-200',   text: 'text-amber-900',   images: [{ name: 'Boys', file: 'Journal/1. Boys.png' },{ name: 'Girls', file: 'Journal/2. Girls.png' }] },
+    ],
+    groups: [
+      { id: 'beh-regulation', name: 'Regulation & Mindfulness', emoji: '🧘', sectionIds: ['zones-regulation','breathing-techniques','mindfulness','calm-corner','emotion-ocean'] },
+      { id: 'beh-coping',     name: 'Coping Strategies',        emoji: '🧰', sectionIds: ['coping-toolkit-1','coping-toolkit-2','coping-toolkit-3','size-of-problem','sensory-options'] },
+      { id: 'beh-mood-modes', name: 'Mood Modes',               emoji: '🦊', sectionIds: ['mood-modes-lower','mood-modes-middle','mood-modes-upper-f','mood-modes-upper-f2','mood-modes-upper-m','mood-modes-upper-mixed'] },
+      { id: 'beh-social',     name: 'Social Skills & Conflict',  emoji: '🤝', sectionIds: ['social-skills','conflict-resolution-boys','conflict-resolution-girls','expected-unexpected'] },
+      { id: 'beh-classroom',  name: 'Classroom Environment',    emoji: '📋', sectionIds: ['classroom-rules','behaviour-cues','wellbeing','behaviour-journal'] },
     ],
   },
   {
@@ -249,12 +276,16 @@ const buildSearchIndex = (subjects, resourcesBySubject) => {
         });
       }
     });
-    // Unit resources
-    (resourcesBySubject[subj.id] || []).forEach(res => {
-      // find the resources area
-      const resArea = subj.areas.find(a => a.type === 'resources');
-      index.push({ kind: 'resource', label: res.title, sublabel: `${subj.emoji} ${subj.name} › Bundles`, subject: subj, area: resArea, resource: res, emoji: res.icon || '📄' });
-    });
+    // Unit resources — handle grouped structure
+    const _resArea = subj.areas.find(a => a.type === 'resources');
+    if (_resArea) {
+      const _groups = resourcesBySubject[subj.id] || [];
+      const _isGrouped = _groups.length > 0 && _groups[0].items !== undefined;
+      const _flat = _isGrouped ? _groups.flatMap(g => g.items) : _groups;
+      _flat.forEach(res => {
+        index.push({ kind: 'resource', label: res.title, sublabel: `${subj.emoji} ${subj.name} › Bundles`, subject: subj, area: _resArea, resource: res, emoji: res.icon || '📄' });
+      });
+    }
   });
   // Displays
   ALL_DISPLAY_CATEGORIES.forEach(cat => {
@@ -268,93 +299,236 @@ const buildSearchIndex = (subjects, resourcesBySubject) => {
 };
 
 // ─── Unit Resources ───────────────────────────────────────────────────────────
+// Structure: { [subjectId]: [ { id, name, emoji, items: [{id, title, icon, pdfPath?, pptxPath?}] } ] }
 const resourcesBySubject = {
   english: [
-    { id: 'informative-ocean-theme',  title: 'Informative Writing — Ocean Theme Learning Wall', icon: '🌊', pdfPath: '/Unit Resources/English/Informative_Ocean_Theme_Learning_Wall.pdf' },
-    { id: 'paragraph-writing',        title: 'Paragraph Writing',                               icon: '¶',  pdfPath: '/Unit Resources/English/Paragraph_Writing.pdf' },
-    { id: 'sentence-writing',         title: 'Sentence Writing',                                icon: '✏️', pdfPath: '/Unit Resources/English/Sentence_Writing.pdf' },
-    { id: 'english-anchor-charts',    title: 'Anchor Charts',                                   icon: '⚓', pdfPath: '/Unit Resources/English/English_Anchor_Charts.pdf' },
-    { id: 'research-skills',          title: 'Research Skills',                                 icon: '🔍', pdfPath: '/Unit Resources/English/Research_Skills.pdf' },
-    { id: 'creative-writing',         title: 'Creative Writing',                                icon: '🖊️', pdfPath: '/Unit Resources/English/Creative_Writing.pdf' },
-    { id: 'narrative-forest-wall',    title: 'Narrative Writing — Forest Themed Learning Wall', icon: '🌲', pdfPath: '/Unit Resources/English/Narrative_Forest_Themed_Learning_Wall.pdf' },
-    { id: 'procedure-writing',        title: 'Procedure Writing',                               icon: '📋', pdfPath: '/Unit Resources/English/Procedure_Writing.pdf' },
-    { id: 'wilds-of-writing',         title: 'The Wilds of Writing: A Field Guide',      icon: '✍️', pdfPath: '/Unit Resources/Literacy/The_Wilds_of_Writing_A_Field_Guide.pdf' },
-    { id: 'blend-friends',            title: 'Blend Friends Adventure',                  icon: '🔤', pdfPath: '/Unit Resources/Literacy/Blend_Friends_Adventure.pdf' },
-    { id: 'phonics-superpowers',        title: 'Phonics Superpowers Guide',                icon: '🔡', pdfPath: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf' },
-    { id: 'comprehension-info-texts', title: 'Comprehension Information Texts',          icon: '📖', pdfPath: '/Unit Resources/Literacy/Comprehension Information Texts.pdf' },
-    { id: 'leveled-comprehension-1',  title: 'Leveled Comprehension PACK 1',             icon: '📖', pdfPath: '/Unit Resources/Literacy/Leveled Comprehension PACK 1.pdf' },
-    { id: 'leveled-comprehension-2',  title: 'Leveled Comprehension PACK 2',             icon: '📖', pdfPath: '/Unit Resources/Literacy/Leveled Comprehension PACK 2.pdf' },
-    { id: 'reading-strategies',       title: 'Reading Strategies',                       icon: '🧠', pdfPath: '/Unit Resources/Literacy/Reading Strategies.pdf' },
-    { id: 'info-text-comprehension',  title: 'Information Text Comprehension',           icon: '📝', pdfPath: '/Unit Resources/Literacy/Information Text Comprehension.pdf' },
-    { id: 'character-profile',        title: 'Character Profile Comprehension',          icon: '🧑‍🎨', pdfPath: '/Unit Resources/Literacy/Character Profile Comprehension.pdf' },
-    { id: 'character-creation',       title: 'Character Creation Crew',                  icon: '🧑‍🎨', pdfPath: '/Unit Resources/Literacy/Character_Creation_Crew_Building_Unforgettable_Stories.pdf' },
-    { id: 'metaphors-similes',        title: 'Comparison Cuties: Metaphors & Similes',   icon: '🌈', pdfPath: '/Unit Resources/Literacy/Comparison_Cuties_Metaphors_and_Similes.pdf' },
-    { id: 'literary-architecture',    title: 'Literary Architecture',                    icon: '🏛️', pdfPath: '/Unit Resources/Literacy/Literary_Architecture.pdf' },
-    { id: 'paint-worlds',             title: 'Paint Worlds With Words',                  icon: '🎨', pdfPath: '/Unit Resources/Literacy/Paint_Worlds_With_Words.pdf' },
-    { id: 'shelter-shore',            title: 'Shelter Shore: Identity Craft',            icon: '🌊', pdfPath: '/Unit Resources/Literacy/Shelter_Shore_Identity_Craft.pdf' },
-    { id: 'teresa-book-analysis',     title: 'Teresa: A New Australian — Book Analysis', icon: '📗', pdfPath: '/Unit Resources/Literacy/Teresa_A_New_Australian_Book_Analysis.pdf' },
-    { id: 'fanboys',                  title: 'FANBOYS: The Super Squad of Sentences',    icon: '💥', pdfPath: '/Unit Resources/Literacy/FANBOYS_The_Super_Squad_of_Sentences.pdf' },
-    { id: 'grammar-garden',           title: 'Grammar Garden Helpers',                   icon: '🌸', pdfPath: '/Unit Resources/Literacy/Grammar_Garden_Helpers.pdf' },
-    { id: 'grammar-kingdoms',         title: 'Grammar: The Four Kingdoms',               icon: '👑', pdfPath: '/Unit Resources/Literacy/Grammar_The_Four_Kingdoms.pdf' },
-    { id: 'narnia',                   title: 'Narnia: Deep Magic and the Wardrobe',      icon: '🦁', pdfPath: '/Unit Resources/Literacy/Narnia_Deep_Magic_and_the_Wardrobe.pdf' },
-    { id: 'nintendo-story',           title: 'The Nintendo Story',                       icon: '🎮', pdfPath: '/Unit Resources/Literacy/The_Nintendo_Story.pdf' },
-    { id: 'noun-hunt',                title: 'The Noun Hunt',                            icon: '🔍', pdfPath: '/Unit Resources/Literacy/The_Noun_Hunt.pdf' },
-    { id: 'world-cup',                title: 'World Cup History: The Global Game',       icon: '⚽', pdfPath: '/Unit Resources/Literacy/World_Cup_History_The_Global_Game.pdf' },
+    {
+      id: 'grammar-pos', name: 'Grammar — Parts of Speech', emoji: '🔤',
+      items: [
+        { id: 'grammar-nouns',         title: 'Nouns',          icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pdf',                                       pptxPath: '/Curriculum/New Literacy/Grammar/Nouns/Learning/Noun_Kingdom.pptx' },
+        { id: 'grammar-verbs',         title: 'Verbs',          icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pdf',                                               pptxPath: '/Curriculum/New Literacy/Grammar/Verbs/Learning/Verbs.pptx' },
+        { id: 'grammar-adjectives',    title: 'Adjectives',     icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pdf',                                     pptxPath: '/Curriculum/New Literacy/Grammar/Adjectives/Learning/Adjectives.pptx' },
+        { id: 'grammar-adverbs',       title: 'Adverbs',        icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pdf',                                           pptxPath: '/Curriculum/New Literacy/Grammar/Adverbs/Learning/Adverbs.pptx' },
+        { id: 'grammar-pronouns',      title: 'Pronouns',       icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pdf',                                         pptxPath: '/Curriculum/New Literacy/Grammar/Pronouns/Learning/Pronouns.pptx' },
+        { id: 'grammar-prepositions',  title: 'Prepositions',   icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pdf',                                 pptxPath: '/Curriculum/New Literacy/Grammar/Prepositions/Learning/Prepositions.pptx' },
+        { id: 'grammar-conjunctions',  title: 'Conjunctions',   icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pdf',                                 pptxPath: '/Curriculum/New Literacy/Grammar/Conjunctions/Learning/Conjunctions.pptx' },
+        { id: 'grammar-interjections', title: 'Interjections',  icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pdf',                               pptxPath: '/Curriculum/New Literacy/Grammar/Interjections/Learning/Interjections.pptx' },
+      ],
+    },
+    {
+      id: 'grammar-structure', name: 'Grammar — Sentence Structure', emoji: '📐',
+      items: [
+        { id: 'grammar-sentence-types', title: 'Simple, Compound & Complex Sentences', icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Simple Compound Complex Sentences/Learning/SentenceTypes.pdf', pptxPath: '/Curriculum/New Literacy/Grammar/Simple Compound Complex Sentences/Learning/SentenceTypes.pptx' },
+        { id: 'grammar-clauses',        title: 'Clauses',                               icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Clauses/Learning/Clauses.pdf',                                  pptxPath: '/Curriculum/New Literacy/Grammar/Clauses/Learning/Clauses.pptx' },
+        { id: 'grammar-subj-pred',      title: 'Subjects & Predicates',                icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Subject and Predicate/Learning/SubjectandPredicate.pdf',         pptxPath: '/Curriculum/New Literacy/Grammar/Subject and Predicate/Learning/SubjectandPredicate.pptx' },
+        { id: 'grammar-voice',          title: 'Active vs Passive Voice',              icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/ActiveVsPassive.pdf',           pptxPath: '/Curriculum/New Literacy/Grammar/Active vs Passive Voice/Learning/ActiveVsPassive.pptx' },
+        { id: 'grammar-fragments',      title: 'Fragments & Run-Ons',                  icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/SegmentsandRunons.pdf',   pptxPath: '/Curriculum/New Literacy/Grammar/Sentence Fragments and Run-ons/Learning/SegmentsandRunons.pptx' },
+        { id: 'fanboys',                title: 'FANBOYS: The Super Squad of Sentences', icon: '💥', pdfPath: '/Unit Resources/Literacy/FANBOYS_The_Super_Squad_of_Sentences.pdf' },
+      ],
+    },
+    {
+      id: 'grammar-tense', name: 'Grammar — Tense & Mood', emoji: '⏰',
+      items: [
+        { id: 'grammar-tense',     title: 'Past, Present & Future', icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Past Present Future/Learning/PastPresentFuture.pdf',     pptxPath: '/Curriculum/New Literacy/Grammar/Past Present Future/Learning/PastPresentFuture.pptx' },
+        { id: 'grammar-irregular', title: 'Irregular Verbs',        icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Irreguluar Verbs/Learning/IrregularVerbs.pdf',           pptxPath: '/Curriculum/New Literacy/Grammar/Irreguluar Verbs/Learning/IrregularVerbs.pptx' },
+        { id: 'grammar-tense-use', title: 'Consistent Tense Use',   icon: '📝', pdfPath: '/Curriculum/New Literacy/Grammar/Consistent Tense Use/Learning/ConsistentTenseUse.pdf',   pptxPath: '/Curriculum/New Literacy/Grammar/Consistent Tense Use/Learning/ConsistentTenseUse.pptx' },
+      ],
+    },
+    {
+      id: 'grammar-reference', name: 'Grammar — Reference & Practice', emoji: '📚',
+      items: [
+        { id: 'grammar-garden',   title: 'Grammar Garden Helpers',     icon: '🌸', pdfPath: '/Unit Resources/Literacy/Grammar_Garden_Helpers.pdf' },
+        { id: 'grammar-kingdoms', title: 'Grammar: The Four Kingdoms', icon: '👑', pdfPath: '/Unit Resources/Literacy/Grammar_The_Four_Kingdoms.pdf' },
+        { id: 'noun-hunt',        title: 'The Noun Hunt',              icon: '🔍', pdfPath: '/Unit Resources/Literacy/The_Noun_Hunt.pdf' },
+      ],
+    },
+    {
+      id: 'punctuation', name: 'Punctuation', emoji: '❕',
+      items: [
+        { id: 'punct-capitals',    title: 'Capital Letters',   icon: '📝', pdfPath: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/Capitals.pdf',          pptxPath: '/Curriculum/New Literacy/Punctuation/Capital Letters/Learning/Capitals.pptx' },
+        { id: 'punct-fullstops',   title: 'Full Stops',        icon: '📝', pdfPath: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullStops.pdf',               pptxPath: '/Curriculum/New Literacy/Punctuation/Full Stops/Learning/FullStops.pptx' },
+        { id: 'punct-questions',   title: 'Question Marks',    icon: '📝', pdfPath: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionMarks.pdf',       pptxPath: '/Curriculum/New Literacy/Punctuation/Question Marks/Learning/QuestionMarks.pptx' },
+        { id: 'punct-exclamation', title: 'Exclamation Marks', icon: '📝', pdfPath: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Learning/ExclamationMarks.pdf', pptxPath: '/Curriculum/New Literacy/Punctuation/Exclamation Marks/Learning/ExclamationMarks.pptx' },
+      ],
+    },
+    {
+      id: 'phonics-spelling', name: 'Phonics & Spelling', emoji: '🔡',
+      items: [
+        { id: 'phonics-superpowers', title: 'Phonics Superpowers Guide', icon: '🔡', pdfPath: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pdf', pptxPath: '/Curriculum/New Literacy/Spelling and Word Study/Phonics Patterns/Learning/Phonics_Superpowers.pptx' },
+        { id: 'blend-friends',       title: 'Blend Friends Adventure',   icon: '🔤', pdfPath: '/Unit Resources/Literacy/Blend_Friends_Adventure.pdf' },
+      ],
+    },
+    {
+      id: 'writing-bundles', name: 'Writing', emoji: '✍️',
+      items: [
+        { id: 'informative-ocean-theme', title: 'Informative Writing — Ocean Theme Learning Wall', icon: '🌊', pdfPath: '/Unit Resources/English/Informative_Ocean_Theme_Learning_Wall.pdf' },
+        { id: 'narrative-forest-wall',   title: 'Narrative Writing — Forest Themed Learning Wall', icon: '🌲', pdfPath: '/Unit Resources/English/Narrative_Forest_Themed_Learning_Wall.pdf' },
+        { id: 'paragraph-writing',       title: 'Paragraph Writing',       icon: '¶',  pdfPath: '/Unit Resources/English/Paragraph_Writing.pdf' },
+        { id: 'sentence-writing',        title: 'Sentence Writing',         icon: '✏️', pdfPath: '/Unit Resources/English/Sentence_Writing.pdf' },
+        { id: 'procedure-writing',       title: 'Procedure Writing',        icon: '📋', pdfPath: '/Unit Resources/English/Procedure_Writing.pdf' },
+        { id: 'creative-writing',        title: 'Creative Writing',         icon: '🖊️', pdfPath: '/Unit Resources/English/Creative_Writing.pdf' },
+        { id: 'wilds-of-writing',        title: 'The Wilds of Writing: A Field Guide',             icon: '✍️', pdfPath: '/Unit Resources/Literacy/The_Wilds_of_Writing_A_Field_Guide.pdf' },
+        { id: 'character-creation',      title: 'Character Creation Crew',  icon: '🧑‍🎨', pdfPath: '/Unit Resources/Literacy/Character_Creation_Crew_Building_Unforgettable_Stories.pdf' },
+        { id: 'paint-worlds',            title: 'Paint Worlds With Words',  icon: '🎨', pdfPath: '/Unit Resources/Literacy/Paint_Worlds_With_Words.pdf' },
+        { id: 'shelter-shore',           title: 'Shelter Shore: Identity Craft',                   icon: '🌊', pdfPath: '/Unit Resources/Literacy/Shelter_Shore_Identity_Craft.pdf' },
+        { id: 'metaphors-similes',       title: 'Comparison Cuties: Metaphors & Similes',          icon: '🌈', pdfPath: '/Unit Resources/Literacy/Comparison_Cuties_Metaphors_and_Similes.pdf' },
+        { id: 'literary-architecture',   title: 'Literary Architecture',    icon: '🏛️', pdfPath: '/Unit Resources/Literacy/Literary_Architecture.pdf' },
+      ],
+    },
+    {
+      id: 'reading-comprehension', name: 'Reading & Comprehension', emoji: '📖',
+      items: [
+        { id: 'reading-strategies',       title: 'Reading Strategies',               icon: '🧠', pdfPath: '/Unit Resources/Literacy/Reading Strategies.pdf' },
+        { id: 'comprehension-info-texts', title: 'Comprehension — Information Texts', icon: '📖', pdfPath: '/Unit Resources/Literacy/Comprehension Information Texts.pdf' },
+        { id: 'leveled-comprehension-1',  title: 'Leveled Comprehension Pack 1',      icon: '📖', pdfPath: '/Unit Resources/Literacy/Leveled Comprehension PACK 1.pdf' },
+        { id: 'leveled-comprehension-2',  title: 'Leveled Comprehension Pack 2',      icon: '📖', pdfPath: '/Unit Resources/Literacy/Leveled Comprehension PACK 2.pdf' },
+        { id: 'info-text-comprehension',  title: 'Information Text Comprehension',    icon: '📝', pdfPath: '/Unit Resources/Literacy/Information Text Comprehension.pdf' },
+        { id: 'character-profile',        title: 'Character Profile Comprehension',   icon: '🧑‍🎨', pdfPath: '/Unit Resources/Literacy/Character Profile Comprehension.pdf' },
+      ],
+    },
+    {
+      id: 'literature-analysis', name: 'Literature & Analysis', emoji: '📚',
+      items: [
+        { id: 'narnia',               title: 'Narnia: Deep Magic and the Wardrobe',      icon: '🦁', pdfPath: '/Unit Resources/Literacy/Narnia_Deep_Magic_and_the_Wardrobe.pdf' },
+        { id: 'nintendo-story',       title: 'The Nintendo Story',                       icon: '🎮', pdfPath: '/Unit Resources/Literacy/The_Nintendo_Story.pdf' },
+        { id: 'teresa-book-analysis', title: 'Teresa: A New Australian — Book Analysis', icon: '📗', pdfPath: '/Unit Resources/Literacy/Teresa_A_New_Australian_Book_Analysis.pdf' },
+        { id: 'world-cup',            title: 'World Cup History: The Global Game',       icon: '⚽', pdfPath: '/Unit Resources/Literacy/World_Cup_History_The_Global_Game.pdf' },
+      ],
+    },
+    {
+      id: 'reference-charts', name: 'Reference & Anchor Charts', emoji: '⚓',
+      items: [
+        { id: 'english-anchor-charts', title: 'Anchor Charts',   icon: '⚓', pdfPath: '/Unit Resources/English/English_Anchor_Charts.pdf' },
+        { id: 'research-skills',       title: 'Research Skills', icon: '🔍', pdfPath: '/Unit Resources/English/Research_Skills.pdf' },
+      ],
+    },
   ],
   mathematics: [
-    { id: 'math-mentals',      title: 'Math Mentals',                icon: '🧠', pdfPath: '/Unit Resources/Maths/Math_Mentals.pdf' },
-    { id: 'maths-anchor-charts', title: 'Anchor Charts',             icon: '⚓', pdfPath: '/Unit Resources/Maths/Maths_Anchor_Charts.pdf' },
-    { id: 'coins-notes',       title: 'Australian Coins and Notes',  icon: '💰', pdfPath: '/Unit Resources/Mathematics/Australian Coins and Notes.pdf' },
-    { id: 'fraction-blocks',   title: 'Fraction Building Blocks',    icon: '½',  pdfPath: '/Unit Resources/Mathematics/Fraction_Building_Blocks.pdf' },
-    { id: 'integer-ocean',     title: 'Integer Ocean Adventure',     icon: '🌊', pdfPath: '/Unit Resources/Mathematics/Integer_Ocean_Adventure.pdf' },
-    { id: 'world-beyond-zero', title: 'The World Beyond Zero',       icon: '0️⃣', pdfPath: '/Unit Resources/Mathematics/The_World_Beyond_Zero.pdf' },
+    {
+      id: 'number-algebra', name: 'Number & Algebra', emoji: '🔢',
+      items: [
+        { id: 'math-mentals',      title: 'Math Mentals',              icon: '🧠', pdfPath: '/Unit Resources/Maths/Math_Mentals.pdf' },
+        { id: 'fraction-blocks',   title: 'Fraction Building Blocks',  icon: '½',  pdfPath: '/Unit Resources/Mathematics/Fraction_Building_Blocks.pdf' },
+        { id: 'integer-ocean',     title: 'Integer Ocean Adventure',   icon: '🌊', pdfPath: '/Unit Resources/Mathematics/Integer_Ocean_Adventure.pdf' },
+        { id: 'world-beyond-zero', title: 'The World Beyond Zero',     icon: '0️⃣', pdfPath: '/Unit Resources/Mathematics/The_World_Beyond_Zero.pdf' },
+      ],
+    },
+    {
+      id: 'measurement-money', name: 'Measurement & Money', emoji: '💰',
+      items: [
+        { id: 'coins-notes', title: 'Australian Coins and Notes', icon: '💰', pdfPath: '/Unit Resources/Mathematics/Australian Coins and Notes.pdf' },
+      ],
+    },
+    {
+      id: 'maths-reference', name: 'Anchor Charts', emoji: '⚓',
+      items: [
+        { id: 'maths-anchor-charts', title: 'Anchor Charts', icon: '⚓', pdfPath: '/Unit Resources/Maths/Maths_Anchor_Charts.pdf' },
+      ],
+    },
   ],
   science: [
-    { id: 'city-stars',          title: 'A City In The Stars',   icon: '🌃', pdfPath: '/Unit Resources/Science/A_City_In_The_Stars.pdf' },
-    { id: 'celestial-clockwork', title: 'Celestial Clockwork',   icon: '⚙️', pdfPath: '/Unit Resources/Science/Celestial_Clockwork.pdf' },
-    { id: 'solar-system-pdf',    title: 'Our Solar System Tour', icon: '🪐', pdfPath: '/Unit Resources/Science/Our_Solar_System_Tour.pdf' },
+    {
+      id: 'forces-motion-group', name: 'Forces & Motion', emoji: '⚡',
+      items: [
+        { id: 'forces-pushes',   title: 'Pushes and Pulls',       icon: '💪', pdfPath: '/Curriculum/New Science/Forces and Motion/Pushes and pulls/Learning/PushesAndPulls.pdf',              pptxPath: '/Curriculum/New Science/Forces and Motion/Pushes and pulls/Learning/PushesAndPulls.pptx' },
+        { id: 'forces-contact',  title: 'Contact vs Non-Contact', icon: '🧲', pdfPath: '/Curriculum/New Science/Forces and Motion/Contact Vs Non Contact/Learning/ContactVsNonContact.pdf',   pptxPath: '/Curriculum/New Science/Forces and Motion/Contact Vs Non Contact/Learning/ContactVsNonContact.pptx' },
+        { id: 'forces-gravity',  title: 'Gravity',                icon: '🌍', pdfPath: '/Curriculum/New Science/Forces and Motion/Gravity/Learning/Gravity.pdf',                              pptxPath: '/Curriculum/New Science/Forces and Motion/Gravity/Learning/Gravity.pptx' },
+        { id: 'forces-friction', title: 'Friction',               icon: '🏃', pdfPath: '/Curriculum/New Science/Forces and Motion/Friction/Learning/Friction.pdf',                            pptxPath: '/Curriculum/New Science/Forces and Motion/Friction/Learning/Friction.pptx' },
+        { id: 'forces-air',      title: 'Air Resistance',         icon: '💨', pdfPath: '/Curriculum/New Science/Forces and Motion/Air Resistance/Learning/AirResistance.pdf',                pptxPath: '/Curriculum/New Science/Forces and Motion/Air Resistance/Learning/AirResistance.pptx' },
+        { id: 'forces-magnetic', title: 'Magnetic Forces',        icon: '🧲', pdfPath: '/Curriculum/New Science/Forces and Motion/Magnetic Forces/Learning/MagneticForces.pdf',              pptxPath: '/Curriculum/New Science/Forces and Motion/Magnetic Forces/Learning/MagneticForces.pptx' },
+        { id: 'forces-machines', title: 'Simple Machines',        icon: '⚙️', pdfPath: '/Curriculum/New Science/Forces and Motion/Simple Machines/Learning/SimpleMachines.pdf',             pptxPath: '/Curriculum/New Science/Forces and Motion/Simple Machines/Learning/SimpleMachines.pptx' },
+      ],
+    },
+    {
+      id: 'space-astronomy', name: 'Space & Astronomy', emoji: '🪐',
+      items: [
+        { id: 'city-stars',          title: 'A City In The Stars',   icon: '🌃', pdfPath: '/Unit Resources/Science/A_City_In_The_Stars.pdf' },
+        { id: 'celestial-clockwork', title: 'Celestial Clockwork',   icon: '⚙️', pdfPath: '/Unit Resources/Science/Celestial_Clockwork.pdf' },
+        { id: 'solar-system-pdf',    title: 'Our Solar System Tour', icon: '🪐', pdfPath: '/Unit Resources/Science/Our_Solar_System_Tour.pdf' },
+      ],
+    },
   ],
   behaviour: [
-    { id: 'zones-of-regulation',             title: 'Zones of Regulation',                      icon: '🌈', pdfPath: '/free-resources/Zones_of_Regulation.pdf' },
-    { id: 'wellbeing',                         title: 'Wellbeing',                                        icon: '💚', pdfPath: '/Unit Resources/Behaviour/Wellbeing.pdf' },
-    { id: 'journal',                           title: 'Journal',                                          icon: '📓', pdfPath: '/Unit Resources/Behaviour/Journal.pdf' },
-    { id: 'conflict-resolution-boys',        title: 'Conflict Resolution (Boys)',                icon: '🤜', pdfPath: '/Unit Resources/Behaviour/Conflict_Resolution_Boys.pdf' },
-    { id: 'conflict-resolution-girls',       title: 'Conflict Resolution (Girls)',               icon: '🤛', pdfPath: '/Unit Resources/Behaviour/Conflict_Resolution_Girls.pdf' },
-    { id: 'mood-modes-upper-primary-female-2', title: 'Mood Modes — Upper Primary (Female) v2', icon: '💜', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Female_2.pdf' },
-    { id: 'mood-modes-upper-primary-mixed',  title: 'Mood Modes — Upper Primary (Mixed)',       icon: '🌟', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Mixed.pdf' },
-    { id: 'mood-modes-lower-primary',        title: 'Mood Modes — Lower Primary',               icon: '🐨', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Lower_Primary.pdf' },
-    { id: 'mood-modes-middle-primary',       title: 'Mood Modes — Middle Primary',              icon: '🦊', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Middle_Primary.pdf' },
-    { id: 'mood-modes-upper-primary-female', title: 'Mood Modes — Upper Primary (Female)',      icon: '🌸', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Female.pdf' },
-    { id: 'mood-modes-upper-primary-male',   title: 'Mood Modes — Upper Primary (Male)',        icon: '🦒', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Male.pdf' },
-    { id: 'breathing-techniques',            title: 'Breathing Techniques',                     icon: '💨', pdfPath: '/Unit Resources/Behaviour/Breathing_Techniques.pdf' },
-    { id: 'coping-toolkit-1',                title: 'Coping Toolkit 1',                         icon: '🧰', pdfPath: '/Unit Resources/Behaviour/Coping_Toolkit_1.pdf' },
-    { id: 'coping-toolkit-2',                title: 'Coping Toolkit 2',                         icon: '🧰', pdfPath: '/Unit Resources/Behaviour/Coping_Toolkit_2.pdf' },
-    { id: 'coping-toolkit-3',                title: 'Coping Toolkit 3',                         icon: '🧰', pdfPath: '/Unit Resources/Behaviour/Coping_Toolkit_3.pdf' },
-    { id: 'emotion-ocean',                   title: 'Emotion Ocean',                            icon: '🌊', pdfPath: '/Unit Resources/Behaviour/Emotion_Ocean.pdf' },
-    { id: 'expected-unexpected',             title: 'Expected vs Unexpected Behaviours',        icon: '⚖️', pdfPath: '/Unit Resources/Behaviour/Expected_vs_Unexpected_Behaviours.pdf' },
-    { id: 'mindfulness',                     title: 'Mindfulness',                              icon: '🧘', pdfPath: '/Unit Resources/Behaviour/Mindfulness.pdf' },
-    { id: 'size-of-problem',                 title: 'Size of the Problem',                      icon: '📏', pdfPath: '/Unit Resources/Behaviour/Size_of_the_Problem.pdf' },
-    { id: 'social-skills',                   title: 'Social Skills',                            icon: '🤝', pdfPath: '/Unit Resources/Behaviour/Social_Skills.pdf' },
-    { id: 'classroom-rules-pdf',             title: 'Classroom Rules',                          icon: '📋', pdfPath: '/Unit Resources/Behaviour/Classroom_Rules.pdf' },
+    {
+      id: 'wellbeing-regulation', name: 'Wellbeing & Regulation', emoji: '🌈',
+      items: [
+        { id: 'zones-of-regulation',  title: 'Zones of Regulation',              icon: '🌈', pdfPath: '/free-resources/Zones_of_Regulation.pdf' },
+        { id: 'wellbeing',            title: 'Wellbeing',                         icon: '💚', pdfPath: '/Unit Resources/Behaviour/Wellbeing.pdf' },
+        { id: 'emotion-ocean',        title: 'Emotion Ocean',                     icon: '🌊', pdfPath: '/Unit Resources/Behaviour/Emotion_Ocean.pdf' },
+        { id: 'mindfulness',          title: 'Mindfulness',                       icon: '🧘', pdfPath: '/Unit Resources/Behaviour/Mindfulness.pdf' },
+        { id: 'breathing-techniques', title: 'Breathing Techniques',              icon: '💨', pdfPath: '/Unit Resources/Behaviour/Breathing_Techniques.pdf' },
+        { id: 'expected-unexpected',  title: 'Expected vs Unexpected Behaviours', icon: '⚖️', pdfPath: '/Unit Resources/Behaviour/Expected_vs_Unexpected_Behaviours.pdf' },
+      ],
+    },
+    {
+      id: 'mood-modes', name: 'Mood Modes', emoji: '🦊',
+      items: [
+        { id: 'mood-modes-lower-primary',         title: 'Mood Modes — Lower Primary',          icon: '🐨', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Lower_Primary.pdf' },
+        { id: 'mood-modes-middle-primary',        title: 'Mood Modes — Middle Primary',         icon: '🦊', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Middle_Primary.pdf' },
+        { id: 'mood-modes-upper-primary-female',  title: 'Mood Modes — Upper Primary (Female)', icon: '🌸', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Female.pdf' },
+        { id: 'mood-modes-upper-primary-female-2',title: 'Mood Modes — Upper Primary (Female) v2', icon: '💜', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Female_2.pdf' },
+        { id: 'mood-modes-upper-primary-male',    title: 'Mood Modes — Upper Primary (Male)',   icon: '🦒', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Male.pdf' },
+        { id: 'mood-modes-upper-primary-mixed',   title: 'Mood Modes — Upper Primary (Mixed)',  icon: '🌟', pdfPath: '/Unit Resources/Behaviour/Mood_Modes_Upper_Primary_Mixed.pdf' },
+      ],
+    },
+    {
+      id: 'coping-social', name: 'Coping & Social Skills', emoji: '🧰',
+      items: [
+        { id: 'coping-toolkit-1',          title: 'Coping Toolkit 1',                    icon: '🧰', pdfPath: '/Unit Resources/Behaviour/Coping_Toolkit_1.pdf' },
+        { id: 'coping-toolkit-2',          title: 'Coping Toolkit 2',                    icon: '🧰', pdfPath: '/Unit Resources/Behaviour/Coping_Toolkit_2.pdf' },
+        { id: 'coping-toolkit-3',          title: 'Coping Toolkit 3',                    icon: '🧰', pdfPath: '/Unit Resources/Behaviour/Coping_Toolkit_3.pdf' },
+        { id: 'social-skills',             title: 'Social Skills',                       icon: '🤝', pdfPath: '/Unit Resources/Behaviour/Social_Skills.pdf' },
+        { id: 'size-of-problem',           title: 'Size of the Problem',                 icon: '📏', pdfPath: '/Unit Resources/Behaviour/Size_of_the_Problem.pdf' },
+        { id: 'conflict-resolution-boys',  title: 'Conflict Resolution (Boys)',          icon: '🤜', pdfPath: '/Unit Resources/Behaviour/Conflict_Resolution_Boys.pdf' },
+        { id: 'conflict-resolution-girls', title: 'Conflict Resolution (Girls)',         icon: '🤛', pdfPath: '/Unit Resources/Behaviour/Conflict_Resolution_Girls.pdf' },
+      ],
+    },
+    {
+      id: 'classroom-tools', name: 'Classroom Tools', emoji: '📋',
+      items: [
+        { id: 'classroom-rules-pdf', title: 'Classroom Rules', icon: '📋', pdfPath: '/Unit Resources/Behaviour/Classroom_Rules.pdf' },
+        { id: 'journal',             title: 'Journal',          icon: '📓', pdfPath: '/Unit Resources/Behaviour/Journal.pdf' },
+      ],
+    },
   ],
   hass: [
-    { id: 'historical-figures',  title: 'Historical Figures',                          icon: '🏛️', pdfPath: '/Unit Resources/HASS/Historical Figures.pptx' },
-    { id: 'alexander',           title: 'Alexander Unbroken',                          icon: '⚔️', pdfPath: '/Unit Resources/HASS/Alexander_Unbroken_The_Life_of_Conquest.pdf' },
-    { id: 'attila',              title: 'Attila: Scourge and Sovereign',               icon: '🗡️', pdfPath: '/Unit Resources/HASS/Attila_Scourge_and_Sovereign.pdf' },
-    { id: 'australia-deep-time', title: 'Australia: Deep Time to Now',                icon: '🦘', pdfPath: '/Unit Resources/HASS/Australia_Deep_Time_to_Now.pdf' },
-    { id: 'bermuda',             title: 'Bermuda Triangle Investigation',              icon: '🔺', pdfPath: '/Unit Resources/HASS/Bermuda_Triangle_Investigation.pdf' },
-    { id: 'caesar',              title: "Caesar's Path to Empire",                    icon: '🦅', pdfPath: '/Unit Resources/HASS/Caesar_s_Path_to_Empire.pdf' },
-    { id: 'cleopatra',           title: 'Cleopatra: Power, Propaganda, Legacy',       icon: '🐍', pdfPath: '/Unit Resources/HASS/Cleopatra_Power_Propaganda_Legacy.pdf' },
-    { id: 'cross-crescent',      title: 'Cross and Crescent: War and Ideas',          icon: '✝️', pdfPath: '/Unit Resources/HASS/Cross_and_Crescent_War_and_Ideas.pdf' },
-    { id: 'einstein',            title: 'Einstein: Mind, Matter, Time',               icon: '🧠', pdfPath: '/Unit Resources/HASS/Einstein_Mind_Matter_Time.pdf' },
-    { id: 'genghis-khan',        title: 'Genghis Khan: Architect of the Modern World',icon: '🏹', pdfPath: '/Unit Resources/HASS/Genghis_Khan_Architect_of_the_Modern_World.pdf' },
-    { id: 'joan-of-arc',         title: 'Joan of Arc: The Maid Who Saved France',    icon: '⚜️', pdfPath: '/Unit Resources/HASS/Joan_of_Arc_The_Maid_Who_Saved_France.pdf' },
-    { id: 'pyramid-engineering', title: 'Pyramid Engineering Solved',                 icon: '🔺', pdfPath: '/Unit Resources/HASS/Pyramid_Engineering_Solved.pdf' },
-    { id: 'black-death',         title: 'The Black Death: A Timeline',                icon: '💀', pdfPath: '/Unit Resources/HASS/The_Black_Death_A_Timeline_of_History.pdf' },
-    { id: 'french-revolution',   title: 'The French Revolution: A World Transformed', icon: '🗽', pdfPath: '/Unit Resources/HASS/The_French_Revolution_A_World_Transformed.pdf' },
-    { id: 'ww2',                 title: 'The Second World War: 1939–1945',            icon: '🎖️', pdfPath: '/Unit Resources/HASS/The_Second_World_War_1939–1945.pdf' },
-    { id: 'confucius',           title: 'The Way of Confucius',                       icon: '☯️', pdfPath: '/Unit Resources/HASS/The_Way_of_Confucius_Endures.pdf' },
-    { id: 'ww1',                 title: 'World War I Timeline: From Spark to Treaty', icon: '🕊️', pdfPath: '/Unit Resources/HASS/World_War_I_Timeline_From_Spark_to_Treaty.pdf' },
+    {
+      id: 'ancient-classical', name: 'Ancient & Classical World', emoji: '🏛️',
+      items: [
+        { id: 'alexander',           title: 'Alexander Unbroken',                          icon: '⚔️', pdfPath: '/Unit Resources/HASS/Alexander_Unbroken_The_Life_of_Conquest.pdf' },
+        { id: 'attila',              title: 'Attila: Scourge and Sovereign',               icon: '🗡️', pdfPath: '/Unit Resources/HASS/Attila_Scourge_and_Sovereign.pdf' },
+        { id: 'caesar',              title: "Caesar's Path to Empire",                     icon: '🦅', pdfPath: '/Unit Resources/HASS/Caesar_s_Path_to_Empire.pdf' },
+        { id: 'cleopatra',           title: 'Cleopatra: Power, Propaganda, Legacy',        icon: '🐍', pdfPath: '/Unit Resources/HASS/Cleopatra_Power_Propaganda_Legacy.pdf' },
+        { id: 'pyramid-engineering', title: 'Pyramid Engineering Solved',                  icon: '🔺', pdfPath: '/Unit Resources/HASS/Pyramid_Engineering_Solved.pdf' },
+        { id: 'confucius',           title: 'The Way of Confucius',                        icon: '☯️', pdfPath: '/Unit Resources/HASS/The_Way_of_Confucius_Endures.pdf' },
+        { id: 'historical-figures',  title: 'Historical Figures',                         icon: '🏛️', pptxPath: '/Unit Resources/HASS/Historical Figures.pptx' },
+      ],
+    },
+    {
+      id: 'medieval-early-modern', name: 'Medieval & Early Modern', emoji: '⚔️',
+      items: [
+        { id: 'joan-of-arc',    title: 'Joan of Arc: The Maid Who Saved France',          icon: '⚜️', pdfPath: '/Unit Resources/HASS/Joan_of_Arc_The_Maid_Who_Saved_France.pdf' },
+        { id: 'genghis-khan',   title: 'Genghis Khan: Architect of the Modern World',     icon: '🏹', pdfPath: '/Unit Resources/HASS/Genghis_Khan_Architect_of_the_Modern_World.pdf' },
+        { id: 'cross-crescent', title: 'Cross and Crescent: War and Ideas',              icon: '✝️', pdfPath: '/Unit Resources/HASS/Cross_and_Crescent_War_and_Ideas.pdf' },
+        { id: 'black-death',    title: 'The Black Death: A Timeline',                    icon: '💀', pdfPath: '/Unit Resources/HASS/The_Black_Death_A_Timeline_of_History.pdf' },
+      ],
+    },
+    {
+      id: 'modern-history', name: 'Modern History', emoji: '🌍',
+      items: [
+        { id: 'french-revolution', title: 'The French Revolution: A World Transformed',  icon: '🗽', pdfPath: '/Unit Resources/HASS/The_French_Revolution_A_World_Transformed.pdf' },
+        { id: 'ww1',               title: 'World War I: From Spark to Treaty',           icon: '🕊️', pdfPath: '/Unit Resources/HASS/World_War_I_Timeline_From_Spark_to_Treaty.pdf' },
+        { id: 'ww2',               title: 'The Second World War: 1939–1945',             icon: '🎖️', pdfPath: '/Unit Resources/HASS/The_Second_World_War_1939–1945.pdf' },
+        { id: 'einstein',          title: 'Einstein: Mind, Matter, Time',                icon: '🧠', pdfPath: '/Unit Resources/HASS/Einstein_Mind_Matter_Time.pdf' },
+        { id: 'bermuda',           title: 'Bermuda Triangle Investigation',              icon: '🔺', pdfPath: '/Unit Resources/HASS/Bermuda_Triangle_Investigation.pdf' },
+      ],
+    },
+    {
+      id: 'australian-history', name: 'Australian History', emoji: '🦘',
+      items: [
+        { id: 'australia-deep-time', title: 'Australia: Deep Time to Now', icon: '🦘', pdfPath: '/Unit Resources/HASS/Australia_Deep_Time_to_Now.pdf' },
+      ],
+    },
   ],
 };
 
@@ -366,11 +540,10 @@ const SUBJECTS = [
     areas: [
       { id: 'reading',    name: 'Reading',          emoji: '📖', description: 'Comprehension, passages & reading for fun',   bg: 'bg-sky-100',     border: 'border-sky-300',     hover: 'hover:bg-sky-200',     text: 'text-sky-900',     type: 'tools', tools: [{ id: 'reading-comprehension', name: 'Reading Comprehension',  emoji: '🧠', description: 'Text analysis and understanding',          component: ReadingComprehension, badge: 'UPDATED' },{ id: 'beginner-readers', name: 'Beginner Readers', emoji: '🔤', description: 'Early reading for beginning readers',      component: BeginnerReaders },{ id: 'partner-reading', name: 'Partner Reading Passages', emoji: '🤝', description: 'Printable passages with partner turns',     component: PartnerReading, badge: 'NEW' },{ id: 'reading-for-fun', name: 'Reading for Fun', emoji: '🎉', description: 'Engaging texts for advanced readers',       component: ReadingForFun, badge: 'NEW' }] },
       { id: 'writing',    name: 'Writing',          emoji: '✍️', description: 'Creative writing, grammar & composition',    bg: 'bg-pink-100',    border: 'border-pink-300',    hover: 'hover:bg-pink-200',    text: 'text-pink-900',    type: 'tools', tools: [{ id: 'visual-writing-prompts', name: 'Visual Writing Prompts', emoji: '🖼️', description: 'Image-based storytelling prompts',           component: VisualWritingPrompts },{ id: 'grammar-workshop', name: 'Grammar Workshop', emoji: '✏️', description: 'Interactive grammar lessons & quizzes',     component: GrammarWorkshop, badge: 'NEW' },{ id: 'poetry-corner', name: 'Poetry Corner', emoji: '🎭', description: 'Poetry forms and creative expression',       component: PoetryCorner, badge: 'NEW' }] },
-      { id: 'spelling',   name: 'Spelling',         emoji: '🔡', description: 'Spelling programs, morphology & vocabulary', bg: 'bg-emerald-100', border: 'border-emerald-300', hover: 'hover:bg-emerald-200', text: 'text-emerald-900', type: 'tools', tools: [{ id: 'spelling-program', name: 'Spelling & Fluency Studio', emoji: '🌀', description: 'Spelling lists with reading passages',      component: SpellingProgram, badge: 'UPDATED' },{ id: 'morphology', name: 'Morphology Master', emoji: '🔤', description: 'Prefixes, suffixes and base words',           component: Morphology, badge: 'NEW' },{ id: 'vocabulary-builder', name: 'Vocabulary Builder', emoji: '📖', description: 'Definitions, synonyms and word lists',     component: VocabularyCorner, badge: 'NEW' }] },
+      { id: 'spelling',   name: 'Spelling',         emoji: '🔡', description: 'Morphology & vocabulary', bg: 'bg-emerald-100', border: 'border-emerald-300', hover: 'hover:bg-emerald-200', text: 'text-emerald-900', type: 'tools', tools: [{ id: 'morphology', name: 'Morphology Master', emoji: '🔤', description: 'Prefixes, suffixes and base words', component: Morphology, badge: 'NEW' },{ id: 'vocabulary-builder', name: 'Vocabulary Builder', emoji: '📖', description: 'Definitions, synonyms and word lists', component: VocabularyCorner, badge: 'NEW' }] },
       { id: 'phonics',    name: 'Phonics',          emoji: '🔤', description: 'Sounds, blending & early literacy',          bg: 'bg-cyan-100',    border: 'border-cyan-300',    hover: 'hover:bg-cyan-200',    text: 'text-cyan-900',    type: 'tools', tools: [{ id: 'literacy-warmup', name: 'Literacy Warmup', emoji: '🔥', description: 'Interactive phonics activities', hasYearLevels: true, yearLevels: [{ id: 'prep', name: 'Prep / Foundation', emoji: '🌱', component: PrepLiteracyWarmup },{ id: 'grade5', name: 'Grade 5', emoji: '🚀', component: LiteracyWarmup }] }] },
-      { id: 'speaking',   name: 'Speaking & Drama', emoji: '🎤', description: 'Readers theatre & oral language',            bg: 'bg-fuchsia-100', border: 'border-fuchsia-300', hover: 'hover:bg-fuchsia-200', text: 'text-fuchsia-900', type: 'tools', tools: [{ id: 'readers-theatre', name: 'Readers Theatre', emoji: '🎭', description: 'Drama scripts with character roles',         component: ReadersTheatre, badge: 'NEW' }] },
+      // Speaking & Drama area removed — Readers Theatre now lives in Classroom Champions → Resources
       { id: 'english-resources',  name: 'Bundles',     emoji: '📁', description: 'Downloadable PDFs & worksheets',          bg: 'bg-rose-100',    border: 'border-rose-300',    hover: 'hover:bg-rose-200',    text: 'text-rose-900',    type: 'resources',   subjectId: 'english' },
-      { id: 'english-curriculum', name: 'Curriculum Domains', emoji: '🎓', description: 'Framework topics & structured content',     bg: 'bg-indigo-100',  border: 'border-indigo-300',  hover: 'hover:bg-indigo-200',  text: 'text-indigo-900',  type: 'curriculum',  curriculumComponent: EnglishNewSection },
       { id: 'english-displays',   name: 'Displays',           emoji: '🖼️', description: 'Classroom posters & wall displays',         bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  type: 'displays-grouped', displayCatId: 'english' },
     ],
   },
@@ -384,7 +557,6 @@ const SUBJECTS = [
       { id: 'measurement', name: 'Measurement & Time',  emoji: '🕒', description: 'Telling time and measuring',                bg: 'bg-orange-100',  border: 'border-orange-300',  hover: 'hover:bg-orange-200',  text: 'text-orange-900',  type: 'tools', tools: [{ id: 'interactive-clock', name: 'Interactive Clock', emoji: '🕒', description: 'Learn to tell time with draggable hands', component: InteractiveClock }] },
       { id: 'worksheets',  name: 'Worksheet Generator', emoji: '📄', description: 'Create printable maths worksheets',          bg: 'bg-yellow-100',  border: 'border-yellow-300',  hover: 'hover:bg-yellow-200',  text: 'text-yellow-900',  type: 'tools', tools: [{ id: 'worksheet-generator', name: 'Worksheet Generator', emoji: '📄', description: 'Generate printable maths worksheets',   component: WorksheetGenerator }] },
       { id: 'maths-resources',  name: 'Bundles',     emoji: '📁', description: 'Downloadable PDFs & worksheets',          bg: 'bg-rose-100',    border: 'border-rose-300',    hover: 'hover:bg-rose-200',    text: 'text-rose-900',    type: 'resources',       subjectId: 'mathematics' },
-      { id: 'maths-curriculum', name: 'Curriculum Domains', emoji: '🎓', description: 'Framework topics & structured content',   bg: 'bg-indigo-100',  border: 'border-indigo-300',  hover: 'hover:bg-indigo-200',  text: 'text-indigo-900',  type: 'curriculum',      curriculumComponent: MathNewSection },
       { id: 'maths-displays',   name: 'Displays',           emoji: '🖼️', description: 'Classroom posters & wall displays',       bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  type: 'displays-grouped', displayCatId: 'maths' },
     ],
   },
@@ -395,7 +567,6 @@ const SUBJECTS = [
       { id: 'space',       name: 'Space & Earth',   emoji: '🪐', description: 'Planets, solar system & earth science',  bg: 'bg-indigo-100', border: 'border-indigo-300', hover: 'hover:bg-indigo-200', text: 'text-indigo-900', type: 'tools', tools: [{ id: 'solar-system', name: 'Solar System Explorer', emoji: '🪐', description: 'Explore planets and space interactively', component: SolarSystemExplorer, badge: 'NEW' }] },
       { id: 'life-science', name: 'Life Science',   emoji: '🦁', description: 'Food chains, ecosystems & living things', bg: 'bg-green-100',  border: 'border-green-300',  hover: 'hover:bg-green-200',  text: 'text-green-900',  type: 'tools', tools: [{ id: 'food-chain', name: 'Food Chain Builder', emoji: '🦁', description: 'Build food chains across 4 ecosystems',    component: FoodChainBuilder, badge: 'NEW' }] },
       { id: 'science-resources',  name: 'Bundles',     emoji: '📁', description: 'Downloadable PDFs & worksheets',         bg: 'bg-rose-100',   border: 'border-rose-300',   hover: 'hover:bg-rose-200',   text: 'text-rose-900',   type: 'resources',        subjectId: 'science' },
-      { id: 'science-curriculum', name: 'Curriculum Domains', emoji: '🎓', description: 'Framework topics & structured content',  bg: 'bg-sky-100',    border: 'border-sky-300',    hover: 'hover:bg-sky-200',    text: 'text-sky-900',    type: 'curriculum',       curriculumComponent: ScienceNewSection },
       { id: 'science-displays',   name: 'Displays',           emoji: '🖼️', description: 'Classroom posters & wall displays',      bg: 'bg-violet-100', border: 'border-violet-300', hover: 'hover:bg-violet-200', text: 'text-violet-900', type: 'displays-grouped', displayCatId: 'science' },
     ],
   },
@@ -412,7 +583,6 @@ const SUBJECTS = [
     bg: 'bg-amber-200', border: 'border-amber-300', hover: 'hover:bg-amber-300', text: 'text-amber-900',
     areas: [
       { id: 'hass-resources',  name: 'Bundles',     emoji: '📁', description: 'Downloadable PDFs & PowerPoints',        bg: 'bg-rose-100',   border: 'border-rose-300',   hover: 'hover:bg-rose-200',   text: 'text-rose-900',   type: 'resources',        subjectId: 'hass' },
-      { id: 'hass-curriculum', name: 'Curriculum Domains', emoji: '🎓', description: 'Framework topics & structured content',  bg: 'bg-indigo-100', border: 'border-indigo-300', hover: 'hover:bg-indigo-200', text: 'text-indigo-900', type: 'curriculum',       curriculumComponent: HassNewSection },
       { id: 'hass-displays',   name: 'Displays',           emoji: '🖼️', description: 'Classroom posters & wall displays',      bg: 'bg-violet-100', border: 'border-violet-300', hover: 'hover:bg-violet-200', text: 'text-violet-900', type: 'displays-grouped', displayCatId: 'hass' },
     ],
   },
@@ -447,12 +617,22 @@ const PastelTile = ({ emoji, name, description, bg, border, hover, text, badge, 
   </button>
 );
 
-// Resource card with download button
+// Resource card — supports single format or PDF+PPT toggle
 const ResourceCard = ({ resource, onPreview }) => {
-  const isPpt = resource.pdfPath.endsWith('.pptx') || resource.pdfPath.endsWith('.ppt');
+  const hasBoth = !!(resource.pdfPath && resource.pptxPath);
+  const defaultFmt = resource.pdfPath ? 'pdf' : 'pptx';
+  const [fmt, setFmt] = React.useState(hasBoth ? 'pdf' : defaultFmt);
+  const activePath = fmt === 'pptx' ? (resource.pptxPath || resource.pdfPath) : (resource.pdfPath || resource.pptxPath);
+  const isPpt = activePath?.toLowerCase().endsWith('.pptx') || activePath?.toLowerCase().endsWith('.ppt');
   return (
     <div className="bg-white rounded-2xl border-2 border-gray-100 hover:border-rose-200 hover:shadow-lg transition-all flex flex-col">
-      <button onClick={() => onPreview(resource)} className="flex items-start gap-3 p-4 text-left flex-1">
+      {hasBoth && (
+        <div className="px-3 pt-3 flex gap-1.5">
+          <button onClick={() => setFmt('pdf')}  className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition-colors ${fmt === 'pdf'  ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>📄 PDF</button>
+          <button onClick={() => setFmt('pptx')} className={`flex-1 text-xs font-bold py-1.5 rounded-lg transition-colors ${fmt === 'pptx' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>📊 PPT</button>
+        </div>
+      )}
+      <button onClick={() => onPreview({ ...resource, pdfPath: activePath })} className="flex items-start gap-3 p-4 text-left flex-1">
         <div className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xl ${isPpt ? 'bg-orange-100' : 'bg-red-50'}`}>{resource.icon || (isPpt ? '📊' : '📄')}</div>
         <div className="flex-1 min-w-0">
           <h3 className="font-black text-gray-800 text-sm leading-tight mb-1">{resource.title}</h3>
@@ -460,12 +640,72 @@ const ResourceCard = ({ resource, onPreview }) => {
         </div>
       </button>
       <div className="px-4 pb-4">
-        <a href={resource.pdfPath} download onClick={e => e.stopPropagation()}
+        <a href={activePath} download onClick={e => e.stopPropagation()}
           className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs py-2 rounded-xl border border-emerald-200 transition-colors">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           Download
         </a>
       </div>
+    </div>
+  );
+};
+
+// Collapsible group of resources
+const BundleGroup = ({ group, onPreview }) => {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden shadow-sm">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{group.emoji}</span>
+          <div className="text-left">
+            <h3 className="font-black text-gray-800 text-base">{group.name}</h3>
+            <p className="text-xs text-gray-400 font-semibold mt-0.5">{group.items.length} resource{group.items.length !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="border-t border-gray-100 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {group.items.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+// Collapsible group of display sections
+const DisplaySectionGroup = ({ group, sections, folder, onSelectSection }) => {
+  const [open, setOpen] = useState(true);
+  const groupSections = sections.filter(s => group.sectionIds.includes(s.id));
+  if (groupSections.length === 0) return null;
+  return (
+    <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden shadow-sm">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{group.emoji}</span>
+          <div className="text-left">
+            <h3 className="font-black text-gray-800 text-base">{group.name}</h3>
+            <p className="text-xs text-gray-400 font-semibold mt-0.5">{groupSections.length} section{groupSections.length !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="border-t border-gray-100 p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {groupSections.map(sec => (
+              <PastelTile key={sec.id} emoji={sec.emoji} name={sec.name}
+                description={`${sec.images.length} display${sec.images.length !== 1 ? 's' : ''}`}
+                bg={sec.bg} border={sec.border} hover={sec.hover} text={sec.text}
+                onClick={() => onSelectSection({ ...sec, folder })} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -498,22 +738,52 @@ const ResourceViewer = ({ resource, onBack }) => {
   );
 };
 
-// Unit resource list
+// Unit resource list — shows grouped sections with search
 const UnitResourcesList = ({ subjectId, onPreview }) => {
-  const resources = resourcesBySubject[subjectId] || [];
+  const groups = resourcesBySubject[subjectId] || [];
   const [filter, setFilter] = useState('');
-  const filtered = resources.filter(r => r.title.toLowerCase().includes(filter.toLowerCase()));
+  const isGrouped = groups.length > 0 && groups[0].items !== undefined;
+  const flatItems = isGrouped ? groups.flatMap(g => g.items) : groups;
+  const filtered = flatItems.filter(r => r.title.toLowerCase().includes(filter.toLowerCase()));
+
+  const searchBox = (
+    <div className="relative">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
+      <input type="text" value={filter} onChange={e => setFilter(e.target.value)} placeholder="Search bundles…" className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm" />
+    </div>
+  );
+
+  // Flat search results
+  if (filter) {
+    return (
+      <div className="space-y-5">
+        {searchBox}
+        {filtered.length === 0
+          ? <div className="bg-gray-50 rounded-2xl p-10 text-center border-2 border-dashed border-gray-200"><p className="text-gray-500 font-bold">No results for "{filter}"</p></div>
+          : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{filtered.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} />)}</div>
+        }
+      </div>
+    );
+  }
+
+  // Grouped view
+  if (isGrouped) {
+    return (
+      <div className="space-y-4">
+        {searchBox}
+        {groups.map(g => <BundleGroup key={g.id} group={g} onPreview={onPreview} />)}
+      </div>
+    );
+  }
+
+  // Fallback flat view
   return (
     <div className="space-y-5">
-      <div className="relative">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
-        <input type="text" value={filter} onChange={e => setFilter(e.target.value)} placeholder="Search resources…" className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm" />
-      </div>
-      {filtered.length === 0 ? (
-        <div className="bg-gray-50 rounded-2xl p-10 text-center border-2 border-dashed border-gray-200"><p className="text-gray-500 font-bold">{filter ? `No results for "${filter}"` : 'No resources yet'}</p></div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{filtered.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} />)}</div>
-      )}
+      {searchBox}
+      {flatItems.length === 0
+        ? <div className="bg-gray-50 rounded-2xl p-10 text-center border-2 border-dashed border-gray-200"><p className="text-gray-500 font-bold">No resources yet</p></div>
+        : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{flatItems.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} />)}</div>
+      }
     </div>
   );
 };
@@ -713,17 +983,25 @@ export default function CurriculumPage() {
 
     // ── Display category section grid ─────────────────────────────────────────
     if (displayCat) {
+      const hasGroups = displayCat.groups && displayCat.groups.length > 0;
+      const onSel = (sec) => setDisplaySection(sec);
       return (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {renderBreadcrumb()}
-          <AreaHeader bg={displayCat.bg} border={displayCat.border} emoji={displayCat.emoji} name={displayCat.name} description={`${displayCat.sections.length} groups`} text={displayCat.text} onBack={() => { setDisplayCat(null); setDisplaySection(null); }} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-            {displayCat.sections.map(sec => (
-              <PastelTile key={sec.id} emoji={sec.emoji} name={sec.name} description={`${sec.images.length} display${sec.images.length !== 1 ? 's' : ''}`}
-                bg={sec.bg} border={sec.border} hover={sec.hover} text={sec.text}
-                onClick={() => setDisplaySection({ ...sec, folder: displayCat.folder })} />
-            ))}
-          </div>
+          <AreaHeader bg={displayCat.bg} border={displayCat.border} emoji={displayCat.emoji} name={displayCat.name} description={hasGroups ? `${displayCat.groups.length} categories` : `${displayCat.sections.length} sections`} text={displayCat.text} onBack={() => { setDisplayCat(null); setDisplaySection(null); }} />
+          {hasGroups ? (
+            displayCat.groups.map(g => (
+              <DisplaySectionGroup key={g.id} group={g} sections={displayCat.sections} folder={displayCat.folder} onSelectSection={onSel} />
+            ))
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+              {displayCat.sections.map(sec => (
+                <PastelTile key={sec.id} emoji={sec.emoji} name={sec.name} description={`${sec.images.length} display${sec.images.length !== 1 ? 's' : ''}`}
+                  bg={sec.bg} border={sec.border} hover={sec.hover} text={sec.text}
+                  onClick={() => setDisplaySection({ ...sec, folder: displayCat.folder })} />
+              ))}
+            </div>
+          )}
         </div>
       );
     }
@@ -767,17 +1045,25 @@ export default function CurriculumPage() {
       if (type === 'displays-grouped') {
         const cat = ALL_DISPLAY_CATEGORIES.find(c => c.id === area.displayCatId);
         if (!cat) return <ComingSoon />;
+        const hasGroups = cat.groups && cat.groups.length > 0;
+        const onSel = (sec) => { setDisplayCat(cat); setDisplaySection(sec); };
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {renderBreadcrumb()}
-            <AreaHeader bg={area.bg} border={area.border} emoji={area.emoji} name={area.name} description={`${cat.sections.length} display groups`} text={area.text} onBack={goSubject} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-              {cat.sections.map(sec => (
-                <PastelTile key={sec.id} emoji={sec.emoji} name={sec.name} description={`${sec.images.length} display${sec.images.length !== 1 ? 's' : ''}`}
-                  bg={sec.bg} border={sec.border} hover={sec.hover} text={sec.text}
-                  onClick={() => { setDisplayCat(cat); setDisplaySection({ ...sec, folder: cat.folder }); }} />
-              ))}
-            </div>
+            <AreaHeader bg={area.bg} border={area.border} emoji={area.emoji} name={area.name} description={hasGroups ? `${cat.groups.length} categories` : `${cat.sections.length} sections`} text={area.text} onBack={goSubject} />
+            {hasGroups ? (
+              cat.groups.map(g => (
+                <DisplaySectionGroup key={g.id} group={g} sections={cat.sections} folder={cat.folder} onSelectSection={onSel} />
+              ))
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                {cat.sections.map(sec => (
+                  <PastelTile key={sec.id} emoji={sec.emoji} name={sec.name} description={`${sec.images.length} display${sec.images.length !== 1 ? 's' : ''}`}
+                    bg={sec.bg} border={sec.border} hover={sec.hover} text={sec.text}
+                    onClick={() => { setDisplayCat(cat); setDisplaySection({ ...sec, folder: cat.folder }); }} />
+                ))}
+              </div>
+            )}
           </div>
         );
       }

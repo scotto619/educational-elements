@@ -648,16 +648,15 @@ const SpellingProgram = ({
         color: group.color || 'bg-blue-500',
         students: group.students || [],
         assignedLists: Array.from(new Set((group.assignedTexts || []).map(textId => textId.split('-')[0]))),
-        assignedActivity: null
       }));
       setGroups(converted);
       setHasUnsavedChanges(false);
     } else if (loadedData !== undefined && groups.length === 0) {
       // Only create defaults if no groups exist in Firebase and local state is empty
       const defaultGroups = [
-        { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedLists: [], assignedActivity: null },
-        { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedLists: [], assignedActivity: null },
-        { id: 3, name: "Group 3", color: "bg-purple-500", students: [], assignedLists: [], assignedActivity: null }
+        { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedLists: [] },
+        { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedLists: [] },
+        { id: 3, name: "Group 3", color: "bg-purple-500", students: [], assignedLists: [] }
       ];
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
@@ -682,7 +681,6 @@ const SpellingProgram = ({
         color: group.color || 'bg-blue-500',
         students: group.students || [],
         assignedLists: Array.from(new Set((group.assignedTexts || []).map(textId => textId.split('-')[0]))),
-        assignedActivity: null
       }));
       setGroups(converted);
       setHasUnsavedChanges(false);
@@ -761,7 +759,6 @@ const SpellingProgram = ({
       color: colors[groups.length % colors.length],
       students: [],
       assignedLists: [],
-      assignedActivity: null
     };
     const updatedGroups = [...groups, newGroup];
     updateGroups(updatedGroups);
@@ -792,13 +789,6 @@ const SpellingProgram = ({
   const assignListsToGroup = (groupId, listIds) => {
     const updatedGroups = groups.map(g => 
       g.id === groupId ? { ...g, assignedLists: listIds } : g
-    );
-    updateGroups(updatedGroups);
-  };
-
-  const assignActivityToGroup = (groupId, activityId) => {
-    const updatedGroups = groups.map(g => 
-      g.id === groupId ? { ...g, assignedActivity: activityId } : g
     );
     updateGroups(updatedGroups);
   };
@@ -1070,67 +1060,11 @@ const SpellingProgram = ({
           {activeGroups.length > 3 ? (
             // Single row layout for 4+ groups
             <div className="grid grid-cols-4 gap-4">
-              {activeGroups.map(group => {
-                const assignedActivity = ACTIVITIES.find(a => a.id === group.assignedActivity);
-                return (
-                  <div key={group.id} className="bg-white rounded-xl shadow-lg p-4">
-                    <div className={`${group.color} text-white text-center py-3 rounded-lg mb-4`}>
-                      <h2 className="text-xl font-bold">{group.name}</h2>
-                      <p className="text-sm opacity-90">{group.students.length} students</p>
-                    </div>
-
-                    {group.assignedLists.map(listId => {
-                      const list = listsWithPassages.find(l => l.id === listId);
-                      if (!list) return null;
-                      const passage = list.passage;
-                      return (
-                        <div key={listId} className="mb-4 space-y-2">
-                          <h3 className="text-lg font-bold text-center text-gray-800">{list.name}</h3>
-                          <p className="text-xs text-center text-blue-600 italic">{list.feature}</p>
-                          <div className="grid grid-cols-2 gap-1">
-                            {list.words.map((word, index) => (
-                              <div key={index} className="bg-gray-100 border border-gray-300 rounded p-1 text-center">
-                                <span className="text-sm font-medium text-gray-800">{word}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {passage && (
-                            <div className="bg-gradient-to-r from-sky-100 to-indigo-100 border border-indigo-200 rounded-lg p-2 text-center">
-                              <p className="text-xs font-semibold text-indigo-700">📖 Connected Reading: {passage.level}</p>
-                              {passage.texts?.[0] && (
-                                <p className="text-[11px] text-indigo-600">
-                                  {passage.texts[0].title} • {passage.texts[0].wordCount} words
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {assignedActivity && (
-                      <div className={`${assignedActivity.color} text-white p-3 rounded-lg mt-4 cursor-pointer hover:opacity-90 transition-opacity`}
-                           onClick={() => setShowActivityInstructions(assignedActivity)}>
-                        <div className="text-center">
-                          <div className="text-2xl mb-2">{assignedActivity.icon}</div>
-                          <h3 className="text-sm font-bold">{assignedActivity.name}</h3>
-                          <p className="text-xs opacity-80">Click for instructions</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            // Original layout for 1-3 groups
-            activeGroups.map(group => {
-              const assignedActivity = ACTIVITIES.find(a => a.id === group.assignedActivity);
-              return (
-                <div key={group.id} className="bg-white rounded-2xl shadow-2xl p-8">
-                  <div className={`${group.color} text-white text-center py-6 rounded-xl mb-6`}>
-                    <h2 className="text-4xl font-bold">{group.name}</h2>
-                    <p className="text-2xl opacity-90">{group.students.length} students</p>
+              {activeGroups.map(group => (
+                <div key={group.id} className="bg-white rounded-xl shadow-lg p-4">
+                  <div className={`${group.color} text-white text-center py-3 rounded-lg mb-4`}>
+                    <h2 className="text-xl font-bold">{group.name}</h2>
+                    <p className="text-sm opacity-90">{group.students.length} students</p>
                   </div>
 
                   {group.assignedLists.map(listId => {
@@ -1138,26 +1072,21 @@ const SpellingProgram = ({
                     if (!list) return null;
                     const passage = list.passage;
                     return (
-                      <div key={listId} className="mb-8 space-y-4">
-                        <div>
-                          <h3 className="text-3xl font-bold text-center text-gray-800">{list.name}</h3>
-                          <p className="text-lg text-center text-blue-600 italic">{list.feature}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+                      <div key={listId} className="mb-4 space-y-2">
+                        <h3 className="text-lg font-bold text-center text-gray-800">{list.name}</h3>
+                        <p className="text-xs text-center text-blue-600 italic">{list.feature}</p>
+                        <div className="grid grid-cols-2 gap-1">
                           {list.words.map((word, index) => (
-                            <div key={index} className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 text-center">
-                              <span className="text-3xl font-bold text-gray-800">{word}</span>
+                            <div key={index} className="bg-gray-100 border border-gray-300 rounded p-1 text-center">
+                              <span className="text-sm font-medium text-gray-800">{word}</span>
                             </div>
                           ))}
                         </div>
                         {passage && (
-                          <div className="bg-gradient-to-r from-sky-200 via-indigo-200 to-purple-200 border border-indigo-300 rounded-xl p-4 text-center">
-                            <p className="text-base font-semibold text-indigo-800 flex items-center justify-center gap-2">
-                              <span>📖</span>
-                              Connected Reading: {passage.level}
-                            </p>
+                          <div className="bg-gradient-to-r from-sky-100 to-indigo-100 border border-indigo-200 rounded-lg p-2 text-center">
+                            <p className="text-xs font-semibold text-indigo-700">📖 Connected Reading: {passage.level}</p>
                             {passage.texts?.[0] && (
-                              <p className="text-sm text-indigo-700">
+                              <p className="text-[11px] text-indigo-600">
                                 {passage.texts[0].title} • {passage.texts[0].wordCount} words
                               </p>
                             )}
@@ -1166,18 +1095,53 @@ const SpellingProgram = ({
                       </div>
                     );
                   })}
-
-                  {assignedActivity && (
-                    <div className={`${assignedActivity.color} text-white p-6 rounded-xl mt-6`}>
-                      <div className="text-center">
-                        <div className="text-6xl mb-4">{assignedActivity.icon}</div>
-                        <h3 className="text-3xl font-bold">{assignedActivity.name}</h3>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              );
-            })
+              ))}
+            </div>
+          ) : (
+            // Original layout for 1-3 groups
+            activeGroups.map(group => (
+              <div key={group.id} className="bg-white rounded-2xl shadow-2xl p-8">
+                <div className={`${group.color} text-white text-center py-6 rounded-xl mb-6`}>
+                  <h2 className="text-4xl font-bold">{group.name}</h2>
+                  <p className="text-2xl opacity-90">{group.students.length} students</p>
+                </div>
+
+                {group.assignedLists.map(listId => {
+                  const list = listsWithPassages.find(l => l.id === listId);
+                  if (!list) return null;
+                  const passage = list.passage;
+                  return (
+                    <div key={listId} className="mb-8 space-y-4">
+                      <div>
+                        <h3 className="text-3xl font-bold text-center text-gray-800">{list.name}</h3>
+                        <p className="text-lg text-center text-blue-600 italic">{list.feature}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        {list.words.map((word, index) => (
+                          <div key={index} className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 text-center">
+                            <span className="text-3xl font-bold text-gray-800">{word}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {passage && (
+                        <div className="bg-gradient-to-r from-sky-200 via-indigo-200 to-purple-200 border border-indigo-300 rounded-xl p-4 text-center">
+                          <p className="text-base font-semibold text-indigo-800 flex items-center justify-center gap-2">
+                            <span>📖</span>
+                            Connected Reading: {passage.level}
+                          </p>
+                          {passage.texts?.[0] && (
+                            <p className="text-sm text-indigo-700">
+                              {passage.texts[0].title} • {passage.texts[0].wordCount} words
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))
           )}
         </div>
       </div>
@@ -1192,7 +1156,7 @@ const SpellingProgram = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">🌀 Spelling & Fluency Studio</h1>
-            <p className="text-white/70 text-sm mt-0.5">{SPELLING_LISTS.length} lists · {READING_PASSAGES.length} passages · 4 levels · {ACTIVITIES.length} activities</p>
+            <p className="text-white/70 text-sm mt-0.5">{SPELLING_LISTS.length} lists · {READING_PASSAGES.length} passages · 4 levels</p>
             {loadedData?.spellingGroups?.length > 0 && !hasUnsavedChanges && (
               <p className="text-green-300 text-xs mt-1">✅ Groups saved</p>
             )}
@@ -1379,29 +1343,6 @@ const SpellingProgram = ({
                       </select>
                     </div>
 
-                    {/* Activity */}
-                    <div>
-                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Activity</div>
-                      {group.assignedActivity ? (
-                        <div
-                          className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl p-2 cursor-pointer hover:bg-green-100"
-                          onClick={() => setShowActivityInstructions(ACTIVITIES.find(a => a.id === group.assignedActivity))}
-                        >
-                          <span className="text-lg">{ACTIVITIES.find(a => a.id === group.assignedActivity)?.icon}</span>
-                          <span className="text-xs font-medium text-green-800 flex-1 leading-tight">{ACTIVITIES.find(a => a.id === group.assignedActivity)?.name}</span>
-                          <button onClick={e => { e.stopPropagation(); assignActivityToGroup(group.id, null); }} className="text-red-400 hover:text-red-600 text-xs">×</button>
-                        </div>
-                      ) : (
-                        <select
-                          onChange={e => e.target.value && assignActivityToGroup(group.id, e.target.value)}
-                          className="w-full border border-gray-200 rounded-xl text-xs p-1.5 bg-white focus:ring-1 focus:ring-indigo-300"
-                          defaultValue=""
-                        >
-                          <option value="">Assign activity…</option>
-                          {ACTIVITIES.map(a => <option key={a.id} value={a.id}>{a.icon} {a.name}</option>)}
-                        </select>
-                      )}
-                    </div>
                   </div>
                 </div>
               ))}
@@ -1470,7 +1411,7 @@ const SpellingProgram = ({
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <div className="mb-4">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">💡 Suggested Activities</h2>
-          <p className="text-sm text-gray-500 mt-1">Click any card to preview instructions, then assign it to a group from the group's Activity dropdown above.</p>
+          <p className="text-sm text-gray-500 mt-1">Click any card to preview instructions for students.</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {ACTIVITIES.map(activity => (
