@@ -756,6 +756,7 @@ const SCORE_COLS=[
   {bg:'#BFDBFE',border:'#93C5FD',text:'#1E3A5F',btn:'#3B82F6'},
   {bg:'#DDD6FE',border:'#C4B5FD',text:'#4C1D95',btn:'#8B5CF6'},
 ];
+const CONFETTI_COLS=['#FDE68A','#BBF7D0','#BFDBFE','#DDD6FE','#F9A8D4','#FCA5A5','#A5F3FC','#D9F99D'];
 function ScoreboardTool(){
   const [teams,setTeams]=useState(()=>{
     try{const s=localStorage.getItem('toolkit_scoreboard');if(s)return JSON.parse(s);}catch(e){}
@@ -763,10 +764,24 @@ function ScoreboardTool(){
   });
   useEffect(()=>{try{localStorage.setItem('toolkit_scoreboard',JSON.stringify(teams));}catch(e){};},[teams]);
   const [flash,setFlash]=useState({});
+  const [lastScored,setLastScored]=useState(null);
+  const [confettiPieces,setConfettiPieces]=useState([]);
+  const playDing=()=>{try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[[880,0],[1109,0.1],[1318,0.2]].forEach(([freq,t])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type='sine';o.frequency.value=freq;const st=ctx.currentTime+t;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(0.22,st+0.015);g.gain.exponentialRampToValueAtTime(0.001,st+0.55);o.start(st);o.stop(st+0.6);});}catch(e){}};
+  const spawnConfetti=(teamId)=>{
+    const pieces=Array.from({length:16},(_,i)=>({key:`${Date.now()}_${i}`,teamId,x:5+Math.random()*90,delay:Math.random()*0.3,col:CONFETTI_COLS[i%CONFETTI_COLS.length],shape:i%3===0?'circle':'square',size:5+Math.random()*5,dx:(Math.random()-0.5)*40}));
+    setConfettiPieces(p=>[...p,...pieces]);
+    setTimeout(()=>setConfettiPieces(p=>p.filter(pc=>!pieces.find(pp=>pp.key===pc.key))),1300);
+  };
   const addScore=(id,delta)=>{
     setTeams(t=>t.map(tm=>tm.id===id?{...tm,score:Math.max(0,tm.score+delta)}:tm));
     setFlash(f=>({...f,[id]:(delta>0?'+':'')+delta}));
     setTimeout(()=>setFlash(f=>{const n={...f};delete n[id];return n;}),700);
+    if(delta>0){
+      playDing();
+      spawnConfetti(id);
+      setLastScored(id);
+      setTimeout(()=>setLastScored(null),900);
+    }
   };
   const addTeam=()=>{
     if(teams.length>=4)return;
@@ -781,9 +796,15 @@ function ScoreboardTool(){
       {teams.map((team,i)=>{
         const col=SCORE_COLS[i%SCORE_COLS.length];
         const leading=team.score>0&&team.score===maxScore;
+        const justScored=lastScored===team.id;
+        const myConfetti=confettiPieces.filter(p=>p.teamId===team.id);
         return(
-          <div key={team.id} style={{background:col.bg,border:`2.5px solid ${col.border}`,borderRadius:16,padding:'11px 13px',position:'relative'}}>
-            {leading&&<div style={{position:'absolute',top:-9,right:10,background:'#FCD34D',borderRadius:20,padding:'2px 8px',fontSize:10,fontWeight:800,color:'#78350F',boxShadow:'0 2px 6px #0002'}}>👑 Leading</div>}
+          <div key={team.id} style={{background:col.bg,border:`2.5px solid ${justScored?col.btn:col.border}`,borderRadius:16,padding:'11px 13px',position:'relative',overflow:'hidden',transition:'border-color 0.15s, box-shadow 0.15s',boxShadow:justScored?`0 0 0 3px ${col.btn}66`:'none'}}>
+            {/* Confetti burst */}
+            {myConfetti.map(pc=>(
+              <div key={pc.key} style={{position:'absolute',left:`${pc.x}%`,top:'30%',width:pc.size,height:pc.size,background:pc.col,borderRadius:pc.shape==='circle'?'50%':'2px',animation:`confettiFall 1s ${pc.delay}s ease-out forwards`,pointerEvents:'none',zIndex:20}}/>
+            ))}
+            {leading&&<div style={{position:'absolute',top:8,right:10,fontSize:18,lineHeight:1,zIndex:5,pointerEvents:'none'}}>👑</div>}
             <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
               <div style={{flex:1}}>
                 {team.editing
@@ -792,7 +813,7 @@ function ScoreboardTool(){
                 }
               </div>
               <div style={{position:'relative',textAlign:'center',minWidth:58}}>
-                <div style={{fontSize:38,fontWeight:900,color:col.text,fontVariantNumeric:'tabular-nums',lineHeight:1}}>{team.score}</div>
+                <div style={{fontSize:38,fontWeight:900,color:col.text,fontVariantNumeric:'tabular-nums',lineHeight:1,animation:justScored?'scoreBounce 0.35s ease-out':'none'}}>{team.score}</div>
                 {flash[team.id]&&<div style={{position:'absolute',top:-14,right:0,fontSize:15,fontWeight:900,color:col.btn,animation:'winPop 0.4s ease-out',pointerEvents:'none'}}>{flash[team.id]}</div>}
               </div>
               {teams.length>1&&<button onClick={()=>setTeams(t=>t.filter(tm=>tm.id!==team.id))} style={{background:'none',border:'none',color:'#D1D5DB',cursor:'pointer',fontSize:16,padding:0,flexShrink:0,lineHeight:1}}>×</button>}
@@ -1555,6 +1576,8 @@ export default function TeacherToolsPage(){
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
         @keyframes diceWobble{0%{transform:rotate(0deg) scale(1)}25%{transform:rotate(-8deg) scale(1.06)}50%{transform:rotate(8deg) scale(0.96)}75%{transform:rotate(-4deg) scale(1.03)}100%{transform:rotate(0deg) scale(1)}}
+        @keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg) scale(1)}100%{opacity:0;transform:translateY(70px) rotate(540deg) scale(0.4)}}
+        @keyframes scoreBounce{0%{transform:scale(1)}30%{transform:scale(1.35)}60%{transform:scale(0.92)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
         ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:4px}
