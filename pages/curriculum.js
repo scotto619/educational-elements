@@ -411,6 +411,7 @@ const resourcesBySubject = {
       items: [
         { id: 'english-anchor-charts', title: 'Anchor Charts',   icon: '⚓', pdfPath: '/Unit Resources/English/English_Anchor_Charts.pdf' },
         { id: 'research-skills',       title: 'Research Skills', icon: '🔍', pdfPath: '/Unit Resources/English/Research_Skills.pdf' },
+        { id: 'alphabet',              title: 'Alphabet',        icon: '🔤', pdfPath: '/Unit Resources/English/Alphabet.pdf' },
       ],
     },
   ],
