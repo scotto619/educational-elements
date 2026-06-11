@@ -24,11 +24,13 @@ const resourcesBySubject = {
   behaviour: [
     { id: 'zones-of-regulation', title: 'Zones of Regulation', description: 'A framework for self-regulation — understanding and managing emotions in the classroom', pdfPath: '/free-resources/Zones_of_Regulation.pdf', icon: '🌈' },
     { id: 'journal', title: 'Journal', description: 'Boys and girls journal prompt posters to encourage student reflection and self-expression', pdfPath: '/Unit Resources/Behaviour/Journal.pdf', icon: '📓' },
+    { id: 'journal-2', title: 'Mood Journal', description: 'A printable mood journal template plus two worked examples to model reflective writing about feelings', pdfPath: '/Unit Resources/Behaviour/Journal_2.pdf', icon: '📔' },
   ],
   english: [
     { id: 'informative-ocean-theme', title: 'Informative Writing — Ocean Theme Learning Wall', description: 'A full ocean-themed learning wall set for informative writing — 24 display posters covering planning, research, writing and editing', pdfPath: '/Unit Resources/English/Informative_Ocean_Theme_Learning_Wall.pdf', icon: '🌊' },
     { id: 'sentence-writing', title: 'Sentence Writing', description: 'Overview, template, sentence starters and sentence upgrade posters to help students write stronger, more varied sentences', pdfPath: '/Unit Resources/English/Sentence_Writing.pdf', icon: '✏️' },
     { id: 'english-anchor-charts', title: 'Anchor Charts', description: '48 classroom anchor charts covering key English concepts — grammar, writing, comprehension, figurative language and more', pdfPath: '/Unit Resources/English/English_Anchor_Charts.pdf', icon: '⚓' },
+    { id: 'english-anchor-charts-2', title: 'Anchor Charts 2', description: '20 more classroom anchor charts covering grammar, sentence types, punctuation and writing skills', pdfPath: '/Unit Resources/English/English_Anchor_Charts_2.pdf', icon: '⚓' },
     { id: 'research-skills', title: 'Research Skills', description: '18-poster set (6 topics × 3 variants) covering key research skills to support student inquiry and project work', pdfPath: '/Unit Resources/English/Research_Skills.pdf', icon: '🔍' },
     { id: 'alphabet', title: 'Alphabet', description: '27-page alphabet display set with a cover poster and individual posters for every letter A–Z', pdfPath: '/Unit Resources/English/Alphabet.pdf', icon: '🔤' },
     { id: 'creative-writing', title: 'Creative Writing', description: '34-page creative writing resource set covering ideas, structure, language features and prompts to inspire student writers', pdfPath: '/Unit Resources/English/Creative_Writing.pdf', icon: '🖊️' },
