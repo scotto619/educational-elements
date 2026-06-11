@@ -1,5 +1,5 @@
-// pages/index.js - Landing Page v3 (GSAP-powered, evolved pastel brand)
-import { useState, useEffect, useRef } from 'react';
+// pages/index.js - Redesigned Landing Page (Pastel Theme)
+import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -38,6 +38,7 @@ const GALLERY_ROW_3 = [
   { src: '/Displays/English/Worksheets/Writing/NarrativeWritingWorksheet.png', alt: 'Narrative Worksheet' },
 ];
 
+// ── Avatar showcase for Classroom Champions ──
 const CHAMPION_AVATARS = [
   { src: '/avatars/Knight F/Level 2.png', name: 'Knight' },
   { src: '/avatars/Wizard M/Level 3.png', name: 'Wizard' },
@@ -50,52 +51,48 @@ const CHAMPION_AVATARS = [
 ];
 
 const STATS = [
-  { end: 10000, suffix: '+', label: 'Happy Teachers', format: (v) => Math.round(v).toLocaleString() },
-  { end: 500, suffix: '+', label: 'Curriculum Resources', format: (v) => Math.round(v) },
-  { end: 50, suffix: '+', label: 'Interactive Tools', format: (v) => Math.round(v) },
-  { end: 4.9, suffix: '★', label: 'Average Rating', format: (v) => v.toFixed(1) },
+  { value: '10,000+', label: 'Happy Teachers' },
+  { value: '500+', label: 'Curriculum Resources' },
+  { value: '50+', label: 'Interactive Tools' },
+  { value: '4.9★', label: 'Average Rating' },
 ];
 
 const TESTIMONIALS = [
   {
     quote: "My students actually ask to come inside at lunch now. The quests and pet races have completely transformed how they engage with learning.",
-    name: 'Sarah M.', role: 'Year 5 Teacher, Melbourne', initials: 'SM',
-    bg: '#F3E8FF', border: '#E9D5FF', avatarBg: '#C4B5E8',
+    name: "Sarah M.",
+    role: "Year 5 Teacher, Melbourne",
+    initials: "SM",
+    bg: '#F3E8FF',
+    border: '#E9D5FF',
+    avatarBg: '#C4B5E8',
   },
   {
     quote: "I've tried so many behaviour management apps. This is the only one where the kids genuinely care about their progress. XP and avatars are genius.",
-    name: 'James T.', role: 'Primary School Teacher, Brisbane', initials: 'JT',
-    bg: '#EFF6FF', border: '#BFDBFE', avatarBg: '#93C5FD',
+    name: "James T.",
+    role: "Primary School Teacher, Brisbane",
+    initials: "JT",
+    bg: '#EFF6FF',
+    border: '#BFDBFE',
+    avatarBg: '#93C5FD',
   },
   {
     quote: "The free resources alone saved me hours of prep every week. The full platform is an absolute no-brainer for the price.",
-    name: 'Priya K.', role: 'Year 3 Teacher, Sydney', initials: 'PK',
-    bg: '#FFF0F5', border: '#FBCFE8', avatarBg: '#F9A8D4',
+    name: "Priya K.",
+    role: "Year 3 Teacher, Sydney",
+    initials: "PK",
+    bg: '#FFF0F5',
+    border: '#FBCFE8',
+    avatarBg: '#F9A8D4',
   },
 ];
 
-const FREE_RESOURCES = [
-  { title: 'Integer Ocean', subtitle: 'Math Adventure', desc: 'A deep dive into integers! Solve math mysteries in the ocean depths.',
-    gradient: 'linear-gradient(135deg, #3B82F6, #06B6D4)', icon: '🌊', file: '/free-resources/Integer_Ocean_Adventure.pdf', bg: '#EFF6FF', border: '#BFDBFE' },
-  { title: 'Paint With Words', subtitle: 'Creative Writing', desc: 'Unlock creativity with descriptive writing prompts and imaginary worlds.',
-    gradient: 'linear-gradient(135deg, #8B5CF6, #EC4899)', icon: '🎨', file: '/free-resources/Paint_Worlds_With_Words.pdf', bg: '#FDF4FF', border: '#E9D5FF' },
-  { title: 'Game History', subtitle: 'Reading Comprehension', desc: 'Level up reading skills with passages about the history of video games.',
-    gradient: 'linear-gradient(135deg, #10B981, #3B82F6)', icon: '🎮', file: '/free-resources/Video_Game_Comprehension.pdf', bg: '#F0FDF4', border: '#A7F3D0' },
-  { title: 'Zones of Regulation', subtitle: 'Social-Emotional Learning', desc: 'Help students identify and manage their emotions using the four colour zones framework.',
-    gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)', icon: '🧠', file: '/free-resources/Zones_of_Regulation.pdf', bg: '#FFFBEB', border: '#FDE68A' },
-  { title: 'Wellbeing', subtitle: 'Health & Wellbeing', desc: 'Breathing, stretches, movements, affirmations, sleep tips and journalling prompts to support student wellbeing.',
-    gradient: 'linear-gradient(135deg, #10B981, #34D399)', icon: '💚', file: '/free-resources/Wellbeing.pdf', bg: '#ECFDF5', border: '#A7F3D0' },
-  { title: 'Paragraph Writing', subtitle: 'Writing Skills', desc: 'A clear overview, worked example, writing template and checklist to help students master paragraph structure.',
-    gradient: 'linear-gradient(135deg, #84CC16, #22C55E)', icon: '¶', file: '/free-resources/Paragraph_Writing.pdf', bg: '#F7FEE7', border: '#D9F99D' },
-];
-
-// ── Reusable marquee row (CSS-driven for perf; GSAP adds scroll-velocity skew) ──
+// ── Reusable marquee row ──
 function MarqueeRow({ images, reverse = false, cardW = 220, cardH = 290 }) {
   const doubled = [...images, ...images];
   return (
     <div className="overflow-hidden w-full">
       <div
-        className="marquee-track"
         style={{
           display: 'flex',
           width: 'max-content',
@@ -105,7 +102,6 @@ function MarqueeRow({ images, reverse = false, cardW = 220, cardH = 290 }) {
         {doubled.map((img, i) => (
           <div
             key={i}
-            className="marquee-card"
             style={{
               flexShrink: 0,
               width: cardW,
@@ -122,7 +118,6 @@ function MarqueeRow({ images, reverse = false, cardW = 220, cardH = 290 }) {
             <img
               src={img.src}
               alt={img.alt}
-              loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
             />
           </div>
@@ -132,264 +127,13 @@ function MarqueeRow({ images, reverse = false, cardW = 220, cardH = 290 }) {
   );
 }
 
-// ── Split a string into animatable word spans ──
-function Words({ text, className = '' }) {
-  return text.split(' ').map((w, i) => (
-    <span key={i} className="hero-word-mask" style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'top' }}>
-      <span className={`hero-word inline-block ${className}`}>{w}&nbsp;</span>
-    </span>
-  ));
-}
-
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const rootRef = useRef(null);
-  const canvasRef = useRef(null);
 
   const scrollToSection = (sectionId) => {
     document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
     setIsMobileMenuOpen(false);
   };
-
-  // ══════════════ Aurora particle canvas (hero) ══════════════
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const ctx = canvas.getContext('2d');
-    let raf, w, h, dpr;
-    const mouse = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 };
-    const isMobile = window.innerWidth < 768;
-
-    const PALETTE = ['#C4B5FD', '#F9A8D4', '#93C5FD', '#FCD34D', '#A7F3D0'];
-    const ORB_COLORS = ['rgba(196,181,253,', 'rgba(249,168,212,', 'rgba(147,197,253,'];
-
-    const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = canvas.offsetWidth; h = canvas.offsetHeight;
-      canvas.width = w * dpr; canvas.height = h * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-
-    // Large soft aurora orbs
-    const orbs = Array.from({ length: isMobile ? 3 : 5 }, (_, i) => ({
-      x: Math.random(), y: Math.random(),
-      r: (isMobile ? 130 : 230) + Math.random() * 120,
-      c: ORB_COLORS[i % ORB_COLORS.length],
-      sp: 0.0002 + Math.random() * 0.0004,
-      ph: Math.random() * Math.PI * 2,
-    }));
-    // Small floating sparkles
-    const sparks = Array.from({ length: isMobile ? 18 : 42 }, () => ({
-      x: Math.random(), y: Math.random(),
-      r: 1 + Math.random() * 2.4,
-      c: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-      vx: (Math.random() - 0.5) * 0.0004,
-      vy: -0.0002 - Math.random() * 0.0005,
-      tw: Math.random() * Math.PI * 2,
-      twSp: 0.01 + Math.random() * 0.03,
-    }));
-
-    const onMove = (e) => {
-      mouse.tx = e.clientX / window.innerWidth;
-      mouse.ty = e.clientY / window.innerHeight;
-    };
-
-    let t = 0;
-    const draw = () => {
-      t += 1;
-      mouse.x += (mouse.tx - mouse.x) * 0.04;
-      mouse.y += (mouse.ty - mouse.y) * 0.04;
-      ctx.clearRect(0, 0, w, h);
-
-      orbs.forEach((o, i) => {
-        const ox = (o.x + Math.sin(t * o.sp * 10 + o.ph) * 0.08 + (mouse.x - 0.5) * 0.05 * (i % 2 ? 1 : -1)) * w;
-        const oy = (o.y + Math.cos(t * o.sp * 8 + o.ph) * 0.07 + (mouse.y - 0.5) * 0.04) * h;
-        const g = ctx.createRadialGradient(ox, oy, 0, ox, oy, o.r);
-        g.addColorStop(0, o.c + '0.35)');
-        g.addColorStop(1, o.c + '0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(ox, oy, o.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      sparks.forEach((s) => {
-        s.x += s.vx; s.y += s.vy; s.tw += s.twSp;
-        if (s.y < -0.02) { s.y = 1.02; s.x = Math.random(); }
-        if (s.x < -0.02) s.x = 1.02;
-        if (s.x > 1.02) s.x = -0.02;
-        const a = 0.35 + Math.sin(s.tw) * 0.3;
-        ctx.globalAlpha = Math.max(a, 0.05);
-        ctx.fillStyle = s.c;
-        ctx.beginPath();
-        ctx.arc(s.x * w, s.y * h, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.globalAlpha = 1;
-      raf = requestAnimationFrame(draw);
-    };
-
-    if (reduced) {
-      // Static single frame for reduced-motion users
-      draw(); cancelAnimationFrame(raf);
-    } else {
-      raf = requestAnimationFrame(draw);
-      window.addEventListener('pointermove', onMove, { passive: true });
-    }
-    window.addEventListener('resize', resize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
-  // ══════════════ GSAP scroll experience ══════════════
-  useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
-
-    let ctx;
-    let cleanupFns = [];
-    let alive = true;
-
-    (async () => {
-      const gsapModule = await import('gsap');
-      const stModule = await import('gsap/dist/ScrollTrigger');
-      if (!alive) return;
-      const gsap = gsapModule.gsap || gsapModule.default;
-      const ScrollTrigger = stModule.ScrollTrigger || stModule.default;
-      gsap.registerPlugin(ScrollTrigger);
-
-      ctx = gsap.context(() => {
-        // ── Hero entrance timeline ──
-        const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-        tl.from('.hero-badge', { y: 24, autoAlpha: 0, duration: 0.7 })
-          .from('.hero-banner', { scale: 0.85, autoAlpha: 0, duration: 0.9, ease: 'back.out(1.4)' }, '-=0.35')
-          .from('.hero-word', { yPercent: 110, duration: 0.85, stagger: 0.05 }, '-=0.5')
-          .from('.hero-sub', { y: 28, autoAlpha: 0, duration: 0.7 }, '-=0.4')
-          .from('.hero-cta', { y: 24, autoAlpha: 0, duration: 0.6, stagger: 0.1 }, '-=0.4')
-          .from('.hero-trust', { autoAlpha: 0, duration: 0.6 }, '-=0.2')
-          .from('.stat-card', { y: 32, autoAlpha: 0, duration: 0.7, stagger: 0.08 }, '-=0.4');
-
-        // ── Animated stat counters ──
-        document.querySelectorAll('.stat-value').forEach((el) => {
-          const end = parseFloat(el.dataset.end);
-          const suffix = el.dataset.suffix || '';
-          const isDecimal = el.dataset.decimal === '1';
-          const obj = { v: 0 };
-          gsap.to(obj, {
-            v: end,
-            duration: 1.8,
-            ease: 'power2.out',
-            delay: 0.6,
-            onUpdate: () => {
-              el.textContent = (isDecimal ? obj.v.toFixed(1) : Math.round(obj.v).toLocaleString()) + suffix;
-            },
-          });
-        });
-
-        // ── Hero parallax out on scroll ──
-        gsap.to('.hero-inner', {
-          yPercent: -12, autoAlpha: 0.25, ease: 'none',
-          scrollTrigger: { trigger: '.hero-section', start: 'top top', end: 'bottom top', scrub: true },
-        });
-
-        // ── Generic reveals: anything with data-reveal ──
-        gsap.utils.toArray('[data-reveal]').forEach((el) => {
-          gsap.from(el, {
-            y: 48, autoAlpha: 0, duration: 0.9, ease: 'power3.out',
-            scrollTrigger: { trigger: el, start: 'top 88%' },
-          });
-        });
-
-        // ── Staggered card groups: data-stagger-group > data-stagger-item ──
-        gsap.utils.toArray('[data-stagger-group]').forEach((group) => {
-          const items = group.querySelectorAll('[data-stagger-item]');
-          gsap.from(items, {
-            y: 56, autoAlpha: 0, duration: 0.8, ease: 'power3.out', stagger: 0.12,
-            scrollTrigger: { trigger: group, start: 'top 85%' },
-          });
-        });
-
-        // ── Champions avatars pop-in ──
-        gsap.from('.champ-avatar', {
-          scale: 0.4, autoAlpha: 0, duration: 0.6, ease: 'back.out(1.8)', stagger: { each: 0.06, from: 'random' },
-          scrollTrigger: { trigger: '.champ-grid', start: 'top 82%' },
-        });
-
-        // ── Marquee skew responds to scroll velocity ──
-        const tracks = gsap.utils.toArray('.marquee-track');
-        const proxySkew = { v: 0 };
-        ScrollTrigger.create({
-          trigger: '.marquee-zone', start: 'top bottom', end: 'bottom top',
-          onUpdate: (self) => {
-            const target = gsap.utils.clamp(-4, 4, self.getVelocity() / -350);
-            gsap.to(proxySkew, {
-              v: target, duration: 0.4, overwrite: true,
-              onUpdate: () => tracks.forEach((tr) => gsap.set(tr, { skewY: proxySkew.v * 0.4, rotate: proxySkew.v * 0.1 })),
-            });
-            gsap.to(proxySkew, { v: 0, duration: 0.8, delay: 0.1 });
-          },
-        });
-
-        // ── Floating decorative blobs (continuous) ──
-        gsap.utils.toArray('.gsap-blob').forEach((blob, i) => {
-          gsap.to(blob, {
-            x: i % 2 ? -30 : 30, y: i % 2 ? 24 : -24, scale: 1.06,
-            duration: 7 + i * 2, ease: 'sine.inOut', yoyo: true, repeat: -1,
-          });
-        });
-
-        // ── Section background parallax glows ──
-        gsap.utils.toArray('.parallax-slow').forEach((el) => {
-          gsap.to(el, {
-            yPercent: -22, ease: 'none',
-            scrollTrigger: { trigger: el.closest('section'), start: 'top bottom', end: 'bottom top', scrub: 1 },
-          });
-        });
-
-        // ── Pricing card dramatic entrance ──
-        gsap.from('.pricing-card', {
-          scale: 0.9, y: 60, autoAlpha: 0, duration: 1, ease: 'power3.out',
-          scrollTrigger: { trigger: '.pricing-card', start: 'top 85%' },
-        });
-
-        // ── Nav: shadow + compact after scroll ──
-        ScrollTrigger.create({
-          start: 'top -60',
-          onToggle: (self) => {
-            const nav = document.querySelector('.main-nav');
-            if (nav) nav.classList.toggle('nav-scrolled', self.isActive);
-          },
-        });
-      }, rootRef);
-
-      // ── Magnetic buttons (fine pointers only) ──
-      if (window.matchMedia('(pointer: fine)').matches) {
-        document.querySelectorAll('.magnetic').forEach((btn) => {
-          const onMove = (e) => {
-            const r = btn.getBoundingClientRect();
-            const x = e.clientX - (r.left + r.width / 2);
-            const y = e.clientY - (r.top + r.height / 2);
-            gsap.to(btn, { x: x * 0.18, y: y * 0.22, duration: 0.4, ease: 'power2.out' });
-          };
-          const onLeave = () => gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.45)' });
-          btn.addEventListener('mousemove', onMove);
-          btn.addEventListener('mouseleave', onLeave);
-          cleanupFns.push(() => { btn.removeEventListener('mousemove', onMove); btn.removeEventListener('mouseleave', onLeave); });
-        });
-      }
-    })();
-
-    return () => {
-      alive = false;
-      cleanupFns.forEach((fn) => fn());
-      if (ctx) ctx.revert();
-    };
-  }, []);
 
   return (
     <>
@@ -410,55 +154,32 @@ export default function Home() {
             0%   { transform: translateX(-50%); }
             100% { transform: translateX(0); }
           }
-          .marquee-pause:hover .marquee-track {
+          .marquee-pause:hover > div {
             animation-play-state: paused !important;
           }
-          @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50%      { background-position: 100% 50%; }
+          @keyframes blobFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33%       { transform: translate(20px, -20px) scale(1.05); }
+            66%       { transform: translate(-15px, 10px) scale(0.97); }
           }
-          .animated-gradient-text {
-            background: linear-gradient(120deg, #8B5CF6, #EC4899, #3B82F6, #8B5CF6);
-            background-size: 280% 280%;
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: gradientShift 7s ease infinite;
+          .blob { animation: blobFloat 12s ease-in-out infinite; }
+          .blob-delay { animation-delay: -5s; }
+          @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
-          @keyframes shimmerSweep {
-            0%   { transform: translateX(-150%) skewX(-20deg); }
-            100% { transform: translateX(280%) skewX(-20deg); }
-          }
-          .btn-shimmer { position: relative; overflow: hidden; }
-          .btn-shimmer::after {
-            content: '';
-            position: absolute; top: 0; left: 0; height: 100%; width: 40%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-            animation: shimmerSweep 3.2s ease-in-out infinite;
-            pointer-events: none;
-          }
-          .main-nav { transition: box-shadow .35s ease, background-color .35s ease; }
-          .nav-scrolled {
-            box-shadow: 0 8px 32px rgba(139,92,246,0.12) !important;
-            background-color: rgba(255,255,255,0.92) !important;
-          }
-          .tilt-card { transition: transform .45s cubic-bezier(.2,.8,.25,1), box-shadow .45s ease; will-change: transform; }
-          .tilt-card:hover { transform: translateY(-10px) rotate(-0.5deg) scale(1.015); box-shadow: 0 28px 60px rgba(139,92,246,0.18) !important; }
-          .avatar-card { transition: transform .35s cubic-bezier(.2,.8,.25,1), border-color .35s ease, background-color .35s ease; }
-          .avatar-card:hover { transform: translateY(-6px) scale(1.06) rotate(1.5deg); border-color: rgba(252,211,77,0.7) !important; background-color: rgba(255,255,255,0.14) !important; }
+          .fade-up { animation: fadeUp 0.7s ease both; }
+          .fade-up-2 { animation: fadeUp 0.7s 0.15s ease both; }
+          .fade-up-3 { animation: fadeUp 0.7s 0.3s ease both; }
           html { scroll-behavior: smooth; }
-          @media (prefers-reduced-motion: reduce) {
-            .marquee-track, .btn-shimmer::after, .animated-gradient-text { animation: none !important; }
-            html { scroll-behavior: auto; }
-          }
         `}</style>
       </Head>
 
-      <div ref={rootRef} style={{ backgroundColor: '#FDFCF8', fontFamily: 'Inter, sans-serif' }} className="overflow-x-hidden">
+      <div style={{ backgroundColor: '#FDFCF8', fontFamily: 'Inter, sans-serif' }} className="overflow-x-hidden">
 
         {/* ══════════════════════ NAVIGATION ══════════════════════ */}
         <nav style={{ backgroundColor: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', borderBottom: '1px solid #F3E8FF' }}
-          className="main-nav fixed w-full top-0 z-50 shadow-sm">
+          className="fixed w-full top-0 z-50 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-3">
 
@@ -491,14 +212,13 @@ export default function Home() {
                 </Link>
                 <Link href="/signup"
                   style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)' }}
-                  className="magnetic btn-shimmer text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all shadow-md hover:shadow-lg">
+                  className="text-white px-5 py-2.5 rounded-full text-sm font-bold transition-all shadow-md hover:shadow-lg hover:opacity-90">
                   Start for $1
                 </Link>
               </div>
 
               {/* Mobile toggle */}
               <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label="Toggle menu"
                 className="lg:hidden p-2 text-gray-600 rounded-lg hover:bg-purple-50">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isMobileMenuOpen
@@ -540,23 +260,26 @@ export default function Home() {
         </nav>
 
         {/* ══════════════════════ HERO ══════════════════════ */}
-        <section className="hero-section relative pt-28 pb-16 lg:pt-36 lg:pb-20 overflow-hidden"
+        <section className="relative pt-28 pb-20 lg:pt-36 lg:pb-28 overflow-hidden"
           style={{ background: 'linear-gradient(155deg, #FDF4FF 0%, #EEF2FF 45%, #FFF0F9 100%)' }}>
 
-          {/* Aurora particle canvas */}
-          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true" />
+          {/* Background blobs */}
+          <div className="blob absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full pointer-events-none opacity-50"
+            style={{ background: 'radial-gradient(circle at 40% 40%, #E9D5FF, #BFDBFE 60%, transparent)' }} />
+          <div className="blob blob-delay absolute -bottom-32 -left-32 w-[500px] h-[500px] rounded-full pointer-events-none opacity-40"
+            style={{ background: 'radial-gradient(circle at 60% 60%, #FCE7F3, #DDD6FE 60%, transparent)' }} />
 
-          <div className="hero-inner relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
 
             {/* Live badge */}
-            <div className="hero-badge inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm border shadow-sm mb-8"
+            <div className="fade-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm border shadow-sm mb-8"
               style={{ borderColor: '#E9D5FF' }}>
               <span className="flex h-2 w-2 rounded-full bg-green-400 animate-pulse" />
               <span className="text-sm font-bold" style={{ color: '#7C3AED' }}>Join thousands of happy teachers 🚀</span>
             </div>
 
             {/* Main title banner */}
-            <div className="hero-banner relative w-full mx-auto h-32 sm:h-48 md:h-56 lg:h-64 mb-6">
+            <div className="fade-up-2 relative w-full mx-auto h-36 sm:h-56 md:h-64 lg:h-72 mb-6">
               <Image
                 src="/Displays/Banners/Educational Elements.png"
                 alt="Educational Elements"
@@ -566,49 +289,49 @@ export default function Home() {
               />
             </div>
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-6 tracking-tight leading-[1.08]">
-              <Words text="Where Teaching Meets" />
-              <br />
-              <Words text="Magic & Adventure" className="animated-gradient-text" />
+            <h1 className="fade-up-2 text-4xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-6 tracking-tight leading-[1.1]">
+              Where Teaching Meets<br />
+              <span style={{ background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #3B82F6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Magic &amp; Adventure
+              </span>
             </h1>
 
-            <p className="hero-sub text-xl md:text-2xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+            <p className="fade-up-3 text-xl md:text-2xl text-gray-500 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
               The all-in-one platform for classroom gamification, curriculum resources, and teacher productivity.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="fade-up-3 flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link href="/signup"
                 style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', boxShadow: '0 8px 32px rgba(139,92,246,0.35)' }}
-                className="hero-cta magnetic btn-shimmer w-full sm:w-auto px-9 py-4 text-white rounded-2xl font-bold text-lg transition-shadow hover:shadow-2xl flex items-center justify-center gap-2">
+                className="w-full sm:w-auto px-9 py-4 text-white rounded-2xl font-bold text-lg transition-all hover:opacity-90 hover:scale-105 flex items-center justify-center gap-2">
                 Start for $1
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </Link>
               <button onClick={() => scrollToSection('resources')}
-                className="hero-cta magnetic w-full sm:w-auto px-9 py-4 bg-white text-gray-800 border border-gray-200 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center gap-2">
+                className="w-full sm:w-auto px-9 py-4 bg-white text-gray-800 border border-gray-200 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all shadow-sm flex items-center justify-center gap-2">
                 🎁 Browse Free Resources
               </button>
             </div>
 
-            <p className="hero-trust mt-5 text-sm text-gray-400 font-medium">
+            <p className="mt-5 text-sm text-gray-400 font-medium">
               First month just $1 · Cancel anytime · No credit card needed for free resources
             </p>
+          </div>
+        </section>
 
-            {/* Animated stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-14 max-w-3xl mx-auto">
+        {/* ══════════════════════ STATS BAR ══════════════════════ */}
+        <section className="py-10 bg-white border-b" style={{ borderColor: '#F3E8FF' }}>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               {STATS.map((stat) => (
-                <div key={stat.label}
-                  className="stat-card rounded-2xl px-4 py-5 bg-white/70 backdrop-blur-md border shadow-sm"
-                  style={{ borderColor: '#F3E8FF' }}>
-                  <div className="stat-value text-2xl md:text-3xl font-extrabold"
-                    data-end={stat.end}
-                    data-suffix={stat.suffix}
-                    data-decimal={stat.end % 1 !== 0 ? '1' : '0'}
+                <div key={stat.label}>
+                  <div className="text-3xl md:text-4xl font-extrabold"
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    {stat.format(stat.end)}{stat.suffix}
+                    {stat.value}
                   </div>
-                  <div className="text-xs md:text-sm font-semibold text-gray-400 mt-1">{stat.label}</div>
+                  <div className="text-sm font-semibold text-gray-400 mt-1">{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -616,8 +339,8 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════ RESOURCE GALLERY (MARQUEE) ══════════════════════ */}
-        <section className="marquee-zone py-20 overflow-hidden" style={{ background: 'linear-gradient(180deg, #FAF5FF 0%, #EEF2FF 50%, #FFF0F9 100%)' }}>
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-14" data-reveal>
+        <section className="py-20 overflow-hidden" style={{ background: 'linear-gradient(180deg, #FAF5FF 0%, #EEF2FF 50%, #FFF0F9 100%)' }}>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-14">
             <span className="text-xs font-bold tracking-widest uppercase mb-3 block" style={{ color: '#8B5CF6' }}>
               Hundreds of beautiful resources
             </span>
@@ -636,7 +359,7 @@ export default function Home() {
             <MarqueeRow images={GALLERY_ROW_3} reverse={false} cardW={210} cardH={280} />
           </div>
 
-          <div className="text-center mt-12" data-reveal>
+          <div className="text-center mt-12">
             <Link href="/signup"
               className="inline-flex items-center gap-2 font-bold text-base transition-all group"
               style={{ color: '#8B5CF6' }}>
@@ -651,13 +374,13 @@ export default function Home() {
         {/* ══════════════════════ THREE PILLARS ══════════════════════ */}
         <section id="features" className="py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16" data-reveal>
+            <div className="text-center mb-16">
               <span className="text-xs font-bold tracking-widest uppercase mb-3 block" style={{ color: '#8B5CF6' }}>Everything in one place</span>
               <h2 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">The Complete Ecosystem</h2>
               <p className="text-lg text-gray-500 max-w-xl mx-auto">Everything you need to run a modern, engaging, stress-free classroom.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" data-stagger-group>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {[
                 {
                   banner: '/Displays/Banners/ClassroomChampions.png',
@@ -665,7 +388,11 @@ export default function Home() {
                   title: 'Gamification',
                   desc: 'Transform behaviour management into an RPG adventure your students will love.',
                   features: ['Students earn XP & level up', 'Unlock & customise avatars', 'Magical pets & collectibles', 'Live class leaderboards'],
-                  cardBg: '#FDF4FF', bannerBg: '#F3E8FF', border: '#E9D5FF', checkBg: '#F5F0FF', checkColor: '#8B5CF6',
+                  cardBg: '#FDF4FF',
+                  bannerBg: '#F3E8FF',
+                  border: '#E9D5FF',
+                  checkBg: '#F5F0FF',
+                  checkColor: '#8B5CF6',
                 },
                 {
                   banner: '/Displays/Banners/TeacherToolkit.png',
@@ -673,7 +400,11 @@ export default function Home() {
                   title: 'Teacher Tools',
                   desc: 'Essential classroom tools at your fingertips — built by teachers, for teachers.',
                   features: ['Random group maker', 'Noise meter & class timer', 'Seating chart builder', 'Student analytics dashboard'],
-                  cardBg: '#EFF6FF', bannerBg: '#DBEAFE', border: '#BFDBFE', checkBg: '#EFF6FF', checkColor: '#3B82F6',
+                  cardBg: '#EFF6FF',
+                  bannerBg: '#DBEAFE',
+                  border: '#BFDBFE',
+                  checkBg: '#EFF6FF',
+                  checkColor: '#3B82F6',
                 },
                 {
                   banner: '/Displays/Banners/CurriculumCorner.png',
@@ -681,12 +412,16 @@ export default function Home() {
                   title: 'Curriculum Resources',
                   desc: 'A constantly growing library of high-quality, classroom-ready materials.',
                   features: ['Printable worksheets & displays', 'Lesson starters & games', 'Aligned to curriculum', 'New resources added weekly'],
-                  cardBg: '#F0FDF4', bannerBg: '#D1FAE5', border: '#A7F3D0', checkBg: '#ECFDF5', checkColor: '#10B981',
+                  cardBg: '#F0FDF4',
+                  bannerBg: '#D1FAE5',
+                  border: '#A7F3D0',
+                  checkBg: '#ECFDF5',
+                  checkColor: '#10B981',
                 },
               ].map((p, i) => (
-                <div key={i} data-stagger-item
+                <div key={i}
                   style={{ backgroundColor: p.cardBg, border: `1.5px solid ${p.border}`, boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}
-                  className="tilt-card group rounded-3xl p-8">
+                  className="group rounded-3xl p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl">
                   <div className="relative h-36 rounded-2xl overflow-hidden mb-6 flex items-center justify-center"
                     style={{ backgroundColor: p.bannerBg }}>
                     <Image src={p.banner} alt={p.title} fill className="object-contain p-3 group-hover:scale-105 transition-transform duration-300" />
@@ -711,20 +446,20 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ══════════════════════ CLASSROOM CHAMPIONS (merged showcase) ══════════════════════ */}
+        {/* ══════════════════════ CLASSROOM CHAMPIONS ══════════════════════ */}
         <section id="champions" className="py-24 overflow-hidden relative"
           style={{ background: 'linear-gradient(155deg, #1E1B4B 0%, #312E81 45%, #4C1D95 100%)' }}>
 
           {/* Decorative glow */}
-          <div className="parallax-slow absolute top-0 left-1/4 w-96 h-96 rounded-full pointer-events-none opacity-25 blur-3xl"
+          <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full pointer-events-none opacity-20 blur-3xl"
             style={{ background: 'radial-gradient(circle, #A78BFA, transparent)' }} />
-          <div className="parallax-slow absolute bottom-0 right-1/4 w-96 h-96 rounded-full pointer-events-none opacity-25 blur-3xl"
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full pointer-events-none opacity-20 blur-3xl"
             style={{ background: 'radial-gradient(circle, #EC4899, transparent)' }} />
 
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {/* Section header */}
-            <div className="text-center mb-16" data-reveal>
+            <div className="text-center mb-16">
               <div className="relative inline-block h-16 w-72 mb-4">
                 <Image src="/Displays/Banners/ClassroomChampions.png" alt="Classroom Champions" fill className="object-contain" />
               </div>
@@ -737,16 +472,15 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center mb-16">
 
               {/* Feature list */}
-              <div className="space-y-6" data-stagger-group>
+              <div className="space-y-7">
                 {[
                   { icon: '⚔️', title: 'Hero Classes & Avatars', text: 'Students choose from dozens of unique RPG heroes — Knights, Wizards, Druids, Bards and more — each with beautiful levelled-up artwork.' },
                   { icon: '⭐', title: 'XP & Levelling System', text: 'Award XP for great work, positive behaviour, and class participation. Watch students race to reach the next level.' },
-                  { icon: '🛍️', title: 'Classroom Shop & Coins', text: 'Students earn coins for great behaviour and spend them on rewards, consumables, and accessories in the class shop.' },
-                  { icon: '👾', title: 'Epic Quests', text: 'Turn assignments into Quests that students are excited to complete and hand in early.' },
-                  { icon: '🏁', title: 'Pet Races & Companions', text: 'Students collect magical pets and cheer them on in thrilling whole-class pet races — the perfect brain break.' },
+                  { icon: '🐾', title: 'Pets & Companions', text: 'Students earn and collect magical pets that appear on their champion card, adding a personal touch to their journey.' },
                   { icon: '🏆', title: 'Live Class Leaderboard', text: 'Real-time rankings keep the whole class excited and motivated — even students who usually disengage get hooked.' },
+                  { icon: '🛍️', title: 'Classroom Shop & Coins', text: 'Students earn coins for great behaviour and spend them on rewards, consumables, and accessories in the class shop.' },
                 ].map(item => (
-                  <div key={item.title} data-stagger-item className="flex items-start gap-4">
+                  <div key={item.title} className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
                       style={{ backgroundColor: 'rgba(196,181,253,0.15)', border: '1px solid rgba(196,181,253,0.2)' }}>
                       {item.icon}
@@ -761,14 +495,14 @@ export default function Home() {
 
               {/* Avatar showcase grid */}
               <div>
-                <p className="text-center text-xs font-bold tracking-widest uppercase mb-5" style={{ color: '#C4B5E8' }} data-reveal>
+                <p className="text-center text-xs font-bold tracking-widest uppercase mb-5" style={{ color: '#C4B5E8' }}>
                   Choose from 100+ unique hero avatars
                 </p>
-                <div className="champ-grid grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   {CHAMPION_AVATARS.map((av, i) => (
                     <div key={i}
                       style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1.5px solid rgba(196,181,253,0.2)', borderRadius: 16 }}
-                      className="champ-avatar avatar-card p-3 flex flex-col items-center gap-2 cursor-default">
+                      className="p-3 flex flex-col items-center gap-2 hover:scale-105 transition-transform duration-200 cursor-default">
                       <div className="relative w-full aspect-square">
                         <Image src={av.src} alt={av.name} fill className="object-contain" />
                       </div>
@@ -778,12 +512,11 @@ export default function Home() {
                 </div>
 
                 {/* Sub-banners */}
-                <div className="grid grid-cols-2 gap-3 mt-4" data-stagger-group>
-                  {['/Displays/Banners/Shop.png', '/Displays/Banners/Quests.png', '/Displays/Banners/PetRace.png', '/Displays/Banners/Games.png'].map((src, i) => (
-                    <div key={i} data-stagger-item
-                      style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(196,181,253,0.15)', borderRadius: 12, overflow: 'hidden' }}
-                      className="hover:scale-105 transition-transform duration-300">
-                      <Image src={src} alt="" width={300} height={150} className="w-full h-auto" />
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  {['/Displays/Banners/Shop.png', '/Displays/Banners/Quests.png', '/Displays/Banners/PetRace.png'].map((src, i) => (
+                    <div key={i}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(196,181,253,0.15)', borderRadius: 12, overflow: 'hidden' }}>
+                      <Image src={src} alt="" width={200} height={100} className="w-full h-auto" />
                     </div>
                   ))}
                 </div>
@@ -791,10 +524,10 @@ export default function Home() {
             </div>
 
             {/* CTA */}
-            <div className="text-center" data-reveal>
+            <div className="text-center">
               <Link href="/signup"
                 style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', boxShadow: '0 8px 32px rgba(139,92,246,0.4)' }}
-                className="magnetic btn-shimmer inline-block text-white px-10 py-4 rounded-2xl font-bold text-lg transition-shadow hover:shadow-2xl">
+                className="inline-block text-white px-10 py-4 rounded-2xl font-bold text-lg transition-all hover:opacity-90 hover:scale-105">
                 Set Up Your Class for Free →
               </Link>
               <p className="mt-3 text-sm" style={{ color: 'rgba(196,181,253,0.6)' }}>First month just $1 · No lock-in</p>
@@ -802,19 +535,85 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ══════════════════════ ENGAGEMENT FEATURES ══════════════════════ */}
+        <section className="py-24 overflow-hidden relative"
+          style={{ background: 'linear-gradient(155deg, #0F172A 0%, #1E293B 100%)' }}>
+
+          <div className="absolute top-10 left-10 w-80 h-80 rounded-full opacity-15 blur-3xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle, #8B5CF6, transparent)' }} />
+          <div className="absolute bottom-10 right-10 w-80 h-80 rounded-full opacity-15 blur-3xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle, #EC4899, transparent)' }} />
+
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row items-center gap-16">
+
+              <div className="lg:w-1/2">
+                <span className="text-xs font-bold tracking-widest uppercase block mb-4" style={{ color: '#A78BFA' }}>
+                  Student engagement
+                </span>
+                <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-8 leading-tight tracking-tight">
+                  Make Learning<br />
+                  <span style={{ background: 'linear-gradient(135deg, #FCD34D, #F59E0B)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Irresistibly Fun
+                  </span>
+                </h2>
+                <div className="space-y-6">
+                  {[
+                    { icon: '🛍️', bg: 'rgba(139,92,246,0.2)', title: 'Classroom Shop', text: 'Students earn coins for great behaviour and spend them on fun, engaging items and rewards.' },
+                    { icon: '👾', bg: 'rgba(59,130,246,0.2)',  title: 'Epic Quests',    text: 'Turn assignments into Quests that students are excited to complete and hand in early.' },
+                    { icon: '🏁', bg: 'rgba(16,185,129,0.2)', title: 'Pet Races',       text: 'Run thrilling whole-class pet races as brain breaks — students cheer for their champions.' },
+                    { icon: '🎲', bg: 'rgba(236,72,153,0.2)',  title: 'Interactive Games', text: 'Dozens of curriculum-linked games to run in minutes with zero preparation needed.' },
+                  ].map(item => (
+                    <div key={item.title} className="flex items-start gap-4">
+                      <div style={{ backgroundColor: item.bg }} className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xl">
+                        {item.icon}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white mb-0.5">{item.title}</h4>
+                        <p className="text-sm text-gray-400 leading-relaxed">{item.text}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="lg:w-1/2 grid grid-cols-2 gap-4">
+                <div className="space-y-4 pt-8">
+                  {['/Displays/Banners/Shop.png', '/Displays/Banners/Quests.png'].map((src, i) => (
+                    <div key={i}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', padding: 8 }}
+                      className="hover:scale-105 transition-transform duration-300">
+                      <Image src={src} alt="" width={400} height={200} className="w-full h-auto rounded-xl object-contain" />
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-4">
+                  {['/Displays/Banners/PetRace.png', '/Displays/Banners/Games.png'].map((src, i) => (
+                    <div key={i}
+                      style={{ backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.08)', padding: 8 }}
+                      className="hover:scale-105 transition-transform duration-300">
+                      <Image src={src} alt="" width={400} height={200} className="w-full h-auto rounded-xl object-contain" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ══════════════════════ TESTIMONIALS ══════════════════════ */}
         <section className="py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16" data-reveal>
+            <div className="text-center mb-16">
               <span className="text-xs font-bold tracking-widest uppercase mb-3 block" style={{ color: '#8B5CF6' }}>Teacher stories</span>
               <h2 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">Loved by Teachers</h2>
               <p className="text-lg text-gray-500">Real feedback from real classrooms across Australia.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-stagger-group>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {TESTIMONIALS.map((t) => (
-                <div key={t.name} data-stagger-item
+                <div key={t.name}
                   style={{ backgroundColor: t.bg, border: `1.5px solid ${t.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}
-                  className="tilt-card rounded-3xl p-8 flex flex-col">
+                  className="rounded-3xl p-8 flex flex-col hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
                   <div className="flex gap-0.5 mb-5">
                     {[...Array(5)].map((_, i) => (
                       <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
@@ -840,16 +639,10 @@ export default function Home() {
         </section>
 
         {/* ══════════════════════ FREE RESOURCES ══════════════════════ */}
-        <section id="resources" className="py-24 relative overflow-hidden"
+        <section id="resources" className="py-24"
           style={{ background: 'linear-gradient(180deg, #FAF5FF 0%, #EEF2FF 100%)' }}>
-
-          <div className="gsap-blob absolute -top-24 -right-24 w-96 h-96 rounded-full pointer-events-none opacity-40"
-            style={{ background: 'radial-gradient(circle at 40% 40%, #E9D5FF, #BFDBFE 60%, transparent)' }} />
-          <div className="gsap-blob absolute -bottom-24 -left-24 w-96 h-96 rounded-full pointer-events-none opacity-30"
-            style={{ background: 'radial-gradient(circle at 60% 60%, #FCE7F3, #DDD6FE 60%, transparent)' }} />
-
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16" data-reveal>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
               <span className="text-xs font-bold tracking-widest uppercase mb-3 block" style={{ color: '#3B82F6' }}>No login needed</span>
               <h2 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">Free Resource Library</h2>
               <p className="text-lg text-gray-500 max-w-xl mx-auto">
@@ -857,13 +650,74 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-stagger-group>
-              {FREE_RESOURCES.map((resource, i) => (
-                <div key={i} data-stagger-item
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  title: 'Integer Ocean',
+                  subtitle: 'Math Adventure',
+                  desc: 'A deep dive into integers! Solve math mysteries in the ocean depths.',
+                  gradient: 'linear-gradient(135deg, #3B82F6, #06B6D4)',
+                  icon: '🌊',
+                  file: '/free-resources/Integer_Ocean_Adventure.pdf',
+                  bg: '#EFF6FF',
+                  border: '#BFDBFE',
+                },
+                {
+                  title: 'Paint With Words',
+                  subtitle: 'Creative Writing',
+                  desc: 'Unlock creativity with descriptive writing prompts and imaginary worlds.',
+                  gradient: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                  icon: '🎨',
+                  file: '/free-resources/Paint_Worlds_With_Words.pdf',
+                  bg: '#FDF4FF',
+                  border: '#E9D5FF',
+                },
+                {
+                  title: 'Game History',
+                  subtitle: 'Reading Comprehension',
+                  desc: 'Level up reading skills with passages about the history of video games.',
+                  gradient: 'linear-gradient(135deg, #10B981, #3B82F6)',
+                  icon: '🎮',
+                  file: '/free-resources/Video_Game_Comprehension.pdf',
+                  bg: '#F0FDF4',
+                  border: '#A7F3D0',
+                },
+                {
+                  title: 'Zones of Regulation',
+                  subtitle: 'Social-Emotional Learning',
+                  desc: 'Help students identify and manage their emotions using the four colour zones framework.',
+                  gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                  icon: '🧠',
+                  file: '/free-resources/Zones_of_Regulation.pdf',
+                  bg: '#FFFBEB',
+                  border: '#FDE68A',
+                },
+                {
+                  title: 'Wellbeing',
+                  subtitle: 'Health & Wellbeing',
+                  desc: 'Breathing, stretches, movements, affirmations, sleep tips and journalling prompts to support student wellbeing.',
+                  gradient: 'linear-gradient(135deg, #10B981, #34D399)',
+                  icon: '💚',
+                  file: '/free-resources/Wellbeing.pdf',
+                  bg: '#ECFDF5',
+                  border: '#A7F3D0',
+                },
+                {
+                  title: 'Paragraph Writing',
+                  subtitle: 'Writing Skills',
+                  desc: 'A clear overview, worked example, writing template and checklist to help students master paragraph structure.',
+                  gradient: 'linear-gradient(135deg, #84CC16, #22C55E)',
+                  icon: '¶',
+                  file: '/free-resources/Paragraph_Writing.pdf',
+                  bg: '#F7FEE7',
+                  border: '#D9F99D',
+                },
+              ].map((resource, i) => (
+                <div key={i}
                   style={{ backgroundColor: resource.bg, border: `1.5px solid ${resource.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}
-                  className="tilt-card group rounded-3xl overflow-hidden flex flex-col">
+                  className="group rounded-3xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col">
                   <div className="h-32 flex items-center justify-center" style={{ background: resource.gradient }}>
-                    <span className="text-6xl group-hover:scale-110 transition-transform duration-300">{resource.icon}</span>
+                    <span className="text-6xl">{resource.icon}</span>
                   </div>
                   <div className="p-6 flex-1 flex flex-col">
                     <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-white mb-3 self-start"
@@ -887,7 +741,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-12 text-center" data-reveal>
+            <div className="mt-12 text-center">
               <Link href="/signup"
                 className="inline-flex items-center gap-2 text-base font-bold transition-all group"
                 style={{ color: '#8B5CF6' }}>
@@ -904,21 +758,19 @@ export default function Home() {
         <section id="pricing" className="py-24 relative overflow-hidden"
           style={{ background: 'linear-gradient(155deg, #1E1B4B 0%, #312E81 50%, #4C1D95 100%)' }}>
 
-          <div className="parallax-slow absolute inset-0 pointer-events-none opacity-30"
+          <div className="absolute inset-0 pointer-events-none opacity-30"
             style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 50%, rgba(167,139,250,0.3), transparent)' }} />
 
           <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
-            <div data-reveal>
-              <span className="text-xs font-bold tracking-widest uppercase mb-4 block" style={{ color: '#C4B5E8' }}>Simple pricing</span>
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
-                Ready to Transform Your Classroom?
-              </h2>
-              <p className="text-lg mb-10 max-w-xl mx-auto" style={{ color: '#A5B4FC' }}>
-                Start for just $1 for your first month, then $5.99/month. Full access, no hidden fees, cancel anytime.
-              </p>
-            </div>
+            <span className="text-xs font-bold tracking-widest uppercase mb-4 block" style={{ color: '#C4B5E8' }}>Simple pricing</span>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
+              Ready to Transform Your Classroom?
+            </h2>
+            <p className="text-lg mb-10 max-w-xl mx-auto" style={{ color: '#A5B4FC' }}>
+              Start for just $1 for your first month, then $5.99/month. Full access, no hidden fees, cancel anytime.
+            </p>
 
-            <div className="pricing-card max-w-2xl mx-auto rounded-3xl p-px shadow-2xl"
+            <div className="max-w-2xl mx-auto rounded-3xl p-px shadow-2xl"
               style={{ background: 'linear-gradient(135deg, #A78BFA, #EC4899, #60A5FA)' }}>
               <div className="rounded-[22px] p-8 md:p-10"
                 style={{ background: 'linear-gradient(135deg, rgba(109,40,217,0.95), rgba(157,23,77,0.95))' }}>
@@ -947,7 +799,7 @@ export default function Home() {
                   </div>
                   <div className="flex-shrink-0 text-center">
                     <Link href="/signup"
-                      className="magnetic btn-shimmer inline-block bg-white text-gray-900 px-8 py-4 rounded-2xl font-extrabold text-lg hover:bg-gray-50 transition-colors shadow-xl whitespace-nowrap">
+                      className="inline-block bg-white text-gray-900 px-8 py-4 rounded-2xl font-extrabold text-lg hover:bg-gray-50 transition-all shadow-xl hover:scale-105 whitespace-nowrap">
                       Start for $1 →
                     </Link>
                     <p className="text-xs mt-2" style={{ color: 'rgba(255,255,255,0.45)' }}>Cancel anytime. No lock-in.</p>
