@@ -105,7 +105,8 @@ const StudentPortal = () => {
   const [classData, setClassData] = useState(null);
   const [teacherUserId, setTeacherUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [activeSubTab, setActiveSubTab] = useState(null); // For subtabs within Maths/Literacy
+  const [activeSubTab, setActiveSubTab] = useState(null); // For subtabs within Learning
+  const [activeLiteracyStrand, setActiveLiteracyStrand] = useState('reading'); // Third level inside Learning > Literacy
   const [architectureVersion, setArchitectureVersion] = useState('unknown');
   const [dailyMysteryBoxAvailable, setDailyMysteryBoxAvailable] = useState(false);
   const [showDailyMysteryBox, setShowDailyMysteryBox] = useState(false);
@@ -1832,25 +1833,27 @@ const StudentPortal = () => {
   // RENDER MAIN PORTAL WITH NEW LITERACY TAB
   // ===============================================
 
+  const hasAssignments = classData?.assignedTopics?.length > 0;
+
   const tabs = [
     { id: 'dashboard', name: 'Home', icon: '🏠', shortName: 'Home' },
-    // Only show assignments tab if there are actual assignments
-    ...(classData?.assignedTopics?.length > 0 ? [
-      { id: 'assignments', name: 'Assigned Topics', icon: '📝', shortName: 'Assignments' }
+    { id: 'learning', name: 'Learning', icon: '📚', shortName: 'Learning', hasSubTabs: true },
+    { id: 'fun', name: 'Fun', icon: '🎮', shortName: 'Fun' },
+    { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' },
+    { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' }
+  ];
+
+  const learningSubTabs = [
+    // Only show assignments subtab if there are actual assignments
+    ...(hasAssignments ? [
+      { id: 'assignments', name: 'Assigned Topics', icon: '📝', shortName: 'Assigned', badge: true }
     ] : []),
-    { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths', hasSubTabs: true },
-    { id: 'literacy', name: 'Literacy', icon: '📚', shortName: 'Literacy', hasSubTabs: true },
-    { id: 'science', name: 'Science', icon: '🪐', shortName: 'Science' },
-    { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop' },
-    { id: 'games', name: 'Games', icon: '🎮', shortName: 'Games' },
-    { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz' }
+    { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths' },
+    { id: 'literacy', name: 'Literacy', icon: '📖', shortName: 'Literacy' },
+    { id: 'science', name: 'Science', icon: '🪐', shortName: 'Science' }
   ];
 
-  const mathsSubTabs = [
-    { id: 'general', name: 'General Maths', icon: '➕', shortName: 'General' }
-  ];
-
-  const literacySubTabs = [
+  const literacyStrands = [
     { id: 'reading', name: 'Reading', icon: '📖', shortName: 'Reading' },
     { id: 'writing', name: 'Writing', icon: '✍️', shortName: 'Writing' },
     { id: 'spelling', name: 'Spelling', icon: '🔤', shortName: 'Spelling' },
@@ -1864,10 +1867,9 @@ const StudentPortal = () => {
     setActiveTab(tabId);
 
     // Set default subtab for tabs with subtabs
-    if (tabId === 'maths') {
-      setActiveSubTab('general');
-    } else if (tabId === 'literacy') {
-      setActiveSubTab(hasMorphologyLesson ? 'morphology' : 'reading');
+    if (tabId === 'learning') {
+      setActiveSubTab(hasAssignments ? 'assignments' : 'maths');
+      setActiveLiteracyStrand(hasMorphologyLesson ? 'morphology' : 'reading');
     } else {
       setActiveSubTab(null);
     }
@@ -2040,17 +2042,16 @@ const StudentPortal = () => {
           />
         );
 
-      case 'assignments':
-        return (
-          <StudentAssignments
-            assignedTopics={classData?.assignedTopics || []}
-          />
-        );
-
-      case 'maths':
-        // Render maths subtabs content
+      case 'learning':
+        // Render learning subtabs content
         switch (activeSubTab) {
-          case 'general':
+          case 'assignments':
+            return (
+              <StudentAssignments
+                assignedTopics={classData?.assignedTopics || []}
+              />
+            );
+          case 'maths':
             return (
               <StudentMaths
                 studentData={studentData}
@@ -2059,6 +2060,42 @@ const StudentPortal = () => {
                 updateStudentData={updateStudentData}
               />
             );
+          case 'literacy':
+            // Render literacy strand content
+            switch (activeLiteracyStrand) {
+              case 'writing':
+                return (
+                  <VisualWritingPrompts
+                    showToast={showToast}
+                    students={[studentData]}
+                  />
+                );
+              case 'spelling':
+                return (
+                  <StudentSpelling
+                    studentData={studentData}
+                    classData={classData}
+                    showToast={showToast}
+                  />
+                );
+              case 'morphology':
+                return (
+                  <StudentMorphology
+                    classData={classData}
+                  />
+                );
+              case 'reading':
+              default:
+                return (
+                  <StudentReading
+                    studentData={studentData}
+                    classData={classData}
+                    showToast={showToast}
+                  />
+                );
+            }
+          case 'science':
+            return <StudentScience />;
           default:
             return (
               <StudentMaths
@@ -2069,51 +2106,6 @@ const StudentPortal = () => {
               />
             );
         }
-
-      case 'literacy':
-        // Render literacy subtabs content
-        switch (activeSubTab) {
-          case 'reading':
-            return (
-              <StudentReading
-                studentData={studentData}
-                classData={classData}
-                showToast={showToast}
-              />
-            );
-          case 'writing':
-            return (
-              <VisualWritingPrompts
-                showToast={showToast}
-                students={[studentData]}
-              />
-            );
-          case 'spelling':
-            return (
-              <StudentSpelling
-                studentData={studentData}
-                classData={classData}
-                showToast={showToast}
-              />
-            );
-          case 'morphology':
-            return (
-              <StudentMorphology
-                classData={classData}
-              />
-            );
-          default:
-            return (
-              <StudentReading
-                studentData={studentData}
-                classData={classData}
-                showToast={showToast}
-              />
-            );
-        }
-
-      case 'science':
-        return <StudentScience />;
 
       case 'shop':
         return (
@@ -2142,7 +2134,7 @@ const StudentPortal = () => {
           />
         );
 
-      case 'games':
+      case 'fun':
         return (
           <StudentGames
             studentData={studentData}
@@ -2244,12 +2236,12 @@ const StudentPortal = () => {
         </div>
       </div>
 
-      {/* Sub-Navigation for Maths and Literacy */}
-      {(activeTab === 'maths' || activeTab === 'literacy') && (
+      {/* Sub-Navigation for Learning */}
+      {activeTab === 'learning' && (
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-b shadow-sm">
           <div className="max-w-6xl mx-auto">
             <div className="flex overflow-x-auto">
-              {activeTab === 'maths' && mathsSubTabs.map(subTab => (
+              {learningSubTabs.map(subTab => (
                 <button
                   key={subTab.id}
                   onClick={() => setActiveSubTab(subTab.id)}
@@ -2260,21 +2252,36 @@ const StudentPortal = () => {
                 >
                   <span className="text-base md:text-lg">{subTab.icon}</span>
                   <span className="text-xs md:text-sm">{subTab.shortName}</span>
+                  {subTab.badge && (
+                    <span className="ml-1 inline-flex items-center justify-center rounded-full bg-amber-100 text-amber-700 text-[10px] md:text-xs font-semibold px-2 py-0.5">
+                      {classData?.assignedTopics?.length || ''}
+                    </span>
+                  )}
                 </button>
               ))}
-              {activeTab === 'literacy' && literacySubTabs.map(subTab => (
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Literacy Strand Navigation (third level inside Learning > Literacy) */}
+      {activeTab === 'learning' && activeSubTab === 'literacy' && (
+        <div className="bg-white border-b shadow-sm">
+          <div className="max-w-6xl mx-auto px-3 md:px-4 py-2">
+            <div className="flex overflow-x-auto gap-2">
+              {literacyStrands.map(strand => (
                 <button
-                  key={subTab.id}
-                  onClick={() => setActiveSubTab(subTab.id)}
-                  className={`flex-shrink-0 flex items-center justify-center space-x-2 px-3 md:px-6 py-2 md:py-3 transition-all duration-200 min-w-[100px] md:min-w-0 ${activeSubTab === subTab.id
-                      ? 'text-purple-600 border-b-2 border-purple-600 bg-white font-semibold'
-                      : 'text-gray-600 hover:text-gray-800 hover:bg-white hover:bg-opacity-50'
+                  key={strand.id}
+                  onClick={() => setActiveLiteracyStrand(strand.id)}
+                  className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 md:px-4 py-1.5 rounded-full text-xs md:text-sm font-semibold transition-all duration-200 ${activeLiteracyStrand === strand.id
+                      ? 'bg-purple-600 text-white shadow'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
-                  <span className="text-base md:text-lg">{subTab.icon}</span>
-                  <span className="text-xs md:text-sm">{subTab.shortName}</span>
-                  {subTab.id === 'morphology' && hasMorphologyLesson && (
-                    <span className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-[10px] md:text-xs font-semibold px-2 py-0.5">
+                  <span>{strand.icon}</span>
+                  <span>{strand.shortName}</span>
+                  {strand.id === 'morphology' && hasMorphologyLesson && (
+                    <span className={`inline-flex items-center justify-center rounded-full text-[10px] font-bold px-1.5 py-0.5 ${activeLiteracyStrand === strand.id ? 'bg-white/25 text-white' : 'bg-emerald-100 text-emerald-700'}`}>
                       NEW
                     </span>
                   )}
@@ -2315,7 +2322,7 @@ const StudentPortal = () => {
             />
           )}
 
-          {activeTab === 'games' && (
+          {activeTab === 'fun' && (
             <HiddenPresent
               giftId="games-arcade"
               studentData={studentData}
@@ -2327,7 +2334,7 @@ const StudentPortal = () => {
             />
           )}
 
-          {activeTab === 'literacy' && (
+          {activeTab === 'learning' && activeSubTab === 'literacy' && (
             <HiddenPresent
               giftId="literacy-underline"
               studentData={studentData}
