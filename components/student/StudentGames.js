@@ -37,6 +37,7 @@ const WordImposterGame = dynamic(() => import('../games/WordImposterGame'), { lo
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
+const CritterSortGame = dynamic(() => import('../games/CritterSortGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -45,6 +46,7 @@ const resolveLogoSource = (logo) => normalizeImageSource(logo, DEFAULT_GAME_LOGO
 const StudentGames = ({ studentData, showToast, updateStudentData, classData }) => {
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
 
   // Get classmates for leaderboards
   const classmates = classData?.students || [];
@@ -62,6 +64,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'daily',
       featured: true,
       daily: true,
+      subject: 'english',
       storageKeySuffix: 'student',
       logo: getGameLogo('daily-word-challenge')
     },
@@ -78,6 +81,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       new: true,
       educational: true,
+      subject: 'english',
       logo: getGameLogo('type-defender')
     },
     {
@@ -93,6 +97,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'featured',
       educational: true,
+      subject: 'math',
       logo: getGameLogo('math-grid')
     },
     {
@@ -108,6 +113,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'featured',
       educational: true,
+      subject: 'math',
       logo: getGameLogo('coordinate-quest')
     },
     {
@@ -121,6 +127,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '5-30 minutes',
       featured: true,
       category: 'featured',
+      subject: 'math',
       logo: getGameLogo('math-space-invaders')
     },
     {
@@ -136,6 +143,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       category: 'featured',
       educational: true,
+      subject: 'general',
       requiresTeacher: true,
       logo: getGameLogo('educational-bingo')
     },
@@ -343,6 +351,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '3-10 minutes',
       category: 'educational',
       educational: true,
+      subject: 'english',
       logo: getGameLogo('word-scramble')
     },
     {
@@ -356,6 +365,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       time: '5-15 minutes',
       category: 'educational',
       educational: true,
+      subject: 'english',
       logo: getGameLogo('word-hunt')
     },
     {
@@ -371,6 +381,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'fun',
       inDevelopment: true,
       logo: getGameLogo('sprout-bloom')
+    },
+    {
+      id: 'critter-sort',
+      name: 'Critter Sort',
+      icon: '🦁',
+      description: 'Sort creatures into animal classes — mammal, bird, reptile, amphibian, fish, or insect — before time runs out!',
+      component: CritterSortGame,
+      color: 'from-emerald-500 to-teal-600',
+      difficulty: 'Easy - Hard',
+      time: '3-8 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'science',
+      logo: getGameLogo('critter-sort')
     }
   ];
 
@@ -411,8 +437,56 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     }
   ];
 
-  const getGamesInCategory = (categoryId) => {
-    return categorizedGames.filter(game => game.displayCategory === categoryId);
+  // Subject areas within the Educational category
+  const subjects = [
+    {
+      id: 'english',
+      name: 'English',
+      icon: '📖',
+      description: 'Vocabulary, spelling, typing, and word skills'
+    },
+    {
+      id: 'math',
+      name: 'Math',
+      icon: '🔢',
+      description: 'Number facts, coordinates, and problem solving'
+    },
+    {
+      id: 'science',
+      name: 'Science',
+      icon: '🔬',
+      description: 'Explore living things and the world around us'
+    },
+    {
+      id: 'general',
+      name: 'General & Logic',
+      icon: '🧠',
+      description: 'Brain games and topics that span every subject'
+    }
+  ];
+
+  const getGamesInCategory = (categoryId, subjectId = null) => {
+    let games = categorizedGames.filter(game => game.displayCategory === categoryId);
+    if (categoryId === 'educational' && subjectId) {
+      games = games.filter(game => game.subject === subjectId);
+    }
+    return games;
+  };
+
+  const getGamesInSubject = (subjectId) => getGamesInCategory('educational', subjectId);
+
+  const handleSelectCategory = (categoryId) => {
+    setSelectedSubject(null);
+    setSelectedCategory(categoryId);
+  };
+
+  const handleBack = () => {
+    if (selectedCategory === 'educational' && selectedSubject) {
+      setSelectedSubject(null);
+    } else {
+      setSelectedCategory(null);
+      setSelectedSubject(null);
+    }
   };
 
   if (selectedGame) {
@@ -475,7 +549,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
           {categories.map((category) => (
             <button
               key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
+              onClick={() => handleSelectCategory(category.id)}
               className="group bg-white rounded-2xl shadow-lg border border-gray-100 p-6 text-left hover:shadow-xl transition-all duration-300 relative overflow-hidden"
             >
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 transition-opacity"></div>
@@ -484,7 +558,11 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
                 <h3 className="text-2xl font-bold text-gray-900">{category.name}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{category.description}</p>
                 <div className="flex items-center gap-2 text-sm font-semibold text-purple-600">
-                  <span>{getGamesInCategory(category.id).length} games</span>
+                  <span>
+                    {category.id === 'educational'
+                      ? `${subjects.length} subjects · ${getGamesInCategory(category.id).length} games`
+                      : `${getGamesInCategory(category.id).length} games`}
+                  </span>
                   <span>→</span>
                 </div>
               </div>
@@ -495,19 +573,70 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     );
   }
 
+  // Educational category: show subject areas before listing games
+  if (selectedCategory === 'educational' && !selectedSubject) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-6 md:p-8 text-white shadow-xl">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="text-center md:text-left space-y-1">
+              <h2 className="text-2xl md:text-3xl font-bold">📚 Educational Games</h2>
+              <p className="text-white/90 text-sm md:text-base">Pick a subject to find skill-building games and challenges.</p>
+            </div>
+            <button
+              onClick={handleBack}
+              className="bg-white/15 border border-white/30 text-white px-4 py-2 rounded-xl hover:bg-white/25 transition-all self-center md:self-auto"
+            >
+              ← All Categories
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {subjects.map((subject) => {
+            const subjectGames = getGamesInSubject(subject.id);
+            return (
+              <button
+                key={subject.id}
+                onClick={() => setSelectedSubject(subject.id)}
+                disabled={subjectGames.length === 0}
+                className={`group bg-white rounded-2xl shadow-lg border border-gray-100 p-6 text-left transition-all duration-300 relative overflow-hidden ${subjectGames.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl'}`}
+              >
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 transition-opacity"></div>
+                <div className="relative z-10 space-y-3">
+                  <div className="text-4xl">{subject.icon}</div>
+                  <h3 className="text-2xl font-bold text-gray-900">{subject.name}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{subject.description}</p>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-purple-600">
+                    <span>{subjectGames.length} {subjectGames.length === 1 ? 'game' : 'games'}</span>
+                    <span>→</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-6 md:p-8 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold mb-1">🎮 {categories.find((cat) => cat.id === selectedCategory)?.name} Games</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-1">
+              {selectedCategory === 'educational'
+                ? `${subjects.find((sub) => sub.id === selectedSubject)?.icon || '📚'} ${subjects.find((sub) => sub.id === selectedSubject)?.name || 'Educational'} Games`
+                : `🎮 ${categories.find((cat) => cat.id === selectedCategory)?.name} Games`}
+            </h2>
             <p className="text-white/90 text-sm md:text-base">Choose a game to play now. Multiplayer titles use your class code.</p>
           </div>
           <button
-            onClick={() => setSelectedCategory(null)}
+            onClick={handleBack}
             className="bg-white/15 border border-white/30 text-white px-4 py-2 rounded-xl hover:bg-white/25 transition-all"
           >
-            ← All Categories
+            {selectedCategory === 'educational' ? '← Subjects' : '← All Categories'}
           </button>
         </div>
       </div>
@@ -523,7 +652,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        {getGamesInCategory(selectedCategory)
+        {getGamesInCategory(selectedCategory, selectedSubject)
           .filter(game => selectedCategory !== 'multiplayer' || classData?.classCode || !game.requiresClassCode)
           .map((game) => {
             const buttonLabel = game.requiresTeacher

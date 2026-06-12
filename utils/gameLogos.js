@@ -113,7 +113,8 @@ const GAME_LOGO_MAP = {
   'kawaii-agar': createLogoCandidates('kawaii-agar', ['kawaii-agar.png', 'Kawaii Agar', 'kawaii agar', 'kawaii-agar-logo']),
   'endless-runner': createLogoCandidates('endless-runner', ['endless-runner.png', 'Endless Runner', 'endless-runner-logo']),
   'cozy-cottage': createLogoCandidates('cozy-cottage', ['cozy-cottage.png', 'Cozy Cottage', 'cozy-cottage-logo']),
-  'magical-athletes': createLogoCandidates('magical-athletes', ['magical-athletes.png', 'Magical Athletes', 'Magic Athletes'])
+  'magical-athletes': createLogoCandidates('magical-athletes', ['magical-athletes.png', 'Magical Athletes', 'Magic Athletes']),
+  'critter-sort': createLogoCandidates('critter-sort', ['critter-sort.png', 'Critter Sort', 'Animal Classification'])
 };
 
 const GAME_LOGO_ALIASES = {
