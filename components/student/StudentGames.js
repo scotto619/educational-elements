@@ -44,6 +44,8 @@ const NumberCrunchGame = dynamic(() => import('../games/NumberCrunchGame'), { lo
 const BlockBlasterGame = dynamic(() => import('../games/BlockBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
 const FoodChainFrenzyGame = dynamic(() => import('../games/FoodChainFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonSerpentGame = dynamic(() => import('../games/NeonSerpentGame'), { loading: GameLoadingSpinner, ssr: false });
+const SkyHopperGame = dynamic(() => import('../games/SkyHopperGame'), { loading: GameLoadingSpinner, ssr: false });
+const GrammarGoalieGame = dynamic(() => import('../games/GrammarGoalieGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -223,6 +225,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       logo: getGameLogo('2048-puzzle')
     },
     {
+      id: 'sky-hopper',
+      name: 'Sky Hopper',
+      icon: '🐸',
+      description: 'Bounce your frog from platform to platform and climb into the stars! Spring pads launch you sky-high, crumbly platforms break away, and coins and stars boost your score.',
+      component: SkyHopperGame,
+      color: 'from-sky-500 to-indigo-600',
+      difficulty: 'All Levels',
+      time: '2-10 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('sky-hopper')
+    },
+    {
       id: 'neon-serpent',
       name: 'Neon Serpent',
       icon: '🐍',
@@ -388,6 +404,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     },
 
     // Educational Utils
+    {
+      id: 'grammar-goalie',
+      name: 'Grammar Goalie',
+      icon: '🧤',
+      description: 'Defend your goal with grammar! Every shot is a sentence with a missing word — pick the right one to make the save. Homophones, contractions, tenses, plurals and more, with a tip after every shot.',
+      component: GrammarGoalieGame,
+      color: 'from-emerald-500 to-sky-600',
+      difficulty: 'All Levels',
+      time: '3-8 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'english',
+      logo: getGameLogo('grammar-goalie')
+    },
     {
       id: 'brain-blitz',
       name: 'Brain Blitz',
