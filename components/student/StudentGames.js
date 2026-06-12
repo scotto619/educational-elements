@@ -40,6 +40,7 @@ const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loadin
 const CritterSortGame = dynamic(() => import('../games/CritterSortGame'), { loading: GameLoadingSpinner, ssr: false });
 const FruitFrenzyGame = dynamic(() => import('../games/FruitFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
 const BrainBlitzGame = dynamic(() => import('../games/BrainBlitzGame'), { loading: GameLoadingSpinner, ssr: false });
+const NumberCrunchGame = dynamic(() => import('../games/NumberCrunchGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -371,6 +372,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       educational: true,
       subject: 'general',
       logo: getGameLogo('brain-blitz')
+    },
+    {
+      id: 'number-crunch',
+      name: 'Number Crunch',
+      icon: '🎯',
+      description: 'Combine number tiles with + − × ÷ to hit the target! Every puzzle has an exact solution — find it before the clock runs out and build bullseye streaks for bonus points.',
+      component: NumberCrunchGame,
+      color: 'from-cyan-500 to-blue-600',
+      difficulty: 'Easy - Hard',
+      time: '5-10 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'math',
+      logo: getGameLogo('number-crunch')
     },
     {
       id: 'boggle',
