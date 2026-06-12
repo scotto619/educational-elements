@@ -42,6 +42,7 @@ const FruitFrenzyGame = dynamic(() => import('../games/FruitFrenzyGame'), { load
 const BrainBlitzGame = dynamic(() => import('../games/BrainBlitzGame'), { loading: GameLoadingSpinner, ssr: false });
 const NumberCrunchGame = dynamic(() => import('../games/NumberCrunchGame'), { loading: GameLoadingSpinner, ssr: false });
 const BlockBlasterGame = dynamic(() => import('../games/BlockBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
+const FoodChainFrenzyGame = dynamic(() => import('../games/FoodChainFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -445,6 +446,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'fun',
       inDevelopment: true,
       logo: getGameLogo('sprout-bloom')
+    },
+    {
+      id: 'food-chain-frenzy',
+      name: 'Food Chain Frenzy',
+      icon: '🌿',
+      description: 'Build the food chain! Put organisms in order so energy flows from producer to top predator across real ecosystems — and spot the sneaky decoy that doesn\'t belong. Learn a fun fact every round!',
+      component: FoodChainFrenzyGame,
+      color: 'from-lime-500 to-emerald-600',
+      difficulty: 'Easy - Medium',
+      time: '3-8 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'science',
+      logo: getGameLogo('food-chain-frenzy')
     },
     {
       id: 'critter-sort',
