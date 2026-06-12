@@ -39,6 +39,7 @@ const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { load
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
 const CritterSortGame = dynamic(() => import('../games/CritterSortGame'), { loading: GameLoadingSpinner, ssr: false });
 const FruitFrenzyGame = dynamic(() => import('../games/FruitFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
+const BrainBlitzGame = dynamic(() => import('../games/BrainBlitzGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -355,6 +356,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     },
 
     // Educational Utils
+    {
+      id: 'brain-blitz',
+      name: 'Brain Blitz',
+      icon: '🧠',
+      description: 'A fast-paced trivia quiz show! Race the clock across Science, Geography, Math, Words and more. Build a streak multiplier and use your 50/50, Freeze, and Skip lifelines to top the leaderboard.',
+      component: BrainBlitzGame,
+      color: 'from-purple-500 to-fuchsia-600',
+      difficulty: 'All Levels',
+      time: '3-10 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'general',
+      logo: getGameLogo('brain-blitz')
+    },
     {
       id: 'boggle',
       name: 'Word Scramble',
