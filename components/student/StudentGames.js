@@ -38,6 +38,7 @@ const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadi
 const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
 const CritterSortGame = dynamic(() => import('../games/CritterSortGame'), { loading: GameLoadingSpinner, ssr: false });
+const FruitFrenzyGame = dynamic(() => import('../games/FruitFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -149,6 +150,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     },
 
     // Fun / Adventure Games
+    {
+      id: 'fruit-frenzy',
+      name: 'Fruit Frenzy',
+      icon: '🍉',
+      description: 'Swipe to slice flying fruit ninja-style! Chain combos, grab golden stars and slow-mo power-ups — but whatever you do, don\'t slice the bombs!',
+      component: FruitFrenzyGame,
+      color: 'from-pink-500 to-orange-500',
+      difficulty: 'All Levels',
+      time: '2-10 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('fruit-frenzy')
+    },
     {
       id: 'precision-timer',
       name: 'Precision Timer Challenge',
@@ -762,6 +777,10 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
           Gaming Tips
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="bg-white rounded-lg p-3">
+            <div className="font-semibold text-pink-700 mb-1">🍉 Fruit Frenzy</div>
+            <div className="text-gray-600">Slice 3 or more fruit in a single swipe to score combo bonuses! Score 200+ to earn coins once a day.</div>
+          </div>
           <div className="bg-white rounded-lg p-3">
             <div className="font-semibold text-blue-700 mb-1">🔢 Math Facts Grid</div>
             <div className="text-gray-600">Race against the clock to complete multiplication, addition, or subtraction grids! Compete with classmates for the fastest times.</div>
