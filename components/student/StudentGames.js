@@ -43,6 +43,7 @@ const BrainBlitzGame = dynamic(() => import('../games/BrainBlitzGame'), { loadin
 const NumberCrunchGame = dynamic(() => import('../games/NumberCrunchGame'), { loading: GameLoadingSpinner, ssr: false });
 const BlockBlasterGame = dynamic(() => import('../games/BlockBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
 const FoodChainFrenzyGame = dynamic(() => import('../games/FoodChainFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
+const NeonSerpentGame = dynamic(() => import('../games/NeonSerpentGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -220,6 +221,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('2048-puzzle')
+    },
+    {
+      id: 'neon-serpent',
+      name: 'Neon Serpent',
+      icon: '🐍',
+      description: 'The classic snake game with a glowing neon twist! Chain quick eats for combos, grab ghost berries and slow-mo clocks, and try Portal mode where you wrap through the walls.',
+      component: NeonSerpentGame,
+      color: 'from-emerald-500 to-cyan-600',
+      difficulty: 'All Levels',
+      time: '2-10 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('neon-serpent')
     },
     {
       id: 'block-blaster',
