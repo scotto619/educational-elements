@@ -41,6 +41,7 @@ const CritterSortGame = dynamic(() => import('../games/CritterSortGame'), { load
 const FruitFrenzyGame = dynamic(() => import('../games/FruitFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
 const BrainBlitzGame = dynamic(() => import('../games/BrainBlitzGame'), { loading: GameLoadingSpinner, ssr: false });
 const NumberCrunchGame = dynamic(() => import('../games/NumberCrunchGame'), { loading: GameLoadingSpinner, ssr: false });
+const BlockBlasterGame = dynamic(() => import('../games/BlockBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -218,6 +219,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('2048-puzzle')
+    },
+    {
+      id: 'block-blaster',
+      name: 'Block Blaster',
+      icon: '🧱',
+      description: 'Neon breakout action! Bounce the ball, smash brick patterns, and catch falling power-ups — multiball, lasers, wide paddle, and more. Endless levels, endless fun!',
+      component: BlockBlasterGame,
+      color: 'from-cyan-500 to-blue-600',
+      difficulty: 'All Levels',
+      time: '5-15 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('block-blaster')
     },
     {
       id: 'neon-tetris',
