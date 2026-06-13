@@ -47,6 +47,7 @@ const NeonSerpentGame = dynamic(() => import('../games/NeonSerpentGame'), { load
 const SkyHopperGame = dynamic(() => import('../games/SkyHopperGame'), { loading: GameLoadingSpinner, ssr: false });
 const GrammarGoalieGame = dynamic(() => import('../games/GrammarGoalieGame'), { loading: GameLoadingSpinner, ssr: false });
 const SketchGuessGame = dynamic(() => import('../games/SketchGuessGame'), { loading: GameLoadingSpinner, ssr: false });
+const BluffBattleGame = dynamic(() => import('../games/BluffBattleGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -361,6 +362,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'multiplayer',
       logo: getGameLogo('sketch-guess')
+    },
+    {
+      id: 'bluff-battle',
+      name: 'Bluff Battle',
+      icon: '🎭',
+      description: "Invent a believable lie to fill in the blank of a wild true fact, then vote to spot the real truth hidden among everyone's bluffs. Fool your friends to rack up points!",
+      component: BluffBattleGame,
+      color: 'from-indigo-500 to-pink-600',
+      difficulty: 'Easy',
+      time: '10-20 minutes',
+      multiplayer: true,
+      featured: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('bluff-battle')
     },
     {
       id: 'werewolf',
@@ -933,3 +949,4 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
 };
 
 export default StudentGames;
+
