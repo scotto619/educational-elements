@@ -1,0 +1,150 @@
+{
+  "rules": {
+    "battle_royale": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['gameCode']) || !newData.exists()",
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['id', 'name']) || !newData.exists()",
+            ".indexOn": ["lives", "active", "joinTime"]
+          }
+        },
+        "responses": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['answer', 'timestamp']) || !newData.exists()",
+            ".indexOn": ["timestamp"]
+          }
+        }
+      }
+    },
+    "battleRoyale": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['gameCode']) || !newData.exists()",
+        "host": { ".write": "auth != null" },
+        "responses": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['answer', 'timestamp', 'playerId']) || !newData.exists()",
+            ".indexOn": ["timestamp"]
+          }
+        },
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['id', 'name', 'lives']) || !newData.exists()",
+            ".indexOn": ["lives", "streak", "correctAnswers", "active", "joinTime"]
+          }
+        }
+      }
+    },
+    "memory_game": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['roomCode']) || !newData.exists()",
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['id', 'name']) || !newData.exists()",
+            ".indexOn": ["ready", "score"]
+          }
+        }
+      }
+    },
+    "gameRooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true,
+        "players": {
+          "$playerId": {
+            ".validate": "newData.hasChildren(['id', 'name']) || !newData.exists()",
+            ".indexOn": ["active", "score", "lastUpdate"]
+          }
+        },
+        "food": {
+          "$foodId": {
+            ".validate": "newData.hasChildren(['id', 'x', 'y', 'size', 'color']) || !newData.exists()"
+          }
+        }
+      }
+    },
+    "sketchGuessRooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['roomCode']) || !newData.exists()",
+        "players": {
+          "$playerId": { ".indexOn": ["score", "guessedAt"] }
+        },
+        "guesses": { ".indexOn": ["at"] },
+        "strokes": { ".indexOn": ["at"] }
+      }
+    },
+
+    "quizzes": {
+      "$quizId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "classLookup": { ".read": true, ".write": "auth != null" },
+    "users": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
+
+    "tempSessions": {
+      "$sessionId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.child('timestamp').val() > (now - 24 * 60 * 60 * 1000) || !newData.exists()",
+        ".indexOn": ["timestamp", "active"]
+      }
+    },
+    "leaderboards": {
+      ".read": true,
+      ".write": true,
+      "$gameType": {
+        ".indexOn": ["score", "timestamp"]
+      },
+      "battleRoyale": {
+        "allTime": { ".indexOn": ["wins", "questionsCorrect", "gamesPlayed"] },
+        "daily": { ".indexOn": ["wins", "questionsCorrect"] },
+        "weekly": { ".indexOn": ["wins", "questionsCorrect"] }
+      },
+      "memoryGame": {
+        "allTime": { ".indexOn": ["matches", "gamesWon", "gamesPlayed"] },
+        "daily": { ".indexOn": ["matches", "gamesWon"] },
+        "weekly": { ".indexOn": ["matches", "gamesWon"] }
+      }
+    },
+    "battleRoyaleMonitoring": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        "responseTime": { ".indexOn": ["timestamp"] },
+        "playerLatency": {
+          "$playerId": { ".indexOn": ["timestamp", "latency"] }
+        }
+      }
+    },
+    "memoryGameMonitoring": {
+      "$gameCode": {
+        ".read": true,
+        ".write": true,
+        "turnTime": { ".indexOn": ["timestamp"] },
+        "playerPerformance": {
+          "$playerId": { ".indexOn": ["timestamp", "responseTime"] }
+        }
+      }
+    },
+
+    "$anyOtherPath": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}

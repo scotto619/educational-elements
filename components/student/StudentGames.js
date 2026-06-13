@@ -46,6 +46,7 @@ const FoodChainFrenzyGame = dynamic(() => import('../games/FoodChainFrenzyGame')
 const NeonSerpentGame = dynamic(() => import('../games/NeonSerpentGame'), { loading: GameLoadingSpinner, ssr: false });
 const SkyHopperGame = dynamic(() => import('../games/SkyHopperGame'), { loading: GameLoadingSpinner, ssr: false });
 const GrammarGoalieGame = dynamic(() => import('../games/GrammarGoalieGame'), { loading: GameLoadingSpinner, ssr: false });
+const SketchGuessGame = dynamic(() => import('../games/SketchGuessGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -345,6 +346,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'multiplayer',
       logo: getGameLogo('uno')
+    },
+    {
+      id: 'sketch-guess',
+      name: 'Sketch & Guess',
+      icon: '🎨',
+      description: 'The classic drawing & guessing party game! Take turns sketching a secret word while everyone races to guess it in the chat. Letter hints appear as time runs out — fastest guess wins the most points!',
+      component: SketchGuessGame,
+      color: 'from-fuchsia-500 to-purple-600',
+      difficulty: 'Easy',
+      time: '10-20 minutes',
+      multiplayer: true,
+      featured: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('sketch-guess')
     },
     {
       id: 'werewolf',
