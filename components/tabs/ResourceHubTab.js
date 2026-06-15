@@ -51,6 +51,8 @@ const resourcesBySubject = {
     { id: 'character-creation', title: 'Character Creation Crew', description: 'Building unforgettable stories through character development', pdfPath: '/Unit Resources/Literacy/Character_Creation_Crew_Building_Unforgettable_Stories.pdf', icon: '🧑‍🎨' },
     { id: 'metaphors-similes', title: 'Comparison Cuties: Metaphors & Similes', description: 'Understanding and using figurative language', pdfPath: '/Unit Resources/Literacy/Comparison_Cuties_Metaphors_and_Similes.pdf', icon: '🌈' },
     { id: 'literary-architecture', title: 'Literary Architecture', description: 'Understanding text structure and story building', pdfPath: '/Unit Resources/Literacy/Literary_Architecture.pdf', icon: '🏛️' },
+    { id: 'story-builders', title: 'Story Builders', description: '8 story builder templates and examples to scaffold creative narrative writing — pond, beach, camping, pirate and more themes', pdfPath: '/Unit Resources/English/Story_Builders.pdf', icon: '📝' },
+    { id: 'animal-reports', title: 'Informative Writing — Animal Reports', description: '7 animal report examples — sea turtles, penguins, dolphins, elephants, sea otters, whales and lions — modelling informative writing', pdfPath: '/Unit Resources/English/Animal_Reports.pdf', icon: '🦁' },
     { id: 'paint-worlds', title: 'Paint Worlds With Words', description: 'Descriptive writing and imagery techniques', pdfPath: '/Unit Resources/Literacy/Paint_Worlds_With_Words.pdf', icon: '🎨' },
     { id: 'shelter-shore', title: 'Shelter Shore: Identity Craft', description: 'Exploring identity through creative writing', pdfPath: '/Unit Resources/Literacy/Shelter_Shore_Identity_Craft.pdf', icon: '🌊' },
     { id: 'teresa-book-analysis', title: 'Teresa: A New Australian - Book Analysis', description: 'Comprehensive analysis of the novel Teresa: A New Australian', pdfPath: '/Unit Resources/Literacy/Teresa_A_New_Australian_Book_Analysis.pdf', icon: '📗' },
@@ -94,6 +96,10 @@ const resourcesBySubject = {
     { id: 'ww2', title: 'The Second World War', description: '1939–1945 History', pdfPath: '/Unit Resources/HASS/The_Second_World_War_1939–1945.pdf', icon: '🎖️' },
     { id: 'confucius', title: 'The Way of Confucius', description: 'Philosophy and endurance', pdfPath: '/Unit Resources/HASS/The_Way_of_Confucius_Endures.pdf', icon: '☯️' },
     { id: 'ww1', title: 'World War I Timeline', description: 'From Spark to Treaty', pdfPath: '/Unit Resources/HASS/World_War_I_Timeline_From_Spark_to_Treaty.pdf', icon: '🕊️' },
+  ],
+  decor: [
+    { id: 'decor-beach', title: 'Beach Theme Classroom Decor', description: '16-piece beach-themed classroom decor set — group signs, class rules, voice levels, classroom jobs, daily schedule, birthday chart, rewards chart and more', pdfPath: '/Unit Resources/Decor/Beach_Theme.pdf', icon: '🏖️' },
+    { id: 'decor-cherry-blossom', title: 'Cherry Blossom Theme Classroom Decor', description: '20-piece cherry blossom themed classroom decor set — group signs, attendance chart, classroom rules, reading log, reward charts, name cards and more', pdfPath: '/Unit Resources/Decor/Cherry_Blossom_Theme.pdf', icon: '🌸' },
   ],
 };
 
@@ -166,6 +172,19 @@ const subjects = [
     banner: '/Displays/Banners/HISTORY.png',
     description: 'History, geography & social sciences',
     hasCurriculum: true,
+  },
+  {
+    id: 'decor',
+    name: 'Classroom Decor',
+    icon: '🎨',
+    gradient: 'from-pink-500 to-rose-500',
+    lightBg: 'bg-pink-50',
+    accentColor: 'text-pink-600',
+    borderColor: 'border-pink-200',
+    ringColor: 'ring-pink-300',
+    banner: null,
+    description: 'Themed posters & classroom decor sets',
+    hasCurriculum: false,
   },
 ];
 

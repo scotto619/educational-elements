@@ -41,6 +41,7 @@ const CritterSortGame = dynamic(() => import('../games/CritterSortGame'), { load
 const FruitFrenzyGame = dynamic(() => import('../games/FruitFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
 const BrainBlitzGame = dynamic(() => import('../games/BrainBlitzGame'), { loading: GameLoadingSpinner, ssr: false });
 const NumberCrunchGame = dynamic(() => import('../games/NumberCrunchGame'), { loading: GameLoadingSpinner, ssr: false });
+const PlaceValuePopGame = dynamic(() => import('../games/PlaceValuePopGame'), { loading: GameLoadingSpinner, ssr: false });
 const BlockBlasterGame = dynamic(() => import('../games/BlockBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
 const FoodChainFrenzyGame = dynamic(() => import('../games/FoodChainFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonSerpentGame = dynamic(() => import('../games/NeonSerpentGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -498,6 +499,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       educational: true,
       subject: 'math',
       logo: getGameLogo('number-crunch')
+    },
+    {
+      id: 'place-value-pop',
+      name: 'Place Value Pop',
+      icon: '🫧',
+      description: 'Read the number, then pop the bubble with the right answer — the value of a digit, its place, or the expanded form. Beat the timer and build combos across three levels!',
+      component: PlaceValuePopGame,
+      color: 'from-cyan-500 to-purple-600',
+      difficulty: 'Easy - Hard',
+      time: '2-10 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'math',
+      logo: getGameLogo('place-value-pop')
     },
     {
       id: 'boggle',
