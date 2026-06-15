@@ -8,30 +8,18 @@ import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'fireb
 import { verifyStudentPasswordDirect, getDefaultPassword } from '../utils/passwordHelpers';
 
 // Import reusable components
-import dynamic from 'next/dynamic';
-
-// Lightweight components shown immediately on login stay statically imported.
+import StudentShop from '../components/student/StudentShop';
+import StudentGames from '../components/student/StudentGames';
 import StudentDashboard from '../components/student/StudentDashboard';
+import StudentSpelling from '../components/student/StudentSpelling';
+import StudentReading from '../components/student/StudentReading';
+import StudentMaths from '../components/student/StudentMaths';
+import StudentMorphology from '../components/student/StudentMorphology';
+import StudentScience from '../components/student/StudentScience';
+import VisualWritingPrompts from '../components/curriculum/literacy/VisualWritingPrompts';
+import DailyMysteryBoxModal from '../components/student/DailyMysteryBoxModal';
 import HiddenPresent from '../components/student/HiddenPresent';
-
-// Heavy tab components are code-split so the initial student bundle stays small
-// — a big win for load times, especially on mobile. Each one is downloaded only
-// when the student actually opens that tab, instead of all upfront.
-const TabLoader = () => (
-  <div className="flex items-center justify-center py-16">
-    <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-  </div>
-);
-const StudentShop = dynamic(() => import('../components/student/StudentShop'), { loading: TabLoader, ssr: false });
-const StudentGames = dynamic(() => import('../components/student/StudentGames'), { loading: TabLoader, ssr: false });
-const StudentSpelling = dynamic(() => import('../components/student/StudentSpelling'), { loading: TabLoader, ssr: false });
-const StudentReading = dynamic(() => import('../components/student/StudentReading'), { loading: TabLoader, ssr: false });
-const StudentMaths = dynamic(() => import('../components/student/StudentMaths'), { loading: TabLoader, ssr: false });
-const StudentMorphology = dynamic(() => import('../components/student/StudentMorphology'), { loading: TabLoader, ssr: false });
-const StudentScience = dynamic(() => import('../components/student/StudentScience'), { loading: TabLoader, ssr: false });
-const VisualWritingPrompts = dynamic(() => import('../components/curriculum/literacy/VisualWritingPrompts'), { loading: TabLoader, ssr: false });
-const StudentAssignments = dynamic(() => import('../components/student/StudentAssignments'), { loading: TabLoader, ssr: false });
-const DailyMysteryBoxModal = dynamic(() => import('../components/student/DailyMysteryBoxModal'), { ssr: false });
+import StudentAssignments from '../components/student/StudentAssignments';
 import { DEFAULT_NOTICE_ITEMS } from '../services/noticeBoard';
 import { CARD_EFFECTS } from '../constants/cardEffects';
 
@@ -59,10 +47,10 @@ import { fetchGlobalShopItems, mergeShopInventories } from '../services/globalCo
 import { database } from '../utils/firebase';
 import { ref, set, onValue, off } from 'firebase/database';
 import { calculateFinalLeaderboard } from '../utils/quizShowHelpers';
-const JoinGame = dynamic(() => import('../components/quizshow/student/JoinGame'), { loading: TabLoader, ssr: false });
-const StudentLobby = dynamic(() => import('../components/quizshow/student/StudentLobby'), { loading: TabLoader, ssr: false });
-const StudentGameView = dynamic(() => import('../components/quizshow/student/StudentGameView'), { loading: TabLoader, ssr: false });
-const StudentResults = dynamic(() => import('../components/quizshow/student/StudentResults'), { loading: TabLoader, ssr: false });
+import JoinGame from '../components/quizshow/student/JoinGame';
+import StudentLobby from '../components/quizshow/student/StudentLobby';
+import StudentGameView from '../components/quizshow/student/StudentGameView';
+import StudentResults from '../components/quizshow/student/StudentResults';
 
 const isSameCalendarDay = (dateA, dateB) => (
   dateA.getFullYear() === dateB.getFullYear() &&
