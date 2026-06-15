@@ -48,7 +48,6 @@ const SkyHopperGame = dynamic(() => import('../games/SkyHopperGame'), { loading:
 const GrammarGoalieGame = dynamic(() => import('../games/GrammarGoalieGame'), { loading: GameLoadingSpinner, ssr: false });
 const SketchGuessGame = dynamic(() => import('../games/SketchGuessGame'), { loading: GameLoadingSpinner, ssr: false });
 const BluffBattleGame = dynamic(() => import('../games/BluffBattleGame'), { loading: GameLoadingSpinner, ssr: false });
-const TowerStackGame = dynamic(() => import('../games/TowerStackGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -240,20 +239,6 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('sky-hopper')
-    },
-    {
-      id: 'tower-stack',
-      name: 'Tower Stack',
-      icon: '🏗️',
-      description: 'Tap to drop each sliding block and stack your tower as high as you can! Nail a perfect line-up to keep your width and build a glowing combo. One miss and it all comes down.',
-      component: TowerStackGame,
-      color: 'from-cyan-500 to-purple-600',
-      difficulty: 'All Levels',
-      time: '1-5 minutes',
-      featured: true,
-      new: true,
-      category: 'fun',
-      logo: getGameLogo('tower-stack')
     },
     {
       id: 'neon-serpent',
