@@ -1,7 +1,7 @@
 // utils/firebase.js - FIXED Firebase Configuration with Database URL
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getDatabase } from 'firebase/database';
 
 // Firebase configuration - these should be set in your .env.local file
@@ -52,8 +52,11 @@ try {
   // Initialize Firebase Authentication and get a reference to the service
   auth = getAuth(app);
   
-  // Initialize Cloud Firestore and get a reference to the service
-  firestore = getFirestore(app);
+  // Initialize Cloud Firestore. autoDetectLongPolling lets the SDK use a fast
+  // streaming connection where the network allows and only fall back to HTTP
+  // long-polling when it must — improving load times and reducing the channel
+  // 503/handshake stalls seen on iPads and flaky networks.
+  firestore = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
   
   // Initialize Realtime Database and get a reference to the service
   database = getDatabase(app);

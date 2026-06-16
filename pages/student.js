@@ -598,7 +598,7 @@ const StudentPortal = () => {
       const classDoc = classesSnapshot.docs[0];
       const classData = { id: classDoc.id, ...classDoc.data() };
 
-      // Get class membership and students
+      // Get class membership (authoritative list of student IDs + order)
       const membershipDoc = await getDoc(doc(firestore, 'class_memberships', classDoc.id));
 
       let students = [];
@@ -607,20 +607,41 @@ const StudentPortal = () => {
         const studentIds = membershipData.students || [];
 
         if (studentIds.length > 0) {
-          const studentPromises = studentIds.map(async (studentId) => {
-            try {
-              const studentDoc = await getDoc(doc(firestore, 'students', studentId));
-              if (studentDoc.exists()) {
-                return { id: studentDoc.id, ...studentDoc.data() };
-              }
-            } catch (error) {
-              console.warn('⚠️ Error loading student:', studentId, error);
-            }
-            return null;
-          });
+          // PERF: fetch the whole roster in ONE query instead of one getDoc per
+          // student. This collapses ~N network round trips into a single read —
+          // a major speedup on iPads / slow networks where each round trip is
+          // expensive (Firestore long-polling).
+          const byId = new Map();
+          try {
+            const rosterSnap = await getDocs(
+              query(collection(firestore, 'students'), where('classId', '==', classDoc.id))
+            );
+            rosterSnap.forEach((d) => byId.set(d.id, { id: d.id, ...d.data() }));
+          } catch (error) {
+            console.warn('⚠️ Roster query failed; falling back to per-student reads:', error);
+          }
 
-          const studentResults = await Promise.all(studentPromises);
-          students = studentResults.filter(s => s !== null);
+          // Safety net: if the query missed any student in the membership list
+          // (e.g. a doc with a missing/mismatched classId), read those directly
+          // so the roster is never incomplete.
+          const missingIds = studentIds.filter((id) => !byId.has(id));
+          if (missingIds.length > 0) {
+            const fallback = await Promise.all(
+              missingIds.map(async (studentId) => {
+                try {
+                  const studentDoc = await getDoc(doc(firestore, 'students', studentId));
+                  return studentDoc.exists() ? { id: studentDoc.id, ...studentDoc.data() } : null;
+                } catch (error) {
+                  console.warn('⚠️ Error loading student:', studentId, error);
+                  return null;
+                }
+              })
+            );
+            fallback.forEach((s) => { if (s) byId.set(s.id, s); });
+          }
+
+          // Preserve the membership's order.
+          students = studentIds.map((id) => byId.get(id)).filter(Boolean);
         }
       }
 

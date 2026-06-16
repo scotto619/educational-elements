@@ -1,0 +1,476 @@
+{
+  "id": "rSMUzgSQcoMDLKCouKNzN8a2NCt2",
+  "displayName": null,
+  "createdAt": "2025-09-12T12:47:32.091Z",
+  "subscription": "pro",
+  "subscriptionStatus": null,
+  "stripeCustomerId": null,
+  "planType": null,
+  "currentPeriodEnd": null,
+  "discountCodeUsed": null,
+  "freeAccessUntil": null,
+  "migratedAt": "2025-09-12T12:47:32.091Z",
+  "migratedFrom": "v1-monolithic",
+  "version": "2.0",
+  "email": "scotto6190@gmail.com",
+  "classes": [
+    {
+      "id": "class-1764197804243",
+      "name": "6C",
+      "students": [
+        {
+          "id": "1764197736743w6q8qz",
+          "firstName": "Aylah",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.242Z",
+          "lastUpdated": "2025-11-26T22:56:44.242Z"
+        },
+        {
+          "id": "1764197736743pilzzx",
+          "firstName": "Farida",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.242Z",
+          "lastUpdated": "2025-11-26T22:56:44.242Z"
+        },
+        {
+          "id": "17641977367434mtbxc",
+          "firstName": "Rumer",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.242Z",
+          "lastUpdated": "2025-11-26T22:56:44.242Z"
+        },
+        {
+          "id": "17641977367430mb7iz",
+          "firstName": "Lolly",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.242Z",
+          "lastUpdated": "2025-11-26T22:56:44.242Z"
+        },
+        {
+          "id": "1764197736743004i0e",
+          "firstName": "Sydney",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.242Z",
+          "lastUpdated": "2025-11-26T22:56:44.242Z"
+        },
+        {
+          "id": "1764197736743e0fvmx",
+          "firstName": "Kiki",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.242Z",
+          "lastUpdated": "2025-11-26T22:56:44.242Z"
+        },
+        {
+          "id": "1764197736743e82i40",
+          "firstName": "Kora",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.242Z",
+          "lastUpdated": "2025-11-26T22:56:44.242Z"
+        },
+        {
+          "id": "1764197736743ghtghp",
+          "firstName": "Jema",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743hrpl63",
+          "firstName": "Emerald",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743mvhffx",
+          "firstName": "Hope",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "17641977367437sng7x",
+          "firstName": "Maia",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743p46aw0",
+          "firstName": "Tiana",
+          "lastName": "",
+          "avatarBase": "Knight F",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight F/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight F"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "17641977367431q95wn",
+          "firstName": "Phoenix",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743gh36aj",
+          "firstName": "Richard",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743ihn5du",
+          "firstName": "Mason",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "17641977367433bkydf",
+          "firstName": "Luka",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743awep5w",
+          "firstName": "Rocco",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743zacj12",
+          "firstName": "Darcy",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743vgcyhf",
+          "firstName": "Abteen",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743n4bz58",
+          "firstName": "Kelvin",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743olbj9i",
+          "firstName": "Te",
+          "lastName": "Ariki",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743eaottn",
+          "firstName": "Horizon",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "17641977367431dh2i9",
+          "firstName": "Hartley",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        },
+        {
+          "id": "1764197736743xhi0qx",
+          "firstName": "Ace",
+          "lastName": "",
+          "avatarBase": "Knight M",
+          "avatarLevel": 1,
+          "avatar": "/avatars/Knight M/Level 1.png",
+          "totalPoints": 0,
+          "currency": 0,
+          "coinsSpent": 0,
+          "ownedAvatars": [
+            "Knight M"
+          ],
+          "ownedPets": [],
+          "createdAt": "2025-11-26T22:56:44.243Z",
+          "lastUpdated": "2025-11-26T22:56:44.243Z"
+        }
+      ],
+      "createdAt": "2025-11-26T22:56:44.243Z",
+      "xpCategories": [
+        {
+          "id": 1,
+          "label": "Respectful",
+          "amount": 1,
+          "color": "bg-blue-500",
+          "icon": "🤝"
+        },
+        {
+          "id": 2,
+          "label": "Responsible",
+          "amount": 1,
+          "color": "bg-green-500",
+          "icon": "✅"
+        },
+        {
+          "id": 3,
+          "label": "Safe",
+          "amount": 1,
+          "color": "bg-yellow-500",
+          "icon": "🛡️"
+        },
+        {
+          "id": 4,
+          "label": "Learner",
+          "amount": 1,
+          "color": "bg-purple-500",
+          "icon": "📚"
+        },
+        {
+          "id": 5,
+          "label": "Star Award",
+          "amount": 5,
+          "color": "bg-yellow-600",
+          "icon": "⭐"
+        }
+      ]
+    }
+  ],
+  "activeClassId": "class_1764199157392_0nzbs6hfu",
+  "widgetSettings": {
+    "showTimer": false,
+    "showNamePicker": false
+  },
+  "updatedAt": "2026-06-01T07:31:45.473Z"
+}
