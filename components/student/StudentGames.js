@@ -50,6 +50,7 @@ const GrammarGoalieGame = dynamic(() => import('../games/GrammarGoalieGame'), { 
 const SketchGuessGame = dynamic(() => import('../games/SketchGuessGame'), { loading: GameLoadingSpinner, ssr: false });
 const BluffBattleGame = dynamic(() => import('../games/BluffBattleGame'), { loading: GameLoadingSpinner, ssr: false });
 const TowerStackGame = dynamic(() => import('../games/TowerStackGame'), { loading: GameLoadingSpinner, ssr: false });
+const AstroBlasterGame = dynamic(() => import('../games/AstroBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -161,6 +162,20 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     },
 
     // Fun / Adventure Games
+    {
+      id: 'astro-blaster',
+      name: 'Astro Blaster',
+      icon: '🚀',
+      description: 'Pilot a neon starfighter through an asteroid field! Blast rocks that split into faster chunks, chain combos, grab shield / triple-shot / rapid-fire power-ups, and take down the sneaky UFO.',
+      component: AstroBlasterGame,
+      color: 'from-indigo-500 to-fuchsia-600',
+      difficulty: 'All Levels',
+      time: '3-15 minutes',
+      featured: true,
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('astro-blaster')
+    },
     {
       id: 'fruit-frenzy',
       name: 'Fruit Frenzy',
