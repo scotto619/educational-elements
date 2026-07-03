@@ -14,7 +14,7 @@
 //                   finishedAt|null, isHost }
 'use client';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { MATH_SUBLEVELS, generateQuestion } from '../student/StudentMathMentals';
+import { MATH_SUBLEVELS, generateQuestion } from '../../utils/mathMentalsEngine';
 
 // ── Tuning ───────────────────────────────────────────────────────────────────
 const TRACK_LEN = 100;          // units to the finish line

@@ -4,6 +4,7 @@ import React, { Suspense, lazy, useState } from 'react';
 
 const SpellingProgram = lazy(() => import('../curriculum/literacy/SpellingProgram'));
 const ReadersTheatre  = lazy(() => import('../curriculum/literacy/ReadersTheatre'));
+const MathMentals     = lazy(() => import('../curriculum/mathematics/MathMentals'));
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center py-20">
@@ -34,6 +35,17 @@ const RESOURCE_TOOLS = [
     borderColor: 'border-fuchsia-300',
     bgColor: 'bg-fuchsia-50',
     hoverColor: 'hover:bg-fuchsia-100',
+  },
+  {
+    id: 'math-mentals',
+    name: 'Math Mentals',
+    emoji: '🧮',
+    description: 'Assign mental-math levels to students, track daily tests and streaks, and preview questions for every level.',
+    badge: 'REBUILT',
+    badgeColor: 'bg-cyan-100 text-cyan-700',
+    borderColor: 'border-cyan-300',
+    bgColor: 'bg-cyan-50',
+    hoverColor: 'hover:bg-cyan-100',
   },
 ];
 
@@ -83,6 +95,14 @@ const ResourcesTab = ({
           )}
           {activeTool === 'readers-theatre' && (
             <ReadersTheatre
+              students={students}
+              showToast={showToast}
+              saveData={handleSaveData}
+              loadedData={loadedData}
+            />
+          )}
+          {activeTool === 'math-mentals' && (
+            <MathMentals
               students={students}
               showToast={showToast}
               saveData={handleSaveData}

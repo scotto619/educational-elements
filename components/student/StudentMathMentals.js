@@ -3,196 +3,21 @@ import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { firestore } from '../../utils/firebase';
 
-// [All the constants remain the same - MATH_LEVELS, MATH_SUBLEVELS, etc.]
-const MATH_LEVELS = {
-  1: {
-    name: "Level 1 - Prep/Grade 1",
-    description: "Basic number facts and counting (Ages 5-7)",
-    color: "from-green-400 to-green-600",
-    icon: "🌱"
-  },
-  2: {
-    name: "Level 2 - Grade 1/2", 
-    description: "Early addition and subtraction (Ages 6-8)",
-    color: "from-blue-400 to-blue-600",
-    icon: "📚"
-  },
-  3: {
-    name: "Level 3 - Grade 2/3",
-    description: "Multiplication and division basics (Ages 7-9)", 
-    color: "from-purple-400 to-purple-600",
-    icon: "🚀"
-  },
-  4: {
-    name: "Level 4 - Grade 3/4",
-    description: "Advanced number operations (Ages 8-10)",
-    color: "from-red-400 to-red-600", 
-    icon: "⭐"
-  }
-};
+// Math Mentals levels, sublevels, and question generation now live in
+// utils/mathMentalsEngine.js — a single robust engine that implements ALL
+// question types (the old inline generator only implemented 7 of 49 types and
+// silently returned "2 + 2" for everything else).
+// Re-exported here so existing imports keep working.
+import {
+  MATH_LEVELS,
+  MATH_SUBLEVELS,
+  generateQuestion,
+  generateQuestionSet,
+  getNextSublevel,
+  checkAnswer as engineCheckAnswer,
+} from '../../utils/mathMentalsEngine';
 
-export const MATH_SUBLEVELS = {
-  // LEVEL 1 - PREP/GRADE 1
-  "1.1": { name: "Counting 0-5", type: "counting", max: 5 },
-  "1.2": { name: "Counting 0-10", type: "counting", max: 10 },
-  "1.3": { name: "Add 1", type: "add_one", max: 10 },
-  "1.4": { name: "Subtract 1", type: "subtract_one", max: 10 },
-  "1.5": { name: "Add 2", type: "add_two", max: 8 },
-  "1.6": { name: "Number Before", type: "number_before", max: 10 },
-  "1.7": { name: "Number After", type: "number_after", max: 9 },
-  "1.8": { name: "Doubles to 5", type: "doubles", max: 5 },
-  "1.9": { name: "Add to 5", type: "add_to_target", target: 5 },
-  "1.10": { name: "Subtract from 5", type: "subtract_from_target", target: 5 },
-  "1.11": { name: "Count by 2s", type: "skip_count", step: 2, max: 10 },
-  "1.12": { name: "Add to 10", type: "add_to_target", target: 10 },
-  "1.13": { name: "Subtract from 10", type: "subtract_from_target", target: 10 },
-  "1.14": { name: "Doubles to 10", type: "doubles", max: 10 },
-  "1.15": { name: "Which is More?", type: "compare", max: 10 },
-  "1.16": { name: "Which is Less?", type: "compare_less", max: 10 },
-  "1.17": { name: "Missing Numbers", type: "missing_number", max: 10 },
-  "1.18": { name: "Count Forward 3", type: "count_forward", steps: 3, max: 7 },
-  "1.19": { name: "Count Backward 3", type: "count_backward", steps: 3, max: 10 },
-  "1.20": { name: "Mixed to 10", type: "mixed_basic", max: 10 },
-
-  // LEVEL 2 - GRADE 1/2
-  "2.1": { name: "Add to 15", type: "addition", max: 15 },
-  "2.2": { name: "Subtract from 15", type: "subtraction", max: 15 },
-  "2.3": { name: "Add to 20", type: "addition", max: 20 },
-  "2.4": { name: "Subtract from 20", type: "subtraction", max: 20 },
-  "2.5": { name: "Doubles to 20", type: "doubles", max: 20 },
-  "2.6": { name: "Near Doubles", type: "near_doubles", max: 20 },
-  "2.7": { name: "Count by 5s", type: "skip_count", step: 5, max: 50 },
-  "2.8": { name: "Count by 10s", type: "skip_count", step: 10, max: 100 },
-  "2.9": { name: "2 Times Table", type: "times_table", table: 2 },
-  "2.10": { name: "5 Times Table", type: "times_table", table: 5 },
-  "2.11": { name: "10 Times Table", type: "times_table", table: 10 },
-  "2.12": { name: "Half of Even Numbers", type: "halving", max: 20 },
-  "2.13": { name: "Add 10", type: "add_ten", max: 90 },
-  "2.14": { name: "Subtract 10", type: "subtract_ten", max: 100 },
-  "2.15": { name: "Bridging 10", type: "bridging_ten", max: 20 },
-  "2.16": { name: "Teen Numbers", type: "teen_numbers", max: 19 },
-  "2.17": { name: "Place Value Tens", type: "place_value_tens", max: 99 },
-  "2.18": { name: "Round to 10", type: "rounding", target: 10 },
-  "2.19": { name: "Mixed Addition 20", type: "mixed_addition", max: 20 },
-  "2.20": { name: "Mixed Subtraction 20", type: "mixed_subtraction", max: 20 },
-
-  // LEVEL 3 - GRADE 2/3  
-  "3.1": { name: "Add to 50", type: "addition", max: 50 },
-  "3.2": { name: "Subtract from 50", type: "subtraction", max: 50 },
-  "3.3": { name: "Add to 100", type: "addition", max: 100 },
-  "3.4": { name: "Subtract from 100", type: "subtraction", max: 100 },
-  "3.5": { name: "3 Times Table", type: "times_table", table: 3 },
-  "3.6": { name: "4 Times Table", type: "times_table", table: 4 },
-  "3.7": { name: "6 Times Table", type: "times_table", table: 6 },
-  "3.8": { name: "7 Times Table", type: "times_table", table: 7 },
-  "3.9": { name: "8 Times Table", type: "times_table", table: 8 },
-  "3.10": { name: "9 Times Table", type: "times_table", table: 9 },
-  "3.11": { name: "Division by 2", type: "division", table: 2 },
-  "3.12": { name: "Division by 5", type: "division", table: 5 },
-  "3.13": { name: "Division by 10", type: "division", table: 10 },
-  "3.14": { name: "Mixed Times Tables", type: "mixed_tables", tables: [2,3,4,5,10] },
-  "3.15": { name: "Add 3 Numbers", type: "add_three", max: 30 },
-  "3.16": { name: "Round to 100", type: "rounding", target: 100 },
-  "3.17": { name: "Place Value 100s", type: "place_value_hundreds", max: 999 },
-  "3.18": { name: "Missing Addend", type: "missing_addend", max: 50 },
-  "3.19": { name: "Fraction Halves", type: "fractions_half", max: 20 },
-  "3.20": { name: "Mixed Operations 100", type: "mixed_all", max: 100 },
-
-  // LEVEL 4 - GRADE 3/4
-  "4.1": { name: "Add to 200", type: "addition", max: 200 },
-  "4.2": { name: "Subtract from 200", type: "subtraction", max: 200 },
-  "4.3": { name: "Add to 1000", type: "addition", max: 1000 },
-  "4.4": { name: "Subtract from 1000", type: "subtraction", max: 1000 },
-  "4.5": { name: "11 Times Table", type: "times_table", table: 11 },
-  "4.6": { name: "12 Times Table", type: "times_table", table: 12 },
-  "4.7": { name: "Mixed Division", type: "mixed_division", tables: [2,3,4,5,6,7,8,9,10] },
-  "4.8": { name: "Multiply by 10", type: "multiply_ten", max: 99 },
-  "4.9": { name: "Multiply by 100", type: "multiply_hundred", max: 99 },
-  "4.10": { name: "Divide by 10", type: "divide_ten", max: 990 },
-  "4.11": { name: "Decimals Add", type: "decimal_add", max: 10 },
-  "4.12": { name: "Decimals Subtract", type: "decimal_subtract", max: 10 },
-  "4.13": { name: "Fraction Quarters", type: "fractions_quarter", max: 16 },
-  "4.14": { name: "Percentage 10s", type: "percentage_tens", max: 100 },
-  "4.15": { name: "Square Numbers", type: "squares", max: 10 },
-  "4.16": { name: "Double & Half", type: "double_half", max: 100 },
-  "4.17": { name: "Add Hundreds", type: "add_hundreds", max: 900 },
-  "4.18": { name: "Subtract Hundreds", type: "subtract_hundreds", max: 1000 },
-  "4.19": { name: "Round to 1000", type: "rounding", target: 1000 },
-  "4.20": { name: "Mixed Advanced", type: "mixed_advanced", max: 1000 }
-};
-
-export const generateQuestion = (sublevel, config, seed = 0) => {
-  const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-  switch (config.type) {
-    case "counting":
-      const count = randomInt(1, config.max);
-      return {
-        question: `Count the dots:`,
-        answer: count,
-        display: "•".repeat(count),
-        uniqueId: `count_${count}_${Date.now()}_${Math.random()}`
-      };
-
-    case "add_one":
-      const num1 = randomInt(0, config.max);
-      return {
-        question: `${num1} + 1 = ?`,
-        answer: num1 + 1,
-        uniqueId: `add1_${num1}_${Date.now()}_${Math.random()}`
-      };
-
-    case "subtract_one":
-      const num2 = randomInt(1, config.max);
-      return {
-        question: `${num2} - 1 = ?`,
-        answer: num2 - 1,
-        uniqueId: `sub1_${num2}_${Date.now()}_${Math.random()}`
-      };
-
-    case "times_table":
-      const multiplier = randomInt(1, 12);
-      return {
-        question: `${multiplier} × ${config.table} = ?`,
-        answer: multiplier * config.table,
-        uniqueId: `times_${multiplier}_${config.table}_${Date.now()}_${Math.random()}`
-      };
-
-    case "division":
-      const quotient = randomInt(1, 12);
-      const dividend = quotient * config.table;
-      return {
-        question: `${dividend} ÷ ${config.table} = ?`,
-        answer: quotient,
-        uniqueId: `div_${dividend}_${config.table}_${Date.now()}_${Math.random()}`
-      };
-
-    case "addition":
-      const addA = randomInt(1, Math.floor(config.max * 0.6));
-      const addB = randomInt(1, config.max - addA);
-      return {
-        question: `${addA} + ${addB} = ?`,
-        answer: addA + addB,
-        uniqueId: `add_${addA}_${addB}_${Date.now()}_${Math.random()}`
-      };
-
-    case "subtraction":
-      const subResult = randomInt(1, config.max - 1);
-      const subAmount = randomInt(1, config.max - subResult);
-      return {
-        question: `${subResult + subAmount} - ${subAmount} = ?`,
-        answer: subResult,
-        uniqueId: `sub_${subResult + subAmount}_${subAmount}_${Date.now()}_${Math.random()}`
-      };
-
-    default:
-      return {
-        question: "2 + 2 = ?",
-        answer: 4,
-        uniqueId: `default_${Date.now()}_${Math.random()}`
-      };
-  }
-};
+export { MATH_LEVELS, MATH_SUBLEVELS, generateQuestion };
 
 const StudentMathMentals = ({ 
   studentData, 
@@ -396,32 +221,9 @@ const StudentMathMentals = ({
       return;
     }
 
-    const newQuestions = [];
-    const usedQuestionIds = new Set();
-    const maxAttempts = 100;
-    let attempts = 0;
-    
-    while (newQuestions.length < 10 && attempts < maxAttempts) {
-      const question = generateQuestion(studentAssignment.currentLevel, levelConfig, attempts);
-      
-      if (!usedQuestionIds.has(question.uniqueId)) {
-        usedQuestionIds.add(question.uniqueId);
-        newQuestions.push({
-          ...question,
-          id: newQuestions.length + 1
-        });
-      }
-      attempts++;
-    }
-    
-    while (newQuestions.length < 10) {
-      const question = generateQuestion(studentAssignment.currentLevel, levelConfig, Date.now() + newQuestions.length);
-      newQuestions.push({
-        ...question,
-        id: newQuestions.length + 1
-      });
-    }
-
+    // Engine guarantees 10 questions with no duplicate question text
+    const newQuestions = generateQuestionSet(studentAssignment.currentLevel, 10)
+      .map((question, i) => ({ ...question, id: i + 1 }));
 
     setQuestions(newQuestions);
     setCurrentQuestionIndex(0);
@@ -443,7 +245,7 @@ const StudentMathMentals = ({
       question: questions[currentQuestionIndex].question,
       userAnswer: currentAnswer,
       correctAnswer: correctAnswer,
-      isCorrect: parseFloat(currentAnswer) === correctAnswer,
+      isCorrect: engineCheckAnswer(questions[currentQuestionIndex], currentAnswer),
       display: questions[currentQuestionIndex].display
     }];
 
@@ -494,11 +296,11 @@ const StudentMathMentals = ({
       newStreak += 1;
       
       if (newStreak >= 3) {
-        const allLevels = Object.keys(MATH_SUBLEVELS).sort();
-        const currentIndex = allLevels.indexOf(studentAssignment.currentLevel);
-        
-        if (currentIndex < allLevels.length - 1) {
-          newCurrentLevel = allLevels[currentIndex + 1];
+        // Uses proper numeric ordering (1.2 after 1.1 — not the old
+        // alphabetical sort that jumped from 1.1 straight to 1.10!)
+        const next = getNextSublevel(studentAssignment.currentLevel);
+        if (next) {
+          newCurrentLevel = next;
           newStreak = 0;
           shouldAdvance = true;
         }
