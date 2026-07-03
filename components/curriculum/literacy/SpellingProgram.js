@@ -44,7 +44,7 @@ import { LEVEL_4_PASSAGES_13 } from './passages/Level4Passages13';
 // ===============================================
 // ALL SPELLING LISTS WITH FEATURES
 // ===============================================
-const SPELLING_LISTS = [
+export const SPELLING_LISTS = [
   // LEVEL 1 LISTS
   { id: "1.1", name: "Level 1.1 - Simple CVC", feature: "Basic consonant-vowel-consonant patterns", words: ["in", "at", "it", "an", "sit", "sat"] },
   { id: "1.2", name: "Level 1.2 - CVC Practice", feature: "CVC patterns with p, t, n", words: ["pat", "tap", "nap", "tin", "pin", "pit"] },

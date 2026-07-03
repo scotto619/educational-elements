@@ -51,6 +51,7 @@ const SketchGuessGame = dynamic(() => import('../games/SketchGuessGame'), { load
 const BluffBattleGame = dynamic(() => import('../games/BluffBattleGame'), { loading: GameLoadingSpinner, ssr: false });
 const TowerStackGame = dynamic(() => import('../games/TowerStackGame'), { loading: GameLoadingSpinner, ssr: false });
 const AstroBlasterGame = dynamic(() => import('../games/AstroBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
+const SpellCasterGame = dynamic(() => import('../games/SpellCasterGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -96,6 +97,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       educational: true,
       subject: 'english',
       logo: getGameLogo('type-defender')
+    },
+    {
+      id: 'spell-caster',
+      name: 'Spell Caster',
+      icon: '🧙‍♂️',
+      description: 'Monsters are marching toward your wizard — stop them with SPELLING! Hear each word read aloud, type it correctly to cast lightning, and battle boss rounds. Uses your class spelling words when assigned!',
+      component: SpellCasterGame,
+      color: 'from-amber-500 to-purple-600',
+      difficulty: 'All Levels',
+      time: '5-15 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'english',
+      logo: getGameLogo('spell-caster')
     },
     {
       id: 'multiplication-grid',
