@@ -52,6 +52,7 @@ const BluffBattleGame = dynamic(() => import('../games/BluffBattleGame'), { load
 const TowerStackGame = dynamic(() => import('../games/TowerStackGame'), { loading: GameLoadingSpinner, ssr: false });
 const AstroBlasterGame = dynamic(() => import('../games/AstroBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
 const SpellCasterGame = dynamic(() => import('../games/SpellCasterGame'), { loading: GameLoadingSpinner, ssr: false });
+const MathGrandPrixGame = dynamic(() => import('../games/MathGrandPrixGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -113,6 +114,23 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       educational: true,
       subject: 'english',
       logo: getGameLogo('spell-caster')
+    },
+    {
+      id: 'math-grand-prix',
+      name: 'Math Grand Prix',
+      icon: '🏎️',
+      description: 'Your kart runs on brain power! Answer mental-math questions to race past rival karts — or host a room and race up to 8 classmates live! 3 in a row fires a turbo boost. Uses your assigned Math Mentals level!',
+      component: MathGrandPrixGame,
+      color: 'from-emerald-500 to-teal-600',
+      difficulty: 'All Levels',
+      time: '3-10 minutes',
+      featured: true,
+      new: true,
+      multiplayer: true,
+      category: 'educational',
+      educational: true,
+      subject: 'math',
+      logo: getGameLogo('math-grand-prix')
     },
     {
       id: 'multiplication-grid',

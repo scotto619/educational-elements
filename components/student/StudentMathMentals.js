@@ -31,7 +31,7 @@ const MATH_LEVELS = {
   }
 };
 
-const MATH_SUBLEVELS = {
+export const MATH_SUBLEVELS = {
   // LEVEL 1 - PREP/GRADE 1
   "1.1": { name: "Counting 0-5", type: "counting", max: 5 },
   "1.2": { name: "Counting 0-10", type: "counting", max: 10 },
@@ -121,7 +121,7 @@ const MATH_SUBLEVELS = {
   "4.20": { name: "Mixed Advanced", type: "mixed_advanced", max: 1000 }
 };
 
-const generateQuestion = (sublevel, config, seed = 0) => {
+export const generateQuestion = (sublevel, config, seed = 0) => {
   const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
   switch (config.type) {
