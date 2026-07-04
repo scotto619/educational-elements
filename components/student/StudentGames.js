@@ -53,6 +53,7 @@ const TowerStackGame = dynamic(() => import('../games/TowerStackGame'), { loadin
 const AstroBlasterGame = dynamic(() => import('../games/AstroBlasterGame'), { loading: GameLoadingSpinner, ssr: false });
 const SpellCasterGame = dynamic(() => import('../games/SpellCasterGame'), { loading: GameLoadingSpinner, ssr: false });
 const MathGrandPrixGame = dynamic(() => import('../games/MathGrandPrixGame'), { loading: GameLoadingSpinner, ssr: false });
+const StorySleuthGame = dynamic(() => import('../games/StorySleuthGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -131,6 +132,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       educational: true,
       subject: 'math',
       logo: getGameLogo('math-grand-prix')
+    },
+    {
+      id: 'story-sleuth',
+      name: 'Story Sleuth',
+      icon: '🕵️',
+      description: 'Become a reading detective! Hunt the hidden spelling words in a real story, then rebuild the story when they vanish. Uses the fluency passages matched to your spelling list!',
+      component: StorySleuthGame,
+      color: 'from-indigo-500 to-amber-500',
+      difficulty: 'All Levels',
+      time: '5-10 minutes',
+      featured: true,
+      new: true,
+      category: 'educational',
+      educational: true,
+      subject: 'english',
+      logo: getGameLogo('story-sleuth')
     },
     {
       id: 'multiplication-grid',
