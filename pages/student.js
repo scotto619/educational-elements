@@ -29,7 +29,7 @@ const StudentReading = dynamic(() => import('../components/student/StudentReadin
 const StudentMaths = dynamic(() => import('../components/student/StudentMaths'), { loading: TabLoader, ssr: false });
 const StudentMorphology = dynamic(() => import('../components/student/StudentMorphology'), { loading: TabLoader, ssr: false });
 const StudentScience = dynamic(() => import('../components/student/StudentScience'), { loading: TabLoader, ssr: false });
-const VisualWritingPrompts = dynamic(() => import('../components/curriculum/literacy/VisualWritingPrompts'), { loading: TabLoader, ssr: false });
+const StudentWritingHub = dynamic(() => import('../components/student/StudentWritingHub'), { loading: TabLoader, ssr: false });
 const StudentAssignments = dynamic(() => import('../components/student/StudentAssignments'), { loading: TabLoader, ssr: false });
 const DailyMysteryBoxModal = dynamic(() => import('../components/student/DailyMysteryBoxModal'), { ssr: false });
 import { DEFAULT_NOTICE_ITEMS } from '../services/noticeBoard';
@@ -2098,9 +2098,10 @@ const StudentPortal = () => {
             switch (activeLiteracyStrand) {
               case 'writing':
                 return (
-                  <VisualWritingPrompts
+                  <StudentWritingHub
+                    studentData={studentData}
                     showToast={showToast}
-                    students={[studentData]}
+                    updateStudentData={updateStudentData}
                   />
                 );
               case 'spelling':

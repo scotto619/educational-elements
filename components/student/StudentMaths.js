@@ -4,6 +4,7 @@ import StudentMathMentals from './StudentMathMentals';
 import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles';
 import StudentMathChallenge from './StudentMathChallenge';
 import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
+import TimesTablesDojo from './TimesTablesDojo';
 import { DAILY_MATH_CHALLENGES } from '../curriculum/mathematics/data/dailyChallenges';
 
 // Simple Calculator Component
@@ -352,6 +353,14 @@ const StudentMaths = ({
       description: 'Highlight rows, columns, skip counting and number patterns',
       color: 'from-amber-500 to-orange-500',
       component: NumbersBoard
+    },
+    {
+      id: 'times-tables-dojo',
+      name: 'Times Tables Dojo',
+      icon: '🥋',
+      description: 'Earn belts from white to black! A mastery map tracks every fact and smart practice trains your weakest ones',
+      color: 'from-slate-700 to-indigo-600',
+      component: TimesTablesDojo
     },
     {
       id: 'times-tables',
