@@ -2129,7 +2129,13 @@ const StudentPortal = () => {
                 );
             }
           case 'science':
-            return <StudentScience />;
+            return (
+              <StudentScience
+                studentData={studentData}
+                showToast={showToast}
+                updateStudentData={updateStudentData}
+              />
+            );
           default:
             return (
               <StudentMaths
