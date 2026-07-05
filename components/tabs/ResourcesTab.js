@@ -5,6 +5,7 @@ import React, { Suspense, lazy, useState } from 'react';
 const SpellingProgram = lazy(() => import('../curriculum/literacy/SpellingProgram'));
 const ReadersTheatre  = lazy(() => import('../curriculum/literacy/ReadersTheatre'));
 const MathMentals     = lazy(() => import('../curriculum/mathematics/MathMentals'));
+const MoneyMasters    = lazy(() => import('../curriculum/financial/MoneyMasters'));
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center py-20">
@@ -46,6 +47,17 @@ const RESOURCE_TOOLS = [
     borderColor: 'border-cyan-300',
     bgColor: 'bg-cyan-50',
     hoverColor: 'hover:bg-cyan-100',
+  },
+  {
+    id: 'money-masters',
+    name: 'Money Masters',
+    emoji: '💰',
+    description: 'Assign financial literacy levels — money lessons, auto-marked quizzes, boss challenges, badges, and a virtual bank with weekly interest.',
+    badge: 'NEW',
+    badgeColor: 'bg-amber-100 text-amber-700',
+    borderColor: 'border-amber-300',
+    bgColor: 'bg-amber-50',
+    hoverColor: 'hover:bg-amber-100',
   },
 ];
 
@@ -103,6 +115,14 @@ const ResourcesTab = ({
           )}
           {activeTool === 'math-mentals' && (
             <MathMentals
+              students={students}
+              showToast={showToast}
+              saveData={handleSaveData}
+              loadedData={loadedData}
+            />
+          )}
+          {activeTool === 'money-masters' && (
+            <MoneyMasters
               students={students}
               showToast={showToast}
               saveData={handleSaveData}

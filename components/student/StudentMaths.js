@@ -1,6 +1,7 @@
 // components/student/StudentMaths.js - COMPREHENSIVE MATHS TAB FOR STUDENT PORTAL
 import React, { useMemo, useState } from 'react';
 import StudentMathMentals from './StudentMathMentals';
+import StudentMoneyMasters from './StudentMoneyMasters';
 import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles';
 import StudentMathChallenge from './StudentMathChallenge';
 import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
@@ -337,6 +338,14 @@ const StudentMaths = ({
       description: 'Daily math facts practice - your assigned level',
       color: 'from-blue-500 to-blue-600',
       component: StudentMathMentals
+    },
+    {
+      id: 'money-masters',
+      name: 'Money Masters',
+      icon: '💰',
+      description: 'Learn real money skills! Pass lessons, beat boss challenges, earn badges and grow your own virtual bank',
+      color: 'from-yellow-500 to-amber-600',
+      component: StudentMoneyMasters
     },
     {
       id: 'interactive-angles',
