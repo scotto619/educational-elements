@@ -6,6 +6,7 @@ const SpellingProgram = lazy(() => import('../curriculum/literacy/SpellingProgra
 const ReadersTheatre  = lazy(() => import('../curriculum/literacy/ReadersTheatre'));
 const MathMentals     = lazy(() => import('../curriculum/mathematics/MathMentals'));
 const MoneyMasters    = lazy(() => import('../curriculum/financial/MoneyMasters'));
+const KeyboardQuest   = lazy(() => import('../curriculum/typing/KeyboardQuest'));
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center py-20">
@@ -58,6 +59,17 @@ const RESOURCE_TOOLS = [
     borderColor: 'border-amber-300',
     bgColor: 'bg-amber-50',
     hoverColor: 'hover:bg-amber-100',
+  },
+  {
+    id: 'keyboard-quest',
+    name: 'Keyboard Quest',
+    emoji: '⌨️',
+    description: 'Assign touch-typing stages — 40 lessons across 5 belts with live WPM tracking, a finger-guide keyboard, stars, and belt tests.',
+    badge: 'NEW',
+    badgeColor: 'bg-indigo-100 text-indigo-700',
+    borderColor: 'border-indigo-300',
+    bgColor: 'bg-indigo-50',
+    hoverColor: 'hover:bg-indigo-100',
   },
 ];
 
@@ -123,6 +135,14 @@ const ResourcesTab = ({
           )}
           {activeTool === 'money-masters' && (
             <MoneyMasters
+              students={students}
+              showToast={showToast}
+              saveData={handleSaveData}
+              loadedData={loadedData}
+            />
+          )}
+          {activeTool === 'keyboard-quest' && (
+            <KeyboardQuest
               students={students}
               showToast={showToast}
               saveData={handleSaveData}

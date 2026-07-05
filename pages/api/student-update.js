@@ -68,6 +68,7 @@ export default async function handler(req, res) {
       'clickerGameData',
       'sweetEmpireData',      // Sweet Empire clicker game (replaces Hero Forge)
       'moneyMastersProgress', // Money Masters financial literacy tool
+      'keyboardQuestProgress', // Keyboard Quest typing program
       'mathMentalsProgress' // Math Mentals specific field
     ];
 

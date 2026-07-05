@@ -29,6 +29,7 @@ const StudentReading = dynamic(() => import('../components/student/StudentReadin
 const StudentMaths = dynamic(() => import('../components/student/StudentMaths'), { loading: TabLoader, ssr: false });
 const StudentMorphology = dynamic(() => import('../components/student/StudentMorphology'), { loading: TabLoader, ssr: false });
 const StudentScience = dynamic(() => import('../components/student/StudentScience'), { loading: TabLoader, ssr: false });
+const StudentKeyboardQuest = dynamic(() => import('../components/student/StudentKeyboardQuest'), { loading: TabLoader, ssr: false });
 const StudentWritingHub = dynamic(() => import('../components/student/StudentWritingHub'), { loading: TabLoader, ssr: false });
 const StudentAssignments = dynamic(() => import('../components/student/StudentAssignments'), { loading: TabLoader, ssr: false });
 const DailyMysteryBoxModal = dynamic(() => import('../components/student/DailyMysteryBoxModal'), { ssr: false });
@@ -1883,7 +1884,8 @@ const StudentPortal = () => {
     ] : []),
     { id: 'maths', name: 'Maths', icon: '🔢', shortName: 'Maths' },
     { id: 'literacy', name: 'Literacy', icon: '📖', shortName: 'Literacy' },
-    { id: 'science', name: 'Science', icon: '🪐', shortName: 'Science' }
+    { id: 'science', name: 'Science', icon: '🪐', shortName: 'Science' },
+    { id: 'typing', name: 'Typing', icon: '⌨️', shortName: 'Typing' }
   ];
 
   const literacyStrands = [
@@ -2132,6 +2134,15 @@ const StudentPortal = () => {
             return (
               <StudentScience
                 studentData={studentData}
+                showToast={showToast}
+                updateStudentData={updateStudentData}
+              />
+            );
+          case 'typing':
+            return (
+              <StudentKeyboardQuest
+                studentData={studentData}
+                classData={classData}
                 showToast={showToast}
                 updateStudentData={updateStudentData}
               />
