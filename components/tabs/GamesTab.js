@@ -54,6 +54,32 @@ const GamesTab = ({
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
+  // ── Student game-section locks ─────────────────────────────────────────────
+  // Stored on the class as gameSettings.lockedCategories { fun, educational,
+  // multiplayer }. The student portal reads this and hides locked sections.
+  const [localLocks, setLocalLocks] = useState(null); // optimistic UI override
+  const lockedCategories = localLocks || currentClassData?.gameSettings?.lockedCategories || {};
+
+  const toggleCategoryLock = async (categoryId, label) => {
+    const next = { ...lockedCategories, [categoryId]: !lockedCategories[categoryId] };
+    setLocalLocks(next);
+    try {
+      await saveClassData({
+        gameSettings: { ...(currentClassData?.gameSettings || {}), lockedCategories: next },
+      });
+      showToast(
+        next[categoryId]
+          ? `🔒 ${label} games are now LOCKED for students`
+          : `🔓 ${label} games are now unlocked for students`,
+        'success'
+      );
+    } catch (err) {
+      console.error('GamesTab: failed to save game locks', err);
+      setLocalLocks(null); // revert to stored value
+      showToast('Could not save game lock settings', 'error');
+    }
+  };
+
   // Mock student data for teacher preview (no saving)
   const mockTeacherData = {
     firstName: 'Teacher',
@@ -437,6 +463,40 @@ const GamesTab = ({
         <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl p-6 md:p-8 text-white shadow-xl text-center">
           <h2 className="text-3xl font-bold mb-2">🎮 Teacher Game Library</h2>
           <p className="text-white/90 text-sm md:text-base">Choose a category to browse and launch games for your class.</p>
+        </div>
+
+        {/* Student game access controls */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">🎛️ Student Game Access</h3>
+              <p className="text-sm text-gray-500">Lock or unlock whole game sections in the student portal. Students see locked sections greyed out.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {categories.map((category) => {
+              const locked = !!lockedCategories[category.id];
+              return (
+                <button
+                  key={`lock-${category.id}`}
+                  onClick={() => toggleCategoryLock(category.id, category.name)}
+                  className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 transition ${
+                    locked
+                      ? 'border-red-300 bg-red-50 hover:bg-red-100'
+                      : 'border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
+                  }`}
+                  title={locked ? `Unlock ${category.name} games for students` : `Lock ${category.name} games for students`}
+                >
+                  <span className="font-bold text-gray-800 text-sm">{category.icon} {category.name}</span>
+                  <span className={`flex items-center gap-1.5 text-xs font-bold rounded-full px-2.5 py-1 ${
+                    locked ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
+                  }`}>
+                    {locked ? '🔒 Locked' : '🔓 Open'}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

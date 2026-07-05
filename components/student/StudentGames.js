@@ -67,6 +67,10 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   // Get classmates for leaderboards
   const classmates = classData?.students || [];
 
+  // Game sections the teacher has locked (set in the teacher Games tab)
+  const lockedCategories = classData?.gameSettings?.lockedCategories || {};
+  const isCategoryLocked = (categoryId) => !!lockedCategories[categoryId];
+
   const availableGames = [
     {
       id: 'daily-word-challenge',
@@ -735,6 +739,10 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   const getGamesInSubject = (subjectId) => getGamesInCategory('educational', subjectId);
 
   const handleSelectCategory = (categoryId) => {
+    if (isCategoryLocked(categoryId)) {
+      showToast('🔒 Your teacher has locked this game section for now.', 'info');
+      return;
+    }
     setSelectedSubject(null);
     setSelectedCategory(categoryId);
   };
@@ -747,6 +755,24 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       setSelectedSubject(null);
     }
   };
+
+  // Teacher locked this section while a game/category was open — block access
+  if ((selectedGame && isCategoryLocked(categorizeGame(selectedGame))) ||
+      (!selectedGame && selectedCategory && isCategoryLocked(selectedCategory))) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-10 text-center max-w-xl mx-auto mt-6">
+        <div className="text-6xl mb-4">🔒</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">This game section is locked</h2>
+        <p className="text-gray-600 mb-6">Your teacher has locked this section for now. Check back later!</p>
+        <button
+          onClick={() => { setSelectedGame(null); setSelectedCategory(null); setSelectedSubject(null); }}
+          className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+        >
+          ← Back to Game Center
+        </button>
+      </div>
+    );
+  }
 
   if (selectedGame) {
     const GameComponent = selectedGame.component;
@@ -805,28 +831,44 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => handleSelectCategory(category.id)}
-              className="group bg-white rounded-2xl shadow-lg border border-gray-100 p-6 text-left hover:shadow-xl transition-all duration-300 relative overflow-hidden"
-            >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 transition-opacity"></div>
-              <div className="relative z-10 space-y-3">
-                <div className="text-4xl">{category.icon}</div>
-                <h3 className="text-2xl font-bold text-gray-900">{category.name}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">{category.description}</p>
-                <div className="flex items-center gap-2 text-sm font-semibold text-purple-600">
-                  <span>
-                    {category.id === 'educational'
-                      ? `${subjects.length} subjects · ${getGamesInCategory(category.id).length} games`
-                      : `${getGamesInCategory(category.id).length} games`}
-                  </span>
-                  <span>→</span>
+          {categories.map((category) => {
+            const locked = isCategoryLocked(category.id);
+            return (
+              <button
+                key={category.id}
+                onClick={() => handleSelectCategory(category.id)}
+                className={`group rounded-2xl shadow-lg border p-6 text-left transition-all duration-300 relative overflow-hidden ${
+                  locked
+                    ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
+                    : 'bg-white border-gray-100 hover:shadow-xl'
+                }`}
+              >
+                {!locked && (
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5 transition-opacity"></div>
+                )}
+                {locked && (
+                  <div className="absolute top-3 right-3 bg-gray-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow z-20">
+                    🔒 Locked
+                  </div>
+                )}
+                <div className={`relative z-10 space-y-3 ${locked ? 'opacity-50 grayscale' : ''}`}>
+                  <div className="text-4xl">{category.icon}</div>
+                  <h3 className="text-2xl font-bold text-gray-900">{category.name}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{category.description}</p>
+                  <div className={`flex items-center gap-2 text-sm font-semibold ${locked ? 'text-gray-500' : 'text-purple-600'}`}>
+                    <span>
+                      {locked
+                        ? 'Locked by your teacher'
+                        : category.id === 'educational'
+                          ? `${subjects.length} subjects · ${getGamesInCategory(category.id).length} games`
+                          : `${getGamesInCategory(category.id).length} games`}
+                    </span>
+                    {!locked && <span>→</span>}
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </div>
     );
