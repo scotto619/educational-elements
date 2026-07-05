@@ -280,7 +280,8 @@ export async function createStudent(classId, studentData) {
       ownedPets: [],
       
       // Game data
-      clickerGameData: null,
+      sweetEmpireData: null,
+      moneyMastersProgress: null,
       mathMentalsProgress: null,
       gameProgress: {},
       achievements: [],

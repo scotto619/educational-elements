@@ -50,7 +50,8 @@ export async function createStudentV2(req, res) {
         ownedPets: [],
         
         // Game data
-        clickerGameData: null,
+        sweetEmpireData: null,
+        moneyMastersProgress: null,
         mathMentalsProgress: null,
         gameProgress: {},
         achievements: [],

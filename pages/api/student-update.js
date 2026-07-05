@@ -66,6 +66,8 @@ export default async function handler(req, res) {
       'ownedAvatars', 'ownedPets', 'rewardsPurchased',
       'gameProgress', 'achievements', 'lastUpdated',
       'clickerGameData',
+      'sweetEmpireData',      // Sweet Empire clicker game (replaces Hero Forge)
+      'moneyMastersProgress', // Money Masters financial literacy tool
       'mathMentalsProgress' // Math Mentals specific field
     ];
 

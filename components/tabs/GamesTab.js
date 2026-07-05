@@ -19,7 +19,7 @@ const NoggleGame = dynamic(() => import('../games/NoggleGame'), { loading: GameL
 const WordSearchGame = dynamic(() => import('../games/WordSearchGame'), { loading: GameLoadingSpinner, ssr: false });
 const TicTacToeGame = dynamic(() => import('../games/TicTacToeGame'), { loading: GameLoadingSpinner, ssr: false });
 const BattleshipsGame = dynamic(() => import('../games/BattleshipsGame'), { loading: GameLoadingSpinner, ssr: false });
-const ClickerGame = dynamic(() => import('../games/ClickerGame'), { loading: GameLoadingSpinner, ssr: false });
+const SweetEmpireGame = dynamic(() => import('../games/SweetEmpireGame'), { loading: GameLoadingSpinner, ssr: false });
 const MathSpaceInvadersGame = dynamic(() => import('../games/MathSpaceInvadersGame'), { loading: GameLoadingSpinner, ssr: false });
 const MultiplayerAgarGame = dynamic(() => import('../games/MultiplayerAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 const BingoGame = dynamic(() => import('../games/BingoGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -317,17 +317,16 @@ const GamesTab = ({
 
     // Brain Games
     {
-      id: 'clicker',
-      name: 'Hero Forge Display',
-      icon: '⚡',
-      description: 'Display incremental game progress as a relaxing visual.',
-      component: ClickerGame,
-      color: 'from-yellow-500 to-orange-500',
+      id: 'sweet-empire',
+      name: 'Sweet Empire Preview',
+      icon: '🍪',
+      description: 'Preview the Sweet Empire clicker your students play — bake sweets, build the empire, see the unlockable profile styles.',
+      component: SweetEmpireGame,
+      color: 'from-amber-500 to-rose-500',
       difficulty: 'Easy',
       time: '10+ minutes',
       category: 'fun',
-      inDevelopment: true,
-      logo: getGameLogo('clicker')
+      logo: getGameLogo('sweet-empire')
     },
     {
       id: 'sprout-bloom',

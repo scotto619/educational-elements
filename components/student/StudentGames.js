@@ -18,7 +18,7 @@ const BoggleGame = dynamic(() => import('../games/BoggleGame'), { loading: GameL
 const WordSearchGame = dynamic(() => import('../games/WordSearchGame'), { loading: GameLoadingSpinner, ssr: false });
 const TicTacToeGame = dynamic(() => import('../games/TicTacToeGame'), { loading: GameLoadingSpinner, ssr: false });
 const BattleshipsGame = dynamic(() => import('../games/BattleshipsGame'), { loading: GameLoadingSpinner, ssr: false });
-const ClickerGame = dynamic(() => import('../games/ClickerGame'), { loading: GameLoadingSpinner, ssr: false });
+const SweetEmpireGame = dynamic(() => import('../games/SweetEmpireGame'), { loading: GameLoadingSpinner, ssr: false });
 const MathSpaceInvadersGame = dynamic(() => import('../games/MathSpaceInvadersGame'), { loading: GameLoadingSpinner, ssr: false });
 const MultiplayerAgarGame = dynamic(() => import('../games/MultiplayerAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 const StudentBingo = dynamic(() => import('../student/StudentBingo'), { loading: GameLoadingSpinner, ssr: false });
@@ -378,17 +378,17 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       logo: getGameLogo('maze-runner')
     },
     {
-      id: 'clicker',
-      name: 'Hero Forge',
-      icon: '⚡',
-      description: 'Build your fantasy empire in this epic incremental adventure!',
-      component: ClickerGame,
-      color: 'from-yellow-500 to-orange-600',
+      id: 'sweet-empire',
+      name: 'Sweet Empire',
+      icon: '🍪',
+      description: 'Bake sweets, build a dessert empire, and unlock ultra-rare profile themes, titles and effects that show on your class card!',
+      component: SweetEmpireGame,
+      color: 'from-amber-500 to-rose-500',
       difficulty: 'Easy',
       time: '10+ minutes',
+      new: true,
       category: 'fun',
-      inDevelopment: true,
-      logo: getGameLogo('hero-forge')
+      logo: getGameLogo('sweet-empire')
     },
     {
       id: 'battleships',
@@ -662,7 +662,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
   const categorizeGame = (game) => {
     // Determine category based on game object properties
     if (game.category === 'multiplayer') return 'multiplayer';
-    if (game.category === 'fun' || game.id === 'clicker') return 'fun'; // Explicitly check for fun category
+    if (game.category === 'fun') return 'fun';
     if (game.educational || game.category === 'educational' || game.category === 'featured' || game.category === 'daily') {
       return 'educational';
     }

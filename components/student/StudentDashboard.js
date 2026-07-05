@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
+import { getSweetEmpireProfile } from '../games/SweetEmpire/sweetEmpireConfig';
 
 const CLASS_REWARD_TIERS = [
   { xp: 1000, label: 'Class Prize 1' },
@@ -29,6 +30,10 @@ const StudentDashboard = ({
   const equippedEffect = useMemo(() => CARD_EFFECT_MAP[studentData?.equippedCardEffect], [studentData?.equippedCardEffect]);
   const effectAccent = equippedEffect?.colors?.[0];
 
+  // Sweet Empire profile style — earned in the Sweet Empire clicker game
+  const seProfile = useMemo(() => getSweetEmpireProfile(studentData?.sweetEmpireData, false), [studentData?.sweetEmpireData]);
+  const seAccent = seProfile?.theme?.accent;
+
   const classTotalXP = useMemo(() => {
     const roster = classData?.students || [];
     return roster.reduce((sum, student) => sum + (student.totalPoints || 0), 0);
@@ -52,10 +57,18 @@ const StudentDashboard = ({
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Welcome Card - Mobile Optimized */}
-      <div className="bg-gradient-to-r from-purple-500 to-blue-600 text-white rounded-xl p-4 md:p-6 shadow-lg">
-        <h2 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">Welcome back, {studentData?.firstName}! 🎉</h2>
-        <p className="text-purple-100 text-sm md:text-base">Ready to continue your classroom adventure?</p>
+      {/* Welcome Card - Mobile Optimized (themed by Sweet Empire unlocks) */}
+      <div className={`bg-gradient-to-r ${seProfile?.theme ? seProfile.theme.grad : 'from-purple-500 to-blue-600'} text-white rounded-xl p-4 md:p-6 shadow-lg ${seProfile?.effectCls || ''}`}>
+        <h2 className="text-xl md:text-3xl font-bold mb-1 md:mb-2 drop-shadow">Welcome back, {studentData?.firstName}! 🎉</h2>
+        <p className="text-white/90 text-sm md:text-base drop-shadow">Ready to continue your classroom adventure?</p>
+        {seProfile && (seProfile.themeName || seProfile.title || seProfile.effectName) && (
+          <div className="flex flex-wrap gap-2 mt-2 text-[11px] md:text-xs font-bold">
+            {seProfile.title && <span className="bg-white/25 rounded-full px-2.5 py-0.5">📛 {seProfile.title.name}</span>}
+            {seProfile.themeName && <span className="bg-white/25 rounded-full px-2.5 py-0.5">{seProfile.themeIcon} {seProfile.themeName}</span>}
+            {seProfile.effectName && <span className="bg-white/25 rounded-full px-2.5 py-0.5">✨ {seProfile.effectName}</span>}
+            <span className="bg-white/25 rounded-full px-2.5 py-0.5">🍪 Earned in Sweet Empire</span>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid - Mobile Optimized */}
@@ -82,15 +95,17 @@ const StudentDashboard = ({
               alt="Your Avatar"
               className="w-16 h-16 md:w-20 md:h-20 rounded-full mx-auto mb-2 md:mb-4 border-4 border-purple-300"
               style={{
-                borderColor: effectAccent || undefined,
-                boxShadow: effectAccent ? `0 0 24px ${effectAccent}66` : undefined
+                borderColor: seAccent || effectAccent || undefined,
+                boxShadow: (seAccent || effectAccent) ? `0 0 24px ${seAccent || effectAccent}66` : undefined
               }}
               onError={(e) => {
                 e.target.src = '/shop/Basic/Banana.png';
               }}
             />
             <h3 className="text-base md:text-lg font-bold text-gray-800">Level {level}</h3>
-            <p className="text-purple-600 font-semibold text-sm md:text-base">Champion</p>
+            <p className={`font-semibold text-sm md:text-base ${seProfile?.title ? seProfile.title.color : 'text-purple-600'}`}>
+              {seProfile?.title?.name || 'Champion'}
+            </p>
             {equippedEffect && (
               <p className="text-[11px] md:text-xs font-semibold text-indigo-700 mt-1">
                 {equippedEffect.name} equipped

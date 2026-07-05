@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { DEFAULT_PET_IMAGE, getAvatarImage as resolveAvatarImage, getPetImage as resolvePetImage } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
+import { getSweetEmpireProfile } from '../games/SweetEmpire/sweetEmpireConfig';
 
 // ===============================================
 // HELPER FUNCTIONS (LOCAL FALLBACKS)
@@ -38,49 +39,9 @@ const playAwardSound = (type = 'xp') => {
     } catch (e) { console.log('Sound error:', e); }
 };
 
-// Theme map for card borders/backgrounds (light + dark variants)
-const THEME_COLORS = {
-    'default':         { border: 'border-blue-400',    darkBorder: 'border-blue-500',    bg: 'bg-blue-50',     darkBg: 'bg-blue-950/40',   glow: 'shadow-blue-400/40' },
-    'Hero\'s Dawn':    { border: 'border-blue-400',    darkBorder: 'border-blue-500',    bg: 'bg-blue-50',     darkBg: 'bg-blue-950/40',   glow: 'shadow-blue-400/40' },
-    'Shadow Realm':    { border: 'border-purple-400',  darkBorder: 'border-purple-400',  bg: 'bg-purple-50',   darkBg: 'bg-purple-950/40', glow: 'shadow-purple-400/40' },
-    'Elven Grove':     { border: 'border-green-400',   darkBorder: 'border-green-400',   bg: 'bg-green-50',    darkBg: 'bg-green-950/40',  glow: 'shadow-green-400/40' },
-    'Dragon\'s Lair':  { border: 'border-red-400',     darkBorder: 'border-red-400',     bg: 'bg-red-50',      darkBg: 'bg-red-950/40',    glow: 'shadow-red-400/40' },
-    'Frozen Peaks':    { border: 'border-cyan-400',    darkBorder: 'border-cyan-400',    bg: 'bg-cyan-50',     darkBg: 'bg-cyan-950/40',   glow: 'shadow-cyan-400/40' },
-    'Void Dimension':  { border: 'border-indigo-500',  darkBorder: 'border-indigo-400',  bg: 'bg-indigo-50',   darkBg: 'bg-indigo-950/40', glow: 'shadow-indigo-400/40' },
-    'Desert Oasis':    { border: 'border-yellow-400',  darkBorder: 'border-yellow-400',  bg: 'bg-yellow-50',   darkBg: 'bg-yellow-950/40', glow: 'shadow-yellow-400/40' },
-    'Ocean Depths':    { border: 'border-blue-500',    darkBorder: 'border-blue-400',    bg: 'bg-blue-100',    darkBg: 'bg-blue-900/40',   glow: 'shadow-blue-500/40' },
-    'Mystic Grove':    { border: 'border-purple-300',  darkBorder: 'border-purple-400',  bg: 'bg-purple-100',  darkBg: 'bg-purple-900/40', glow: 'shadow-purple-300/40' },
-    'Celestial Realm': { border: 'border-indigo-400',  darkBorder: 'border-indigo-400',  bg: 'bg-indigo-100',  darkBg: 'bg-indigo-900/40', glow: 'shadow-indigo-400/40' },
-    'Volcanic Forge':  { border: 'border-red-500',     darkBorder: 'border-red-400',     bg: 'bg-red-100',     darkBg: 'bg-red-900/40',    glow: 'shadow-red-500/40' },
-};
-
-const getThemeColors = (themeName) => THEME_COLORS[themeName] || THEME_COLORS['default'];
-
-const getTitleColor = (title, isDark) => {
-    const map = {
-        'Novice':     isDark ? 'text-slate-400'  : 'text-gray-600',
-        'Apprentice': isDark ? 'text-green-400'  : 'text-green-600',
-        'Warrior':    isDark ? 'text-blue-400'   : 'text-blue-600',
-        'Hero':       isDark ? 'text-purple-400' : 'text-purple-600',
-        'Champion':   isDark ? 'text-orange-400' : 'text-orange-600',
-        'Legend':     isDark ? 'text-yellow-400' : 'text-yellow-600',
-        'Mythic':     isDark ? 'text-pink-400'   : 'text-pink-600',
-        'Ascended':   isDark ? 'text-cyan-400'   : 'text-cyan-600',
-        'Divine':     isDark ? 'text-amber-300'  : 'text-yellow-600',
-        'Eternal':    isDark ? 'text-violet-400' : 'text-purple-600',
-    };
-    return map[title] || (isDark ? 'text-slate-400' : 'text-gray-600');
-};
-
-const getPrestigeEffects = (prestige, masterLevel) => {
-    if (masterLevel > 0) return 'animate-pulse ring-4 ring-offset-2 ring-purple-500 shadow-2xl shadow-purple-500/50';
-    if (prestige >= 50) return 'animate-pulse ring-4 ring-indigo-500 shadow-xl shadow-indigo-500/50';
-    if (prestige >= 25) return 'ring-4 ring-pink-500 shadow-lg shadow-pink-500/50';
-    if (prestige >= 10) return 'ring-4 ring-yellow-400 shadow-lg shadow-yellow-400/50';
-    if (prestige >= 5)  return 'ring-4 ring-gray-400 shadow-md shadow-gray-400/50';
-    if (prestige >= 1)  return 'ring-4 ring-orange-400 shadow-md shadow-orange-400/50';
-    return '';
-};
+// Sweet Empire profile styling (themes/titles/effects) is defined centrally in
+// components/games/SweetEmpire/sweetEmpireConfig.js and read via
+// getSweetEmpireProfile(student.sweetEmpireData, isDark).
 
 // Effect rarity badge colors
 const EFFECT_RARITY_COLORS = {
@@ -629,38 +590,21 @@ const StudentCard = ({
     const equippedEffectId = student.equippedCardEffect;
     const cardEffect       = equippedEffectId ? CARD_EFFECT_MAP[equippedEffectId] : null;
 
-    // ── Clicker / theme data ─────────────────────────────────────────────────
-    const clickerGameData = student.clickerGameData || null;
-    const hasClickerData  = clickerGameData && clickerGameData.activeTheme;
-
-    let clickerAchievements = null;
-    if (hasClickerData) {
-        const themeNameMap = {
-            'default': 'Hero\'s Dawn', 'dark': 'Shadow Realm', 'forest': 'Elven Grove',
-            'fire': 'Dragon\'s Lair', 'ice': 'Frozen Peaks', 'cosmic': 'Void Dimension',
-            'desert': 'Desert Oasis', 'ocean': 'Ocean Depths', 'mystic': 'Mystic Grove',
-            'celestial': 'Celestial Realm', 'volcanic': 'Volcanic Forge'
-        };
-        clickerAchievements = {
-            title:     clickerGameData.activeTitle || 'Novice',
-            themeName: themeNameMap[clickerGameData.activeTheme] || 'Hero\'s Dawn',
-            theme:     clickerGameData.activeTheme || 'default',
-            prestige:  clickerGameData.prestige || 0,
-            masterLevel: clickerGameData.masterLevel || 0,
-        };
-    }
+    // ── Sweet Empire profile style (theme / title / special effect) ──────────
+    const seProfile   = getSweetEmpireProfile(student.sweetEmpireData, isDark);
+    const seTheme     = seProfile?.theme || null;
+    const hasSeTheme  = !!seTheme;
 
     // ── Derived styling ───────────────────────────────────────────────────────
-    const themeColors    = hasClickerData ? getThemeColors(clickerAchievements.themeName) : null;
-    const titleColor     = hasClickerData ? getTitleColor(clickerAchievements.title, isDark) : (isDark ? 'text-slate-500' : 'text-gray-500');
-    const prestigeEffects = hasClickerData ? getPrestigeEffects(clickerAchievements.prestige, clickerAchievements.masterLevel) : '';
+    const titleColor    = seProfile?.title ? seProfile.title.color : (isDark ? 'text-slate-500' : 'text-gray-500');
+    const seEffectCls   = seProfile?.effectCls || '';
 
     // Base card background
     let cardBg;
     if (isSelected) {
         cardBg = isDark ? 'bg-purple-900/60' : 'bg-purple-100';
-    } else if (hasClickerData) {
-        cardBg = isDark ? themeColors.darkBg : themeColors.bg;
+    } else if (hasSeTheme) {
+        cardBg = isDark ? seTheme.darkBg : seTheme.bg;
     } else if (cardEffect) {
         // Use the effect's custom bg if it has one, otherwise default
         if (isDark && cardEffect.preview?.darkBgClass) {
@@ -686,8 +630,10 @@ const StudentCard = ({
             const rarityBorderMap = { rare: 'border-2 border-blue-400', epic: 'border-2 border-purple-500', legendary: 'border-2 border-amber-400' };
             borderCls = rarityBorderMap[cardEffect.rarity] || 'border-2 border-blue-400';
         }
-    } else if (hasClickerData) {
-        borderCls = `border-4 ${isDark ? themeColors.darkBorder : themeColors.border} shadow-lg ${themeColors.glow} ${prestigeEffects}`;
+    } else if (hasSeTheme) {
+        borderCls = `border-4 ${isDark ? seTheme.darkBorder : seTheme.border} shadow-lg ${seTheme.glow} ${seEffectCls}`;
+    } else if (seEffectCls) {
+        borderCls = `${isDark ? 'border border-slate-700' : 'border border-gray-200'} ${seEffectCls}`;
     } else {
         borderCls = isDark ? 'border border-slate-700 hover:border-slate-500' : 'border border-gray-200 hover:border-blue-400';
     }
@@ -854,8 +800,8 @@ const StudentCard = ({
 
                 {/* Title row */}
                 <div className="text-[9px] sm:text-[10px] mt-0.5 leading-tight w-full flex items-center justify-center gap-1">
-                    {hasClickerData ? (
-                        <span className={`font-bold ${titleColor}`}>{clickerAchievements.title}</span>
+                    {seProfile?.title ? (
+                        <span className={`font-bold ${titleColor}`}>{seProfile.title.name}</span>
                     ) : (
                         <span className={`font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Hero</span>
                     )}
