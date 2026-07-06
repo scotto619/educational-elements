@@ -4,7 +4,8 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { auth, firestore } from '../utils/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import TutorialGuide from '../components/TutorialGuide';
 
 export default function MainMenu() {
     const router = useRouter();
@@ -12,7 +13,8 @@ export default function MainMenu() {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeClass, setActiveClass] = useState(null);
-    const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+    const [showTutorial, setShowTutorial] = useState(false);
+    const [isFirstVisit, setIsFirstVisit] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -24,9 +26,10 @@ export default function MainMenu() {
                     if (snap.exists()) {
                         const data = snap.data();
                         setUserData(data);
-                        if (!sessionStorage.getItem('welcomePopupShown')) {
-                            setShowWelcomePopup(true);
-                            sessionStorage.setItem('welcomePopupShown', 'true');
+                        // Auto-open the tutorial guide on the user's very first login
+                        if (!data.hasSeenTutorial) {
+                            setIsFirstVisit(true);
+                            setShowTutorial(true);
                         }
 
                         // Try to find the active class name
@@ -58,6 +61,19 @@ export default function MainMenu() {
         router.push(path);
     };
 
+    const handleCloseTutorial = async () => {
+        setShowTutorial(false);
+        // Persist the flag so the guide only auto-opens once per account
+        if (isFirstVisit && user) {
+            setIsFirstVisit(false);
+            try {
+                await updateDoc(doc(firestore, 'users', user.uid), { hasSeenTutorial: true });
+            } catch (err) {
+                console.error('Error saving tutorial flag:', err);
+            }
+        }
+    };
+
     const handleLogout = async () => {
         await signOut(auth);
         router.push('/login');
@@ -74,100 +90,8 @@ export default function MainMenu() {
     return (
         <div className="min-h-screen font-sans" style={{ background: 'linear-gradient(135deg, #fdf6ff 0%, #f0f9ff 50%, #fff7ed 100%)' }}>
 
-            {/* ── Welcome / Update Popup ── */}
-            {showWelcomePopup && (
-                <div
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
-                    onClick={(e) => { if (e.target === e.currentTarget) setShowWelcomePopup(false); }}
-                >
-                    <div
-                        className="relative w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl"
-                        style={{
-                            animation: 'popupEntrance 0.45s cubic-bezier(0.34,1.56,0.64,1) both',
-                        }}
-                    >
-                        {/* Gradient rainbow header bar */}
-                        <div style={{ background: 'linear-gradient(90deg, #f472b6, #a78bfa, #60a5fa, #34d399, #fbbf24)', height: '10px' }} />
-
-                        {/* Card body */}
-                        <div className="bg-white px-7 py-8">
-                            {/* Close button */}
-                            <button
-                                onClick={() => setShowWelcomePopup(false)}
-                                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all text-lg font-bold"
-                                aria-label="Close"
-                            >
-                                ×
-                            </button>
-
-                            {/* Emoji banner */}
-                            <div className="flex justify-center gap-2 text-3xl mb-4">
-                                <span>🌱</span><span>✨</span><span>🚀</span><span>✨</span><span>🌱</span>
-                            </div>
-
-                            {/* Heading */}
-                            <h2
-                                className="text-center text-2xl sm:text-3xl font-black mb-3 leading-tight"
-                                style={{ background: 'linear-gradient(90deg, #9333ea, #ec4899, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-                            >
-                                We&rsquo;re Always Growing! 🎉
-                            </h2>
-
-                            {/* Body */}
-                            <p className="text-gray-600 text-center text-sm sm:text-base leading-relaxed mb-4">
-                                Educational Elements is <span className="font-bold text-purple-600">constantly evolving</span> — we&rsquo;re always adding new resources, tools, and features to make your classroom even better! 🛠️
-                            </p>
-
-                            {/* Highlight boxes */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                                <div className="rounded-2xl px-4 py-3 text-sm font-medium text-center" style={{ background: 'linear-gradient(135deg, #fdf4ff, #fce7f3)', border: '1.5px solid #f0abfc' }}>
-                                    <span className="text-xl block mb-1">📦</span>
-                                    <span className="text-pink-700">New resources &amp; tools are added regularly — keep checking back!</span>
-                                </div>
-                                <div className="rounded-2xl px-4 py-3 text-sm font-medium text-center" style={{ background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', border: '1.5px solid #93c5fd' }}>
-                                    <span className="text-xl block mb-1">🔄</span>
-                                    <span className="text-blue-700">Things may change over time as we improve and update the platform.</span>
-                                </div>
-                            </div>
-
-                            {/* Contact call-to-action */}
-                            <div className="rounded-2xl px-5 py-4 text-center mb-6" style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', border: '1.5px solid #86efac' }}>
-                                <p className="text-sm text-emerald-800 font-medium">
-                                    💌 <span className="font-bold">Found something not working?</span> Or want to request a specific resource?<br />
-                                    <span className="text-emerald-700">We&rsquo;d love to hear from you — just reach out and let us know!</span>
-                                </p>
-                                <a
-                                    href="mailto:admin@educational-elements.com"
-                                    className="inline-block mt-3 bg-gradient-to-r from-emerald-400 to-teal-400 text-white text-sm font-bold px-5 py-2 rounded-full shadow hover:shadow-md transition-all hover:scale-105"
-                                >
-                                    📧 Contact Us
-                                </a>
-                            </div>
-
-                            {/* Dismiss button */}
-                            <button
-                                onClick={() => setShowWelcomePopup(false)}
-                                className="w-full py-3 rounded-2xl font-black text-white text-sm tracking-wide shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
-                                style={{ background: 'linear-gradient(90deg, #9333ea, #ec4899)' }}
-                            >
-                                Let&rsquo;s Go! 🚀
-                            </button>
-                        </div>
-
-                        {/* Bottom gradient bar */}
-                        <div style={{ background: 'linear-gradient(90deg, #fbbf24, #34d399, #60a5fa, #a78bfa, #f472b6)', height: '10px' }} />
-                    </div>
-
-                    {/* Keyframe animation injected via style tag */}
-                    <style>{`
-                        @keyframes popupEntrance {
-                            0%   { opacity: 0; transform: scale(0.7) translateY(30px); }
-                            100% { opacity: 1; transform: scale(1) translateY(0); }
-                        }
-                    `}</style>
-                </div>
-            )}
+            {/* ── Tutorial / Website Guide ── */}
+            {showTutorial && <TutorialGuide onClose={handleCloseTutorial} />}
             <Head>
                 <title>Main Menu | Educational Elements</title>
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -197,6 +121,12 @@ export default function MainMenu() {
                                     👋 {userData.email.split('@')[0]}
                                 </span>
                             )}
+                            <button
+                                onClick={() => setShowTutorial(true)}
+                                className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-xl hover:from-pink-600 hover:to-purple-600 transition-all shadow-md text-sm font-semibold flex items-center gap-1.5"
+                            >
+                                📖 <span className="hidden sm:inline">Website</span> Guide
+                            </button>
                             <button
                                 onClick={handleLogout}
                                 className="bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 transition-all shadow-md text-sm font-semibold"
