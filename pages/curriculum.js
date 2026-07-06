@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { auth } from '../utils/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { saveRedirect } from '../utils/postAuthRedirect';
 
 // ─── Lazy-load tool / section components ─────────────────────────────────────
 const BeginnerReaders      = lazy(() => import('../components/curriculum/literacy/BeginnerReaders'));
@@ -708,7 +709,7 @@ const PastelTile = ({ emoji, name, description, bg, border, hover, text, badge, 
 );
 
 // Resource card — supports single format or PDF+PPT toggle
-const ResourceCard = ({ resource, onPreview }) => {
+const ResourceCard = ({ resource, onPreview, onCopyLink }) => {
   const hasBoth = !!(resource.pdfPath && resource.pptxPath);
   const defaultFmt = resource.pdfPath ? 'pdf' : 'pptx';
   const [fmt, setFmt] = React.useState(hasBoth ? 'pdf' : defaultFmt);
@@ -729,19 +730,26 @@ const ResourceCard = ({ resource, onPreview }) => {
           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isPpt ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>{isPpt ? 'PowerPoint' : 'PDF'} · Preview →</span>
         </div>
       </button>
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 flex gap-2">
         <a href={activePath} download onClick={e => e.stopPropagation()}
-          className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs py-2 rounded-xl border border-emerald-200 transition-colors">
+          className="flex-1 flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs py-2 rounded-xl border border-emerald-200 transition-colors">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
           Download
         </a>
+        {onCopyLink && (
+          <button onClick={e => { e.stopPropagation(); onCopyLink(resource); }}
+            title="Copy shareable link"
+            className="flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs px-3 py-2 rounded-xl border border-purple-200 transition-colors">
+            🔗
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
 // Collapsible group of resources
-const BundleGroup = ({ group, onPreview }) => {
+const BundleGroup = ({ group, onPreview, onCopyLink }) => {
   const [open, setOpen] = useState(true);
   return (
     <div className="bg-white rounded-2xl border-2 border-gray-100 overflow-hidden shadow-sm">
@@ -758,7 +766,7 @@ const BundleGroup = ({ group, onPreview }) => {
       {open && (
         <div className="border-t border-gray-100 p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {group.items.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} />)}
+            {group.items.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} onCopyLink={onCopyLink} />)}
           </div>
         </div>
       )}
@@ -829,7 +837,7 @@ const ResourceViewer = ({ resource, onBack }) => {
 };
 
 // Unit resource list — shows grouped sections with search
-const UnitResourcesList = ({ subjectId, onPreview }) => {
+const UnitResourcesList = ({ subjectId, onPreview, onCopyLink }) => {
   const groups = resourcesBySubject[subjectId] || [];
   const [filter, setFilter] = useState('');
   const isGrouped = groups.length > 0 && groups[0].items !== undefined;
@@ -850,7 +858,7 @@ const UnitResourcesList = ({ subjectId, onPreview }) => {
         {searchBox}
         {filtered.length === 0
           ? <div className="bg-gray-50 rounded-2xl p-10 text-center border-2 border-dashed border-gray-200"><p className="text-gray-500 font-bold">No results for "{filter}"</p></div>
-          : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{filtered.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} />)}</div>
+          : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{filtered.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} onCopyLink={onCopyLink} />)}</div>
         }
       </div>
     );
@@ -861,7 +869,7 @@ const UnitResourcesList = ({ subjectId, onPreview }) => {
     return (
       <div className="space-y-4">
         {searchBox}
-        {groups.map(g => <BundleGroup key={g.id} group={g} onPreview={onPreview} />)}
+        {groups.map(g => <BundleGroup key={g.id} group={g} onPreview={onPreview} onCopyLink={onCopyLink} />)}
       </div>
     );
   }
@@ -872,11 +880,68 @@ const UnitResourcesList = ({ subjectId, onPreview }) => {
       {searchBox}
       {flatItems.length === 0
         ? <div className="bg-gray-50 rounded-2xl p-10 text-center border-2 border-dashed border-gray-200"><p className="text-gray-500 font-bold">No resources yet</p></div>
-        : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{flatItems.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} />)}</div>
+        : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{flatItems.map(r => <ResourceCard key={r.id} resource={r} onPreview={onPreview} onCopyLink={onCopyLink} />)}</div>
       }
     </div>
   );
 };
+
+// ─── Deep links (shareable resource URLs) ─────────────────────────────────
+// Formats (used as /curriculum?link=<key>):
+//   tool:<toolId>[:<yearLevelId>]        → interactive tool
+//   res:<resourceId>                     → bundle (PDF/PPT)
+//   disp:<catId>:<sectionId>[:<imgName>] → display section or single display
+const resolveDeepLink = (link) => {
+  if (!link || typeof link !== 'string') return null;
+  const parts = link.split(':').map(decodeURIComponent);
+  const kind = parts[0];
+
+  if (kind === 'tool') {
+    for (const subj of SUBJECTS) {
+      for (const area of subj.areas) {
+        if (area.type !== 'tools') continue;
+        const tool = (area.tools || []).find(t => t.id === parts[1]);
+        if (tool) {
+          const yearLevel = parts[2] && tool.yearLevels ? tool.yearLevels.find(y => y.id === parts[2]) : null;
+          return { kind: 'tool', subject: subj, area, tool, yearLevel };
+        }
+      }
+    }
+  }
+
+  if (kind === 'res') {
+    for (const subj of SUBJECTS) {
+      const resArea = subj.areas.find(a => a.type === 'resources');
+      if (!resArea) continue;
+      const groups = resourcesBySubject[subj.id] || [];
+      const isGrouped = groups.length > 0 && groups[0].items !== undefined;
+      const flat = isGrouped ? groups.flatMap(g => g.items) : groups;
+      const resource = flat.find(r => r.id === parts[1]);
+      if (resource) return { kind: 'resource', subject: subj, area: resArea, resource };
+    }
+  }
+
+  if (kind === 'disp') {
+    const cat = ALL_DISPLAY_CATEGORIES.find(c => c.id === parts[1]);
+    if (cat) {
+      const sec = cat.sections.find(s => s.id === parts[2]);
+      if (sec) {
+        const img = parts[3] ? sec.images.find(i => i.name === parts[3]) : null;
+        return {
+          kind: 'display',
+          displayCat: cat,
+          displaySection: { ...sec, folder: cat.folder },
+          displayImage: img ? { ...img, folder: cat.folder } : null,
+        };
+      }
+    }
+  }
+
+  return null;
+};
+
+const buildShareUrl = (key) =>
+  `${window.location.origin}/curriculum?link=${key.split(':').map(encodeURIComponent).join(':')}`;
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function CurriculumPage() {
@@ -896,13 +961,67 @@ export default function CurriculumPage() {
   const [displaySection,setDisplaySection]= useState(null); // which section within that cat
   const [displayImage,  setDisplayImage]  = useState(null); // fullscreen image
 
+  const [linkToast, setLinkToast] = useState(false);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, u => {
       if (u) { setLoading(false); setSearchIndex(buildSearchIndex(SUBJECTS, resourcesBySubject)); }
-      else router.push('/login');
+      else {
+        // Remember the full URL (including ?link=...) so shared resource links
+        // survive the login/signup journey.
+        saveRedirect(router.asPath);
+        router.push({ pathname: '/login', query: { redirect: router.asPath } });
+      }
     });
     return () => unsub();
   }, [router]);
+
+  // ── Deep link: /curriculum?link=... → navigate straight to that resource ────
+  useEffect(() => {
+    if (loading || !router.isReady) return;
+    const link = router.query.link;
+    if (!link) return;
+    const target = resolveDeepLink(link);
+    if (target) {
+      if (target.kind === 'tool') {
+        setSubject(target.subject); setArea(target.area); setTool(target.tool);
+        if (target.yearLevel) setYearLevel(target.yearLevel);
+      } else if (target.kind === 'resource') {
+        setSubject(target.subject); setArea(target.area); setResource(target.resource);
+      } else if (target.kind === 'display') {
+        setDisplayCat(target.displayCat);
+        setDisplaySection(target.displaySection);
+        if (target.displayImage) setDisplayImage(target.displayImage);
+      }
+    }
+    // Clean the URL so in-page navigation isn't re-hijacked
+    router.replace('/curriculum', undefined, { shallow: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, router.isReady, router.query.link]);
+
+  // ── Copy shareable link ──────────────────────────────────────────
+  const copyShareLink = async (key) => {
+    const url = buildShareUrl(key);
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (e) {
+      // Fallback for older browsers / non-secure contexts
+      const ta = document.createElement('textarea');
+      ta.value = url; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    setLinkToast(true);
+    setTimeout(() => setLinkToast(false), 2500);
+  };
+
+  // Link key for whatever is currently open (used by the breadcrumb button)
+  const currentLinkKey = () => {
+    if (resource) return `res:${resource.id}`;
+    if (displayImage && displayCat && displaySection) return `disp:${displayCat.id}:${displaySection.id}:${displayImage.name}`;
+    if (displaySection && displayCat) return `disp:${displayCat.id}:${displaySection.id}`;
+    if (tool) return `tool:${tool.id}${yearLevel ? `:${yearLevel.id}` : ''}`;
+    return null;
+  };
 
   const handleLogout = async () => { await signOut(auth); router.push('/login'); };
 
@@ -958,6 +1077,7 @@ export default function CurriculumPage() {
     if (yearLevel)      crumbs.push({ label: `${yearLevel.emoji} ${yearLevel.name}`,     onClick: null });
     if (resource)       crumbs.push({ label: resource.title,                             onClick: null });
 
+    const shareKey = currentLinkKey();
     return (
       <nav className="flex items-center gap-2 text-sm flex-wrap bg-white/80 backdrop-blur rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm">
         {crumbs.map((c, i) => (
@@ -970,6 +1090,15 @@ export default function CurriculumPage() {
             )}
           </React.Fragment>
         ))}
+        {shareKey && (
+          <button
+            onClick={() => copyShareLink(shareKey)}
+            className="ml-auto flex items-center gap-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs px-3 py-1.5 rounded-lg border border-purple-200 transition-colors"
+            title="Copy a shareable link to this resource"
+          >
+            🔗 Copy Link
+          </button>
+        )}
       </nav>
     );
   };
@@ -1026,6 +1155,9 @@ export default function CurriculumPage() {
           <div className="bg-white rounded-2xl shadow border border-gray-200 p-4 flex items-center justify-between gap-4 flex-wrap">
             <h2 className="text-lg font-black text-gray-800">{displayImage.name}</h2>
             <div className="flex gap-2">
+              {displayCat && displaySection && (
+                <button onClick={() => copyShareLink(`disp:${displayCat.id}:${displaySection.id}:${displayImage.name}`)} className="bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 flex items-center gap-2 text-sm font-black shadow">🔗 Copy Link</button>
+              )}
               <button onClick={() => handlePrint(displayImage)} className="bg-purple-500 text-white px-4 py-2 rounded-xl hover:bg-purple-600 flex items-center gap-2 text-sm font-black shadow">🖨️ Print</button>
               <a href={url} download className="bg-emerald-500 text-white px-4 py-2 rounded-xl hover:bg-emerald-600 flex items-center gap-2 text-sm font-black shadow">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Download
@@ -1061,6 +1193,9 @@ export default function CurriculumPage() {
                     <div className="mt-2 flex gap-1">
                       <button onClick={e => { e.stopPropagation(); handlePrint({ ...img, folder }); }} className="flex-1 text-xs bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold py-1 rounded-lg transition-colors">🖨️</button>
                       <a href={url} download onClick={e => e.stopPropagation()} className="flex-1 text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-1 rounded-lg text-center transition-colors">⬇️</a>
+                      {displayCat && (
+                        <button onClick={e => { e.stopPropagation(); copyShareLink(`disp:${displayCat.id}:${displaySection.id}:${img.name}`); }} title="Copy shareable link" className="flex-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-1 rounded-lg transition-colors">🔗</button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1116,7 +1251,7 @@ export default function CurriculumPage() {
         <div className="space-y-6">
           {renderBreadcrumb()}
           <AreaHeader bg={area.bg} border={area.border} emoji={area.emoji} name={area.name} description={area.description} text={area.text} onBack={goSubject} />
-          <UnitResourcesList subjectId={area.subjectId} onPreview={setResource} />
+          <UnitResourcesList subjectId={area.subjectId} onPreview={setResource} onCopyLink={r => copyShareLink(`res:${r.id}`)} />
         </div>
       );
 
@@ -1332,6 +1467,13 @@ export default function CurriculumPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isAllDisplays ? renderAllDisplays() : renderContent()}
       </main>
+
+      {/* Link-copied toast */}
+      {linkToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[120] bg-gray-900 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-2xl">
+          ✅ Link copied — ready to paste!
+        </div>
+      )}
 
       <footer className="border-t border-purple-100 mt-16 py-8 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm">

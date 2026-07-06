@@ -5,6 +5,7 @@ import { auth, firestore } from '../utils/firebase';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { DEFAULT_UPDATES, fetchDashboardUpdates } from '../services/globalContent';
+import { consumeRedirect } from '../utils/postAuthRedirect';
 
 const OWNER_EMAIL = 'scotto6190@gmail.com';
 
@@ -119,6 +120,17 @@ export default function Dashboard() {
       (userData.stripeCustomerId &&
         userData.accountStatus !== 'canceled');
     const hasValidSubscription = hasActiveStatus || hasLegacyActive;
+
+    // If they originally arrived via a shared resource link (saved before
+    // login/signup), send them straight there now that they're subscribed.
+    // Survives the Stripe checkout round trip via localStorage.
+    if (hasValidSubscription) {
+      const destination = consumeRedirect();
+      if (destination && destination !== '/dashboard') {
+        router.replace(destination);
+        return;
+      }
+    }
 
     // Poll for webhook if: (1) just returned from Stripe OR (2) marked as returning from checkout
     const justReturnedFromCheckout = sessionId || sessionStorage.getItem('returning_from_checkout') === 'true';

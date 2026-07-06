@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
+import { saveRedirect, consumeRedirect } from '../utils/postAuthRedirect';
 
 // Dynamic import for Firebase to prevent SSR issues
 let auth = null;
@@ -22,6 +23,14 @@ export default function Login() {
   const [showResetForm, setShowResetForm] = useState(false);
   const firestoreHelpers = useRef({});
   const router = useRouter();
+
+  // If we arrived with ?redirect=... (e.g. from a shared resource link),
+  // remember it so it survives login — and even signup + checkout.
+  useEffect(() => {
+    if (router.isReady && typeof router.query.redirect === 'string') {
+      saveRedirect(router.query.redirect);
+    }
+  }, [router.isReady, router.query.redirect]);
 
   // Load Firebase only on client side
   useEffect(() => {
@@ -168,8 +177,10 @@ export default function Login() {
         }
       }
 
-      // All checks passed - go to main menu
-      router.push('/main-menu');
+      // All checks passed - go to the original destination (e.g. a shared
+      // resource link) if there is one, otherwise the main menu
+      const destination = consumeRedirect();
+      router.push(destination || '/main-menu');
 
     } catch (error) {
       console.error('Login error:', error);
