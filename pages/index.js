@@ -85,8 +85,8 @@ const FREE_RESOURCES = [
     gradient: 'linear-gradient(135deg, #8B5CF6, #EC4899)', icon: '🎨', file: '/free-resources/Watercolour_Theme_Decor.pdf', bg: '#FDF4FF', border: '#E9D5FF' },
   { title: 'Cleopatra', subtitle: 'HASS · Ancient History', desc: 'Power, propaganda and legacy — a rich ancient history unit exploring one of history’s most fascinating rulers.',
     gradient: 'linear-gradient(135deg, #D97706, #92400E)', icon: '🐍', file: '/free-resources/Cleopatra_Power_Propaganda_Legacy.pdf', bg: '#FFF7ED', border: '#FED7AA' },
-  { title: 'Zones of Regulation', subtitle: 'Social-Emotional Learning', desc: 'Help students identify and manage their emotions using the four colour zones framework.',
-    gradient: 'linear-gradient(135deg, #84CC16, #22C55E)', icon: '🧠', file: '/free-resources/Zones_of_Regulation.pdf', bg: '#F7FEE7', border: '#D9F99D' },
+  { title: 'Our Solar System Tour', subtitle: 'Science · Space', desc: 'Blast off on a guided tour of the solar system — stunning visuals and fascinating facts about every planet along the way.',
+    gradient: 'linear-gradient(135deg, #6366F1, #0EA5E9)', icon: '🪐', file: '/free-resources/Our_Solar_System_Tour.pdf', bg: '#EEF2FF', border: '#C7D2FE' },
 ];
 
 // ── Reusable marquee row (CSS-driven for perf; GSAP adds scroll-velocity skew) ──
@@ -887,7 +887,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-12 text-center" data-reveal>
+            <div className="mt-20 text-center" data-reveal>
               <Link href="/signup"
                 className="inline-flex items-center gap-2 text-base font-bold transition-all group"
                 style={{ color: '#8B5CF6' }}>
