@@ -913,6 +913,13 @@ const ClassroomChampions = () => {
   };
 
   // V1 class update helper
+  // FIXED: the old matcher only checked cls.id / cls.classId, but
+  // loadV1ClassAndStudents normalises the id as (id || classId || classCode ||
+  // 'v1'). For classes stored without an id, currentClassId ends up being the
+  // classCode, no class matched, and the save SILENTLY did nothing — data
+  // looked saved locally but vanished on reload. Now we also match by
+  // classCode, fall back to the only class if there's exactly one, and THROW
+  // (surfacing an error toast) instead of failing silently.
   const updateV1ClassData = async (userId, classId, updatedData) => {
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
@@ -922,8 +929,20 @@ const ClassroomChampions = () => {
     const userData = userSnap.data();
     const classes = userData.classes || [];
 
-    const updatedClasses = classes.map(cls => {
-      if (cls.id === classId || cls.classId === classId) {
+    const matchesClass = (cls) => !!cls && (
+      cls.id === classId ||
+      cls.classId === classId ||
+      (cls.classCode && String(cls.classCode).toUpperCase() === String(classId).toUpperCase())
+    );
+
+    const anyMatch = classes.some(matchesClass);
+    if (!anyMatch && classes.length !== 1) {
+      throw new Error(`Could not find class "${classId}" to save changes to`);
+    }
+
+    const updatedClasses = classes.map((cls, idx) => {
+      const isTarget = anyMatch ? matchesClass(cls) : idx === 0; // single-class fallback
+      if (isTarget) {
         return { ...cls, ...updatedData, updatedAt: new Date().toISOString() };
       }
       return cls;

@@ -63,15 +63,21 @@ const MoneyMasters = ({
   const currency = getCurrency(data.settings.currency);
 
   // ── Auto-save ───────────────────────────────────────────────────────────────
-  const persist = useCallback((updated, message) => {
+  // Awaits the save and only confirms on success — a failed write now shows an
+  // error instead of silently looking saved until the page reloads.
+  const persist = useCallback(async (updated, message) => {
     setData(updated);
     try {
-      saveData({
+      const ok = await saveData({
         toolkitData: {
           ...(loadedData || {}),
           moneyMasters: { ...updated, lastSaved: new Date().toISOString() },
         },
       });
+      if (ok === false) {
+        showToast('Save failed — your change may not stick. Please try again.', 'error');
+        return;
+      }
       if (message) showToast(message, 'success');
     } catch (err) {
       console.error('MoneyMasters: save failed', err);

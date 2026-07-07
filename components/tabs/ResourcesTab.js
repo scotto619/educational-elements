@@ -1,6 +1,6 @@
 // components/tabs/ResourcesTab.js
 // Curriculum Resources hub — lives inside Classroom Champions, student-aware
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useState, useMemo } from 'react';
 
 // Class programs (student-aware)
 const SpellingProgram = lazy(() => import('../curriculum/literacy/SpellingProgram'));
@@ -148,18 +148,28 @@ const ResourcesTab = ({
   const [activeTool, setActiveTool] = useState(null);
 
   // Tools call saveData({ toolkitData: updatedData }) — pass straight through to saveClassData.
+  // Returns true on success, false on failure so tools can surface save errors.
   const handleSaveData = async (dataObj) => {
     try {
       if (dataObj && dataObj.toolkitData) {
         await saveClassData({ toolkitData: dataObj.toolkitData });
+        return true;
       }
+      return false;
     } catch (err) {
       console.error('ResourcesTab: error saving toolkit data', err);
       showToast('Error saving data', 'error');
+      return false;
     }
   };
 
-  const loadedData = currentClassData?.toolkitData || {};
+  // Memoised so its identity only changes when class data actually changes —
+  // otherwise every parent re-render (e.g. a toast) created a fresh {} and
+  // reset the open tool's local state mid-save.
+  const loadedData = useMemo(
+    () => currentClassData?.toolkitData || {},
+    [currentClassData]
+  );
 
   // ── Active tool view ────────────────────────────────────────────────────────
   if (activeTool) {
