@@ -1,5 +1,5 @@
 // pages/curriculum.js — Standalone Resource Hub, no class required
-import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -7,32 +7,7 @@ import { auth } from '../utils/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { saveRedirect } from '../utils/postAuthRedirect';
 
-// ─── Lazy-load tool / section components ─────────────────────────────────────
-const BeginnerReaders      = lazy(() => import('../components/curriculum/literacy/BeginnerReaders'));
-const ReadingForFun        = lazy(() => import('../components/curriculum/literacy/ReadingForFun'));
-// ReadersTheatre moved to ResourcesTab (Classroom Champions → Resources)
-const Morphology           = lazy(() => import('../components/curriculum/literacy/Morphology'));
-const LiteracyWarmup       = lazy(() => import('../components/curriculum/literacy/LiteracyWarmup'));
-const PrepLiteracyWarmup   = lazy(() => import('../components/curriculum/literacy/PrepLiteracyWarmUp'));
-// SpellingProgram moved to ResourcesTab (Classroom Champions → Resources)
-const ReadingComprehension = lazy(() => import('../components/curriculum/literacy/ReadingComprehension'));
-const VisualWritingPrompts = lazy(() => import('../components/curriculum/literacy/VisualWritingPrompts'));
-const VocabularyCorner     = lazy(() => import('../components/curriculum/literacy/VocabularyCorner'));
-const GrammarWorkshop      = lazy(() => import('../components/curriculum/literacy/GrammarWorkshop'));
-const PoetryCorner         = lazy(() => import('../components/curriculum/literacy/PoetryCorner'));
-const PartnerReading       = lazy(() => import('../components/curriculum/literacy/PartnerReadingPassages'));
-const DailyMathChallenges  = lazy(() => import('../components/curriculum/mathematics/DailyMathChallenges'));
-const InteractiveAngles    = lazy(() => import('../components/curriculum/mathematics/InteractiveAngles'));
-const InteractiveClock     = lazy(() => import('../components/curriculum/mathematics/InteractiveClock'));
-const NumbersBoard         = lazy(() => import('../components/curriculum/mathematics/NumbersBoard'));
-const MathMentals          = lazy(() => import('../components/curriculum/mathematics/MathMentals'));
-const MathWarmup           = lazy(() => import('../components/curriculum/mathematics/MathWarmup'));
-const WorksheetGenerator   = lazy(() => import('../components/curriculum/mathematics/WorksheetGenerator'));
-const AreaPerimeterTool    = lazy(() => import('../components/curriculum/mathematics/AreaPerimeterTool'));
-const FractionVisualiser   = lazy(() => import('../components/curriculum/mathematics/FractionVisualiser'));
-const TimesTablesMaster    = lazy(() => import('../components/curriculum/mathematics/TimesTablesMaster'));
-const SolarSystemExplorer  = lazy(() => import('../components/curriculum/science/SolarSystemExplorer'));
-const FoodChainBuilder     = lazy(() => import('../components/curriculum/science/FoodChainBuilder'));
+// Interactive tool components now live in Classroom Champions → Resources tab
 
 // ─── Display section data (sourced from DisplaysGallery) ──────────────────────
 const buildImageUrl = (folder, file) => {
@@ -621,10 +596,6 @@ const SUBJECTS = [
     id: 'english', name: 'English', emoji: '📚', description: 'Reading, writing, phonics & language',
     bg: 'bg-blue-200', border: 'border-blue-300', hover: 'hover:bg-blue-300', text: 'text-blue-900',
     areas: [
-      { id: 'reading',    name: 'Reading',          emoji: '📖', description: 'Comprehension, passages & reading for fun',   bg: 'bg-sky-100',     border: 'border-sky-300',     hover: 'hover:bg-sky-200',     text: 'text-sky-900',     type: 'tools', tools: [{ id: 'reading-comprehension', name: 'Reading Comprehension',  emoji: '🧠', description: 'Text analysis and understanding',          component: ReadingComprehension, badge: 'UPDATED' },{ id: 'beginner-readers', name: 'Beginner Readers', emoji: '🔤', description: 'Early reading for beginning readers',      component: BeginnerReaders },{ id: 'partner-reading', name: 'Partner Reading Passages', emoji: '🤝', description: 'Printable passages with partner turns',     component: PartnerReading, badge: 'NEW' },{ id: 'reading-for-fun', name: 'Reading for Fun', emoji: '🎉', description: 'Engaging texts for advanced readers',       component: ReadingForFun, badge: 'NEW' }] },
-      { id: 'writing',    name: 'Writing',          emoji: '✍️', description: 'Creative writing, grammar & composition',    bg: 'bg-pink-100',    border: 'border-pink-300',    hover: 'hover:bg-pink-200',    text: 'text-pink-900',    type: 'tools', tools: [{ id: 'visual-writing-prompts', name: 'Visual Writing Prompts', emoji: '🖼️', description: 'Image-based storytelling prompts',           component: VisualWritingPrompts },{ id: 'grammar-workshop', name: 'Grammar Workshop', emoji: '✏️', description: 'Interactive grammar lessons & quizzes',     component: GrammarWorkshop, badge: 'NEW' },{ id: 'poetry-corner', name: 'Poetry Corner', emoji: '🎭', description: 'Poetry forms and creative expression',       component: PoetryCorner, badge: 'NEW' }] },
-      { id: 'spelling',   name: 'Spelling',         emoji: '🔡', description: 'Morphology & vocabulary', bg: 'bg-emerald-100', border: 'border-emerald-300', hover: 'hover:bg-emerald-200', text: 'text-emerald-900', type: 'tools', tools: [{ id: 'morphology', name: 'Morphology Master', emoji: '🔤', description: 'Prefixes, suffixes and base words', component: Morphology, badge: 'NEW' },{ id: 'vocabulary-builder', name: 'Vocabulary Builder', emoji: '📖', description: 'Definitions, synonyms and word lists', component: VocabularyCorner, badge: 'NEW' }] },
-      { id: 'phonics',    name: 'Phonics',          emoji: '🔤', description: 'Sounds, blending & early literacy',          bg: 'bg-cyan-100',    border: 'border-cyan-300',    hover: 'hover:bg-cyan-200',    text: 'text-cyan-900',    type: 'tools', tools: [{ id: 'literacy-warmup', name: 'Literacy Warmup', emoji: '🔥', description: 'Interactive phonics activities', hasYearLevels: true, yearLevels: [{ id: 'prep', name: 'Prep / Foundation', emoji: '🌱', component: PrepLiteracyWarmup },{ id: 'grade5', name: 'Grade 5', emoji: '🚀', component: LiteracyWarmup }] }] },
       // Speaking & Drama area removed — Readers Theatre now lives in Classroom Champions → Resources
       { id: 'english-resources',  name: 'Bundles',     emoji: '📁', description: 'Downloadable PDFs & worksheets',          bg: 'bg-rose-100',    border: 'border-rose-300',    hover: 'hover:bg-rose-200',    text: 'text-rose-900',    type: 'resources',   subjectId: 'english' },
       { id: 'english-displays',   name: 'Displays',           emoji: '🖼️', description: 'Classroom posters & wall displays',         bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  type: 'displays-grouped', displayCatId: 'english' },
@@ -634,11 +605,6 @@ const SUBJECTS = [
     id: 'mathematics', name: 'Mathematics', emoji: '🔢', description: 'Numbers, patterns & problem solving',
     bg: 'bg-green-200', border: 'border-green-300', hover: 'hover:bg-green-300', text: 'text-green-900',
     areas: [
-      { id: 'number',      name: 'Number & Operations', emoji: '🧮', description: 'Number facts, mentals & times tables',     bg: 'bg-lime-100',    border: 'border-lime-300',    hover: 'hover:bg-lime-200',    text: 'text-lime-900',    type: 'tools', tools: [{ id: 'math-mentals', name: 'Math Mentals', emoji: '🧮', description: 'Daily number facts practice',           component: MathMentals },{ id: 'times-tables', name: 'Times Tables Master', emoji: '✖️', description: 'Explore and quiz all 12 times tables',  component: TimesTablesMaster, badge: 'NEW' },{ id: 'numbers-board', name: 'Numbers Board', emoji: '💯', description: 'Interactive hundreds board for patterns', component: NumbersBoard },{ id: 'daily-math-challenges', name: 'Daily Math Challenges', emoji: '🎯', description: 'Rich daily challenges for classroom display', component: DailyMathChallenges, badge: 'NEW' },{ id: 'math-warmup', name: 'Math Warmup', emoji: '🔥', description: 'Daily warm-up number activities',          component: MathWarmup }] },
-      { id: 'fractions',   name: 'Fractions & Decimals',emoji: '½',  description: 'Fraction models, visualisers & comparisons', bg: 'bg-teal-100',    border: 'border-teal-300',    hover: 'hover:bg-teal-200',    text: 'text-teal-900',    type: 'tools', tools: [{ id: 'fraction-visualiser', name: 'Fraction Visualiser', emoji: '½', description: 'Bar, circle, grid & number line models',  component: FractionVisualiser, badge: 'NEW' }] },
-      { id: 'geometry',    name: 'Geometry',            emoji: '📐', description: 'Angles, area, perimeter & shapes',          bg: 'bg-amber-100',   border: 'border-amber-300',   hover: 'hover:bg-amber-200',   text: 'text-amber-900',   type: 'tools', tools: [{ id: 'interactive-angles', name: 'Interactive Angles', emoji: '📐', description: 'Learn, measure, create and play with angles', component: InteractiveAngles, badge: 'NEW' },{ id: 'area-perimeter', name: 'Area & Perimeter', emoji: '📏', description: 'Explore area and perimeter concepts',   component: AreaPerimeterTool }] },
-      { id: 'measurement', name: 'Measurement & Time',  emoji: '🕒', description: 'Telling time and measuring',                bg: 'bg-orange-100',  border: 'border-orange-300',  hover: 'hover:bg-orange-200',  text: 'text-orange-900',  type: 'tools', tools: [{ id: 'interactive-clock', name: 'Interactive Clock', emoji: '🕒', description: 'Learn to tell time with draggable hands', component: InteractiveClock }] },
-      { id: 'worksheets',  name: 'Worksheet Generator', emoji: '📄', description: 'Create printable maths worksheets',          bg: 'bg-yellow-100',  border: 'border-yellow-300',  hover: 'hover:bg-yellow-200',  text: 'text-yellow-900',  type: 'tools', tools: [{ id: 'worksheet-generator', name: 'Worksheet Generator', emoji: '📄', description: 'Generate printable maths worksheets',   component: WorksheetGenerator }] },
       { id: 'maths-resources',  name: 'Bundles',     emoji: '📁', description: 'Downloadable PDFs & worksheets',          bg: 'bg-rose-100',    border: 'border-rose-300',    hover: 'hover:bg-rose-200',    text: 'text-rose-900',    type: 'resources',       subjectId: 'mathematics' },
       { id: 'maths-displays',   name: 'Displays',           emoji: '🖼️', description: 'Classroom posters & wall displays',       bg: 'bg-violet-100',  border: 'border-violet-300',  hover: 'hover:bg-violet-200',  text: 'text-violet-900',  type: 'displays-grouped', displayCatId: 'maths' },
     ],
@@ -647,8 +613,6 @@ const SUBJECTS = [
     id: 'science', name: 'Science', emoji: '🔬', description: 'Experiments, nature & discovery',
     bg: 'bg-purple-200', border: 'border-purple-300', hover: 'hover:bg-purple-300', text: 'text-purple-900',
     areas: [
-      { id: 'space',       name: 'Space & Earth',   emoji: '🪐', description: 'Planets, solar system & earth science',  bg: 'bg-indigo-100', border: 'border-indigo-300', hover: 'hover:bg-indigo-200', text: 'text-indigo-900', type: 'tools', tools: [{ id: 'solar-system', name: 'Solar System Explorer', emoji: '🪐', description: 'Explore planets and space interactively', component: SolarSystemExplorer, badge: 'NEW' }] },
-      { id: 'life-science', name: 'Life Science',   emoji: '🦁', description: 'Food chains, ecosystems & living things', bg: 'bg-green-100',  border: 'border-green-300',  hover: 'hover:bg-green-200',  text: 'text-green-900',  type: 'tools', tools: [{ id: 'food-chain', name: 'Food Chain Builder', emoji: '🦁', description: 'Build food chains across 4 ecosystems',    component: FoodChainBuilder, badge: 'NEW' }] },
       { id: 'science-resources',  name: 'Bundles',     emoji: '📁', description: 'Downloadable PDFs & worksheets',         bg: 'bg-rose-100',   border: 'border-rose-300',   hover: 'hover:bg-rose-200',   text: 'text-rose-900',   type: 'resources',        subjectId: 'science' },
       { id: 'science-displays',   name: 'Displays',           emoji: '🖼️', description: 'Classroom posters & wall displays',      bg: 'bg-violet-100', border: 'border-violet-300', hover: 'hover:bg-violet-200', text: 'text-violet-900', type: 'displays-grouped', displayCatId: 'science' },
     ],
@@ -960,6 +924,46 @@ const libNamesMatch = (a, b) => {
   return small.length >= 2 || small.length === big.length;
 };
 
+// Merge related bundle groups into one category
+const GROUP_MERGES = {
+  english: [{ id: 'grammar', name: 'Grammar', emoji: '🔤', groupIds: ['grammar-pos', 'grammar-structure', 'grammar-tense', 'grammar-reference'] }],
+};
+
+// Where unmatched display sections belong (category name → section ids).
+// If the name matches an existing bundle category, sections join it; otherwise a new category is created.
+const SECTION_CATEGORY_OVERRIDES = {
+  english: {
+    'Grammar': ['grammar-displays', 'ws-grammar'],
+    'Punctuation': ['punctuation-displays'],
+    'Phonics & Spelling': ['alphabet-2', 'eye-spy', 'cvc-cards', 'phonics-blends', 'phonics-blends-2', 'vowels', 'spelling-rules', 'spelling-strats'],
+    'Writing': ['writing-persuasive', 'writing-poetry', 'writing-recount', 'book-review', 'ws-writing'],
+    'Reading & Comprehension': ['ws-comprehension-yr', 'ws-comprehension-yr2', 'ws-comprehension-ah', 'ws-comprehension-slang'],
+    'Literature & Analysis': ['literary-devices'],
+    'Classroom Mats': ['eng-mats'],
+  },
+  mathematics: {
+    'Number & Algebra': ['number-ops'],
+    'Geometry & Shapes': ['shapes', 'location-transform'],
+    'Measurement & Money': ['measurement-d'],
+    'Worksheets': ['maths-sheets'],
+    'Classroom Mats': ['maths-mats'],
+  },
+  science: {
+    'Forces & Motion': ['forces-motion'],
+    'Space & Astronomy': ['space-displays'],
+    'Experiments': ['experiments'],
+    'Environment & Earth': ['env-change'],
+  },
+  behaviour: {
+    'Wellbeing & Regulation': ['calm-corner', 'sensory-options'],
+    'Classroom Tools': ['behaviour-cues'],
+  },
+  hass: {
+    'Australian History': ['hass-vocab'],
+  },
+};
+const NEW_CATEGORY_EMOJI = { 'Geometry & Shapes': '📐', 'Worksheets': '📄', 'Classroom Mats': '🧩', 'Experiments': '🧪', 'Environment & Earth': '🌏' };
+
 const buildResourceLibrary = () => {
   const lib = {};
   SUBJECTS.forEach(subj => {
@@ -968,7 +972,18 @@ const buildResourceLibrary = () => {
     const claimed = new Set();
     const rawGroups = resourcesBySubject[subj.id] || [];
     const isGrouped = rawGroups.length > 0 && rawGroups[0].items !== undefined;
-    const groups = isGrouped ? rawGroups : (rawGroups.length ? [{ id: subj.id + '-all', name: 'All Resources', emoji: '📁', items: rawGroups }] : []);
+    let groups = isGrouped ? rawGroups : (rawGroups.length ? [{ id: subj.id + '-all', name: 'All Resources', emoji: '📁', items: rawGroups }] : []);
+    (GROUP_MERGES[subj.id] || []).forEach(m => {
+      const merged = { id: m.id, name: m.name, emoji: m.emoji, items: [] };
+      let inserted = false;
+      groups = groups.reduce((acc, g) => {
+        if (m.groupIds.includes(g.id)) {
+          merged.items = merged.items.concat(g.items || []);
+          if (!inserted) { acc.push(merged); inserted = true; }
+        } else acc.push(g);
+        return acc;
+      }, []);
+    });
     const cats = [];
     groups.forEach(g => {
       const items = (g.items || []).map(res => {
@@ -985,19 +1000,30 @@ const buildResourceLibrary = () => {
       });
       cats.push({ id: g.id, name: g.name, emoji: g.emoji || '📁', items });
     });
-    const leftovers = sections.filter(sec => !claimed.has(sec.id));
-    if (leftovers.length) {
-      cats.push({
-        id: subj.id + '-more-displays', name: 'More Displays & Posters', emoji: '🖼️',
-        items: leftovers.map(sec => ({
-          kind: 'display', id: `dispres-${dispCat.id}-${sec.id}`, title: sec.name, icon: sec.emoji || '🖼️',
-          pdfPath: null, pptxPath: null,
-          thumb: sec.images[0] ? buildImageUrl(sec.folder, sec.images[0].file) : null,
-          dispCat, sections: [sec], posterCount: sec.images.length,
-        })),
-      });
+    const sectionItem = (sec) => ({
+      kind: 'display', id: `dispres-${dispCat.id}-${sec.id}`, title: sec.name, icon: sec.emoji || '🖼️',
+      pdfPath: null, pptxPath: null,
+      thumb: sec.images[0] ? buildImageUrl(sec.folder, sec.images[0].file) : null,
+      dispCat, sections: [sec], posterCount: sec.images.length,
+    });
+    const overrides = SECTION_CATEGORY_OVERRIDES[subj.id] || {};
+    const sectionHome = {};
+    Object.entries(overrides).forEach(([catName, ids]) => ids.forEach(id => { sectionHome[id] = catName; }));
+    const stray = [];
+    sections.filter(sec => !claimed.has(sec.id)).forEach(sec => {
+      const home = sectionHome[sec.id];
+      if (!home) { stray.push(sec); return; }
+      let cat = cats.find(c => c.name === home);
+      if (!cat) {
+        cat = { id: subj.id + '-' + home.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name: home, emoji: NEW_CATEGORY_EMOJI[home] || '🖼️', items: [] };
+        cats.push(cat);
+      }
+      cat.items.push(sectionItem(sec));
+    });
+    if (stray.length) {
+      cats.push({ id: subj.id + '-more-displays', name: 'More Displays & Posters', emoji: '🖼️', items: stray.map(sectionItem) });
     }
-    lib[subj.id] = cats;
+    lib[subj.id] = cats.filter(c => c.items.length > 0);
   });
   return lib;
 };
@@ -1554,7 +1580,14 @@ export default function CurriculumPage() {
       <div className="space-y-8">
         <div className="text-center pt-2">
           <h1 className="text-4xl sm:text-5xl font-black text-gray-800 tracking-tight mb-3">📖 Resource Hub</h1>
-          <p className="text-gray-500 text-lg max-w-xl mx-auto">Find lessons, worksheets, interactive tools and classroom displays — organised by subject.</p>
+          <p className="text-gray-500 text-lg max-w-xl mx-auto">Find bundles, worksheets, posters and classroom displays — organised by subject.</p>
+          <div className="mt-5 max-w-2xl mx-auto bg-amber-50 border-2 border-amber-200 rounded-2xl px-5 py-3.5 flex items-center gap-3 text-left">
+            <span className="text-2xl">💡</span>
+            <p className="text-sm text-amber-800 font-semibold">
+              Looking for interactive resources? Reading, writing, maths and science tools can be found in the
+              <span className="font-black"> Classroom Champions</span> section of the website, under the <span className="font-black">Resources</span> tab.
+            </p>
+          </div>
         </div>
 
         {/* ── Search bar ── */}
