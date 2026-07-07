@@ -75,18 +75,18 @@ const TESTIMONIALS = [
 ];
 
 const FREE_RESOURCES = [
-  { title: 'Integer Ocean', subtitle: 'Math Adventure', desc: 'A deep dive into integers! Solve math mysteries in the ocean depths.',
-    gradient: 'linear-gradient(135deg, #3B82F6, #06B6D4)', icon: '🌊', file: '/free-resources/Integer_Ocean_Adventure.pdf', bg: '#EFF6FF', border: '#BFDBFE' },
-  { title: 'Paint With Words', subtitle: 'Creative Writing', desc: 'Unlock creativity with descriptive writing prompts and imaginary worlds.',
-    gradient: 'linear-gradient(135deg, #8B5CF6, #EC4899)', icon: '🎨', file: '/free-resources/Paint_Worlds_With_Words.pdf', bg: '#FDF4FF', border: '#E9D5FF' },
-  { title: 'Game History', subtitle: 'Reading Comprehension', desc: 'Level up reading skills with passages about the history of video games.',
-    gradient: 'linear-gradient(135deg, #10B981, #3B82F6)', icon: '🎮', file: '/free-resources/Video_Game_Comprehension.pdf', bg: '#F0FDF4', border: '#A7F3D0' },
+  { title: 'Mood Modes', subtitle: 'Behaviour & Wellbeing', desc: 'A friendly self-regulation display for middle primary — Recharge, Ready, Alert and Overload modes help students name and manage how they feel.',
+    gradient: 'linear-gradient(135deg, #10B981, #3B82F6)', icon: '🦊', file: '/free-resources/Mood_Modes_Middle_Primary.pdf', bg: '#F0FDF4', border: '#A7F3D0' },
+  { title: 'Information Report', subtitle: 'Writing Bundle', desc: 'A complete information report pack — structure, examples, templates and checklists to take students from plan to polished report.',
+    gradient: 'linear-gradient(135deg, #3B82F6, #06B6D4)', icon: '📰', file: '/free-resources/Information_Report.pdf', bg: '#EFF6FF', border: '#BFDBFE' },
+  { title: 'Maths Anchor Charts', subtitle: 'Mathematics', desc: 'Nine bold anchor charts covering fractions, place value, multiplication, measurement, graphs and more — print and display.',
+    gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)', icon: '⚓', file: '/free-resources/Maths_Anchor_Charts.pdf', bg: '#FFFBEB', border: '#FDE68A' },
+  { title: 'Watercolour Decor', subtitle: 'Classroom Decor', desc: 'A soft watercolour-themed classroom decor set — beautiful coordinated posters to refresh your room in one afternoon.',
+    gradient: 'linear-gradient(135deg, #8B5CF6, #EC4899)', icon: '🎨', file: '/free-resources/Watercolour_Theme_Decor.pdf', bg: '#FDF4FF', border: '#E9D5FF' },
+  { title: 'Cleopatra', subtitle: 'HASS · Ancient History', desc: 'Power, propaganda and legacy — a rich ancient history unit exploring one of history’s most fascinating rulers.',
+    gradient: 'linear-gradient(135deg, #D97706, #92400E)', icon: '🐍', file: '/free-resources/Cleopatra_Power_Propaganda_Legacy.pdf', bg: '#FFF7ED', border: '#FED7AA' },
   { title: 'Zones of Regulation', subtitle: 'Social-Emotional Learning', desc: 'Help students identify and manage their emotions using the four colour zones framework.',
-    gradient: 'linear-gradient(135deg, #F59E0B, #EF4444)', icon: '🧠', file: '/free-resources/Zones_of_Regulation.pdf', bg: '#FFFBEB', border: '#FDE68A' },
-  { title: 'Wellbeing', subtitle: 'Health & Wellbeing', desc: 'Breathing, stretches, movements, affirmations, sleep tips and journalling prompts to support student wellbeing.',
-    gradient: 'linear-gradient(135deg, #10B981, #34D399)', icon: '💚', file: '/free-resources/Wellbeing.pdf', bg: '#ECFDF5', border: '#A7F3D0' },
-  { title: 'Paragraph Writing', subtitle: 'Writing Skills', desc: 'A clear overview, worked example, writing template and checklist to help students master paragraph structure.',
-    gradient: 'linear-gradient(135deg, #84CC16, #22C55E)', icon: '¶', file: '/free-resources/Paragraph_Writing.pdf', bg: '#F7FEE7', border: '#D9F99D' },
+    gradient: 'linear-gradient(135deg, #84CC16, #22C55E)', icon: '🧠', file: '/free-resources/Zones_of_Regulation.pdf', bg: '#F7FEE7', border: '#D9F99D' },
 ];
 
 // ── Reusable marquee row (CSS-driven for perf; GSAP adds scroll-velocity skew) ──
