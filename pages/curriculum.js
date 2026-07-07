@@ -943,6 +943,209 @@ const resolveDeepLink = (link) => {
 const buildShareUrl = (key) =>
   `${window.location.origin}/curriculum?link=${key.split(':').map(encodeURIComponent).join(':')}`;
 
+
+// ─── Unified Resource Library (bundles + displays merged) ────────────────────
+const DISPLAY_CAT_FOR_SUBJECT = { english: 'english', mathematics: 'maths', science: 'science', behaviour: 'behaviour', hass: 'hass', decor: 'decor' };
+const LIBRARY_STOPWORDS = new Set(['display', 'displays', 'poster', 'posters', 'theme', 'themed', 'classroom', 'decor', 'the', 'and', 'of', 'a', 'an']);
+
+const libTokens = (str) => (str || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/)
+  .map(w => w.replace(/s$/, ''))
+  .filter(w => w && !LIBRARY_STOPWORDS.has(w) && !LIBRARY_STOPWORDS.has(w + 's'));
+
+// Two names match if one token set contains the other (single-token matches must be exact)
+const libNamesMatch = (a, b) => {
+  const [small, big] = a.length <= b.length ? [a, b] : [b, a];
+  if (!small.length) return false;
+  if (!small.every(x => big.includes(x))) return false;
+  return small.length >= 2 || small.length === big.length;
+};
+
+const buildResourceLibrary = () => {
+  const lib = {};
+  SUBJECTS.forEach(subj => {
+    const dispCat = ALL_DISPLAY_CATEGORIES.find(c => c.id === DISPLAY_CAT_FOR_SUBJECT[subj.id]) || null;
+    const sections = dispCat ? dispCat.sections.map(sec => ({ ...sec, folder: dispCat.folder, _tokens: libTokens(sec.name) })) : [];
+    const claimed = new Set();
+    const rawGroups = resourcesBySubject[subj.id] || [];
+    const isGrouped = rawGroups.length > 0 && rawGroups[0].items !== undefined;
+    const groups = isGrouped ? rawGroups : (rawGroups.length ? [{ id: subj.id + '-all', name: 'All Resources', emoji: '📁', items: rawGroups }] : []);
+    const cats = [];
+    groups.forEach(g => {
+      const items = (g.items || []).map(res => {
+        const t = libTokens(res.title);
+        const matched = sections.filter(sec => !claimed.has(sec.id) && libNamesMatch(t, sec._tokens));
+        matched.forEach(sec => claimed.add(sec.id));
+        const posterCount = matched.reduce((n, sec) => n + sec.images.length, 0);
+        return {
+          kind: 'bundle', id: res.id, title: res.title, icon: res.icon || '📄',
+          pdfPath: res.pdfPath, pptxPath: res.pptxPath,
+          thumb: res.pdfPath ? `/thumbs/bundles/${res.id}.jpg` : (matched[0] && matched[0].images[0] ? buildImageUrl(matched[0].folder, matched[0].images[0].file) : null),
+          dispCat, sections: matched, posterCount,
+        };
+      });
+      cats.push({ id: g.id, name: g.name, emoji: g.emoji || '📁', items });
+    });
+    const leftovers = sections.filter(sec => !claimed.has(sec.id));
+    if (leftovers.length) {
+      cats.push({
+        id: subj.id + '-more-displays', name: 'More Displays & Posters', emoji: '🖼️',
+        items: leftovers.map(sec => ({
+          kind: 'display', id: `dispres-${dispCat.id}-${sec.id}`, title: sec.name, icon: sec.emoji || '🖼️',
+          pdfPath: null, pptxPath: null,
+          thumb: sec.images[0] ? buildImageUrl(sec.folder, sec.images[0].file) : null,
+          dispCat, sections: [sec], posterCount: sec.images.length,
+        })),
+      });
+    }
+    lib[subj.id] = cats;
+  });
+  return lib;
+};
+const RESOURCE_LIBRARY = buildResourceLibrary();
+
+// Small format badges shown on cards & quick view
+const FormatBadges = ({ res, size = 'xs' }) => (
+  <div className="flex flex-wrap gap-1">
+    {res.pdfPath && <span className={`text-${size} font-bold px-1.5 py-0.5 rounded-md bg-red-100 text-red-700`}>PDF</span>}
+    {res.pptxPath && <span className={`text-${size} font-bold px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-700`}>PPT</span>}
+    {res.posterCount > 0 && <span className={`text-${size} font-bold px-1.5 py-0.5 rounded-md bg-violet-100 text-violet-700`}>🖼️ {res.posterCount} poster{res.posterCount !== 1 ? 's' : ''}</span>}
+  </div>
+);
+
+// Preview card — shows the resource cover without opening it
+function LibraryCard({ res, onOpen }) {
+  const [imgOk, setImgOk] = useState(true);
+  return (
+    <button onClick={onOpen} className="group bg-white rounded-2xl border-2 border-gray-100 hover:border-purple-300 hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden text-left flex flex-col">
+      <div className="aspect-[4/3] bg-gray-50 overflow-hidden flex items-center justify-center relative border-b border-gray-100">
+        {res.thumb && imgOk ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={res.thumb} alt={res.title} loading="lazy" onError={() => setImgOk(false)}
+            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300" />
+        ) : (
+          <span className="text-5xl">{res.icon}</span>
+        )}
+        <div className="absolute bottom-1.5 left-1.5"><FormatBadges res={res} /></div>
+      </div>
+      <div className="p-3 flex-1 flex items-start">
+        <p className="text-sm font-black text-gray-700 leading-tight line-clamp-2">{res.title}</p>
+      </div>
+    </button>
+  );
+}
+
+// Quick-view popup — preview pages/posters + actions, without leaving the page
+function ResourceQuickView({ res, onClose, onCopyLink, onOpenPdf, onOpenSection }) {
+  const previews = [];
+  if (res.pdfPath && res.thumb) previews.push({ src: res.thumb, label: 'Cover — open full preview to see every page', pdf: true });
+  res.sections.forEach(sec => sec.images.slice(0, 30).forEach(img => previews.push({ src: buildImageUrl(sec.folder, img.file), label: img.name, sec, img })));
+  const shareKey = res.kind === 'bundle' ? `res:${res.id}` : (res.dispCat ? `disp:${res.dispCat.id}:${res.sections[0].id}` : null);
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-start gap-3">
+          <span className="text-3xl">{res.icon}</span>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-black text-gray-800 leading-tight">{res.title}</h3>
+            <div className="mt-1.5"><FormatBadges res={res} size="[11px]" /></div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all text-lg font-bold">×</button>
+        </div>
+        {/* Preview strip */}
+        <div className="px-6 py-4 overflow-y-auto">
+          {previews.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {previews.map((p, i) => (
+                <button key={i} title={p.label}
+                  onClick={() => (p.sec ? onOpenSection(p.sec, p.img) : onOpenPdf())}
+                  className="flex-shrink-0 rounded-xl border-2 border-gray-100 hover:border-purple-300 overflow-hidden bg-gray-50 transition-colors">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.src} alt={p.label} loading="lazy" className="h-44 w-auto object-contain" onError={e => { e.target.parentElement.style.display = 'none'; }} />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400 font-bold text-sm">No preview available — download to view.</div>
+          )}
+          <p className="text-[11px] text-gray-400 font-semibold mt-1">Click a preview to open it fully.</p>
+        </div>
+        {/* Actions */}
+        <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/60">
+          {res.pdfPath && (
+            <a href={res.pdfPath} download className="bg-emerald-500 text-white px-4 py-2 rounded-xl hover:bg-emerald-600 text-sm font-black shadow flex items-center gap-1.5">⬇️ Download PDF</a>
+          )}
+          {res.pptxPath && (
+            <a href={res.pptxPath} download className="bg-orange-500 text-white px-4 py-2 rounded-xl hover:bg-orange-600 text-sm font-black shadow flex items-center gap-1.5">⬇️ PowerPoint</a>
+          )}
+          {res.pdfPath && (
+            <button onClick={onOpenPdf} className="bg-purple-500 text-white px-4 py-2 rounded-xl hover:bg-purple-600 text-sm font-black shadow">📖 Full Preview</button>
+          )}
+          {res.sections.length > 0 && (
+            <button onClick={() => onOpenSection(res.sections[0], null)} className="bg-violet-500 text-white px-4 py-2 rounded-xl hover:bg-violet-600 text-sm font-black shadow">🖼️ Browse Posters</button>
+          )}
+          {shareKey && (
+            <button onClick={() => onCopyLink(shareKey)} className="ml-auto bg-white text-purple-700 border border-purple-200 px-4 py-2 rounded-xl hover:bg-purple-50 text-sm font-black">🔗 Copy Link</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Library view — category chips + preview card grid + quick view
+function LibraryView({ subject, onCopyLink, onOpenPdf, onOpenSection }) {
+  const cats = RESOURCE_LIBRARY[subject.id] || [];
+  const [catId, setCatId] = useState(cats[0] ? cats[0].id : null);
+  const [filter, setFilter] = useState('');
+  const [quick, setQuick] = useState(null);
+  const activeCat = cats.find(c => c.id === catId) || cats[0];
+  const q = filter.trim().toLowerCase();
+  const shown = q
+    ? cats.flatMap(c => c.items).filter(r => r.title.toLowerCase().includes(q))
+    : (activeCat ? activeCat.items : []);
+  return (
+    <div className="space-y-5">
+      {/* Search within subject */}
+      <div className="relative max-w-md">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" /></svg>
+        <input type="text" value={filter} onChange={e => setFilter(e.target.value)} placeholder={`Search ${subject.name} resources…`}
+          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm" />
+      </div>
+      {/* Category chips */}
+      {!q && (
+        <div className="flex flex-wrap gap-2">
+          {cats.map(c => (
+            <button key={c.id} onClick={() => setCatId(c.id)}
+              className={`px-3.5 py-2 rounded-full text-sm font-bold border-2 transition-all ${c.id === (activeCat && activeCat.id)
+                ? 'bg-purple-600 border-purple-600 text-white shadow-md'
+                : 'bg-white border-gray-200 text-gray-600 hover:border-purple-300 hover:text-purple-700'}`}>
+              {c.emoji} {c.name} <span className={`ml-1 text-xs font-black ${c.id === (activeCat && activeCat.id) ? 'text-purple-200' : 'text-gray-400'}`}>{c.items.length}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {/* Card grid */}
+      {shown.length === 0 ? (
+        <div className="bg-gray-50 rounded-2xl p-10 text-center border-2 border-dashed border-gray-200"><p className="text-gray-500 font-bold">{q ? `No results for "${filter}"` : 'Nothing here yet'}</p></div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {shown.map(r => <LibraryCard key={r.id} res={r} onOpen={() => setQuick(r)} />)}
+        </div>
+      )}
+      {/* Quick view */}
+      {quick && (
+        <ResourceQuickView res={quick}
+          onClose={() => setQuick(null)}
+          onCopyLink={onCopyLink}
+          onOpenPdf={() => { onOpenPdf(quick); setQuick(null); }}
+          onOpenSection={(sec, img) => { onOpenSection(quick.dispCat, sec, img); setQuick(null); }} />
+      )}
+    </div>
+  );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function CurriculumPage() {
   const router = useRouter();
@@ -1246,6 +1449,18 @@ export default function CurriculumPage() {
         </div>
       );
 
+      // Unified Resource Library — bundles + displays together
+      if (type === 'library') return (
+        <div className="space-y-6">
+          {renderBreadcrumb()}
+          <AreaHeader bg={area.bg} border={area.border} emoji={area.emoji} name={area.name} description={area.description} text={area.text} onBack={goSubject} />
+          <LibraryView subject={subject}
+            onCopyLink={copyShareLink}
+            onOpenPdf={r => setResource({ id: r.id, title: r.title, pdfPath: r.pdfPath || r.pptxPath, pptxPath: r.pptxPath })}
+            onOpenSection={(cat, sec, img) => { if (cat) setDisplayCat(cat); setDisplaySection(sec); if (img) setDisplayImage({ ...img, folder: sec.folder }); }} />
+        </div>
+      );
+
       // Unit resources
       if (type === 'resources') return (
         <div className="space-y-6">
@@ -1297,20 +1512,42 @@ export default function CurriculumPage() {
     }
 
     // ── Subject area grid ─────────────────────────────────────────────────────
-    if (subject) return (
-      <div className="space-y-6">
-        {renderBreadcrumb()}
-        <div className={`rounded-3xl border-2 p-7 flex items-center gap-5 ${subject.bg} ${subject.border}`}>
-          <span className="text-6xl">{subject.emoji}</span>
-          <div className="flex-1"><h2 className={`text-3xl font-black ${subject.text}`}>{subject.name}</h2><p className="text-gray-500 text-sm mt-1">{subject.description}</p></div>
-          <button onClick={goHome} className="bg-white/70 hover:bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-bold border border-white/80 transition-colors">← Back</button>
+    if (subject) {
+      const toolAreas = subject.areas.filter(a => a.type === 'tools' || a.type === 'curriculum');
+      const hasLibrary = (RESOURCE_LIBRARY[subject.id] || []).length > 0;
+      const libraryArea = {
+        id: `${subject.id}-library`, type: 'library', name: 'Resource Library', emoji: '📚',
+        description: 'Bundles, worksheets, posters & displays — together in one place',
+        bg: 'bg-violet-100', border: 'border-violet-300', hover: 'hover:bg-violet-200', text: 'text-violet-900',
+      };
+      const libraryProps = {
+        subject,
+        onCopyLink: copyShareLink,
+        onOpenPdf: r => setResource({ id: r.id, title: r.title, pdfPath: r.pdfPath || r.pptxPath, pptxPath: r.pptxPath }),
+        onOpenSection: (cat, sec, img) => { if (cat) setDisplayCat(cat); setDisplaySection(sec); if (img) setDisplayImage({ ...img, folder: sec.folder }); },
+      };
+      return (
+        <div className="space-y-6">
+          {renderBreadcrumb()}
+          <div className={`rounded-3xl border-2 p-7 flex items-center gap-5 ${subject.bg} ${subject.border}`}>
+            <span className="text-6xl">{subject.emoji}</span>
+            <div className="flex-1"><h2 className={`text-3xl font-black ${subject.text}`}>{subject.name}</h2><p className="text-gray-500 text-sm mt-1">{subject.description}</p></div>
+            <button onClick={goHome} className="bg-white/70 hover:bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-bold border border-white/80 transition-colors">← Back</button>
+          </div>
+          {toolAreas.length > 0 ? (
+            <>
+              <h3 className="text-lg font-black text-gray-600">What are you looking for?</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                {toolAreas.map(a => <PastelTile key={a.id} emoji={a.emoji} name={a.name} description={a.description} bg={a.bg} border={a.border} hover={a.hover} text={a.text} onClick={() => setArea(a)} />)}
+                {hasLibrary && <PastelTile key={libraryArea.id} emoji={libraryArea.emoji} name={libraryArea.name} description={libraryArea.description} bg={libraryArea.bg} border={libraryArea.border} hover={libraryArea.hover} text={libraryArea.text} onClick={() => setArea(libraryArea)} />}
+              </div>
+            </>
+          ) : (
+            <LibraryView {...libraryProps} />
+          )}
         </div>
-        <h3 className="text-lg font-black text-gray-600">What are you looking for?</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-          {subject.areas.map(a => <PastelTile key={a.id} emoji={a.emoji} name={a.name} description={a.description} bg={a.bg} border={a.border} hover={a.hover} text={a.text} onClick={() => setArea(a)} />)}
-        </div>
-      </div>
-    );
+      );
+    }
 
     // ── Level 0: Subject grid + search ────────────────────────────────────────
     return (
