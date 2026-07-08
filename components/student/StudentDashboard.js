@@ -66,7 +66,7 @@ const StudentDashboard = ({
             {seProfile.title && <span className="bg-white/25 rounded-full px-2.5 py-0.5">📛 {seProfile.title.name}</span>}
             {seProfile.themeName && <span className="bg-white/25 rounded-full px-2.5 py-0.5">{seProfile.themeIcon} {seProfile.themeName}</span>}
             {seProfile.effectName && <span className="bg-white/25 rounded-full px-2.5 py-0.5">✨ {seProfile.effectName}</span>}
-            <span className="bg-white/25 rounded-full px-2.5 py-0.5">🍪 Earned in Sweet Empire</span>
+            <span className="bg-white/25 rounded-full px-2.5 py-0.5">⚔️ Earned in Champion&apos;s Forge</span>
           </div>
         )}
       </div>

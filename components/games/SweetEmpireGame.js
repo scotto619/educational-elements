@@ -1,13 +1,16 @@
 // components/games/SweetEmpireGame.js
 // ─────────────────────────────────────────────────────────────────────────────
-// SWEET EMPIRE 🍪 — the deep idle/clicker that replaces Hero Forge.
+// CHAMPION'S FORGE ⚔️ — the deep idle/clicker (formerly Sweet Empire, rethemed
+// to heroes & champions; all save data and ids unchanged so progress is kept).
 //
-// Features: 12 buildings, 70+ upgrades, Sugar Rush click combos, golden
-// cookies with random buffs, 40+ achievements (each a permanent boost),
-// Recipe Rebirth prestige with a Sugar Star shop, offline production,
-// a class leaderboard, and slow-grind profile unlocks (card themes, titles,
-// special effects) that appear on the Classroom Champions student cards and
-// the student's own dashboard.
+// Features: an evolving legendary weapon you strike to earn gold, 12 champion
+// recruits, 75+ upgrades, Battle Momentum combos, loot chests with random
+// buffs, RANDOM REALM EVENTS (merchants, blessings, goblin hordes and
+// clickable DRAGON RAIDS), 45+ achievements (each a permanent boost), Heroic
+// Ascension prestige with a Glory Star shop, offline production, a class
+// leaderboard, and slow-grind profile unlocks (card themes, titles, special
+// effects) that appear on the Classroom Champions student cards and the
+// student's own dashboard.
 //
 // Saves to studentData.sweetEmpireData via updateStudentData (Firestore-safe).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -18,8 +21,11 @@ import {
   UPGRADES, UPGRADE_MAP,
   ACHIEVEMENTS, ACHIEVEMENT_MAP,
   starsForRun, STAR_SPS_BONUS, STAR_UPGRADES, STAR_UPGRADE_MAP,
-  GOLDEN_MIN_GAP, GOLDEN_MAX_GAP, GOLDEN_LIFETIME, GOLDEN_EFFECTS,
+  GOLDEN_MIN_GAP, GOLDEN_MAX_GAP, GOLDEN_LIFETIME, GOLDEN_EFFECTS, LOOT_CHEST_IMAGES,
+  EVENT_MIN_GAP, EVENT_MAX_GAP, EVENT_LIFETIME, REALM_EVENTS,
+  DRAGON_HP_CLICKS, DRAGON_TIME, DRAGON_REWARD_MINUTES, DRAGON_IMAGES,
   COMBO_MAX, COMBO_MAX_BONUS, COMBO_DECAY_PER_SEC,
+  FORGE_STAGES, forgeStageFor,
   SE_THEMES, SE_THEME_STYLES, SE_TITLES, SE_EFFECTS, meetsUnlockReq,
   OFFLINE_BASE_HOURS, OFFLINE_RATE,
   defaultSave,
@@ -40,6 +46,8 @@ const cleanSave = (gs) => ({
   sugarStars: Number(gs.sugarStars) || 0,
   starUpgrades: [...(gs.starUpgrades || [])],
   rebirths: Number(gs.rebirths) || 0,
+  dragonsSlain: Number(gs.dragonsSlain) || 0,
+  eventsClaimed: Number(gs.eventsClaimed) || 0,
   unlockedThemes: [...(gs.unlockedThemes || [])],
   unlockedTitles: [...(gs.unlockedTitles || [])],
   unlockedEffects: [...(gs.unlockedEffects || [])],
@@ -67,7 +75,7 @@ const calcGlobalMult = (gs) => {
     if (u && u.type === 'global') mult *= u.mult;
   });
   mult *= 1 + (gs.achievements || []).length * 0.01;          // +1% per achievement
-  mult *= 1 + (gs.sugarStars || 0) * STAR_SPS_BONUS;          // +2% per sugar star
+  mult *= 1 + (gs.sugarStars || 0) * STAR_SPS_BONUS;          // +2% per Glory Star
   if ((gs.starUpgrades || []).includes('su_prod')) mult *= 2;
   if ((gs.starUpgrades || []).includes('su_prod2')) mult *= 3;
   return mult;
@@ -81,6 +89,7 @@ const calcSps = (gs, buffs = {}) => {
   });
   sps *= calcGlobalMult(gs);
   if (buffs.frenzyUntil && buffs.frenzyUntil > now()) sps *= 7;
+  if (buffs.blessingUntil && buffs.blessingUntil > now()) sps *= 3;
   return sps;
 };
 
@@ -97,6 +106,7 @@ const calcClickPower = (gs, buffs = {}, combo = 0) => {
   power *= calcGlobalMult(gs);
   power *= 1 + (Math.min(combo, COMBO_MAX) / COMBO_MAX) * COMBO_MAX_BONUS;
   if (buffs.clickFrenzyUntil && buffs.clickFrenzyUntil > now()) power *= 20;
+  if (buffs.trainingUntil && buffs.trainingUntil > now()) power *= 10;
   if (spsPct > 0) power += calcSps(gs, buffs) * spsPct;
   return power;
 };
@@ -113,6 +123,13 @@ const goldenGapMs = (gs) => {
   return min + Math.random() * (max - min);
 };
 
+const eventGapMs = (gs) => {
+  const freq = (gs.starUpgrades || []).includes('su_event') ? 1.5 : 1;
+  const min = (EVENT_MIN_GAP / freq) * 1000;
+  const max = (EVENT_MAX_GAP / freq) * 1000;
+  return min + Math.random() * (max - min);
+};
+
 const goldenDurationMult = (gs) =>
   (gs.upgrades || []).some((id) => UPGRADE_MAP[id]?.type === 'goldenDur') ? 1.5 : 1;
 
@@ -122,20 +139,22 @@ const offlineHours = (gs) => {
   return OFFLINE_BASE_HOURS;
 };
 
-const pickGoldenEffect = () => {
-  const total = GOLDEN_EFFECTS.reduce((s, e) => s + e.weight, 0);
+const pickWeighted = (list) => {
+  const total = list.reduce((s, e) => s + e.weight, 0);
   let roll = Math.random() * total;
-  for (const e of GOLDEN_EFFECTS) {
+  for (const e of list) {
     roll -= e.weight;
     if (roll <= 0) return e;
   }
-  return GOLDEN_EFFECTS[0];
+  return list[0];
 };
 
+const merchantDiscount = (buffs) => (buffs.merchantUntil && buffs.merchantUntil > now() ? 0.75 : 1);
+
 const TABS = [
-  { id: 'bakery', name: 'Bakery', icon: '🍪' },
-  { id: 'upgrades', name: 'Upgrades', icon: '⬆️' },
-  { id: 'rebirth', name: 'Rebirth', icon: '⭐' },
+  { id: 'bakery', name: 'Forge', icon: '⚔️' },
+  { id: 'upgrades', name: 'Armory', icon: '⬆️' },
+  { id: 'rebirth', name: 'Ascension', icon: '⭐' },
   { id: 'style', name: 'Style', icon: '🎨' },
   { id: 'awards', name: 'Awards', icon: '🏅' },
   { id: 'stats', name: 'Stats', icon: '📊' },
@@ -149,12 +168,16 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const [tab, setTab] = useState('bakery');
   const [buyAmount, setBuyAmount] = useState(1);
   const [combo, setCombo] = useState(0);
-  const [buffs, setBuffs] = useState({});          // { frenzyUntil, clickFrenzyUntil }
-  const [golden, setGolden] = useState(null);      // { x, y, expiresAt }
-  const [floaties, setFloaties] = useState([]);    // floating click numbers
+  const [buffs, setBuffs] = useState({});          // { frenzyUntil, clickFrenzyUntil, blessingUntil, trainingUntil, merchantUntil }
+  const [golden, setGolden] = useState(null);      // loot chest { x, y, img, expiresAt }
+  const [event, setEvent] = useState(null);        // realm event banner { def, expiresAt }
+  const [dragon, setDragon] = useState(null);      // { hp, maxHp, until, img }
+  const [floaties, setFloaties] = useState([]);    // floating strike numbers
   const [offlineReport, setOfflineReport] = useState(null);
   const [rebirthConfirm, setRebirthConfirm] = useState(false);
-  const [cookiePop, setCookiePop] = useState(false);
+  const [weaponPop, setWeaponPop] = useState(false);
+  const [stageFlash, setStageFlash] = useState(false);
+  const [, setTick] = useState(0);                 // forces countdown re-renders
 
   const gsRef = useRef(gs); gsRef.current = gs;
   const buffsRef = useRef(buffs); buffsRef.current = buffs;
@@ -162,11 +185,14 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const dirtyRef = useRef(false);
   const savingRef = useRef(false);
   const goldenTimer = useRef(null);
+  const eventTimer = useRef(null);
   const floatId = useRef(0);
+  const stageIndexRef = useRef(null);
 
   const sps = useMemo(() => calcSps(gs, buffs), [gs, buffs]);
   const clickPower = useMemo(() => calcClickPower(gs, buffs, combo), [gs, buffs, combo]);
   const pendingStars = starsForRun(gs.runSweets);
+  const forgeStage = useMemo(() => forgeStageFor(gs), [gs]);
 
   // ── Load save + offline earnings ────────────────────────────────────────────
   useEffect(() => {
@@ -195,6 +221,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     setGs(save);
     setLoaded(true);
     dirtyRef.current = true;
+    stageIndexRef.current = forgeStageFor(save).index;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentData, loaded]);
 
@@ -219,6 +246,28 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     }, 100);
     return () => clearInterval(t);
   }, [loaded]);
+
+  // ── Countdown ticker (only while something timed is on screen) ──────────────
+  const hasTimedThing = !!(dragon || event || golden ||
+    buffs.frenzyUntil > now() || buffs.clickFrenzyUntil > now() ||
+    buffs.blessingUntil > now() || buffs.trainingUntil > now() || buffs.merchantUntil > now());
+  useEffect(() => {
+    if (!loaded || !hasTimedThing) return;
+    const t = setInterval(() => setTick((x) => x + 1), 250);
+    return () => clearInterval(t);
+  }, [loaded, hasTimedThing]);
+
+  // ── Weapon evolution watcher ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!loaded) return;
+    if (stageIndexRef.current === null) { stageIndexRef.current = forgeStage.index; return; }
+    if (forgeStage.index > stageIndexRef.current) {
+      stageIndexRef.current = forgeStage.index;
+      setStageFlash(true);
+      setTimeout(() => setStageFlash(false), 2500);
+      showToast(`⚔️ Your weapon has evolved: ${forgeStage.name}!`, 'success');
+    }
+  }, [loaded, forgeStage.index, forgeStage.name, showToast]);
 
   // ── Achievement + profile-unlock sweep (every 2s) ───────────────────────────
   useEffect(() => {
@@ -256,7 +305,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       await updateStudentData({ sweetEmpireData: cleanSave(gsRef.current) });
       dirtyRef.current = false;
     } catch (err) {
-      console.error('SweetEmpire: save failed', err);
+      console.error('ChampionsForge: save failed', err);
     } finally {
       savingRef.current = false;
     }
@@ -268,36 +317,32 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     return () => { clearInterval(t); persist(); };
   }, [loaded, persist]);
 
-  // ── Golden cookie scheduler ─────────────────────────────────────────────────
+  // ── Loot chest scheduler (self-sustaining: spawn → expire/claim → repeat) ──
+  const scheduleGolden = useCallback(() => {
+    clearTimeout(goldenTimer.current);
+    goldenTimer.current = setTimeout(() => {
+      setGolden({
+        x: 8 + Math.random() * 76,   // % across the play area
+        y: 12 + Math.random() * 60,
+        img: LOOT_CHEST_IMAGES[Math.floor(Math.random() * LOOT_CHEST_IMAGES.length)],
+        expiresAt: now() + GOLDEN_LIFETIME * 1000,
+      });
+      goldenTimer.current = setTimeout(() => { setGolden(null); scheduleGolden(); }, GOLDEN_LIFETIME * 1000);
+    }, goldenGapMs(gsRef.current));
+  }, []);
+
   useEffect(() => {
     if (!loaded) return;
-    let cancelled = false;
-    const schedule = () => {
-      if (cancelled) return;
-      goldenTimer.current = setTimeout(() => {
-        if (cancelled) return;
-        setGolden({
-          x: 8 + Math.random() * 76,   // % across the play area
-          y: 12 + Math.random() * 60,
-          expiresAt: now() + GOLDEN_LIFETIME * 1000,
-        });
-        goldenTimer.current = setTimeout(() => { if (!cancelled) { setGolden(null); schedule(); } }, GOLDEN_LIFETIME * 1000);
-      }, goldenGapMs(gsRef.current));
-    };
-    schedule();
-    return () => { cancelled = true; clearTimeout(goldenTimer.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded]);
+    scheduleGolden();
+    return () => clearTimeout(goldenTimer.current);
+  }, [loaded, scheduleGolden]);
 
   const clickGolden = () => {
     if (!golden) return;
     setGolden(null);
-    clearTimeout(goldenTimer.current);
-    goldenTimer.current = setTimeout(() => {
-      setGolden({ x: 8 + Math.random() * 76, y: 12 + Math.random() * 60, expiresAt: now() + GOLDEN_LIFETIME * 1000 });
-    }, goldenGapMs(gsRef.current));
+    scheduleGolden();
 
-    const effect = pickGoldenEffect();
+    const effect = pickWeighted(GOLDEN_EFFECTS);
     const durMult = goldenDurationMult(gsRef.current);
     const cur = gsRef.current;
     const baseSps = calcSps(cur, {});
@@ -309,14 +354,14 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     } else if (effect.id === 'lucky') {
       const gain = Math.max(cur.sweets * 0.1, baseSps * 900) + 13;
       setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
-      showToast(`💰 Sweet Windfall! +${fmtNum(gain)} sweets!`, 'success');
+      showToast(`💰 Treasure Trove! +${fmtNum(gain)} gold!`, 'success');
     } else if (effect.id === 'rush') {
       setCombo(COMBO_MAX);
-      showToast('🌀 Sugar Rush maxed out!', 'success');
+      showToast('🌀 War Cry! Battle Momentum maxed out!', 'success');
     } else if (effect.id === 'jackpot') {
       const gain = baseSps * 3600 + 777;
       setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
-      showToast(`🎰 JACKPOT! +${fmtNum(gain)} sweets!`, 'success');
+      showToast(`🎰 DRAGON'S HOARD! +${fmtNum(gain)} gold!`, 'success');
     }
     if (effect.duration > 0) showToast(`${effect.icon} ${effect.name} ${effect.desc}`, 'success');
 
@@ -324,8 +369,99 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     dirtyRef.current = true;
   };
 
-  // ── The Big Cookie ──────────────────────────────────────────────────────────
-  const clickCookie = (e) => {
+  // ── Realm event scheduler (self-sustaining) ─────────────────────────────────
+  const scheduleEvent = useCallback(() => {
+    clearTimeout(eventTimer.current);
+    eventTimer.current = setTimeout(() => {
+      const def = pickWeighted(REALM_EVENTS);
+      setEvent({ def, expiresAt: now() + EVENT_LIFETIME * 1000 });
+      eventTimer.current = setTimeout(() => { setEvent(null); scheduleEvent(); }, EVENT_LIFETIME * 1000);
+    }, eventGapMs(gsRef.current));
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    scheduleEvent();
+    return () => clearTimeout(eventTimer.current);
+  }, [loaded, scheduleEvent]);
+
+  const answerEvent = () => {
+    if (!event) return;
+    const def = event.def;
+    setEvent(null);
+    scheduleEvent();
+    const cur = gsRef.current;
+    const baseSps = calcSps(cur, {});
+
+    if (def.id === 'merchant') {
+      setBuffs((b) => ({ ...b, merchantUntil: now() + def.duration * 1000 }));
+      showToast('🧝 Travelling Merchant! All recruits 25% off — hire fast!', 'success');
+    } else if (def.id === 'blessing') {
+      setBuffs((b) => ({ ...b, blessingUntil: now() + def.duration * 1000 }));
+      showToast('✨ Royal Blessing! Production ×3!', 'success');
+    } else if (def.id === 'training') {
+      setBuffs((b) => ({ ...b, trainingUntil: now() + def.duration * 1000 }));
+      showToast('🛡️ Weapons Master! Strike power ×10!', 'success');
+    } else if (def.id === 'star') {
+      const gain = Math.max(cur.sweets * 0.15, baseSps * 600) + 42;
+      setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+      showToast(`🌠 Falling Star! +${fmtNum(gain)} gold!`, 'success');
+    } else if (def.id === 'horde') {
+      const gain = baseSps * 300 + 99;
+      setCombo(COMBO_MAX);
+      setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+      showToast(`👺 Goblin Horde routed! Momentum maxed + ${fmtNum(gain)} gold!`, 'success');
+    } else if (def.id === 'dragon') {
+      setDragon({
+        hp: DRAGON_HP_CLICKS,
+        maxHp: DRAGON_HP_CLICKS,
+        until: now() + DRAGON_TIME * 1000,
+        img: DRAGON_IMAGES[Math.floor(Math.random() * DRAGON_IMAGES.length)],
+      });
+      showToast('🐉 DRAGON RAID! Strike it down before it escapes!', 'error');
+      return; // dragon claims eventsClaimed on resolution
+    }
+    setGs((p) => ({ ...p, eventsClaimed: (p.eventsClaimed || 0) + 1 }));
+    dirtyRef.current = true;
+  };
+
+  // ── Dragon raid: escapes when the timer runs out ────────────────────────────
+  useEffect(() => {
+    if (!dragon) return;
+    const t = setTimeout(() => {
+      setDragon(null);
+      showToast('🐉 The dragon escaped with its hoard… next time, champion!', 'error');
+      setGs((p) => ({ ...p, eventsClaimed: (p.eventsClaimed || 0) + 1 }));
+      dirtyRef.current = true;
+    }, Math.max(0, dragon.until - now()));
+    return () => clearTimeout(t);
+  }, [dragon, showToast]);
+
+  const strikeDragon = (e) => {
+    e.stopPropagation();
+    if (!dragon) return;
+    const nextHp = dragon.hp - 1;
+    if (nextHp > 0) { setDragon({ ...dragon, hp: nextHp }); return; }
+    // SLAIN!
+    setDragon(null);
+    const cur = gsRef.current;
+    const baseSps = calcSps(cur, {});
+    const mult = (cur.starUpgrades || []).includes('su_dragon') ? 2 : 1;
+    const gain = (baseSps * 60 * DRAGON_REWARD_MINUTES + 777) * mult;
+    setGs((p) => ({
+      ...p,
+      sweets: p.sweets + gain,
+      runSweets: p.runSweets + gain,
+      lifetimeSweets: p.lifetimeSweets + gain,
+      dragonsSlain: (p.dragonsSlain || 0) + 1,
+      eventsClaimed: (p.eventsClaimed || 0) + 1,
+    }));
+    showToast(`🐉 DRAGON SLAIN! Bounty: +${fmtNum(gain)} gold!`, 'success');
+    dirtyRef.current = true;
+  };
+
+  // ── The Forge (main clickable) ──────────────────────────────────────────────
+  const clickWeapon = (e) => {
     const power = calcClickPower(gsRef.current, buffsRef.current, comboRef.current);
     setGs((p) => ({
       ...p,
@@ -335,8 +471,8 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       clicks: p.clicks + 1,
     }));
     setCombo((c) => Math.min(COMBO_MAX, c + 1));
-    setCookiePop(true);
-    setTimeout(() => setCookiePop(false), 90);
+    setWeaponPop(true);
+    setTimeout(() => setWeaponPop(false), 90);
     dirtyRef.current = true;
 
     // floating number
@@ -351,7 +487,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   // ── Purchases ───────────────────────────────────────────────────────────────
   const buyBuilding = (b) => {
     const owned = gs.buildings[b.id] || 0;
-    const cost = bulkBuildingCost(b, owned, buyAmount);
+    const cost = Math.ceil(bulkBuildingCost(b, owned, buyAmount) * merchantDiscount(buffs));
     if (gs.sweets < cost) return;
     setGs((p) => ({
       ...p,
@@ -364,7 +500,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const buyUpgrade = (u) => {
     if (gs.sweets < u.cost || gs.upgrades.includes(u.id)) return;
     setGs((p) => ({ ...p, sweets: p.sweets - u.cost, upgrades: [...p.upgrades, u.id] }));
-    showToast(`${u.icon} ${u.name} purchased!`, 'success');
+    showToast(`${u.icon} ${u.name} forged!`, 'success');
     dirtyRef.current = true;
   };
 
@@ -375,7 +511,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     dirtyRef.current = true;
   };
 
-  // ── Rebirth ─────────────────────────────────────────────────────────────────
+  // ── Heroic Ascension ────────────────────────────────────────────────────────
   const doRebirth = async () => {
     const stars = starsForRun(gsRef.current.runSweets);
     if (stars < 1) return;
@@ -399,9 +535,10 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     setGs(next);
     setBuffs({});
     setCombo(0);
+    setDragon(null);
     setRebirthConfirm(false);
     setTab('bakery');
-    showToast(`⭐ Recipe Rebirth! +${stars} Sugar Star${stars !== 1 ? 's' : ''} (${next.sugarStars} total, +${Math.round(next.sugarStars * STAR_SPS_BONUS * 100)}% production)`, 'success');
+    showToast(`⭐ Heroic Ascension! +${stars} Glory Star${stars !== 1 ? 's' : ''} (${next.sugarStars} total, +${Math.round(next.sugarStars * STAR_SPS_BONUS * 100)}% production)`, 'success');
     dirtyRef.current = true;
     setTimeout(persist, 500);
   };
@@ -417,14 +554,18 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   // ── Derived UI bits ─────────────────────────────────────────────────────────
   const frenzyOn = buffs.frenzyUntil > now();
   const clickFrenzyOn = buffs.clickFrenzyUntil > now();
+  const blessingOn = buffs.blessingUntil > now();
+  const trainingOn = buffs.trainingUntil > now();
+  const merchantOn = buffs.merchantUntil > now();
   const availableUpgrades = UPGRADES.filter((u) => !gs.upgrades.includes(u.id) && u.unlock(gs)).sort((a, b) => a.cost - b.cost);
   const comboPct = Math.round((Math.min(combo, COMBO_MAX) / COMBO_MAX) * 100);
   const activeThemeStyle = gs.activeTheme ? SE_THEME_STYLES[gs.activeTheme] : null;
+  const nextStage = FORGE_STAGES[forgeStage.index + 1] || null;
 
   if (!loaded) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-amber-500 border-t-transparent" />
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-500 border-t-transparent" />
       </div>
     );
   }
@@ -432,32 +573,36 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   return (
     <div className="space-y-4 select-none">
       <style>{`
-        @keyframes se-float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-60px); } }
-        @keyframes se-golden { 0%,100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1.15) rotate(6deg); } }
-        @keyframes se-wobble { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+        @keyframes cf-float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-60px); } }
+        @keyframes cf-chest { 0%,100% { transform: scale(1) rotate(-6deg); } 50% { transform: scale(1.15) rotate(6deg); } }
+        @keyframes cf-wobble { 0%,100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+        @keyframes cf-evolve { 0% { filter: drop-shadow(0 0 0px #fbbf24); } 50% { filter: drop-shadow(0 0 34px #fbbf24); } 100% { filter: drop-shadow(0 0 0px #fbbf24); } }
+        @keyframes cf-dragon { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.03); } }
+        @keyframes cf-glow { 0%,100% { filter: drop-shadow(0 0 8px rgba(251,191,36,.55)); } 50% { filter: drop-shadow(0 0 20px rgba(251,191,36,.9)); } }
       `}</style>
 
       {/* Header */}
-      <div className={`rounded-2xl p-5 text-white shadow-lg bg-gradient-to-r ${activeThemeStyle ? activeThemeStyle.grad : 'from-amber-500 via-orange-500 to-rose-500'}`}>
+      <div className={`rounded-2xl p-5 text-white shadow-lg bg-gradient-to-r ${activeThemeStyle ? activeThemeStyle.grad : 'from-slate-800 via-indigo-900 to-purple-900'}`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold drop-shadow">🍪 Sweet Empire</h1>
-            <p className="text-white/85 text-sm">Bake sweets. Build an empire. Unlock legendary profile style.</p>
+            <h1 className="text-2xl md:text-3xl font-bold drop-shadow">⚔️ Champion&apos;s Forge</h1>
+            <p className="text-white/85 text-sm">Strike the forge. Raise an army. Become a legend.</p>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold drop-shadow">{fmtNum(gs.sweets)} 🍬</p>
+            <p className="text-3xl font-bold drop-shadow">{fmtNum(gs.sweets)} 🪙</p>
             <p className="text-white/85 text-sm font-semibold">
-              {fmtNum(sps)}/sec {frenzyOn && <span className="text-yellow-200 font-bold">🔥 FRENZY ×7</span>}
+              {fmtNum(sps)}/sec {frenzyOn && <span className="text-yellow-200 font-bold">🔥 FURY ×7</span>}{blessingOn && <span className="text-cyan-200 font-bold"> ✨ ×3</span>}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-3 text-xs font-bold">
-          <span className="bg-white/20 rounded-full px-3 py-1">⭐ {fmtNum(gs.sugarStars)} stars</span>
-          <span className="bg-white/20 rounded-full px-3 py-1">🔄 {gs.rebirths} rebirth{gs.rebirths !== 1 ? 's' : ''}</span>
+          <span className="bg-white/20 rounded-full px-3 py-1">⭐ {fmtNum(gs.sugarStars)} Glory Stars</span>
+          <span className="bg-white/20 rounded-full px-3 py-1">🔄 {gs.rebirths} Ascension{gs.rebirths !== 1 ? 's' : ''}</span>
           <span className="bg-white/20 rounded-full px-3 py-1">🏅 {gs.achievements.length}/{ACHIEVEMENTS.length}</span>
+          {(gs.dragonsSlain || 0) > 0 && <span className="bg-white/20 rounded-full px-3 py-1">🐉 {gs.dragonsSlain} slain</span>}
           {pendingStars > 0 && (
             <button onClick={() => setTab('rebirth')} className="bg-yellow-300 text-amber-900 rounded-full px-3 py-1 animate-pulse">
-              ⭐ {pendingStars} star{pendingStars !== 1 ? 's' : ''} ready — Rebirth!
+              ⭐ {pendingStars} star{pendingStars !== 1 ? 's' : ''} ready — Ascend!
             </button>
           )}
         </div>
@@ -470,7 +615,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`px-3.5 py-2 rounded-xl text-sm font-bold transition ${
-              tab === t.id ? 'bg-amber-500 text-white shadow' : 'bg-white border border-gray-200 text-gray-600 hover:bg-amber-50'
+              tab === t.id ? 'bg-indigo-600 text-white shadow' : 'bg-white border border-gray-200 text-gray-600 hover:bg-indigo-50'
             }`}
           >
             {t.icon} {t.name}
@@ -483,93 +628,157 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
         ))}
       </div>
 
-      {/* ══ BAKERY TAB ══ */}
+      {/* ══ FORGE TAB ══ */}
       {tab === 'bakery' && (
         <div className="grid lg:grid-cols-2 gap-4">
-          {/* Clicker zone */}
-          <div className="relative bg-gradient-to-b from-amber-50 to-orange-100 rounded-2xl border-2 border-amber-200 p-6 overflow-hidden min-h-[420px] flex flex-col items-center justify-center">
-            {/* golden cookie */}
-            {golden && (
+          {/* Battle zone */}
+          <div
+            className="relative rounded-2xl border-2 border-indigo-900/40 p-6 overflow-hidden min-h-[460px] flex flex-col items-center justify-center bg-slate-900 bg-cover bg-center"
+            style={{ backgroundImage: "linear-gradient(rgba(10,10,30,0.55), rgba(10,10,30,0.7)), url('/Loot/Backgrounds/night.png')" }}
+          >
+            {/* realm event banner */}
+            {event && !dragon && (
               <button
-                onClick={clickGolden}
-                className="absolute z-20 text-5xl md:text-6xl drop-shadow-lg"
-                style={{ left: `${golden.x}%`, top: `${golden.y}%`, animation: 'se-golden 0.8s ease-in-out infinite' }}
-                title="Golden cookie! Click it!"
+                onClick={answerEvent}
+                className="absolute top-3 inset-x-3 z-30 bg-gradient-to-r from-purple-700 to-indigo-700 border-2 border-yellow-300/70 rounded-xl px-4 py-2.5 text-left shadow-xl hover:scale-[1.02] transition animate-pulse"
               >
-                🌟🍪
+                <p className="text-yellow-300 font-bold text-sm">{event.def.icon} REALM EVENT: {event.def.name}</p>
+                <p className="text-white/90 text-xs">{event.def.desc} <span className="font-bold text-yellow-200">Tap to answer the call! ({Math.max(0, Math.ceil((event.expiresAt - now()) / 1000))}s)</span></p>
               </button>
             )}
 
-            {/* buffs */}
+            {/* loot chest */}
+            {golden && !dragon && (
+              <button
+                onClick={clickGolden}
+                className="absolute z-20 w-16 h-16 md:w-20 md:h-20"
+                style={{ left: `${golden.x}%`, top: `${golden.y}%`, animation: 'cf-chest 0.8s ease-in-out infinite' }}
+                title="Legendary loot! Grab it!"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={golden.img} alt="Legendary loot" className="w-full h-full object-contain" style={{ animation: 'cf-glow 1.2s ease-in-out infinite' }} />
+              </button>
+            )}
+
+            {/* active buffs */}
             <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
               {frenzyOn && (
                 <span className="bg-red-500 text-white text-xs font-bold rounded-full px-3 py-1 animate-pulse">
-                  🔥 Frenzy ×7 · {Math.ceil((buffs.frenzyUntil - now()) / 1000)}s
+                  🔥 Battle Fury ×7 · {Math.ceil((buffs.frenzyUntil - now()) / 1000)}s
                 </span>
               )}
               {clickFrenzyOn && (
                 <span className="bg-purple-600 text-white text-xs font-bold rounded-full px-3 py-1 animate-pulse">
-                  ⚡ Click Frenzy ×20 · {Math.ceil((buffs.clickFrenzyUntil - now()) / 1000)}s
+                  ⚡ Blade Storm ×20 · {Math.ceil((buffs.clickFrenzyUntil - now()) / 1000)}s
+                </span>
+              )}
+              {blessingOn && (
+                <span className="bg-cyan-600 text-white text-xs font-bold rounded-full px-3 py-1 animate-pulse">
+                  ✨ Royal Blessing ×3 · {Math.ceil((buffs.blessingUntil - now()) / 1000)}s
+                </span>
+              )}
+              {trainingOn && (
+                <span className="bg-emerald-600 text-white text-xs font-bold rounded-full px-3 py-1 animate-pulse">
+                  🛡️ Weapons Master ×10 · {Math.ceil((buffs.trainingUntil - now()) / 1000)}s
+                </span>
+              )}
+              {merchantOn && (
+                <span className="bg-amber-500 text-white text-xs font-bold rounded-full px-3 py-1 animate-pulse">
+                  🧝 Merchant −25% · {Math.ceil((buffs.merchantUntil - now()) / 1000)}s
                 </span>
               )}
             </div>
 
-            {/* the cookie */}
-            <div className="relative">
-              <button
-                onClick={clickCookie}
-                className={`text-[9rem] md:text-[11rem] leading-none transition-transform duration-75 hover:scale-105 active:scale-95 ${cookiePop ? 'scale-90' : 'scale-100'}`}
-                style={frenzyOn ? { animation: 'se-wobble 0.4s ease-in-out infinite' } : undefined}
-                title="Click to bake!"
-              >
-                🍪
-              </button>
-              {floaties.map((f) => (
-                <span
-                  key={f.id}
-                  className="absolute text-amber-700 font-bold text-xl pointer-events-none"
-                  style={{ left: f.x, top: f.y, animation: 'se-float 0.9s ease-out forwards' }}
-                >
-                  {f.text}
-                </span>
-              ))}
-            </div>
-
-            <p className="text-amber-800 font-bold mt-2">+{fmtNum(clickPower)} per click</p>
-
-            {/* Sugar Rush combo bar */}
-            <div className="w-full max-w-xs mt-4">
-              <div className="flex justify-between text-xs font-bold text-amber-700 mb-1">
-                <span>⚡ Sugar Rush</span>
-                <span>+{Math.round(comboPct * COMBO_MAX_BONUS)}% click power</span>
+            {/* DRAGON RAID overlay */}
+            {dragon ? (
+              <div className="relative flex flex-col items-center z-20">
+                <p className="text-red-400 font-bold text-lg mb-1 animate-pulse">🐉 DRAGON RAID! {Math.max(0, Math.ceil((dragon.until - now()) / 1000))}s</p>
+                <button onClick={strikeDragon} className="active:scale-95 transition-transform" title="STRIKE THE DRAGON!">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={dragon.img} alt="Raiding dragon" className="w-44 h-44 md:w-56 md:h-56 object-contain" style={{ animation: 'cf-dragon 0.6s ease-in-out infinite' }} />
+                </button>
+                <div className="w-56 bg-black/50 rounded-full h-4 border border-red-400 mt-2">
+                  <div className="h-full rounded-full bg-gradient-to-r from-red-600 to-red-400 transition-all" style={{ width: `${(dragon.hp / dragon.maxHp) * 100}%` }} />
+                </div>
+                <p className="text-red-200 text-xs font-bold mt-1">{dragon.hp}/{dragon.maxHp} — strike it down for a {DRAGON_REWARD_MINUTES}-minute gold bounty!</p>
               </div>
-              <div className="w-full bg-white/70 rounded-full h-3 border border-amber-200">
+            ) : (
+              <>
+                {/* the evolving weapon */}
+                <p className="text-indigo-200 text-xs font-bold uppercase tracking-widest mb-1 z-10">Stage {forgeStage.index + 1}/{FORGE_STAGES.length}</p>
+                <p className="text-white font-bold text-lg drop-shadow z-10">{forgeStage.name}</p>
+                <div className="relative z-10">
+                  <button
+                    onClick={clickWeapon}
+                    className={`transition-transform duration-75 hover:scale-105 active:scale-95 ${weaponPop ? 'scale-90' : 'scale-100'}`}
+                    style={{
+                      animation: [frenzyOn ? 'cf-wobble 0.4s ease-in-out infinite' : '', stageFlash ? 'cf-evolve 0.8s ease-in-out 3' : ''].filter(Boolean).join(', ') || undefined,
+                    }}
+                    title="Strike to earn gold!"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={forgeStage.img}
+                      alt={forgeStage.name}
+                      className="w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl"
+                      draggable={false}
+                    />
+                  </button>
+                  {floaties.map((f) => (
+                    <span
+                      key={f.id}
+                      className="absolute text-yellow-300 font-bold text-xl pointer-events-none drop-shadow"
+                      style={{ left: f.x, top: f.y, animation: 'cf-float 0.9s ease-out forwards' }}
+                    >
+                      {f.text}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-indigo-100/80 text-xs italic mt-1 z-10">“{forgeStage.flavor}”</p>
+                <p className="text-yellow-300 font-bold mt-1 z-10">+{fmtNum(clickPower)} gold per strike</p>
+                {nextStage && (
+                  <p className="text-indigo-300/80 text-[11px] mt-0.5 z-10">
+                    Next: <span className="font-bold">{nextStage.name}</span> — {nextStage.req.type === 'rebirths'
+                      ? `${nextStage.req.value} Ascension${nextStage.req.value !== 1 ? 's' : ''}`
+                      : `${fmtNum(nextStage.req.value)} lifetime gold`}
+                  </p>
+                )}
+              </>
+            )}
+
+            {/* Battle Momentum bar */}
+            <div className="w-full max-w-xs mt-4 z-10">
+              <div className="flex justify-between text-xs font-bold text-indigo-200 mb-1">
+                <span>⚡ Battle Momentum</span>
+                <span>+{Math.round(comboPct * COMBO_MAX_BONUS)}% strike power</span>
+              </div>
+              <div className="w-full bg-black/40 rounded-full h-3 border border-indigo-500/50">
                 <div
-                  className={`h-3 rounded-full transition-all ${comboPct >= 100 ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}
+                  className={`h-3 rounded-full transition-all ${comboPct >= 100 ? 'bg-gradient-to-r from-fuchsia-500 to-purple-500' : 'bg-gradient-to-r from-amber-400 to-orange-500'}`}
                   style={{ width: `${comboPct}%` }}
                 />
               </div>
-              <p className="text-[10px] text-amber-600 mt-1 text-center">Keep clicking to build your combo — it fades when you rest!</p>
+              <p className="text-[10px] text-indigo-300/80 mt-1 text-center">Keep striking to build momentum — it fades when you rest!</p>
             </div>
           </div>
 
-          {/* Buildings */}
+          {/* Champions (recruits) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-800">🏗️ Buildings</h3>
+              <h3 className="font-bold text-gray-800">🏰 Champions {merchantOn && <span className="text-amber-600 text-xs">🧝 25% OFF!</span>}</h3>
               <div className="flex gap-1">
                 {[1, 10, 100].map((n) => (
                   <button
                     key={n}
                     onClick={() => setBuyAmount(n)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${buyAmount === n ? 'bg-amber-500 text-white' : 'bg-white border border-gray-200 text-gray-500'}`}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${buyAmount === n ? 'bg-indigo-600 text-white' : 'bg-white border border-gray-200 text-gray-500'}`}
                   >
                     ×{n}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="divide-y divide-gray-50 max-h-[420px] overflow-y-auto">
+            <div className="divide-y divide-gray-50 max-h-[460px] overflow-y-auto">
               {BUILDINGS.map((b, i) => {
                 const owned = gs.buildings[b.id] || 0;
                 const prevOwned = i === 0 || (gs.buildings[BUILDINGS[i - 1].id] || 0) > 0;
@@ -578,11 +787,11 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                   return (
                     <div key={b.id} className="px-4 py-3 flex items-center gap-3 opacity-40">
                       <span className="text-2xl">❓</span>
-                      <p className="text-sm font-bold text-gray-400">???</p>
+                      <p className="text-sm font-bold text-gray-400">A mysterious ally awaits…</p>
                     </div>
                   );
                 }
-                const cost = bulkBuildingCost(b, owned, buyAmount);
+                const cost = Math.ceil(bulkBuildingCost(b, owned, buyAmount) * merchantDiscount(buffs));
                 const canAfford = gs.sweets >= cost;
                 const eachSps = b.sps * calcBuildingMult(gs, b.id) * calcGlobalMult(gs);
                 return (
@@ -590,15 +799,16 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                     key={b.id}
                     onClick={() => buyBuilding(b)}
                     disabled={!canAfford}
-                    className={`w-full px-4 py-2.5 flex items-center gap-3 text-left transition ${canAfford ? 'hover:bg-amber-50' : 'opacity-50'}`}
+                    className={`w-full px-4 py-2.5 flex items-center gap-3 text-left transition ${canAfford ? 'hover:bg-indigo-50' : 'opacity-50'}`}
                   >
-                    <span className="text-2xl shrink-0">{b.icon}</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={b.img} alt={b.name} className="w-10 h-10 object-contain shrink-0 rounded-lg bg-slate-100" draggable={false} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-gray-800">{b.name} {owned > 0 && <span className="text-amber-600">×{owned}</span>}</p>
+                      <p className="text-sm font-bold text-gray-800">{b.name} {owned > 0 && <span className="text-indigo-600">×{owned}</span>}</p>
                       <p className="text-[11px] text-gray-500 truncate">{fmtNum(eachSps)}/sec each{owned > 0 ? ` · ${fmtNum(eachSps * owned)}/sec total` : ''}</p>
                     </div>
                     <span className={`text-sm font-bold shrink-0 ${canAfford ? 'text-emerald-600' : 'text-red-400'}`}>
-                      🍬 {fmtNum(cost)}
+                      🪙 {fmtNum(cost)}
                     </span>
                   </button>
                 );
@@ -608,12 +818,12 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
         </div>
       )}
 
-      {/* ══ UPGRADES TAB ══ */}
+      {/* ══ ARMORY (upgrades) TAB ══ */}
       {tab === 'upgrades' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-          <h3 className="font-bold text-gray-800 mb-3">⬆️ Upgrades ({gs.upgrades.length} owned)</h3>
+          <h3 className="font-bold text-gray-800 mb-3">⬆️ Armory ({gs.upgrades.length} forged)</h3>
           {availableUpgrades.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No upgrades available right now — keep baking and clicking to reveal more!</p>
+            <p className="text-sm text-gray-400 text-center py-8">Nothing on the anvil right now — keep questing and striking to reveal more!</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {availableUpgrades.map((u) => {
@@ -623,11 +833,11 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                     key={u.id}
                     onClick={() => buyUpgrade(u)}
                     disabled={!canAfford}
-                    className={`text-left rounded-xl border-2 p-3 transition ${canAfford ? 'border-amber-300 bg-amber-50 hover:border-amber-400 hover:shadow' : 'border-gray-200 bg-gray-50 opacity-60'}`}
+                    className={`text-left rounded-xl border-2 p-3 transition ${canAfford ? 'border-indigo-300 bg-indigo-50 hover:border-indigo-400 hover:shadow' : 'border-gray-200 bg-gray-50 opacity-60'}`}
                   >
                     <p className="font-bold text-gray-800 text-sm">{u.icon} {u.name}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{u.desc}</p>
-                    <p className={`text-xs font-bold mt-1 ${canAfford ? 'text-emerald-600' : 'text-red-400'}`}>🍬 {fmtNum(u.cost)}</p>
+                    <p className={`text-xs font-bold mt-1 ${canAfford ? 'text-emerald-600' : 'text-red-400'}`}>🪙 {fmtNum(u.cost)}</p>
                   </button>
                 );
               })}
@@ -636,22 +846,22 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
         </div>
       )}
 
-      {/* ══ REBIRTH TAB ══ */}
+      {/* ══ ASCENSION TAB ══ */}
       {tab === 'rebirth' && (
         <div className="space-y-4">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg">
-            <h3 className="text-xl font-bold">⭐ Recipe Rebirth</h3>
+            <h3 className="text-xl font-bold">⭐ Heroic Ascension</h3>
             <p className="text-indigo-100 text-sm mt-1">
-              Sacrifice your bakery to discover a legendary new recipe. You lose your sweets, buildings and most upgrades —
-              but earn <span className="font-bold text-yellow-300">Sugar Stars</span>: each one boosts ALL production by {Math.round(STAR_SPS_BONUS * 100)}%, forever.
+              Lay down your arms and ascend to legend. You lose your gold, champions and most upgrades —
+              but earn <span className="font-bold text-yellow-300">Glory Stars</span>: each one boosts ALL production by {Math.round(STAR_SPS_BONUS * 100)}%, forever.
             </p>
             <div className="grid sm:grid-cols-3 gap-3 mt-4">
               <div className="bg-white/15 rounded-xl p-3 text-center">
-                <p className="text-xs font-bold text-indigo-200">BAKED THIS RUN</p>
+                <p className="text-xs font-bold text-indigo-200">GOLD THIS QUEST</p>
                 <p className="text-lg font-bold">{fmtNum(gs.runSweets)}</p>
               </div>
               <div className="bg-white/15 rounded-xl p-3 text-center">
-                <p className="text-xs font-bold text-indigo-200">STARS ON REBIRTH</p>
+                <p className="text-xs font-bold text-indigo-200">STARS ON ASCENSION</p>
                 <p className="text-lg font-bold text-yellow-300">⭐ {pendingStars}</p>
               </div>
               <div className="bg-white/15 rounded-xl p-3 text-center">
@@ -663,28 +873,28 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
               {pendingStars >= 1 ? (
                 rebirthConfirm ? (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-bold">Really rebirth for ⭐ {pendingStars}?</span>
-                    <button onClick={doRebirth} className="bg-yellow-400 text-amber-900 px-5 py-2 rounded-xl font-bold hover:bg-yellow-300 transition">Yes — Rebirth!</button>
+                    <span className="text-sm font-bold">Really ascend for ⭐ {pendingStars}?</span>
+                    <button onClick={doRebirth} className="bg-yellow-400 text-amber-900 px-5 py-2 rounded-xl font-bold hover:bg-yellow-300 transition">Yes — Ascend!</button>
                     <button onClick={() => setRebirthConfirm(false)} className="bg-white/20 px-4 py-2 rounded-xl font-bold hover:bg-white/30 transition">Cancel</button>
                   </div>
                 ) : (
                   <button onClick={() => setRebirthConfirm(true)} className="bg-yellow-400 text-amber-900 px-6 py-2.5 rounded-xl font-bold hover:bg-yellow-300 transition shadow">
-                    ⭐ Rebirth for {pendingStars} Sugar Star{pendingStars !== 1 ? 's' : ''}
+                    ⭐ Ascend for {pendingStars} Glory Star{pendingStars !== 1 ? 's' : ''}
                   </button>
                 )
               ) : (
                 <p className="text-sm bg-white/15 rounded-xl px-4 py-2.5 inline-block">
-                  🔒 Bake <span className="font-bold">{fmtNum(1e9)}</span> sweets in one run to earn your first star.
+                  🔒 Earn <span className="font-bold">{fmtNum(1e9)}</span> gold in one quest to earn your first star.
                   ({fmtNum(gs.runSweets)} / {fmtNum(1e9)})
                 </p>
               )}
             </div>
           </div>
 
-          {/* Star shop */}
+          {/* Hall of Legends */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-800">🌟 Star Shop — permanent upgrades</h3>
+              <h3 className="font-bold text-gray-800">🌟 Hall of Legends — permanent upgrades</h3>
               <span className="text-sm font-bold text-indigo-600">⭐ {fmtNum(gs.sugarStars)} available</span>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -717,10 +927,10 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       {tab === 'style' && (
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <h3 className="font-bold text-gray-800">🎨 Profile Style</h3>
+            <h3 className="font-bold text-gray-800">🎨 Champion Style</h3>
             <p className="text-xs text-gray-500 mt-0.5 mb-4">
               Rare rewards that change how YOUR card looks on the Classroom Champions board and your own dashboard.
-              Unlocks are permanent — even through rebirths.
+              Unlocks are permanent — even through Ascensions.
             </p>
 
             {/* Themes */}
@@ -761,7 +971,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                     disabled={!unlocked}
                     title={unlocked ? '' : t.reqText}
                     className={`rounded-full px-3.5 py-1.5 text-sm font-bold border-2 transition ${
-                      active ? 'border-amber-400 bg-amber-50 ' + t.color
+                      active ? 'border-indigo-400 bg-indigo-50 ' + t.color
                         : unlocked ? `border-gray-200 bg-white ${t.color} hover:shadow` : 'border-gray-200 bg-gray-50 text-gray-300'
                     }`}
                   >
@@ -800,13 +1010,13 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       {/* ══ AWARDS TAB ══ */}
       {tab === 'awards' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-          <h3 className="font-bold text-gray-800 mb-1">🏅 Achievements ({gs.achievements.length}/{ACHIEVEMENTS.length})</h3>
-          <p className="text-xs text-gray-500 mb-3">Every achievement permanently boosts ALL production by 1%. Current bonus: +{gs.achievements.length}%.</p>
+          <h3 className="font-bold text-gray-800 mb-1">🏅 Deeds of Legend ({gs.achievements.length}/{ACHIEVEMENTS.length})</h3>
+          <p className="text-xs text-gray-500 mb-3">Every deed permanently boosts ALL production by 1%. Current bonus: +{gs.achievements.length}%.</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {ACHIEVEMENTS.map((a) => {
               const earned = gs.achievements.includes(a.id);
               return (
-                <div key={a.id} className={`rounded-xl border p-2.5 ${earned ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
+                <div key={a.id} className={`rounded-xl border p-2.5 ${earned ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
                   <p className="text-sm font-bold text-gray-800">{earned ? a.icon : '🔒'} {a.name}</p>
                   <p className="text-[11px] text-gray-500">{a.desc}</p>
                 </div>
@@ -819,21 +1029,24 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       {/* ══ STATS TAB ══ */}
       {tab === 'stats' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-          <h3 className="font-bold text-gray-800 mb-4">📊 Empire Statistics</h3>
+          <h3 className="font-bold text-gray-800 mb-4">📊 Champion&apos;s Chronicle</h3>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
-              ['🍬 Sweets in bank', fmtNum(gs.sweets)],
+              ['🪙 Gold in hoard', fmtNum(gs.sweets)],
               ['🏭 Production', `${fmtNum(sps)}/sec`],
-              ['👆 Sweets per click', fmtNum(clickPower)],
-              ['📈 Baked this run', fmtNum(gs.runSweets)],
-              ['🌍 Lifetime sweets', fmtNum(gs.lifetimeSweets)],
-              ['🖱️ Total clicks', fmtNum(gs.clicks)],
-              ['🌟 Golden cookies clicked', fmtNum(gs.goldenClicks)],
-              ['🏗️ Buildings owned', fmtNum(BUILDINGS.reduce((s, b) => s + (gs.buildings[b.id] || 0), 0))],
-              ['⬆️ Upgrades owned', gs.upgrades.length],
-              ['⭐ Sugar Stars', fmtNum(gs.sugarStars)],
-              ['🔄 Recipe Rebirths', gs.rebirths],
-              ['🏅 Achievement bonus', `+${gs.achievements.length}%`],
+              ['⚔️ Gold per strike', fmtNum(clickPower)],
+              ['📈 Gold this quest', fmtNum(gs.runSweets)],
+              ['🌍 Lifetime gold', fmtNum(gs.lifetimeSweets)],
+              ['🖱️ Total strikes', fmtNum(gs.clicks)],
+              ['🗡️ Weapon stage', `${forgeStage.index + 1}/${FORGE_STAGES.length} — ${forgeStage.name}`],
+              ['🎁 Loot chests opened', fmtNum(gs.goldenClicks)],
+              ['🐉 Dragons slain', fmtNum(gs.dragonsSlain || 0)],
+              ['🌪️ Realm events answered', fmtNum(gs.eventsClaimed || 0)],
+              ['🏰 Champions recruited', fmtNum(BUILDINGS.reduce((s, b) => s + (gs.buildings[b.id] || 0), 0))],
+              ['⬆️ Upgrades forged', gs.upgrades.length],
+              ['⭐ Glory Stars', fmtNum(gs.sugarStars)],
+              ['🔄 Heroic Ascensions', gs.rebirths],
+              ['🏅 Deed bonus', `+${gs.achievements.length}%`],
             ].map(([label, value]) => (
               <div key={label} className="bg-gray-50 rounded-xl p-3">
                 <p className="text-xs text-gray-500 font-semibold">{label}</p>
@@ -842,7 +1055,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-4">
-            💤 Offline production: {offlineHours(gs)}h window at {Math.round(OFFLINE_RATE * 100)}% speed — your bakery keeps working while you&apos;re away!
+            💤 Offline production: {offlineHours(gs)}h window at {Math.round(OFFLINE_RATE * 100)}% speed — your army keeps fighting while you&apos;re away!
           </p>
         </div>
       )}
@@ -850,7 +1063,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       {/* ══ CLASS TAB ══ */}
       {tab === 'class' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-          <h3 className="font-bold text-gray-800 mb-3">👥 Class Sweet-Off — lifetime sweets</h3>
+          <h3 className="font-bold text-gray-800 mb-3">👥 Hall of Champions — lifetime gold</h3>
           {(() => {
             const rows = [...(classmates || [])]
               .map((s) => ({
@@ -872,13 +1085,13 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
             ) : (
               <div className="divide-y divide-gray-50">
                 {rows.slice(0, 20).map((r, i) => (
-                  <div key={r.id || i} className={`flex items-center gap-3 py-2.5 px-2 rounded-lg ${r.isMe ? 'bg-amber-50' : ''}`}>
+                  <div key={r.id || i} className={`flex items-center gap-3 py-2.5 px-2 rounded-lg ${r.isMe ? 'bg-indigo-50' : ''}`}>
                     <span className="w-8 text-center font-bold text-gray-400">
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                     </span>
                     <p className="flex-1 font-semibold text-gray-800 text-sm truncate">{r.name} {r.isMe && '(you)'}</p>
-                    {r.rebirths > 0 && <span className="text-xs font-bold text-indigo-500">🔄{r.rebirths}</span>}
-                    <span className="font-bold text-amber-600 text-sm">🍬 {fmtNum(r.lifetime)}</span>
+                    {r.rebirths > 0 && <span className="text-xs font-bold text-indigo-500">⭐{r.rebirths}</span>}
+                    <span className="font-bold text-amber-600 text-sm">🪙 {fmtNum(r.lifetime)}</span>
                   </div>
                 ))}
               </div>
@@ -891,14 +1104,14 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       {offlineReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setOfflineReport(null)}>
           <div className="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-            <p className="text-5xl mb-3">💤🍪</p>
-            <h3 className="text-xl font-bold text-gray-800">Welcome back, boss!</h3>
+            <p className="text-5xl mb-3">🌙⚔️</p>
+            <h3 className="text-xl font-bold text-gray-800">Welcome back, champion!</h3>
             <p className="text-sm text-gray-500 mt-2">
-              Your bakery kept working for {Math.round(offlineReport.seconds / 60)} minutes while you were away and baked…
+              Your army kept fighting for {Math.round(offlineReport.seconds / 60)} minutes while you were away and plundered…
             </p>
-            <p className="text-3xl font-bold text-amber-600 my-3">+{fmtNum(offlineReport.earned)} 🍬</p>
-            <button onClick={() => setOfflineReport(null)} className="bg-amber-500 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-amber-600 transition">
-              Sweet!
+            <p className="text-3xl font-bold text-amber-600 my-3">+{fmtNum(offlineReport.earned)} 🪙</p>
+            <button onClick={() => setOfflineReport(null)} className="bg-indigo-600 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition">
+              To battle!
             </button>
           </div>
         </div>
@@ -908,3 +1121,4 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
 };
 
 export default SweetEmpireGame;
+// EOF

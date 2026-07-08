@@ -95,7 +95,7 @@ const GAME_LOGO_MAP = {
   'tic-tac-toe': createLogoCandidates('tic-tac-toe', ['tic-tac-toe.png', 'Tic Tac Toe Tournament', 'TicTacToe', 'tictactoe']),
   'precision-timer': createLogoCandidates('precision-timer', ['precisiontimer.png', 'Precision Timer Challenge', 'Timer Challenge', 'Precision Timer']),
   'match3-adventure': createLogoCandidates('match3-adventure', ['match3-adventure.svg', 'Match3 Battle', 'Match 3 Battle', 'Match3 Adventure']),
-  'sweet-empire': createLogoCandidates('sweet-empire', ['sweet-empire.png', 'Sweet Empire', 'sweet-empire-logo']),
+  'sweet-empire': createLogoCandidates('sweet-empire', ['champions-forge.png', "Champion's Forge", 'hero-forge.png', 'hero-forge', 'sweet-empire.png', 'Sweet Empire']),
   'classroom-bingo': createLogoCandidates('classroom-bingo', ['classroom-bingo.png', 'Classroom Bingo', 'Classroom BINGO']),
   'math-race': createLogoCandidates('math-race', ['math-race.svg', 'Math Race Challenge', 'Math Race']),
   'math-grid': createLogoCandidates('math-grid', ['mathsfacts.png', 'Math Facts Grid', 'Math Grid']),

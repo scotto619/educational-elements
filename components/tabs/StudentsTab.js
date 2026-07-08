@@ -475,29 +475,6 @@ const StudentsTab = ({
                 </div>
             </div>
 
-            {/* ── GROUP SCOREBOARD ──────────────────────────────────────── */}
-            {activeGroups.length > 0 && (
-                <div className={`rounded-xl p-3 shadow-md border ${groupBoardBg}`}>
-                    <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2 ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
-                        <span className="text-base">🏆</span> Active Group Scores
-                    </h3>
-                    <div className="flex overflow-x-auto pb-1 gap-2 snap-x">
-                        {activeGroups.map(group => (
-                            <div key={group.id} className={`min-w-[130px] flex-shrink-0 rounded-lg p-2.5 border snap-start ${groupCardBg}`}>
-                                <div className={`font-bold text-sm truncate mb-1 ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>{group.name}</div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className={`font-semibold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Daily: {group.scores?.daily || 0}</span>
-                                    <span className={isDark ? 'text-slate-400' : 'text-gray-500'}>Wk: {group.scores?.weekly || 0}</span>
-                                </div>
-                                <div className={`mt-1.5 text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
-                                    {group.students?.length || 0} Members
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
             {/* ── CARD EFFECT KEYFRAMES ─────────────────────────────────── */}
             {effectKeyframesCSS && (
                 <style suppressHydrationWarning>{effectKeyframesCSS}</style>

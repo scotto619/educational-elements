@@ -1,6 +1,8 @@
 // components/games/SweetEmpire/sweetEmpireConfig.js
 // ─────────────────────────────────────────────────────────────────────────────
-// SWEET EMPIRE — pure configuration + shared styling exports.
+// CHAMPION'S FORGE ⚔️ — pure configuration + shared styling exports.
+// (Formerly "Sweet Empire" — rethemed to heroes & champions. All ids and the
+//  save shape are UNCHANGED so existing student progress carries over 1:1.)
 //
 // This file is imported by:
 //   • SweetEmpireGame.js        (the game itself)
@@ -12,9 +14,14 @@
 //   { sweets, runSweets, lifetimeSweets, clicks, goldenClicks,
 //     buildings: {id:count}, upgrades: [ids], achievements: [ids],
 //     sugarStars, starUpgrades: [ids], rebirths,
+//     dragonsSlain, eventsClaimed,               ← new (default 0)
 //     unlockedThemes/Titles/Effects: [ids],
-//     activeTheme, activeTitle, activeEffect,   ← read by profile pages
+//     activeTheme, activeTitle, activeEffect,    ← read by profile pages
 //     lastSeen, lastSaved }
+//
+// GLOSSARY (internal name → what the player sees):
+//   sweets        → Gold            goldenClicks → Loot Chests opened
+//   sugarStars    → Glory Stars     rebirths     → Heroic Ascensions
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -32,23 +39,24 @@ export const fmtNum = (n) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BUILDINGS — the production ladder (costs grow 1.15× per copy)
+// RECRUITS (buildings) — the production ladder (costs grow 1.15× per copy)
+// ids are the ORIGINAL building ids — do not change (saved progress).
 // ═══════════════════════════════════════════════════════════════════════════
 export const COST_GROWTH = 1.15;
 
 export const BUILDINGS = [
-  { id: 'whisk',      name: 'Auto-Whisk',            icon: '🥄', baseCost: 15,      sps: 0.1,     desc: 'A tireless whisk that stirs up sweets all by itself.' },
-  { id: 'oven',       name: "Grandma's Oven",        icon: '👵', baseCost: 100,     sps: 1,       desc: 'Grandma bakes around the clock. She insists.' },
-  { id: 'stand',      name: 'Cupcake Stand',         icon: '🧁', baseCost: 1100,    sps: 8,       desc: 'A charming street stand selling cupcakes by the tray.' },
-  { id: 'bakery',     name: 'Bakery',                icon: '🥐', baseCost: 12000,   sps: 47,      desc: 'A full bakery with ovens roaring day and night.' },
-  { id: 'chocmine',   name: 'Chocolate Mine',        icon: '⛏️', baseCost: 130000,  sps: 260,     desc: 'Dig deep — the chocolate veins run rich down there.' },
-  { id: 'candyfarm',  name: 'Candy Cane Farm',       icon: '🍬', baseCost: 1.4e6,   sps: 1400,    desc: 'Rows of candy canes swaying in a minty breeze.' },
-  { id: 'icecream',   name: 'Ice Cream Glacier',     icon: '🍨', baseCost: 2e7,     sps: 7800,    desc: 'Harvest scoops straight from the neapolitan ice shelf.' },
-  { id: 'refinery',   name: 'Sugar Refinery',        icon: '🏭', baseCost: 3.3e8,   sps: 44000,   desc: 'Industrial-grade sweetness, refined to perfection.' },
-  { id: 'reactor',    name: 'Caramel Reactor',       icon: '⚗️', baseCost: 5.1e9,   sps: 260000,  desc: 'Molten caramel fusion. Do not lick the core.' },
-  { id: 'gingercity', name: 'Gingerbread City',      icon: '🏰', baseCost: 7.5e10,  sps: 1.6e6,   desc: 'An entire metropolis of gingerbread citizens, all baking.' },
-  { id: 'portal',     name: 'Dessert Dimension',     icon: '🌀', baseCost: 1e12,    sps: 1e7,     desc: 'A portal to a universe made entirely of dessert.' },
-  { id: 'cosmic',     name: 'Cosmic Confectionery',  icon: '🌌', baseCost: 1.4e13,  sps: 6.5e7,   desc: 'Galaxies swirled like soft-serve. The final frontier of flavour.' },
+  { id: 'whisk',      name: 'Squire',             icon: '🗡️', img: '/Pets/Warrior.png',        baseCost: 15,      sps: 0.1,     desc: 'A keen young squire, polishing blades and earning coin.' },
+  { id: 'oven',       name: 'Knight',             icon: '🛡️', img: '/Pets/Knight.png',         baseCost: 100,     sps: 1,       desc: 'A sworn knight who guards the realm around the clock.' },
+  { id: 'stand',      name: "Rogue's Den",        icon: '🗝️', img: '/Pets/Rogue.png',          baseCost: 1100,    sps: 8,       desc: 'Rogues "liberate" treasure from dungeons by the sackful.' },
+  { id: 'bakery',     name: 'Barbarian Warband',  icon: '🪓', img: '/Pets/Barbarian.png',      baseCost: 12000,   sps: 47,      desc: 'A roaring warband raiding monster camps day and night.' },
+  { id: 'chocmine',   name: 'Monk Monastery',     icon: '🥋', img: '/Pets/Monk.png',           baseCost: 130000,  sps: 260,     desc: 'Disciplined monks channel fortune with every strike.' },
+  { id: 'candyfarm',  name: 'Druid Grove',        icon: '🌿', img: '/Pets/Druid.png',          baseCost: 1.4e6,   sps: 1400,    desc: 'Ancient druids grow gold-blossom trees deep in the wilds.' },
+  { id: 'icecream',   name: 'Frost Mage Tower',   icon: '❄️', img: '/Pets/Frost Mage.png',     baseCost: 2e7,     sps: 7800,    desc: 'Frost mages freeze time itself to mine glacial riches.' },
+  { id: 'refinery',   name: 'Paladin Order',      icon: '⚜️', img: '/Pets/Paladin.png',        baseCost: 3.3e8,   sps: 44000,   desc: 'A holy order whose crusades return laden with treasure.' },
+  { id: 'reactor',    name: 'Necromancer Crypt',  icon: '💀', img: '/Pets/Necromancer.png',    baseCost: 5.1e9,   sps: 260000,  desc: 'Skeleton legions never sleep, never eat, never stop digging.' },
+  { id: 'gingercity', name: 'Crystal Citadel',    icon: '🏰', img: '/Pets/Crystal Knight.png', baseCost: 7.5e10,  sps: 1.6e6,   desc: 'A fortress of living crystal, humming with radiant power.' },
+  { id: 'portal',     name: 'Time Knight Gate',   icon: '🌀', img: '/Pets/Time Knight.png',    baseCost: 1e12,    sps: 1e7,     desc: 'Time Knights plunder the treasuries of forgotten eras.' },
+  { id: 'cosmic',     name: 'Dream Legion',       icon: '🌌', img: '/Pets/Dream.png',          baseCost: 1.4e13,  sps: 6.5e7,   desc: 'Champions of the dream realm, marching beyond the stars.' },
 ];
 export const BUILDING_MAP = Object.fromEntries(BUILDINGS.map((b) => [b.id, b]));
 
@@ -62,16 +70,47 @@ export const bulkBuildingCost = (building, owned, count) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// THE FORGE — the evolving clickable centerpiece
+// Stage = highest entry whose requirement is met. Lifetime gold NEVER resets,
+// so the weapon only ever grows mightier. Final relic stages need Ascensions.
+// ═══════════════════════════════════════════════════════════════════════════
+export const FORGE_STAGES = [
+  { name: 'Rusty Dagger',        img: '/Loot/Weapons/1.png',    req: { type: 'lifetime', value: 0 },     flavor: 'Every legend starts somewhere…' },
+  { name: 'Soldier’s Shortsword', img: '/Loot/Weapons/2.png',   req: { type: 'lifetime', value: 5000 },  flavor: 'Standard issue. Barely.' },
+  { name: 'Knight’s Blade',      img: '/Loot/Weapons/3.png',    req: { type: 'lifetime', value: 1e5 },   flavor: 'Now we’re getting somewhere.' },
+  { name: 'Champion’s Axe',      img: '/Loot/Weapons/4.png',    req: { type: 'lifetime', value: 2e6 },   flavor: 'Heavy. Loud. Effective.' },
+  { name: 'Enchanted Warhammer', img: '/Loot/Weapons/5.png',    req: { type: 'lifetime', value: 5e7 },   flavor: 'It hums when monsters are near.' },
+  { name: 'Runeblade',           img: '/Loot/Weapons/6.png',    req: { type: 'lifetime', value: 1e9 },   flavor: 'Ancient runes crawl along the steel.' },
+  { name: 'Dragonfang',          img: '/Loot/Weapons/7.png',    req: { type: 'lifetime', value: 2.5e10 }, flavor: 'Forged from a fang freely given. Mostly.' },
+  { name: 'Stormcaller',         img: '/Loot/Weapons/8.png',    req: { type: 'lifetime', value: 1e12 },  flavor: 'Thunder answers every swing.' },
+  { name: 'Soulrender',          img: '/Loot/Weapons/9.png',    req: { type: 'lifetime', value: 5e13 },  flavor: 'It whispers. Try not to listen.' },
+  { name: 'Blade of Eternity',   img: '/Loot/Weapons/10.png',   req: { type: 'lifetime', value: 1e15 },  flavor: 'Time bends around its edge.' },
+  { name: 'Godforged Edge',      img: '/Loot/Weapons/11.png',   req: { type: 'lifetime', value: 1e18 },  flavor: 'Hammered on the anvil of the gods.' },
+  { name: 'Relic of the Ascended', img: '/Loot/Artifacts/1.png', req: { type: 'rebirths', value: 5 },    flavor: 'A relic only Ascended heroes may wield.' },
+  { name: 'Crown Relic of Legends', img: '/Loot/Artifacts/5.png', req: { type: 'rebirths', value: 15 },  flavor: 'Legends kneel before it.' },
+  { name: 'Heart of the Realm', img: '/Loot/Artifacts/9.png',   req: { type: 'rebirths', value: 30 },    flavor: 'The realm itself beats in your hands.' },
+];
+
+export const forgeStageFor = (gs) => {
+  let stage = FORGE_STAGES[0];
+  let index = 0;
+  FORGE_STAGES.forEach((s, i) => {
+    if (meetsUnlockReq(s.req, gs)) { stage = s; index = i; }
+  });
+  return { ...stage, index };
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
 // UPGRADES
 // ═══════════════════════════════════════════════════════════════════════════
-// Building upgrades: auto-generated — at 10 / 25 / 50 / 100 / 200 owned,
-// an upgrade appears that DOUBLES that building's output.
+// Recruit upgrades: auto-generated — at 10 / 25 / 50 / 100 / 200 owned,
+// an upgrade appears that DOUBLES that recruit's output.
 const BUILDING_UPGRADE_TIERS = [
-  { at: 10,  costMult: 10,   adj: 'Improved' },
-  { at: 25,  costMult: 50,   adj: 'Turbo' },
-  { at: 50,  costMult: 500,  adj: 'Deluxe' },
-  { at: 100, costMult: 5000, adj: 'Quantum' },
-  { at: 200, costMult: 50000, adj: 'Transcendent' },
+  { at: 10,  costMult: 10,    adj: 'Trained' },
+  { at: 25,  costMult: 50,    adj: 'Veteran' },
+  { at: 50,  costMult: 500,   adj: 'Elite' },
+  { at: 100, costMult: 5000,  adj: 'Mythic' },
+  { at: 200, costMult: 50000, adj: 'Ascended' },
 ];
 
 const buildingUpgrades = BUILDINGS.flatMap((b) =>
@@ -79,7 +118,8 @@ const buildingUpgrades = BUILDINGS.flatMap((b) =>
     id: `bu_${b.id}_${i}`,
     name: `${tier.adj} ${b.name}`,
     icon: b.icon,
-    desc: `${b.name} output ×2. (Requires ${tier.at} owned)`,
+    img: b.img,
+    desc: `${b.name} output ×2. (Requires ${tier.at} recruited)`,
     cost: b.baseCost * tier.costMult,
     type: 'building',
     target: b.id,
@@ -88,35 +128,37 @@ const buildingUpgrades = BUILDINGS.flatMap((b) =>
   }))
 );
 
-// Click upgrades: multiply sweets-per-click, plus "sticky fingers" upgrades
-// that add a % of SPS to every click (this keeps clicking relevant forever).
+// Strike upgrades: multiply gold-per-strike, plus "Battle Instinct" upgrades
+// that add a % of GPS to every strike (keeps clicking relevant forever).
 const clickUpgrades = [
-  { id: 'cu_0', name: 'Buttered Fingers',   icon: '👆', desc: 'Clicking power ×2.',                        cost: 100,    type: 'click', mult: 2,  unlock: (gs) => gs.clicks >= 25 },
-  { id: 'cu_1', name: 'Sugar-Dusted Gloves', icon: '🧤', desc: 'Clicking power ×2.',                       cost: 2500,   type: 'click', mult: 2,  unlock: (gs) => gs.clicks >= 200 },
-  { id: 'cu_2', name: 'Caramel Knuckles',   icon: '✊', desc: 'Clicking power ×3.',                        cost: 50000,  type: 'click', mult: 3,  unlock: (gs) => gs.clicks >= 1000 },
-  { id: 'cu_3', name: 'Rolling Pin Arms',   icon: '💪', desc: 'Clicking power ×3.',                        cost: 1e6,    type: 'click', mult: 3,  unlock: (gs) => gs.clicks >= 3000 },
-  { id: 'cu_4', name: 'Piping Bag Cannon',  icon: '🎂', desc: 'Clicking power ×5.',                        cost: 5e7,    type: 'click', mult: 5,  unlock: (gs) => gs.clicks >= 8000 },
-  { id: 'cu_5', name: 'The Midas Mitt',     icon: '🥇', desc: 'Clicking power ×10.',                       cost: 5e9,    type: 'click', mult: 10, unlock: (gs) => gs.clicks >= 20000 },
-  { id: 'sf_0', name: 'Sticky Fingers',     icon: '🍯', desc: 'Each click also earns 1% of your SPS.',     cost: 500000, type: 'clickSps', value: 0.01, unlock: (gs) => gs.clicks >= 2000 },
-  { id: 'sf_1', name: 'Stickier Fingers',   icon: '🍯', desc: 'Each click also earns +2% of your SPS.',    cost: 5e7,    type: 'clickSps', value: 0.02, unlock: (gs) => gs.upgrades.includes('sf_0') },
-  { id: 'sf_2', name: 'Honey-Glazed Hands', icon: '🐝', desc: 'Each click also earns +3% of your SPS.',    cost: 5e9,    type: 'clickSps', value: 0.03, unlock: (gs) => gs.upgrades.includes('sf_1') },
-  { id: 'sf_3', name: 'The Syrup Touch',    icon: '🌊', desc: 'Each click also earns +4% of your SPS.',    cost: 5e11,   type: 'clickSps', value: 0.04, unlock: (gs) => gs.upgrades.includes('sf_2') },
+  { id: 'cu_0', name: 'Sharpened Blade',    icon: '🗡️', desc: 'Strike power ×2.',                          cost: 100,    type: 'click', mult: 2,  unlock: (gs) => gs.clicks >= 25 },
+  { id: 'cu_1', name: 'Iron Gauntlets',     icon: '🧤', desc: 'Strike power ×2.',                          cost: 2500,   type: 'click', mult: 2,  unlock: (gs) => gs.clicks >= 200 },
+  { id: 'cu_2', name: 'Steel Knuckles',     icon: '✊', desc: 'Strike power ×3.',                          cost: 50000,  type: 'click', mult: 3,  unlock: (gs) => gs.clicks >= 1000 },
+  { id: 'cu_3', name: "Titan's Strength",   icon: '💪', desc: 'Strike power ×3.',                          cost: 1e6,    type: 'click', mult: 3,  unlock: (gs) => gs.clicks >= 3000 },
+  { id: 'cu_4', name: 'Ballista Strike',    icon: '🏹', desc: 'Strike power ×5.',                          cost: 5e7,    type: 'click', mult: 5,  unlock: (gs) => gs.clicks >= 8000 },
+  { id: 'cu_5', name: 'The Midas Gauntlet', icon: '🥇', desc: 'Strike power ×10.',                         cost: 5e9,    type: 'click', mult: 10, unlock: (gs) => gs.clicks >= 20000 },
+  { id: 'sf_0', name: 'Battle Instinct',    icon: '⚔️', desc: 'Each strike also earns 1% of your GPS.',    cost: 500000, type: 'clickSps', value: 0.01, unlock: (gs) => gs.clicks >= 2000 },
+  { id: 'sf_1', name: "Warrior's Flow",     icon: '🌊', desc: 'Each strike also earns +2% of your GPS.',   cost: 5e7,    type: 'clickSps', value: 0.02, unlock: (gs) => gs.upgrades.includes('sf_0') },
+  { id: 'sf_2', name: "Hero's Resolve",     icon: '🛡️', desc: 'Each strike also earns +3% of your GPS.',   cost: 5e9,    type: 'clickSps', value: 0.03, unlock: (gs) => gs.upgrades.includes('sf_1') },
+  { id: 'sf_3', name: "Legend's Touch",     icon: '👑', desc: 'Each strike also earns +4% of your GPS.',   cost: 5e11,   type: 'clickSps', value: 0.04, unlock: (gs) => gs.upgrades.includes('sf_2') },
 ];
 
 // Global upgrades: multiply EVERYTHING.
 const globalUpgrades = [
-  { id: 'gu_0', name: 'Secret Family Recipe', icon: '📜', desc: 'All production ×1.5.',  cost: 1e6,  type: 'global', mult: 1.5, unlock: (gs) => gs.runSweets >= 500000 },
-  { id: 'gu_1', name: 'Vanilla Essence',      icon: '🌼', desc: 'All production ×1.5.',  cost: 1e8,  type: 'global', mult: 1.5, unlock: (gs) => gs.runSweets >= 5e7 },
-  { id: 'gu_2', name: 'Royal Warrant',        icon: '👑', desc: 'All production ×2.',    cost: 1e10, type: 'global', mult: 2,   unlock: (gs) => gs.runSweets >= 5e9 },
-  { id: 'gu_3', name: 'Michelin Star',        icon: '⭐', desc: 'All production ×2.',    cost: 1e12, type: 'global', mult: 2,   unlock: (gs) => gs.runSweets >= 5e11 },
-  { id: 'gu_4', name: 'Flavour Singularity',  icon: '🕳️', desc: 'All production ×3.',    cost: 1e15, type: 'global', mult: 3,   unlock: (gs) => gs.runSweets >= 5e14 },
+  { id: 'gu_0', name: 'Ancient War Manual',      icon: '📜', desc: 'All production ×1.5.', cost: 1e6,  type: 'global', mult: 1.5, unlock: (gs) => gs.runSweets >= 500000 },
+  { id: 'gu_1', name: 'Elven Alliance',          icon: '🧝', desc: 'All production ×1.5.', cost: 1e8,  type: 'global', mult: 1.5, unlock: (gs) => gs.runSweets >= 5e7 },
+  { id: 'gu_2', name: 'Royal Warrant',           icon: '👑', desc: 'All production ×2.',   cost: 1e10, type: 'global', mult: 2,   unlock: (gs) => gs.runSweets >= 5e9 },
+  { id: 'gu_3', name: 'Blessing of the Gods',    icon: '⭐', desc: 'All production ×2.',   cost: 1e12, type: 'global', mult: 2,   unlock: (gs) => gs.runSweets >= 5e11 },
+  { id: 'gu_4', name: 'Reality Singularity',     icon: '🕳️', desc: 'All production ×3.',   cost: 1e15, type: 'global', mult: 3,   unlock: (gs) => gs.runSweets >= 5e14 },
+  { id: 'gu_5', name: 'Crown of Infinity',       icon: '♾️', desc: 'All production ×3.',   cost: 1e18, type: 'global', mult: 3,   unlock: (gs) => gs.runSweets >= 5e17 },
+  { id: 'gu_6', name: 'Heart of the Multiverse', icon: '🌠', desc: 'All production ×4.',   cost: 1e21, type: 'global', mult: 4,   unlock: (gs) => gs.runSweets >= 5e20 },
 ];
 
-// Golden cookie upgrades
+// Loot chest upgrades (internally "golden" — do not rename ids)
 const goldenUpgrades = [
-  { id: 'gc_0', name: 'Lucky Sprinkles',  icon: '✨', desc: 'Golden cookies appear 25% more often.',      cost: 1e7,  type: 'goldenFreq', value: 0.25, unlock: (gs) => gs.goldenClicks >= 5 },
-  { id: 'gc_1', name: 'Four-Leaf Cocoa',  icon: '🍀', desc: 'Golden cookies appear 25% more often.',      cost: 1e9,  type: 'goldenFreq', value: 0.25, unlock: (gs) => gs.goldenClicks >= 20 },
-  { id: 'gc_2', name: 'Golden Rolling Pin', icon: '🌟', desc: 'Golden cookie effects last 50% longer.',   cost: 1e11, type: 'goldenDur',  value: 0.5,  unlock: (gs) => gs.goldenClicks >= 50 },
+  { id: 'gc_0', name: 'Lucky Charm',     icon: '🍀', desc: 'Loot chests appear 25% more often.',    cost: 1e7,  type: 'goldenFreq', value: 0.25, unlock: (gs) => gs.goldenClicks >= 5 },
+  { id: 'gc_1', name: 'Treasure Sense',  icon: '🧭', desc: 'Loot chests appear 25% more often.',    cost: 1e9,  type: 'goldenFreq', value: 0.25, unlock: (gs) => gs.goldenClicks >= 20 },
+  { id: 'gc_2', name: 'Gilded Crowbar',  icon: '🪓', desc: 'Loot chest effects last 50% longer.',   cost: 1e11, type: 'goldenDur',  value: 0.5,  unlock: (gs) => gs.goldenClicks >= 50 },
 ];
 
 export const UPGRADES = [...buildingUpgrades, ...clickUpgrades, ...globalUpgrades, ...goldenUpgrades];
@@ -126,128 +168,173 @@ export const UPGRADE_MAP = Object.fromEntries(UPGRADES.map((u) => [u.id, u]));
 // ACHIEVEMENTS — each one earned grants +1% to all production, forever
 // ═══════════════════════════════════════════════════════════════════════════
 const sweetAch = (id, name, icon, amount) =>
-  ({ id, name, icon, desc: `Bake ${fmtNum(amount)} sweets in one run.`, check: (gs) => gs.runSweets >= amount });
+  ({ id, name, icon, desc: `Earn ${fmtNum(amount)} gold in one quest.`, check: (gs) => gs.runSweets >= amount });
 const clickAch = (id, name, icon, amount) =>
-  ({ id, name, icon, desc: `Click the cookie ${fmtNum(amount)} times.`, check: (gs) => gs.clicks >= amount });
+  ({ id, name, icon, desc: `Strike the forge ${fmtNum(amount)} times.`, check: (gs) => gs.clicks >= amount });
 const bldAch = (id, name, icon, buildingId, amount) =>
-  ({ id, name, icon, desc: `Own ${amount} ${BUILDING_MAP[buildingId].name}${amount !== 1 ? 's' : ''}.`, check: (gs) => (gs.buildings[buildingId] || 0) >= amount });
+  ({ id, name, icon, desc: `Recruit ${amount} ${BUILDING_MAP[buildingId].name}${amount !== 1 ? 's' : ''}.`, check: (gs) => (gs.buildings[buildingId] || 0) >= amount });
 
 export const ACHIEVEMENTS = [
-  // Baking milestones
-  sweetAch('a_s0', 'First Batch', '🍪', 100),
-  sweetAch('a_s1', 'Bake Sale', '🧺', 10000),
-  sweetAch('a_s2', 'Sweet Tooth', '🦷', 1e6),
-  sweetAch('a_s3', 'Sugar High', '🎈', 1e8),
-  sweetAch('a_s4', 'Dessert Storm', '🌪️', 1e10),
-  sweetAch('a_s5', 'Confection Perfection', '💯', 1e12),
-  sweetAch('a_s6', 'Planetary Pâtissier', '🪐', 1e15),
-  sweetAch('a_s7', 'Galactic Glazier', '🌌', 1e18),
-  // Clicking
-  clickAch('a_c0', 'Warm-Up Taps', '👆', 100),
-  clickAch('a_c1', 'Finger Workout', '💪', 1000),
-  clickAch('a_c2', 'Click Machine', '🤖', 10000),
-  clickAch('a_c3', 'Carpal Champion', '🏆', 50000),
-  clickAch('a_c4', 'The Unstoppable Finger', '☄️', 200000),
-  // Buildings
-  bldAch('a_b0', 'Whisk Taker', '🥄', 'whisk', 25),
-  bldAch('a_b1', 'Grandma Battalion', '👵', 'oven', 25),
-  bldAch('a_b2', 'Cupcake Empire', '🧁', 'stand', 25),
-  bldAch('a_b3', 'Chain Baker', '🥐', 'bakery', 25),
-  bldAch('a_b4', 'Deep Choc Miner', '⛏️', 'chocmine', 25),
-  bldAch('a_b5', 'Cane Tycoon', '🍬', 'candyfarm', 25),
-  bldAch('a_b6', 'Glacier Boss', '🍨', 'icecream', 25),
-  bldAch('a_b7', 'Refinery Mogul', '🏭', 'refinery', 25),
-  bldAch('a_b8', 'Reactor Overseer', '⚗️', 'reactor', 25),
-  bldAch('a_b9', 'City Planner', '🏰', 'gingercity', 25),
-  bldAch('a_b10', 'Dimension Landlord', '🌀', 'portal', 25),
-  bldAch('a_b11', 'Cosmic Baron', '🌌', 'cosmic', 25),
-  { id: 'a_all1', name: 'One of Everything', icon: '🛒', desc: 'Own at least 1 of every building.', check: (gs) => BUILDINGS.every((b) => (gs.buildings[b.id] || 0) >= 1) },
-  { id: 'a_all50', name: 'Sweet Monopoly', icon: '🎩', desc: 'Own at least 50 of every building.', check: (gs) => BUILDINGS.every((b) => (gs.buildings[b.id] || 0) >= 50) },
-  { id: 'a_all100', name: 'Total Sweet Domination', icon: '🌍', desc: 'Own at least 100 of every building.', check: (gs) => BUILDINGS.every((b) => (gs.buildings[b.id] || 0) >= 100) },
-  // Golden cookies
-  { id: 'a_g0', name: 'Golden Snack', icon: '✨', desc: 'Click your first golden cookie.', check: (gs) => gs.goldenClicks >= 1 },
-  { id: 'a_g1', name: 'Fortune Hunter', icon: '🌠', desc: 'Click 25 golden cookies.', check: (gs) => gs.goldenClicks >= 25 },
-  { id: 'a_g2', name: 'Midas of Munchies', icon: '👑', desc: 'Click 100 golden cookies.', check: (gs) => gs.goldenClicks >= 100 },
-  { id: 'a_g3', name: 'Golden God', icon: '🌞', desc: 'Click 500 golden cookies.', check: (gs) => gs.goldenClicks >= 500 },
+  // Gold milestones
+  sweetAch('a_s0', 'First Bounty', '💰', 100),
+  sweetAch('a_s1', 'Village Hero', '🏘️', 10000),
+  sweetAch('a_s2', 'Gilded Champion', '🥇', 1e6),
+  sweetAch('a_s3', 'Dragon Banker', '🐉', 1e8),
+  sweetAch('a_s4', 'War Treasury', '⚔️', 1e10),
+  sweetAch('a_s5', 'Realm Shaker', '🏰', 1e12),
+  sweetAch('a_s6', 'Planetary Conqueror', '🪐', 1e15),
+  sweetAch('a_s7', 'Galactic Warlord', '🌌', 1e18),
+  // Striking
+  clickAch('a_c0', 'Warm-Up Swings', '🗡️', 100),
+  clickAch('a_c1', 'Sword Arm', '💪', 1000),
+  clickAch('a_c2', 'War Machine', '🤖', 10000),
+  clickAch('a_c3', 'Blademaster', '🏆', 50000),
+  clickAch('a_c4', 'The Unstoppable Blade', '☄️', 200000),
+  // Recruits
+  bldAch('a_b0', 'Squire Squad', '🗡️', 'whisk', 25),
+  bldAch('a_b1', 'Knight Battalion', '🛡️', 'oven', 25),
+  bldAch('a_b2', 'Thieves Guildmaster', '🗝️', 'stand', 25),
+  bldAch('a_b3', 'Horde Leader', '🪓', 'bakery', 25),
+  bldAch('a_b4', 'Grand Abbot', '🥋', 'chocmine', 25),
+  bldAch('a_b5', 'Keeper of the Grove', '🌿', 'candyfarm', 25),
+  bldAch('a_b6', 'Archmage of Frost', '❄️', 'icecream', 25),
+  bldAch('a_b7', 'High Crusader', '⚜️', 'refinery', 25),
+  bldAch('a_b8', 'Lord of Crypts', '💀', 'reactor', 25),
+  bldAch('a_b9', 'Citadel Sovereign', '🏰', 'gingercity', 25),
+  bldAch('a_b10', 'Master of Ages', '🌀', 'portal', 25),
+  bldAch('a_b11', 'Dream General', '🌌', 'cosmic', 25),
+  { id: 'a_all1', name: 'One of Every Banner', icon: '🚩', desc: 'Recruit at least 1 of every champion.', check: (gs) => BUILDINGS.every((b) => (gs.buildings[b.id] || 0) >= 1) },
+  { id: 'a_all50', name: 'Grand Army', icon: '🎖️', desc: 'Recruit at least 50 of every champion.', check: (gs) => BUILDINGS.every((b) => (gs.buildings[b.id] || 0) >= 50) },
+  { id: 'a_all100', name: 'Total Realm Domination', icon: '🌍', desc: 'Recruit at least 100 of every champion.', check: (gs) => BUILDINGS.every((b) => (gs.buildings[b.id] || 0) >= 100) },
+  // Loot chests
+  { id: 'a_g0', name: 'First Loot', icon: '🎁', desc: 'Open your first loot chest.', check: (gs) => gs.goldenClicks >= 1 },
+  { id: 'a_g1', name: 'Treasure Hunter', icon: '🗺️', desc: 'Open 25 loot chests.', check: (gs) => gs.goldenClicks >= 25 },
+  { id: 'a_g2', name: 'Master Looter', icon: '👑', desc: 'Open 100 loot chests.', check: (gs) => gs.goldenClicks >= 100 },
+  { id: 'a_g3', name: 'Midas of the Realm', icon: '🌞', desc: 'Open 500 loot chests.', check: (gs) => gs.goldenClicks >= 500 },
   // Upgrades & stars
-  { id: 'a_u0', name: 'Upgrader', icon: '🔧', desc: 'Buy 10 upgrades.', check: (gs) => gs.upgrades.length >= 10 },
-  { id: 'a_u1', name: 'Optimiser', icon: '⚙️', desc: 'Buy 30 upgrades.', check: (gs) => gs.upgrades.length >= 30 },
-  { id: 'a_u2', name: 'Completionist', icon: '📋', desc: 'Buy 60 upgrades.', check: (gs) => gs.upgrades.length >= 60 },
-  // Rebirths
-  { id: 'a_r0', name: 'Born Again Baker', icon: '🔄', desc: 'Perform your first Recipe Rebirth.', check: (gs) => gs.rebirths >= 1 },
-  { id: 'a_r1', name: 'Serial Rebaker', icon: '♻️', desc: 'Perform 5 Recipe Rebirths.', check: (gs) => gs.rebirths >= 5 },
-  { id: 'a_r2', name: 'Eternal Oven', icon: '🔥', desc: 'Perform 10 Recipe Rebirths.', check: (gs) => gs.rebirths >= 10 },
-  { id: 'a_r3', name: 'The Infinite Bake', icon: '♾️', desc: 'Perform 25 Recipe Rebirths.', check: (gs) => gs.rebirths >= 25 },
-  { id: 'a_r4', name: 'Beyond Flavour', icon: '🌈', desc: 'Perform 50 Recipe Rebirths.', check: (gs) => gs.rebirths >= 50 },
-  // Stars
-  { id: 'a_st0', name: 'Star Gazer', icon: '⭐', desc: 'Hold 10 Sugar Stars.', check: (gs) => gs.sugarStars >= 10 },
-  { id: 'a_st1', name: 'Constellation Chef', icon: '🌟', desc: 'Hold 100 Sugar Stars.', check: (gs) => gs.sugarStars >= 100 },
-  { id: 'a_st2', name: 'Sugar Supernova', icon: '💫', desc: 'Hold 1,000 Sugar Stars.', check: (gs) => gs.sugarStars >= 1000 },
+  { id: 'a_u0', name: 'Armorer', icon: '🔧', desc: 'Buy 10 upgrades.', check: (gs) => gs.upgrades.length >= 10 },
+  { id: 'a_u1', name: 'Master Smith', icon: '⚙️', desc: 'Buy 30 upgrades.', check: (gs) => gs.upgrades.length >= 30 },
+  { id: 'a_u2', name: 'Legendary Artificer', icon: '📋', desc: 'Buy 60 upgrades.', check: (gs) => gs.upgrades.length >= 60 },
+  // Ascensions
+  { id: 'a_r0', name: 'Reborn Hero', icon: '🔄', desc: 'Complete your first Heroic Ascension.', check: (gs) => gs.rebirths >= 1 },
+  { id: 'a_r1', name: 'Serial Ascender', icon: '♻️', desc: 'Complete 5 Heroic Ascensions.', check: (gs) => gs.rebirths >= 5 },
+  { id: 'a_r2', name: 'Eternal Flame', icon: '🔥', desc: 'Complete 10 Heroic Ascensions.', check: (gs) => gs.rebirths >= 10 },
+  { id: 'a_r3', name: 'The Infinite Champion', icon: '♾️', desc: 'Complete 25 Heroic Ascensions.', check: (gs) => gs.rebirths >= 25 },
+  { id: 'a_r4', name: 'Beyond Legend', icon: '🌈', desc: 'Complete 50 Heroic Ascensions.', check: (gs) => gs.rebirths >= 50 },
+  // Glory Stars
+  { id: 'a_st0', name: 'Star Gazer', icon: '⭐', desc: 'Hold 10 Glory Stars.', check: (gs) => gs.sugarStars >= 10 },
+  { id: 'a_st1', name: 'Constellation Knight', icon: '🌟', desc: 'Hold 100 Glory Stars.', check: (gs) => gs.sugarStars >= 100 },
+  { id: 'a_st2', name: 'Glory Supernova', icon: '💫', desc: 'Hold 1,000 Glory Stars.', check: (gs) => gs.sugarStars >= 1000 },
+  // Realm events (new)
+  { id: 'a_e0', name: 'Event Chaser', icon: '🌪️', desc: 'Answer 5 realm events.', check: (gs) => (gs.eventsClaimed || 0) >= 5 },
+  { id: 'a_e1', name: "Fate's Favourite", icon: '🔮', desc: 'Answer 25 realm events.', check: (gs) => (gs.eventsClaimed || 0) >= 25 },
+  { id: 'a_e2', name: 'Storm Rider', icon: '⚡', desc: 'Answer 100 realm events.', check: (gs) => (gs.eventsClaimed || 0) >= 100 },
+  { id: 'a_e3', name: 'Chosen of the Realm', icon: '🌟', desc: 'Answer 500 realm events.', check: (gs) => (gs.eventsClaimed || 0) >= 500 },
+  // Dragon raids (new)
+  { id: 'a_d0', name: 'Dragonslayer', icon: '🐉', desc: 'Slay your first raiding dragon.', check: (gs) => (gs.dragonsSlain || 0) >= 1 },
+  { id: 'a_d1', name: 'Wyrm Bane', icon: '🗡️', desc: 'Slay 10 raiding dragons.', check: (gs) => (gs.dragonsSlain || 0) >= 10 },
+  { id: 'a_d2', name: 'Scourge of Dragons', icon: '🔥', desc: 'Slay 50 raiding dragons.', check: (gs) => (gs.dragonsSlain || 0) >= 50 },
+  { id: 'a_d3', name: 'The Last Dragonlord', icon: '👑', desc: 'Slay 200 raiding dragons.', check: (gs) => (gs.dragonsSlain || 0) >= 200 },
 ];
 export const ACHIEVEMENT_MAP = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PRESTIGE — Recipe Rebirth & Sugar Stars
+// PRESTIGE — Heroic Ascension & Glory Stars (internally rebirths/sugarStars)
 // ═══════════════════════════════════════════════════════════════════════════
-// Stars earned on rebirth: sqrt(runSweets / 1e9) — first star needs 1 BILLION
-// sweets baked in a single run (slow grind by design). Each star = +2% SPS.
+// Stars earned on ascension: sqrt(runGold / 1e9) — first star needs 1 BILLION
+// gold earned in a single quest (slow grind by design). Each star = +2% GPS.
 export const STAR_DIVISOR = 1e9;
 export const starsForRun = (runSweets) => Math.floor(Math.sqrt(Math.max(0, runSweets) / STAR_DIVISOR));
 export const STAR_SPS_BONUS = 0.02;
 
-// Star Shop — permanent upgrades bought with Sugar Stars (spent stars still
-// count toward star-holding achievements? No — spent is spent; plan wisely.)
+// Hall of Legends — permanent upgrades bought with Glory Stars (spent is spent;
+// plan wisely).
 export const STAR_UPGRADES = [
-  { id: 'su_head', name: 'Head Start', icon: '🚀', desc: 'Every rebirth starts with 5 free Auto-Whisks and 1 Grandma.', cost: 3 },
-  { id: 'su_off1', name: 'Night Shift Elves', icon: '🧝', desc: 'Earn offline production for up to 8 hours (base: 2).', cost: 5 },
-  { id: 'su_off2', name: 'Elf Overtime', icon: '🌙', desc: 'Offline production window becomes 24 hours.', cost: 25 },
-  { id: 'su_click', name: 'Star-Powered Finger', icon: '☝️', desc: 'Clicking power permanently ×5.', cost: 10 },
-  { id: 'su_gold', name: 'Golden Magnet', icon: '🧲', desc: 'Golden cookies appear twice as often. Forever.', cost: 20 },
-  { id: 'su_keep', name: 'Recipe Memory', icon: '🧠', desc: 'Keep your click upgrades through rebirths.', cost: 40 },
-  { id: 'su_combo', name: 'Endless Sugar Rush', icon: '⚡', desc: 'Sugar Rush combo decays 3× slower.', cost: 15 },
-  { id: 'su_prod', name: 'Stellar Ovens', icon: '🌠', desc: 'All production permanently ×2.', cost: 75 },
-  { id: 'su_prod2', name: 'Nebula Kitchens', icon: '🌌', desc: 'All production permanently ×3. (Stacks!)', cost: 300 },
+  { id: 'su_head',   name: "Veteran's Start",      icon: '🚀', desc: 'Every Ascension starts with 5 free Squires and 1 Knight.', cost: 3 },
+  { id: 'su_off1',   name: 'Night Watch',          icon: '🌙', desc: 'Earn offline production for up to 8 hours (base: 2).', cost: 5 },
+  { id: 'su_off2',   name: 'Eternal Vigil',        icon: '🌌', desc: 'Offline production window becomes 24 hours.', cost: 25 },
+  { id: 'su_click',  name: 'Star-Forged Gauntlet', icon: '☝️', desc: 'Strike power permanently ×5.', cost: 10 },
+  { id: 'su_gold',   name: 'Treasure Magnet',      icon: '🧲', desc: 'Loot chests appear twice as often. Forever.', cost: 20 },
+  { id: 'su_keep',   name: 'Muscle Memory',        icon: '🧠', desc: 'Keep your strike upgrades through Ascensions.', cost: 40 },
+  { id: 'su_combo',  name: 'Endless Momentum',     icon: '⚡', desc: 'Battle Momentum decays 3× slower.', cost: 15 },
+  { id: 'su_event',  name: 'Omen Reader',          icon: '🔮', desc: 'Realm events happen 50% more often.', cost: 30 },
+  { id: 'su_dragon', name: "Dragonlord's Pact",    icon: '🐉', desc: 'Dragon raid rewards ×2.', cost: 50 },
+  { id: 'su_prod',   name: 'Stellar Armory',       icon: '🌠', desc: 'All production permanently ×2.', cost: 75 },
+  { id: 'su_prod2',  name: 'Celestial Legion',     icon: '🌌', desc: 'All production permanently ×3. (Stacks!)', cost: 300 },
 ];
 export const STAR_UPGRADE_MAP = Object.fromEntries(STAR_UPGRADES.map((u) => [u.id, u]));
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GOLDEN COOKIES
+// LOOT CHESTS (internally "golden cookies" — ids unchanged)
 // ═══════════════════════════════════════════════════════════════════════════
 export const GOLDEN_MIN_GAP = 90;   // seconds
 export const GOLDEN_MAX_GAP = 300;
 export const GOLDEN_LIFETIME = 11;  // seconds on screen
 
 export const GOLDEN_EFFECTS = [
-  { id: 'frenzy',      name: 'Frenzy!',        icon: '🔥', weight: 34, duration: 30, desc: 'Production ×7 for 30s!' },
-  { id: 'clickfrenzy', name: 'Click Frenzy!',  icon: '⚡', weight: 18, duration: 15, desc: 'Clicking ×20 for 15s!' },
-  { id: 'lucky',       name: 'Sweet Windfall', icon: '💰', weight: 34, duration: 0,  desc: 'Instant sweets — 10% of bank or 15 min of SPS!' },
-  { id: 'rush',        name: 'Instant Rush',   icon: '🌀', weight: 10, duration: 0,  desc: 'Sugar Rush combo instantly maxed!' },
-  { id: 'jackpot',     name: 'JACKPOT!',       icon: '🎰', weight: 4,  duration: 0,  desc: 'Instant sweets — a full HOUR of SPS!' },
+  { id: 'frenzy',      name: 'Battle Fury!',    icon: '🔥', weight: 34, duration: 30, desc: 'Production ×7 for 30s!' },
+  { id: 'clickfrenzy', name: 'Blade Storm!',    icon: '⚡', weight: 18, duration: 15, desc: 'Strike power ×20 for 15s!' },
+  { id: 'lucky',       name: 'Treasure Trove',  icon: '💰', weight: 34, duration: 0,  desc: 'Instant gold — 10% of your hoard or 15 min of GPS!' },
+  { id: 'rush',        name: 'War Cry',         icon: '🌀', weight: 10, duration: 0,  desc: 'Battle Momentum instantly maxed!' },
+  { id: 'jackpot',     name: "DRAGON'S HOARD!", icon: '🎰', weight: 4,  duration: 0,  desc: 'Instant gold — a full HOUR of GPS!' },
+];
+
+// A random artifact image is used for each chest spawn.
+export const LOOT_CHEST_IMAGES = Array.from({ length: 21 }, (_, i) => `/Loot/Artifacts/${i + 1}.png`);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REALM EVENTS — random world events (new system, additive to save)
+// ═══════════════════════════════════════════════════════════════════════════
+export const EVENT_MIN_GAP = 150;   // seconds between events
+export const EVENT_MAX_GAP = 420;
+export const EVENT_LIFETIME = 18;   // seconds to answer the call before it fades
+
+export const REALM_EVENTS = [
+  { id: 'merchant', name: 'Travelling Merchant', icon: '🧝', weight: 20, kind: 'buff',
+    desc: 'A merchant opens her wagon — all recruits 25% off for 60s!', duration: 60 },
+  { id: 'blessing', name: 'Royal Blessing', icon: '✨', weight: 18, kind: 'buff',
+    desc: 'The Crown blesses your banner — production ×3 for 45s!', duration: 45 },
+  { id: 'training', name: 'Weapons Master', icon: '🛡️', weight: 18, kind: 'buff',
+    desc: 'A weapons master drills you — strike power ×10 for 30s!', duration: 30 },
+  { id: 'star',     name: 'Falling Star', icon: '🌠', weight: 22, kind: 'instant',
+    desc: 'A star crashes nearby — instant gold! (15% of hoard or 10 min of GPS)' },
+  { id: 'horde',    name: 'Goblin Horde', icon: '👺', weight: 14, kind: 'instant',
+    desc: 'Goblins scatter loot as they flee — Momentum maxed + 5 min of GPS!' },
+  { id: 'dragon',   name: 'DRAGON RAID!', icon: '🐉', weight: 8, kind: 'dragon',
+    desc: 'A dragon attacks! Strike it down before it escapes for a HUGE bounty!', duration: 20 },
+];
+
+// Dragon raid tuning: HP ≈ this many of your strikes; reward = minutes of GPS.
+export const DRAGON_HP_CLICKS = 25;
+export const DRAGON_TIME = 20;          // seconds to slay it
+export const DRAGON_REWARD_MINUTES = 30;
+export const DRAGON_IMAGES = [
+  '/Bosses/Math/Boss 1.png', '/Bosses/Math/Boss 2.png', '/Bosses/Math/Boss 3.png', '/Bosses/Math/Boss 4.png',
+  '/Bosses/English/Boss 1.png', '/Bosses/Science/Boss 1.png', '/Bosses/HaSS/Boss 1.png', '/Bosses/Art/Boss 1.png',
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SUGAR RUSH combo
+// BATTLE MOMENTUM combo (internally "Sugar Rush")
 // ═══════════════════════════════════════════════════════════════════════════
 export const COMBO_MAX = 100;          // combo points
-export const COMBO_MAX_BONUS = 1.0;    // +100% click power at max combo
+export const COMBO_MAX_BONUS = 1.0;    // +100% strike power at max momentum
 export const COMBO_DECAY_PER_SEC = 8;  // points lost per second idle
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PROFILE UNLOCKS — the slow-grind chase items that theme student profiles
+// (ids unchanged — students keep everything they've already unlocked/equipped)
 // ═══════════════════════════════════════════════════════════════════════════
-// Card themes (border/background/glow on the teacher's Students page and the
-// student's own dashboard). Unlocks are DELIBERATELY hard.
 export const SE_THEMES = [
-  { id: 'strawberry', name: 'Strawberry Frosting', icon: '🍓', req: { type: 'rebirths', value: 1 },  reqText: '1 Recipe Rebirth' },
-  { id: 'mint',       name: 'Mint Choc Chip',      icon: '🌿', req: { type: 'rebirths', value: 3 },  reqText: '3 Recipe Rebirths' },
-  { id: 'blueberry',  name: 'Blueberry Glaze',     icon: '🫐', req: { type: 'rebirths', value: 6 },  reqText: '6 Recipe Rebirths' },
-  { id: 'licorice',   name: 'Licorice Night',      icon: '🖤', req: { type: 'golden', value: 100 },  reqText: '100 golden cookies clicked' },
-  { id: 'caramel',    name: 'Golden Caramel',      icon: '🍮', req: { type: 'rebirths', value: 10 }, reqText: '10 Recipe Rebirths' },
-  { id: 'bubblegum',  name: 'Bubblegum Dream',     icon: '🫧', req: { type: 'lifetime', value: 1e12 }, reqText: '1T lifetime sweets' },
-  { id: 'rainbow',    name: 'Rainbow Sherbet',     icon: '🌈', req: { type: 'achievements', value: 30 }, reqText: '30 achievements' },
-  { id: 'galaxy',     name: 'Galaxy Swirl',        icon: '🌌', req: { type: 'rebirths', value: 20 }, reqText: '20 Recipe Rebirths' },
-  { id: 'royal',      name: 'Royal Icing',         icon: '👑', req: { type: 'lifetime', value: 1e15 }, reqText: '1Qa lifetime sweets' },
-  { id: 'eternal',    name: 'Eternal Flambé',      icon: '🔥', req: { type: 'rebirths', value: 40 }, reqText: '40 Recipe Rebirths' },
+  { id: 'strawberry', name: 'Rosefire Banner',   icon: '🌹', req: { type: 'rebirths', value: 1 },  reqText: '1 Heroic Ascension' },
+  { id: 'mint',       name: 'Emerald Grove',     icon: '🌿', req: { type: 'rebirths', value: 3 },  reqText: '3 Heroic Ascensions' },
+  { id: 'blueberry',  name: 'Sapphire Ward',     icon: '🔷', req: { type: 'rebirths', value: 6 },  reqText: '6 Heroic Ascensions' },
+  { id: 'licorice',   name: 'Shadowplate',       icon: '🖤', req: { type: 'golden', value: 100 },  reqText: '100 loot chests opened' },
+  { id: 'caramel',    name: 'Gilded Honour',     icon: '🏅', req: { type: 'rebirths', value: 10 }, reqText: '10 Heroic Ascensions' },
+  { id: 'bubblegum',  name: 'Arcane Bloom',      icon: '🔮', req: { type: 'lifetime', value: 1e12 }, reqText: '1T lifetime gold' },
+  { id: 'rainbow',    name: 'Prismatic Legend',  icon: '🌈', req: { type: 'achievements', value: 30 }, reqText: '30 achievements' },
+  { id: 'galaxy',     name: 'Astral Voyage',     icon: '🌌', req: { type: 'rebirths', value: 20 }, reqText: '20 Heroic Ascensions' },
+  { id: 'royal',      name: 'Crown of Kings',    icon: '👑', req: { type: 'lifetime', value: 1e15 }, reqText: '1Qa lifetime gold' },
+  { id: 'eternal',    name: 'Eternal Flame',     icon: '🔥', req: { type: 'rebirths', value: 40 }, reqText: '40 Heroic Ascensions' },
 ];
 
 // Styling for each theme — used by StudentsTab (card) and StudentDashboard.
@@ -266,30 +353,30 @@ export const SE_THEME_STYLES = {
 
 // Titles shown under the student's name on profile cards.
 export const SE_TITLES = [
-  { id: 'kitchenhand', name: 'Kitchen Hand',      req: { type: 'lifetime', value: 0 },    reqText: 'Start playing', color: 'text-gray-500',    darkColor: 'text-slate-400' },
-  { id: 'apprentice',  name: 'Apprentice Baker',  req: { type: 'lifetime', value: 1e6 },  reqText: '1M lifetime sweets', color: 'text-green-600', darkColor: 'text-green-400' },
-  { id: 'pastrychef',  name: 'Pastry Chef',       req: { type: 'lifetime', value: 1e9 },  reqText: '1B lifetime sweets', color: 'text-blue-600',  darkColor: 'text-blue-400' },
-  { id: 'headbaker',   name: 'Head Baker',        req: { type: 'rebirths', value: 1 },    reqText: '1 Recipe Rebirth', color: 'text-purple-600',  darkColor: 'text-purple-400' },
-  { id: 'sugarsmith',  name: 'Sugarsmith',        req: { type: 'rebirths', value: 5 },    reqText: '5 Recipe Rebirths', color: 'text-orange-600', darkColor: 'text-orange-400' },
-  { id: 'grandmaster', name: 'Grand Confectioner', req: { type: 'rebirths', value: 10 },  reqText: '10 Recipe Rebirths', color: 'text-yellow-600', darkColor: 'text-yellow-400' },
-  { id: 'sweetlord',   name: 'Sweet Lord',        req: { type: 'rebirths', value: 20 },   reqText: '20 Recipe Rebirths', color: 'text-pink-600',   darkColor: 'text-pink-400' },
-  { id: 'dessertdeity', name: 'Dessert Deity',    req: { type: 'rebirths', value: 35 },   reqText: '35 Recipe Rebirths', color: 'text-cyan-600',   darkColor: 'text-cyan-400' },
-  { id: 'sultan',      name: 'Sultan of Sweet',   req: { type: 'rebirths', value: 50 },   reqText: '50 Recipe Rebirths', color: 'text-amber-500',  darkColor: 'text-amber-300' },
+  { id: 'kitchenhand', name: 'Villager',          req: { type: 'lifetime', value: 0 },    reqText: 'Start playing', color: 'text-gray-500',    darkColor: 'text-slate-400' },
+  { id: 'apprentice',  name: 'Squire',            req: { type: 'lifetime', value: 1e6 },  reqText: '1M lifetime gold', color: 'text-green-600', darkColor: 'text-green-400' },
+  { id: 'pastrychef',  name: 'Knight',            req: { type: 'lifetime', value: 1e9 },  reqText: '1B lifetime gold', color: 'text-blue-600',  darkColor: 'text-blue-400' },
+  { id: 'headbaker',   name: 'Champion',          req: { type: 'rebirths', value: 1 },    reqText: '1 Heroic Ascension', color: 'text-purple-600',  darkColor: 'text-purple-400' },
+  { id: 'sugarsmith',  name: 'Warlord',           req: { type: 'rebirths', value: 5 },    reqText: '5 Heroic Ascensions', color: 'text-orange-600', darkColor: 'text-orange-400' },
+  { id: 'grandmaster', name: 'Grand Champion',    req: { type: 'rebirths', value: 10 },   reqText: '10 Heroic Ascensions', color: 'text-yellow-600', darkColor: 'text-yellow-400' },
+  { id: 'sweetlord',   name: 'Living Legend',     req: { type: 'rebirths', value: 20 },   reqText: '20 Heroic Ascensions', color: 'text-pink-600',   darkColor: 'text-pink-400' },
+  { id: 'dessertdeity', name: 'Demigod',          req: { type: 'rebirths', value: 35 },   reqText: '35 Heroic Ascensions', color: 'text-cyan-600',   darkColor: 'text-cyan-400' },
+  { id: 'sultan',      name: 'Eternal Champion',  req: { type: 'rebirths', value: 50 },   reqText: '50 Heroic Ascensions', color: 'text-amber-500',  darkColor: 'text-amber-300' },
 ];
 
 // Special effects — animated rings/glows on the profile card. The rarest tier.
 export const SE_EFFECTS = [
-  { id: 'sprinkle_ring', name: 'Sprinkle Ring',  icon: '🍩', req: { type: 'rebirths', value: 2 },  reqText: '2 Recipe Rebirths',
+  { id: 'sprinkle_ring', name: 'Rose Halo',       icon: '🌹', req: { type: 'rebirths', value: 2 },  reqText: '2 Heroic Ascensions',
     cls: 'ring-4 ring-pink-300 shadow-md shadow-pink-300/50' },
-  { id: 'caramel_glow',  name: 'Caramel Glow',   icon: '🍮', req: { type: 'rebirths', value: 8 },  reqText: '8 Recipe Rebirths',
+  { id: 'caramel_glow',  name: 'Golden Aura',     icon: '🏅', req: { type: 'rebirths', value: 8 },  reqText: '8 Heroic Ascensions',
     cls: 'ring-4 ring-amber-400 shadow-lg shadow-amber-400/50' },
-  { id: 'mint_aura',     name: 'Mint Aura',      icon: '🌿', req: { type: 'golden', value: 250 },  reqText: '250 golden cookies',
+  { id: 'mint_aura',     name: 'Verdant Aura',    icon: '🌿', req: { type: 'golden', value: 250 },  reqText: '250 loot chests',
     cls: 'ring-4 ring-emerald-400 shadow-lg shadow-emerald-400/60' },
-  { id: 'sugar_storm',   name: 'Sugar Storm',    icon: '🌪️', req: { type: 'rebirths', value: 15 }, reqText: '15 Recipe Rebirths',
+  { id: 'sugar_storm',   name: 'Storm of Blades', icon: '🌪️', req: { type: 'rebirths', value: 15 }, reqText: '15 Heroic Ascensions',
     cls: 'animate-pulse ring-4 ring-cyan-400 shadow-xl shadow-cyan-400/60' },
-  { id: 'royal_radiance', name: 'Royal Radiance', icon: '👑', req: { type: 'rebirths', value: 30 }, reqText: '30 Recipe Rebirths',
+  { id: 'royal_radiance', name: 'Royal Radiance', icon: '👑', req: { type: 'rebirths', value: 30 }, reqText: '30 Heroic Ascensions',
     cls: 'animate-pulse ring-4 ring-offset-2 ring-yellow-400 shadow-2xl shadow-yellow-400/60' },
-  { id: 'confection_crown', name: 'Confection Crown', icon: '💎', req: { type: 'allAchievements', value: true }, reqText: 'Earn EVERY achievement',
+  { id: 'confection_crown', name: 'Crown of Legends', icon: '💎', req: { type: 'allAchievements', value: true }, reqText: 'Earn EVERY achievement',
     cls: 'animate-pulse ring-4 ring-offset-2 ring-fuchsia-500 shadow-2xl shadow-fuchsia-500/60' },
 ];
 
@@ -333,20 +420,22 @@ export const getSweetEmpireProfile = (sweetEmpireData, isDark = false) => {
 // DEFAULT SAVE + OFFLINE
 // ═══════════════════════════════════════════════════════════════════════════
 export const OFFLINE_BASE_HOURS = 2;
-export const OFFLINE_RATE = 0.5; // offline production runs at 50% of SPS
+export const OFFLINE_RATE = 0.5; // offline production runs at 50% of GPS
 
 export const defaultSave = () => ({
-  sweets: 0,          // current bank
-  runSweets: 0,       // baked this run (drives stars + achievements)
-  lifetimeSweets: 0,  // baked across all runs
+  sweets: 0,          // current gold in hoard
+  runSweets: 0,       // gold this quest (drives stars + achievements)
+  lifetimeSweets: 0,  // gold across all quests
   clicks: 0,
-  goldenClicks: 0,
+  goldenClicks: 0,    // loot chests opened
   buildings: {},
   upgrades: [],
   achievements: [],
-  sugarStars: 0,
+  sugarStars: 0,      // Glory Stars
   starUpgrades: [],
-  rebirths: 0,
+  rebirths: 0,        // Heroic Ascensions
+  dragonsSlain: 0,
+  eventsClaimed: 0,
   unlockedThemes: [],
   unlockedTitles: ['kitchenhand'],
   unlockedEffects: [],
@@ -356,3 +445,4 @@ export const defaultSave = () => ({
   lastSeen: null,
   lastSaved: null,
 });
+// EOF

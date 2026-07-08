@@ -344,11 +344,11 @@ const GamesTab = ({
     // Brain Games
     {
       id: 'sweet-empire',
-      name: 'Sweet Empire Preview',
-      icon: '🍪',
-      description: 'Preview the Sweet Empire clicker your students play — bake sweets, build the empire, see the unlockable profile styles.',
+      name: "Champion's Forge Preview",
+      icon: '⚔️',
+      description: "Preview the Champion's Forge idle game your students play — strike the forge, raise an army, slay dragons, see the unlockable profile styles.",
       component: SweetEmpireGame,
-      color: 'from-amber-500 to-rose-500',
+      color: 'from-slate-700 to-indigo-800',
       difficulty: 'Easy',
       time: '10+ minutes',
       category: 'fun',
