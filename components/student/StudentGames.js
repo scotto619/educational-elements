@@ -617,8 +617,8 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
     },
     {
       id: 'sprout-bloom',
-      name: 'Sprout & Bloom',
-      icon: '🌱',
+      name: 'Cozy Cottage',
+      icon: '🏡',
       description: 'Build your own cozy farm! Plant seeds, water crops, unlock new plants as you level up, and fulfil daily orders for rewards.',
       component: SproutBloomGame,
       color: 'from-green-500 to-emerald-600',

@@ -356,8 +356,8 @@ const GamesTab = ({
     },
     {
       id: 'sprout-bloom',
-      name: 'Sprout & Bloom',
-      icon: '🌱',
+      name: 'Cozy Cottage',
+      icon: '🏡',
       description: 'A cozy farming simulator! Plant seeds, water crops, fill orders, upgrade your tools, and build the ultimate farm.',
       component: SproutBloomGame,
       color: 'from-green-500 to-emerald-600',
