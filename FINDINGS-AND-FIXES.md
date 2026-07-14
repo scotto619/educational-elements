@@ -47,6 +47,16 @@ All of those features write **directly from the browser to Firestore** — they 
 3. **Run the repair script** for your customer (above), then email her to try again.
 4. Test a student password change from the dashboard — it should work after deploy.
 
+## UPDATE: the rapid-fire write source — found and fixed
+
+Firebase Usage confirmed you're on **Spark** and hit the **20K/day write quota** — burned in a ~2-hour burst Sunday 8–10pm, leaving zero write budget for Monday's school day (quota resets 5pm AEST).
+
+The culprit: **the Interactive Clock maths tool** (`components/curriculum/mathematics/InteractiveClock.js`). It auto-saved its settings in a `useEffect` that listed `saveData` as a dependency. `saveData` is recreated on every dashboard render, and each save touches the class document, which fires the dashboard's realtime listener, which re-renders, which recreates `saveData`, which re-fires the save effect… an infinite write loop at ~1–2 writes/second for as long as the tool was open on screen. Two hours with that tool open ≈ 11K writes. It also wrote a fresh `lastUpdated` timestamp each cycle, so every write was "new" and the loop never settled.
+
+**Fixed:** the effect no longer depends on `saveData` (kept in a ref), skips the initial mount, skips saving while in "real time" mode, and debounces saves by 2 seconds. I scanned every other tool and game for the same pattern — Interactive Clock was the only one; the rest save only on user actions.
+
+**Still upgrade to Blaze** — one classroom's legitimate usage can brush against Spark limits, and Blaze with a budget alert is the safety net. But this loop was the actual quota killer.
+
 ## Worth doing soon (not done today — say the word and I'll implement)
 
 - Several APIs still fall back to downloading the **entire `users` collection** (`verify-student-password.js`, `bulk-update-passwords.js`, `student-update-v2.js`). Massive read amplification. If all your classes are V2 now, those fallbacks can be removed.

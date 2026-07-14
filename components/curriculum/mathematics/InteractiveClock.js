@@ -22,7 +22,17 @@ const InteractiveClock = ({ showToast = () => {}, saveData = () => {}, loadedDat
 
   // Refs for drag functionality
   const clockRef = useRef(null);
-  
+
+  // FIXED: keep the latest saveData in a ref so it is NOT an effect dependency.
+  // saveData is recreated on every parent render, and saving triggers the class
+  // doc's realtime listener → parent re-render → new saveData → effect fires →
+  // save again... an infinite Firestore write loop (~1-2 writes/second) for as
+  // long as this tool was open. This burned the entire daily write quota.
+  const saveDataRef = useRef(saveData);
+  saveDataRef.current = saveData;
+  const hasLoadedRef = useRef(false);
+  const saveDebounceRef = useRef(null);
+
   // Load saved data
   useEffect(() => {
     if (loadedData?.interactiveClock) {
@@ -35,18 +45,30 @@ const InteractiveClock = ({ showToast = () => {}, saveData = () => {}, loadedDat
   }, [loadedData]);
 
   // Save data whenever settings change
+  // FIXED: skip the initial mount, skip real-time ticking (no point persisting
+  // the current time every minute), debounce 2s, and don't depend on saveData.
   useEffect(() => {
-    const dataToSave = {
-      interactiveClock: {
-        hours,
-        minutes,
-        showDigital,
-        show24Hour,
-        lastUpdated: new Date().toISOString()
-      }
-    };
-    saveData(dataToSave);
-  }, [hours, minutes, showDigital, show24Hour, saveData]);
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      return;
+    }
+    if (isRealTime) return;
+
+    clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      saveDataRef.current({
+        interactiveClock: {
+          hours,
+          minutes,
+          showDigital,
+          show24Hour,
+          lastUpdated: new Date().toISOString()
+        }
+      });
+    }, 2000);
+
+    return () => clearTimeout(saveDebounceRef.current);
+  }, [hours, minutes, showDigital, show24Hour, isRealTime]);
 
   // Real-time clock update
   useEffect(() => {
