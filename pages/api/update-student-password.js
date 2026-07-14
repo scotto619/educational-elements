@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     } = req.body;
 
     if (!studentId || !newPassword || !classCode) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Missing required fields',
         required: ['studentId', 'newPassword', 'classCode']
       });
@@ -48,19 +48,22 @@ export default async function handler(req, res) {
     try {
       const studentRef = db.collection('students').doc(studentId);
       const studentDoc = await studentRef.get();
-      
+
       if (studentDoc.exists) {
         const studentData = studentDoc.data();
-        
+
         // Verify class code
         const classRef = db.collection('classes').doc(studentData.classId);
         const classDoc = await classRef.get();
-        
-        if (classDoc.exists()) {
+
+        // FIXED: Admin SDK `exists` is a property, not a method. Calling
+        // classDoc.exists() threw a TypeError, which silently pushed EVERY
+        // password update into the V1 full-collection scan below and then 404'd.
+        if (classDoc.exists) {
           const classData = classDoc.data();
           if (classData.classCode?.toUpperCase() === classCode.toUpperCase()) {
             await studentRef.update(updateData);
-            
+
             console.log('✅ V2 password updated successfully');
             return res.status(200).json({
               success: true,
@@ -68,40 +71,47 @@ export default async function handler(req, res) {
               message: 'Password updated successfully'
             });
           }
+
+          // Student exists in V2 but the class code didn't match — return a
+          // clear error instead of falling through to the expensive V1 scan.
+          return res.status(403).json({
+            error: 'Class code mismatch',
+            message: 'Student found, but the class code does not match their class.'
+          });
         }
       }
     } catch (v2Error) {
-      console.log('⚠️ V2 update failed, trying V1...');
+      console.error('⚠️ V2 update failed, trying V1...', v2Error.message);
     }
 
     // V1 fallback
     const usersSnapshot = await db.collection('users').get();
-    
+
     for (const userDoc of usersSnapshot.docs) {
       const userData = userDoc.data();
       if (userData.classes && Array.isArray(userData.classes)) {
-        
+
         const updatedClasses = userData.classes.map(classData => {
           if (classData.classCode?.toUpperCase() === classCode.toUpperCase() &&
               classData.students && Array.isArray(classData.students)) {
-            
+
             const updatedStudents = classData.students.map(student => {
               if (student.id === studentId) {
                 return { ...student, ...updateData };
               }
               return student;
             });
-            
+
             return { ...classData, students: updatedStudents };
           }
           return classData;
         });
-        
+
         if (JSON.stringify(updatedClasses) !== JSON.stringify(userData.classes)) {
           await db.collection('users').doc(userDoc.id).update({
             classes: updatedClasses
           });
-          
+
           console.log('✅ V1 password updated successfully');
           return res.status(200).json({
             success: true,
@@ -125,4 +135,3 @@ export default async function handler(req, res) {
     });
   }
 }
-

@@ -71,7 +71,8 @@ export async function createStudentV2(req, res) {
       const membershipRef = adminFirestore.collection('class_memberships').doc(classId);
       const membershipDoc = await transaction.get(membershipRef);
 
-      if (membershipDoc.exists()) {
+      // FIXED: Admin SDK `exists` is a property, not a method
+      if (membershipDoc.exists) {
         const membershipData = membershipDoc.data();
         const updatedStudents = [...(membershipData.students || []), studentId];
 

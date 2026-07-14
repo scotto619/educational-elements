@@ -1,8 +1,4 @@
-// pages/api/stripe-webhook.js - FIXED version
-// Key change: all user-doc writes now use set(..., { merge: true }) instead of
-// update(). update() THROWS if the document doesn't exist, which meant a user
-// whose signup Firestore write failed (or was incomplete) could pay in Stripe
-// but never get their subscription recorded — leaving them locked out at login.
+// pages/api/strip-webhook.js - FIXED version
 import { buffer } from 'micro';
 import Stripe from 'stripe';
 import { adminAuth, adminFirestore } from '../../utils/firebase-admin';
@@ -94,10 +90,10 @@ async function handleCheckoutCompleted(session) {
 
     let subscription = subscriptions.data[0];
 
-    // FIXED: With delayed/async payments the subscription may not be 'active'
-    // yet when checkout.session.completed fires. Fall back to the most recent
-    // subscription of ANY status so the user still gets linked to Stripe
-    // instead of being silently skipped.
+    // FIXED: If the payment is still processing (delayed/async payments), the
+    // subscription may not be 'active' yet at checkout.session.completed time.
+    // Fall back to the most recent subscription of ANY status so the user doc
+    // still gets linked to Stripe instead of being silently skipped.
     if (!subscription) {
       subscriptions = await stripe.subscriptions.list({
         customer: customerId,
@@ -107,12 +103,10 @@ async function handleCheckoutCompleted(session) {
       subscription = subscriptions.data[0];
     }
 
-    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-
     if (!subscription) {
       console.error('No subscription found for customer — linking customer ID only');
       // Still record the Stripe customer ID so login-time sync can recover later
-      await userRef.set({
+      await adminFirestore.collection('users').doc(firebaseUserId).set({
         stripeCustomerId: customerId,
         updatedAt: new Date().toISOString()
       }, { merge: true });
@@ -122,8 +116,10 @@ async function handleCheckoutCompleted(session) {
     const appliedCouponId = subscription.discount?.coupon?.id;
     const hasIntroCoupon = introCouponId && appliedCouponId === introCouponId;
 
+    // Update user document in Firestore
+    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
+
     const updateData = {
-      email: session.customer_details?.email || customer.email || null,
       stripeCustomerId: customerId,
       subscription: 'educational-elements',
       subscriptionId: subscription.id,
@@ -143,7 +139,6 @@ async function handleCheckoutCompleted(session) {
       updateData.introOffer = false;
     }
 
-    // FIXED: set + merge creates the doc if signup's client-side write failed
     await userRef.set(updateData, { merge: true });
 
     console.log(`✅ Updated user ${firebaseUserId} with Educational Elements subscription`);
@@ -166,8 +161,7 @@ async function handleSubscriptionCreated(subscription) {
   try {
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
 
-    // FIXED: set + merge instead of update (doc may not exist yet)
-    await userRef.set({
+    await userRef.update({
       stripeCustomerId: customerId,
       subscription: 'educational-elements',
       subscriptionId: subscription.id,
@@ -175,7 +169,7 @@ async function handleSubscriptionCreated(subscription) {
       planType: 'educational-elements',
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    });
 
     console.log(`✅ Created subscription for user ${firebaseUserId}`);
 
@@ -186,7 +180,7 @@ async function handleSubscriptionCreated(subscription) {
 }
 
 async function handleSubscriptionUpdated(subscription) {
-  let firebaseUserId = subscription.metadata?.firebaseUserId;
+  let firebaseUserId = subscription.metadata?.firebaseUserId; // FIXED: Changed from const to let
 
   if (!firebaseUserId) {
     // Try to find user by customer ID
@@ -202,7 +196,7 @@ async function handleSubscriptionUpdated(subscription) {
       }
 
       const userDoc = usersSnapshot.docs[0];
-      firebaseUserId = userDoc.id;
+      firebaseUserId = userDoc.id; // Now this works because firebaseUserId is let, not const
     } catch (error) {
       console.error('Error finding user by customer ID:', error);
       return;
@@ -239,7 +233,6 @@ async function handleSubscriptionUpdated(subscription) {
       updateData.trialUntil = null;
     }
 
-    // FIXED: set + merge instead of update (doc may not exist yet)
     await userRef.set(updateData, { merge: true });
 
     console.log(`✅ Updated subscription for user ${firebaseUserId}, status: ${subscription.status}`);
@@ -251,7 +244,7 @@ async function handleSubscriptionUpdated(subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription) {
-  let firebaseUserId = subscription.metadata?.firebaseUserId;
+  let firebaseUserId = subscription.metadata?.firebaseUserId; // FIXED: Changed from const to let
 
   if (!firebaseUserId) {
     // Try to find user by customer ID
@@ -267,7 +260,7 @@ async function handleSubscriptionDeleted(subscription) {
       }
 
       const userDoc = usersSnapshot.docs[0];
-      firebaseUserId = userDoc.id;
+      firebaseUserId = userDoc.id; // Now this works because firebaseUserId is let, not const
     } catch (error) {
       console.error('Error finding user by customer ID:', error);
       return;
@@ -277,8 +270,7 @@ async function handleSubscriptionDeleted(subscription) {
   try {
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
 
-    // FIXED: set + merge instead of update
-    await userRef.set({
+    await userRef.update({
       subscription: 'cancelled',
       subscriptionStatus: 'canceled',
       accountStatus: 'canceled',
@@ -290,7 +282,7 @@ async function handleSubscriptionDeleted(subscription) {
       isTrialUser: false,
       trialUntil: null,
       freeAccessUntil: null,
-    }, { merge: true });
+    });
 
     console.log(`✅ Cancelled subscription for user ${firebaseUserId}`);
 
@@ -319,14 +311,12 @@ async function handlePaymentSucceeded(invoice) {
 
     const userRef = adminFirestore.collection('users').doc(firebaseUserId);
 
-    // FIXED: set + merge instead of update; also (re)assert subscription access
-    await userRef.set({
-      subscription: 'educational-elements',
+    await userRef.update({
       subscriptionStatus: 'active',
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       lastPaymentDate: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    }, { merge: true });
+    });
 
     console.log(`✅ Payment succeeded for user ${firebaseUserId}`);
 
@@ -339,33 +329,4 @@ async function handlePaymentSucceeded(invoice) {
 async function handlePaymentFailed(invoice) {
   const subscriptionId = invoice.subscription;
 
-  if (!subscriptionId) {
-    console.log('Invoice not associated with subscription, skipping');
-    return;
-  }
-
-  try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    const firebaseUserId = subscription.metadata?.firebaseUserId;
-
-    if (!firebaseUserId) {
-      console.error('No Firebase user ID in subscription metadata');
-      return;
-    }
-
-    const userRef = adminFirestore.collection('users').doc(firebaseUserId);
-
-    // FIXED: set + merge instead of update
-    await userRef.set({
-      subscriptionStatus: 'past_due',
-      lastFailedPaymentDate: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-
-    console.log(`⚠️ Payment failed for user ${firebaseUserId}`);
-
-  } catch (error) {
-    console.error('Error handling payment failed:', error);
-    throw error;
-  }
-}
+  if

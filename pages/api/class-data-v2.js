@@ -41,7 +41,8 @@ export async function getClassDataV2(req, res) {
       const membershipDoc = await transaction.get(membershipRef);
 
       let students = [];
-      if (membershipDoc.exists()) {
+      // FIXED: Admin SDK `exists` is a property, not a method
+      if (membershipDoc.exists) {
         const membershipData = membershipDoc.data();
         const studentIds = membershipData.students || [];
 

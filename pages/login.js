@@ -126,9 +126,13 @@ export default function Login() {
 
         let resolvedUserData = userData;
 
-        // If subscription fields are missing, attempt a server-side sync with Stripe
+        // If subscription fields are missing, attempt a server-side sync with Stripe.
+        // FIXED: abort after 15s so a slow/hung sync can never freeze the login
+        // flow (this endpoint was previously hitting 300s Vercel timeouts).
         if (!resolvedUserData?.subscriptionStatus && !resolvedUserData?.stripeCustomerId) {
           try {
+            const syncController = new AbortController();
+            const syncTimeout = setTimeout(() => syncController.abort(), 15000);
             const syncResponse = await fetch('/api/sync-stripe-subscription', {
               method: 'POST',
               headers: {
@@ -137,8 +141,10 @@ export default function Login() {
               body: JSON.stringify({
                 userId: auth.currentUser.uid,
                 userEmail: normalizedEmail
-              })
+              }),
+              signal: syncController.signal
             });
+            clearTimeout(syncTimeout);
 
             if (syncResponse.ok) {
               const { updated } = await syncResponse.json();

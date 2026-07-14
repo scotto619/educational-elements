@@ -1,5 +1,8 @@
 // pages/api/award-xp-v2.js - BULK XP AWARDING WITH RACE CONDITION PREVENTION
+// FIXED: was missing the adminFirestore import (ReferenceError on every call)
+// and had no default export, so Next.js never routed requests to it.
 import { withHandler, requireFields, ApiError } from '../../utils/apiHelpers';
+import { adminFirestore } from '../../utils/firebase-admin';
 
 export async function awardXpV2(req, res) {
   return withHandler('POST', async (req, res) => {
@@ -110,3 +113,7 @@ export async function awardXpV2(req, res) {
 
   })(req, res);
 }
+
+// FIXED: Next.js API routes require a default export — without this the
+// endpoint 404'd / crashed for every caller.
+export default awardXpV2;
