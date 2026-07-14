@@ -32,10 +32,11 @@ const StudentLiteracy = ({
         );
       case 'spelling':
         return (
-          <StudentSpelling 
+          <StudentSpelling
             studentData={studentData}
             classData={classData}
             showToast={showToast}
+            updateStudentData={updateStudentData}
           />
         );
       case 'writing':

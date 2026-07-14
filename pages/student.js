@@ -2112,6 +2112,7 @@ const StudentPortal = () => {
                     studentData={studentData}
                     classData={classData}
                     showToast={showToast}
+                    updateStudentData={updateStudentData}
                   />
                 );
               case 'morphology':

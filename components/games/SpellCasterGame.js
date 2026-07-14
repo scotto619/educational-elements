@@ -393,7 +393,7 @@ const SpellCasterGame = ({ studentData, updateStudentData, showToast, classData 
                   ⭐ My Spelling Words ({assignedWords.length})
                 </button>
               )}
-              {[1, 2, 3, 4].map((lvl) => {
+              {[1, 2, 3, 4, 5, 6].map((lvl) => {
                 const words = levelWords(lvl);
                 if (words.length < 3) return null;
                 return (

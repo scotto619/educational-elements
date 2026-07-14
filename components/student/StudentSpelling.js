@@ -1,9 +1,11 @@
 // components/student/StudentSpelling.js
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { READING_PASSAGES } from '../curriculum/literacy/SpellingProgram';
+import { READING_PASSAGES, SPELLING_LISTS as PROGRAM_SPELLING_LISTS } from '../curriculum/literacy/SpellingProgram';
+import { INTERACTIVE_ACTIVITIES } from './SpellingActivities';
 
-// Import spelling lists from the main program
-const SPELLING_LISTS = [
+// Legacy local copy (levels 1-4 only) kept as a fallback.
+// The canonical list — including levels 5 and 6 — is imported from SpellingProgram.js above.
+const LEGACY_SPELLING_LISTS = [
   // LEVEL 1 LISTS
   { id: "1.1", name: "Level 1.1 - Simple CVC", feature: "Basic consonant-vowel-consonant patterns", words: ["in", "at", "it", "an", "sit", "sat"] },
   { id: "1.2", name: "Level 1.2 - CVC Practice", feature: "CVC patterns with p, t, n", words: ["pat", "tap", "nap", "tin", "pin", "pit"] },
@@ -249,184 +251,26 @@ const SPELLING_LISTS = [
   { id: "4.65", name: "Level 4.65 - Complex Words", feature: "Advanced vocabulary", words: ["marriage", "carriage", "bream", "sieve", "tortoise", "porpoise", "women", "leopard", "jeopardy", "friend", "leisure", "bury"] }
 ];
 
-// Import spelling activities
-const ACTIVITIES = [
-  { 
-    id: "look_cover_write", 
-    name: "Look, Cover, Write, Check", 
-    icon: "👀", 
-    color: "bg-blue-500",
-    instructions: "1. LOOK at the word carefully\n2. COVER the word with your hand\n3. WRITE the word from memory\n4. CHECK by uncovering and comparing\n5. If wrong, repeat the process\n\nThis classic method helps build visual memory of spelling patterns."
-  },
-  { 
-    id: "rainbow_words", 
-    name: "Rainbow Words", 
-    icon: "🌈", 
-    color: "bg-purple-500",
-    instructions: "1. Write each spelling word in different colors\n2. Use a different color for each letter, or\n3. Use different colors for different letter patterns\n4. Make your words look like rainbows!\n\nThis activity helps students notice letter patterns and makes spelling fun and colorful."
-  },
-  { 
-    id: "silly_sentences", 
-    name: "Silly Sentences", 
-    icon: "😄", 
-    color: "bg-green-500",
-    instructions: "1. Use each spelling word in a funny sentence\n2. Make the sentences as silly as possible\n3. Draw pictures to go with your silly sentences\n4. Share your funniest sentences with the class\n\nExample: 'The purple elephant could spell every word backwards while dancing!'"
-  },
-  { 
-    id: "word_sorting", 
-    name: "Word Sorting", 
-    icon: "📊", 
-    color: "bg-orange-500",
-    instructions: "1. Look at all your spelling words\n2. Sort them into groups by:\n   • Number of letters\n   • Spelling patterns\n   • Word endings\n   • Vowel sounds\n3. Explain why you grouped them together\n4. Try sorting the same words in a different way"
-  },
-  { 
-    id: "spelling_pyramid", 
-    name: "Spelling Pyramid", 
-    icon: "🔺", 
-    color: "bg-red-500",
-    instructions: "Build a pyramid for each word:\n\nFor the word 'SPELL':\nS\nSP\nSPE\nSPEL\nSPELL\n\nWrite each word as a pyramid, adding one letter at a time. This helps students see how words are built letter by letter."
-  },
-  { 
-    id: "trace_write", 
-    name: "Trace & Write", 
-    icon: "✏️", 
-    color: "bg-indigo-500",
-    instructions: "1. Trace over each spelling word 3 times\n2. Write the word 3 times without tracing\n3. Say each letter as you write it\n4. Use your finger to 'write' the word in the air\n\nThis builds muscle memory for correct spelling patterns."
-  },
-  {
-    id: "word_shapes",
-    name: "Word Shapes",
-    icon: "📐",
-    color: "bg-pink-500",
-    instructions: "1. Draw a box around each word\n2. Notice the shape made by tall letters (like b, d, h)\n3. Notice letters that go below the line (like g, j, p)\n4. Draw the 'shape' of each word without the letters\n5. Can you recognize words just by their shapes?"
-  },
-  {
-    id: "backwards_spelling",
-    name: "Backwards Spelling",
-    icon: "🔄",
-    color: "bg-cyan-500",
-    instructions: "1. Say each spelling word backwards\n2. Write each word backwards\n3. Can you read the backwards words?\n4. Practice spelling the words forwards and backwards\n\nExample: 'HOUSE' becomes 'ESUOH'\nThis challenges students to really know their letters!"
-  },
-  {
-    id: "word_hunt",
-    name: "Word Hunt",
-    icon: "🔍",
-    color: "bg-emerald-500",
-    instructions: "1. Find your spelling words hidden around the classroom\n2. Look for them in books, on posters, or labels\n3. When you find a word, write down where you found it\n4. Try to find each word in 3 different places\n5. Which words were easiest/hardest to find?"
-  },
-  {
-    id: "syllable_clap",
-    name: "Syllable Clapping",
-    icon: "👏",
-    color: "bg-amber-500",
-    instructions: "1. Say each spelling word slowly\n2. Clap for each syllable (word part)\n3. Write the word with a dot between syllables\n4. Sort words by number of syllables\n\nExample: 'BUT•TER•FLY' (3 claps)\nHelps students break words into manageable parts."
-  },
-  {
-    id: "rhyme_time",
-    name: "Rhyme Time",
-    icon: "🎵",
-    color: "bg-violet-500",
-    instructions: "1. Find words that rhyme with your spelling words\n2. Make up short poems using your spelling words\n3. Create rap songs or chants with the words\n4. Perform your rhymes for the class\n\nExample: 'The CAT sat on a MAT and wore a HAT!'"
-  },
-  {
-    id: "word_detectives",
-    name: "Word Detectives",
-    icon: "🕵️",
-    color: "bg-slate-500",
-    instructions: "1. Investigate each spelling word like a detective\n2. Find clues about the word:\n   • How many vowels?\n   • Any double letters?\n   • What does it rhyme with?\n   • Where might you see this word?\n3. Make a 'case file' for each word\n4. Present your findings!"
-  },
-  {
-    id: "memory_palace",
-    name: "Memory Palace",
-    icon: "🏰",
-    color: "bg-rose-500",
-    instructions: "1. Choose a familiar place (your bedroom, kitchen)\n2. 'Place' each spelling word in different spots\n3. Create a story connecting the word to that location\n4. Take a mental walk through your space\n5. Can you remember all the words by visiting each spot?\n\nExample: Place 'LAUGH' by your pillow where you have funny dreams!"
-  },
-  {
-    id: "air_writing",
-    name: "Air Writing",
-    icon: "✈️",
-    color: "bg-teal-500",
-    instructions: "1. Use your finger to write spelling words in the air\n2. Make the letters BIG with your whole arm\n3. Have a partner guess which word you're writing\n4. Try writing with your opposite hand\n5. Write words with your foot!\n\nThis helps your body remember how to form letters."
-  },
-  {
-    id: "word_art",
-    name: "Word Art",
-    icon: "🎨",
-    color: "bg-lime-500",
-    instructions: "1. Turn each spelling word into art\n2. Make the letters look like what the word means\n3. Use bubble letters, fancy fonts, or decorations\n4. Add pictures that show the word's meaning\n5. Create a word art gallery!\n\nExample: Make 'FIRE' look like flames, 'ICE' look frozen!"
-  },
-  {
-    id: "mirror_tracing",
-    name: "Mirror Tracing",
-    icon: "🪞",
-    color: "bg-sky-500",
-    instructions: "1. Fold a piece of paper in half\n2. Write each spelling word on the left side\n3. Use tracing paper or hold it to a window to trace the mirror version on the right\n4. Can you still read the mirrored word?\n5. Try writing a secret message in mirror writing!"
-  },
-  {
-    id: "story_spotlight",
-    name: "Story Spotlight",
-    icon: "🎭",
-    color: "bg-orange-500",
-    instructions: "1. Choose 4-6 spelling words\n2. Write a short scene or skit that uses every word\n3. Highlight or underline the words in your script\n4. Perform the scene for a partner or record it\n5. Bonus: add sound effects or props to make it dramatic!"
-  },
-  {
-    id: "pattern_party",
-    name: "Pattern Party Sorting",
-    icon: "🧩",
-    color: "bg-yellow-500",
-    instructions: "1. Look for patterns in your spelling words (prefixes, suffixes, double letters)\n2. Sort words into groups that share a pattern\n3. Give each group a fun name and explain the pattern\n4. Create a mini poster or slide for each group\n5. Teach someone else why the words belong together!"
-  },
-  {
-    id: "emoji_clues",
-    name: "Emoji Clue Maker",
-    icon: "😊",
-    color: "bg-rose-400",
-    instructions: "1. Create an emoji code for each spelling word\n2. Use emojis that hint at the meaning or sounds\n3. Challenge a friend to guess the word from your emoji clue\n4. Swap and decode each other's emoji clues\n5. Write the real word underneath once it's guessed!"
-  },
-  {
-    id: "movement_spelling",
-    name: "Movement Mastery",
-    icon: "🤸",
-    color: "bg-emerald-500",
-    instructions: "1. Assign a body movement to each letter (A = clap, B = jump, etc.)\n2. Spell each word while doing the movements\n3. Mix it up: spell on one foot, backwards, or with dance moves\n4. Teach your movement code to a friend\n5. Finish with a slow-motion spelling challenge!"
-  },
-  {
-    id: "speed_spell_timer",
-    name: "Speed Spell Timer",
-    icon: "⏱️",
-    color: "bg-indigo-500",
-    instructions: "1. Use a timer for 60 seconds\n2. Spell as many words aloud or in writing as you can\n3. Check accuracy before counting the score\n4. Try to beat your personal best with another round\n5. Celebrate with a victory dance when you set a new record!"
-  },
-  {
-    id: "comic_caption",
-    name: "Comic Caption Creator",
-    icon: "🗯️",
-    color: "bg-fuchsia-500",
-    instructions: "1. Draw a 3-panel comic strip\n2. Work at least three spelling words into the speech bubbles\n3. Highlight the spelling words in a bold color\n4. Share your comic with a classmate or display it\n5. Bonus: turn it into a digital comic using slides or a tablet app!"
-  },
-  {
-    id: "buddy_quiz_show",
-    name: "Buddy Quiz Show",
-    icon: "🎤",
-    color: "bg-cyan-500",
-    instructions: "1. Pair up with a friend or family member\n2. Take turns being the game-show host and contestant\n3. The host gives clues or sentences for the spelling words\n4. The contestant spells the word aloud or on a whiteboard\n5. Keep score and celebrate both spellers with a fun cheer!"
-  },
-  {
-    id: "digital_word_search",
-    name: "Digital Word Search",
-    icon: "🧠",
-    color: "bg-teal-500",
-    instructions: "1. Open the Word Search in the Interactive Spelling Lab below\n2. Drag across the hidden spelling words in the grid\n3. Watch the word list fade as you find each one\n4. Click “Shuffle Puzzle” for a fresh challenge\n5. Complete the whole puzzle to mark this activity finished!"
-  },
-  {
-    id: "digital_crossword",
-    name: "Digital Crossword",
-    icon: "🧩",
-    color: "bg-blue-600",
-    instructions: "1. Launch the Crossword in the Interactive Spelling Lab\n2. Use the clues to type each spelling word into the grid\n3. The puzzle checks your spelling as you go\n4. Stuck? Switch to another clue or regenerate the crossword\n5. Fill every square correctly to complete the challenge!"
-  }
+// Use the shared spelling lists (levels 1-6); fall back to the legacy local copy if needed
+const SPELLING_LISTS = (Array.isArray(PROGRAM_SPELLING_LISTS) && PROGRAM_SPELLING_LISTS.length > 0)
+  ? PROGRAM_SPELLING_LISTS
+  : LEGACY_SPELLING_LISTS;
+
+// Interactive activities live in SpellingActivities.js; the two lab puzzles below are defined in this file
+const LAB_ACTIVITY_CARDS = [
+  { id: 'digital_word_search', name: 'Word Search', icon: '🔎', tagline: 'Find the hidden words', gradient: 'from-teal-400 to-emerald-600' },
+  { id: 'digital_crossword', name: 'Crossword', icon: '🧩', tagline: 'Solve clues, type the words', gradient: 'from-blue-500 to-indigo-600' }
 ];
+
+const ALL_ACTIVITIES = [...INTERACTIVE_ACTIVITIES, ...LAB_ACTIVITY_CARDS];
+
+const SPELLING_REWARDS = {
+  ACTIVITY_XP: 5,
+  ACTIVITY_COINS: 1,
+  WEEKLY_GOAL: 5,
+  GOAL_BONUS_XP: 10,
+  GOAL_BONUS_COINS: 3
+};
 
 const normalizeSpellingWord = (word = '') => word.toUpperCase().replace(/[^A-Z]/g, '');
 
@@ -1395,13 +1239,13 @@ const SpellingCrossword = ({ words, onSolved }) => {
 const StudentSpelling = ({
   studentData,
   classData,
-  showToast
+  showToast,
+  updateStudentData
 }) => {
   const [studentAssignments, setStudentAssignments] = useState(null);
   const [completedActivities, setCompletedActivities] = useState([]);
-  const [showActivityInstructions, setShowActivityInstructions] = useState(null);
+  const [activeActivity, setActiveActivity] = useState(null);
   const [selectedListId, setSelectedListId] = useState(null);
-  const [selectedInteractive, setSelectedInteractive] = useState('word_search');
   const [selectedTextType, setSelectedTextType] = useState('narrative');
   const [passageFontSize, setPassageFontSize] = useState(16);
   const [expandedPassage, setExpandedPassage] = useState(false);
@@ -1481,77 +1325,70 @@ const StudentSpelling = ({
     }
   };
 
-  const getCurrentWeek = () => {
+  const getWeekKey = () => {
     const now = new Date();
     const start = new Date(now.getFullYear(), 0, 1);
-    const diff = now - start;
-    const oneWeek = 1000 * 60 * 60 * 24 * 7;
-    return Math.floor(diff / oneWeek);
+    const week = Math.floor((now - start) / (1000 * 60 * 60 * 24 * 7));
+    return `${now.getFullYear()}-W${week}`;
   };
 
-  const getStorageKey = () => {
-    const week = getCurrentWeek();
-    return `spelling_activities_${studentData.id}_week_${week}`;
-  };
+  const getStorageKey = () => `spelling_activities_${studentData.id}_${getWeekKey()}`;
 
   const loadCompletedActivities = () => {
+    const weekKey = getWeekKey();
+    // Prefer progress saved on the student record (syncs across devices)
+    const saved = studentData?.spellingActivityProgress;
+    if (saved?.weekKey === weekKey && Array.isArray(saved.completed)) {
+      setCompletedActivities(saved.completed);
+      return;
+    }
     try {
       const stored = localStorage.getItem(getStorageKey());
-      if (stored) {
-        setCompletedActivities(JSON.parse(stored));
-      } else {
-        setCompletedActivities([]);
-      }
+      setCompletedActivities(stored ? JSON.parse(stored) : []);
     } catch (error) {
       console.error('Error loading completed activities:', error);
       setCompletedActivities([]);
     }
   };
 
-  const saveCompletedActivities = (activities) => {
+  const markActivityComplete = async (activityId) => {
+    if (completedActivities.includes(activityId)) return;
+
+    const updated = [...completedActivities, activityId];
+    setCompletedActivities(updated);
+
     try {
-      localStorage.setItem(getStorageKey(), JSON.stringify(activities));
-      setCompletedActivities(activities);
+      localStorage.setItem(getStorageKey(), JSON.stringify(updated));
     } catch (error) {
       console.error('Error saving completed activities:', error);
     }
-  };
 
-  const markActivityComplete = (activityId) => {
-    if (completedActivities.includes(activityId)) {
-      return;
+    const reachedGoal = updated.length === SPELLING_REWARDS.WEEKLY_GOAL;
+    let xp = SPELLING_REWARDS.ACTIVITY_XP;
+    let coins = SPELLING_REWARDS.ACTIVITY_COINS;
+    if (reachedGoal) {
+      xp += SPELLING_REWARDS.GOAL_BONUS_XP;
+      coins += SPELLING_REWARDS.GOAL_BONUS_COINS;
     }
-    const updated = [...completedActivities, activityId];
-    saveCompletedActivities(updated);
+
+    if (updateStudentData) {
+      await updateStudentData({
+        spellingActivityProgress: { weekKey: getWeekKey(), completed: updated },
+        totalPoints: (studentData?.totalPoints || 0) + xp,
+        currency: (studentData?.currency || 0) + coins
+      });
+    }
+
     if (showToast) {
-      showToast(`Activity completed! ${updated.length}/5 activities done this week.`, 'success');
-    }
-  };
-
-  const toggleActivity = (activityId) => {
-    const newCompleted = completedActivities.includes(activityId)
-      ? completedActivities.filter(id => id !== activityId)
-      : [...completedActivities, activityId];
-    
-    saveCompletedActivities(newCompleted);
-    
-    if (newCompleted.includes(activityId)) {
-      if (showToast) {
-        showToast(`Activity completed! ${newCompleted.length}/5 activities done this week.`, 'success');
+      if (reachedGoal) {
+        showToast(`🏆 Weekly goal smashed! +${xp} XP, +${coins} coins!`, 'success');
+      } else {
+        showToast(`🎉 Activity complete! +${xp} XP, +${coins} coin${coins !== 1 ? 's' : ''} (${updated.length}/${SPELLING_REWARDS.WEEKLY_GOAL} this week)`, 'success');
       }
     }
   };
 
-  const getProgressPercentage = () => {
-    return Math.min((completedActivities.length / 5) * 100, 100);
-  };
-
-  const getProgressColor = () => {
-    const completed = completedActivities.length;
-    if (completed >= 5) return 'bg-green-500';
-    if (completed >= 3) return 'bg-yellow-500';
-    return 'bg-blue-500';
-  };
+  const getProgressPercentage = () => Math.min((completedActivities.length / SPELLING_REWARDS.WEEKLY_GOAL) * 100, 100);
 
   if (!studentAssignments) {
     return (
@@ -1685,76 +1522,62 @@ const StudentSpelling = ({
         </div>
       )}
 
-      {/* ── SECTION 3: SUGGESTED ACTIVITIES ── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">💡 Suggested Activities</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Ways to practise your spelling words — tap any card to see how</p>
-        </div>
-        <div className="p-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {ACTIVITIES.map(activity => (
-            <button
-              key={activity.id}
-              onClick={() => setShowActivityInstructions(activity)}
-              className="border border-gray-200 rounded-2xl p-3 text-center hover:border-indigo-300 hover:shadow-sm hover:bg-indigo-50 transition-all group"
-            >
-              <div className="text-3xl mb-2">{activity.icon}</div>
-              <div className="text-xs font-semibold text-gray-700 leading-tight group-hover:text-indigo-700">{activity.name}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── SECTION 4: INTERACTIVE LAB ── */}
+      {/* ── SECTION 3: SPELLING ACTIVITIES (interactive) ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">🧠 Interactive Spelling Lab</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Digital puzzles using your spelling words</p>
+              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">🎮 Spelling Activities</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Tap any card to play a game using your spelling words!</p>
             </div>
-            {studentAssignments.lists.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                {studentAssignments.lists.length > 1 && (
-                  <select
-                    value={selectedListId || ''}
-                    onChange={e => setSelectedListId(e.target.value)}
-                    className="text-sm border border-gray-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
-                  >
-                    {studentAssignments.lists.map(list => (
-                      <option key={list.id} value={list.id}>{list.name}</option>
-                    ))}
-                  </select>
-                )}
-                {[{ id: 'word_search', label: 'Word Search', icon: '🔎' }, { id: 'crossword', label: 'Crossword', icon: '🧩' }].map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setSelectedInteractive(opt.id)}
-                    className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition ${
-                      selectedInteractive === opt.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                    }`}
-                  >
-                    {opt.icon} {opt.label}
-                  </button>
-                ))}
+            <div className="min-w-[180px]">
+              <div className="flex items-center justify-between text-xs font-bold mb-1">
+                <span className="text-gray-500">⭐ Weekly goal</span>
+                <span className={completedActivities.length >= SPELLING_REWARDS.WEEKLY_GOAL ? 'text-green-600' : 'text-indigo-600'}>
+                  {Math.min(completedActivities.length, SPELLING_REWARDS.WEEKLY_GOAL)}/{SPELLING_REWARDS.WEEKLY_GOAL}
+                  {completedActivities.length >= SPELLING_REWARDS.WEEKLY_GOAL ? ' 🏆' : ''}
+                </span>
               </div>
-            )}
+              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    completedActivities.length >= SPELLING_REWARDS.WEEKLY_GOAL
+                      ? 'bg-gradient-to-r from-green-400 to-emerald-500'
+                      : 'bg-gradient-to-r from-indigo-400 to-purple-500'
+                  }`}
+                  style={{ width: `${getProgressPercentage()}%` }}
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div className="p-5">
           {(!selectedList || !selectedWords.length) ? (
             <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl p-6 text-center text-sm text-gray-500">
-              Your spelling list needs words assigned to unlock the digital puzzles.
+              Your spelling list needs words assigned to unlock the activities.
             </div>
           ) : (
-            <>
-              {selectedInteractive === 'word_search' && (
-                <SpellingWordSearch key={`word-search-${selectedList.id}`} words={selectedWords} onSolved={() => markActivityComplete('digital_word_search')} />
-              )}
-              {selectedInteractive === 'crossword' && (
-                <SpellingCrossword key={`crossword-${selectedList.id}`} words={selectedWords} onSolved={() => markActivityComplete('digital_crossword')} />
-              )}
-            </>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {ALL_ACTIVITIES.map(activity => {
+                const isDone = completedActivities.includes(activity.id);
+                return (
+                  <button
+                    key={activity.id}
+                    onClick={() => setActiveActivity(activity)}
+                    className={`relative rounded-2xl p-3 text-center text-white bg-gradient-to-br ${activity.gradient} shadow-sm hover:shadow-lg hover:scale-105 transition-all ${
+                      isDone ? 'ring-4 ring-green-300' : ''
+                    }`}
+                  >
+                    {isDone && (
+                      <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold rounded-full w-7 h-7 flex items-center justify-center shadow border-2 border-white">✓</span>
+                    )}
+                    <div className="text-3xl mb-1.5 drop-shadow">{activity.icon}</div>
+                    <div className="text-xs font-extrabold leading-tight drop-shadow">{activity.name}</div>
+                    <div className="text-[10px] text-white/80 font-semibold mt-0.5 leading-tight">{activity.tagline}</div>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -1789,26 +1612,38 @@ const StudentSpelling = ({
         ) : null;
       })()}
 
-      {/* ── ACTIVITY INSTRUCTIONS MODAL ── */}
-      {showActivityInstructions && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[88vh] flex flex-col shadow-2xl">
-            <div className={`${showActivityInstructions.color} text-white p-5 rounded-t-2xl flex items-center justify-between flex-shrink-0`}>
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">{showActivityInstructions.icon}</span>
-                <h2 className="text-xl font-bold">{showActivityInstructions.name}</h2>
+      {/* ── ACTIVITY GAME MODAL ── */}
+      {activeActivity && selectedList && (() => {
+        const isDone = completedActivities.includes(activeActivity.id);
+        const closeActivity = () => setActiveActivity(null);
+        const handleComplete = () => markActivityComplete(activeActivity.id);
+        const GameComponent = activeActivity.component;
+        return (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+              <div className={`bg-gradient-to-r ${activeActivity.gradient} text-white px-5 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl drop-shadow">{activeActivity.icon}</span>
+                  <div>
+                    <h2 className="text-lg font-extrabold leading-tight">{activeActivity.name}</h2>
+                    <p className="text-white/80 text-xs font-semibold">{selectedList.name}{isDone ? ' · ✓ completed this week' : ''}</p>
+                  </div>
+                </div>
+                <button onClick={closeActivity} className="text-white/70 hover:text-white text-3xl leading-none font-bold">×</button>
               </div>
-              <button onClick={() => setShowActivityInstructions(null)} className="text-white/70 hover:text-white text-2xl leading-none">×</button>
-            </div>
-            <div className="p-5 overflow-y-auto flex-1">
-              <h3 className="font-bold mb-3 text-gray-800">📋 How to do this activity:</h3>
-              <div className="bg-gray-50 rounded-2xl p-4">
-                <pre className="whitespace-pre-wrap text-gray-800 leading-relaxed font-sans text-sm md:text-base">{showActivityInstructions.instructions}</pre>
+              <div className="p-4 sm:p-5 overflow-y-auto flex-1">
+                {activeActivity.id === 'digital_word_search' ? (
+                  <SpellingWordSearch key={`word-search-${selectedList.id}`} words={selectedWords} onSolved={handleComplete} />
+                ) : activeActivity.id === 'digital_crossword' ? (
+                  <SpellingCrossword key={`crossword-${selectedList.id}`} words={selectedWords} onSolved={handleComplete} />
+                ) : GameComponent ? (
+                  <GameComponent key={`${activeActivity.id}-${selectedList.id}`} words={selectedWords} onComplete={handleComplete} onExit={closeActivity} />
+                ) : null}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
