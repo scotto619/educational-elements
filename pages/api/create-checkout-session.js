@@ -59,7 +59,10 @@ export default async function handler(req, res) {
         
         sessionConfig = {
           customer: customer.id,
-          payment_method_types: ['card'],
+          // FIXED: no payment_method_types — Checkout now offers every method
+          // enabled in the Stripe Dashboard (Link, Apple Pay, Google Pay, etc.).
+          // Card-only was causing declines for international customers whose
+          // banks flag small foreign-currency charges.
           line_items: [
             {
               price: priceId,
@@ -106,7 +109,8 @@ export default async function handler(req, res) {
 
         sessionConfig = {
           customer: customer.id,
-          payment_method_types: ['card'],
+          // FIXED: no payment_method_types — Checkout offers all Dashboard-enabled
+          // methods (Link, Apple Pay, Google Pay), which helps international cards.
           line_items: [
             {
               price: priceId,
