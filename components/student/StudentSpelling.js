@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { READING_PASSAGES, SPELLING_LISTS as PROGRAM_SPELLING_LISTS } from '../curriculum/literacy/SpellingProgram';
 import { INTERACTIVE_ACTIVITIES } from './SpellingActivities';
+import SpellingBee, { isBeeCompatible } from './SpellingBee';
 
 // Legacy local copy (levels 1-4 only) kept as a fallback.
 // The canonical list — including levels 5 and 6 — is imported from SpellingProgram.js above.
@@ -1245,6 +1246,7 @@ const StudentSpelling = ({
   const [studentAssignments, setStudentAssignments] = useState(null);
   const [completedActivities, setCompletedActivities] = useState([]);
   const [activeActivity, setActiveActivity] = useState(null);
+  const [showBee, setShowBee] = useState(false);
   const [selectedListId, setSelectedListId] = useState(null);
   const [selectedTextType, setSelectedTextType] = useState('narrative');
   const [passageFontSize, setPassageFontSize] = useState(16);
@@ -1390,6 +1392,70 @@ const StudentSpelling = ({
 
   const getProgressPercentage = () => Math.min((completedActivities.length / SPELLING_REWARDS.WEEKLY_GOAL) * 100, 100);
 
+  // ── Spelling Bee: save best scores + rewards in ONE update ─────────────────
+  const handleBeeFinished = async (result) => {
+    const prevAll = studentData?.spellingBeeResults || {};
+    const prev = prevAll[result.listId] || {};
+    const beeResults = {
+      ...prevAll,
+      [result.listId]: {
+        best: Math.max(prev.best || 0, result.score),
+        total: result.total,
+        stars: Math.max(prev.stars || 0, result.stars),
+        attempts: (prev.attempts || 0) + 1,
+        perfectRewarded: prev.perfectRewarded || false,
+        lastPlayed: new Date().toISOString()
+      }
+    };
+
+    let xp = 0;
+    let coins = 0;
+    const messages = [];
+    const updates = { spellingBeeResults: beeResults };
+
+    // Passing the Bee counts toward the weekly activity goal (once per week)
+    if (result.passed && !completedActivities.includes('spelling_bee')) {
+      const weekly = [...completedActivities, 'spelling_bee'];
+      setCompletedActivities(weekly);
+      try {
+        localStorage.setItem(getStorageKey(), JSON.stringify(weekly));
+      } catch (error) {
+        console.error('Error saving completed activities:', error);
+      }
+      updates.spellingActivityProgress = { weekKey: getWeekKey(), completed: weekly };
+      xp += SPELLING_REWARDS.ACTIVITY_XP;
+      coins += SPELLING_REWARDS.ACTIVITY_COINS;
+      if (weekly.length === SPELLING_REWARDS.WEEKLY_GOAL) {
+        xp += SPELLING_REWARDS.GOAL_BONUS_XP;
+        coins += SPELLING_REWARDS.GOAL_BONUS_COINS;
+        messages.push('🏆 Weekly goal smashed!');
+      } else {
+        messages.push(`🐝 Bee passed! (${weekly.length}/${SPELLING_REWARDS.WEEKLY_GOAL} this week)`);
+      }
+    }
+
+    // One-time bonus for a first PERFECT round on this list
+    if (result.stars === 3 && !prev.perfectRewarded) {
+      beeResults[result.listId].perfectRewarded = true;
+      xp += 10;
+      coins += 2;
+      messages.push('💯 First perfect round on this list!');
+    }
+
+    if (xp || coins) {
+      updates.totalPoints = (studentData?.totalPoints || 0) + xp;
+      updates.currency = (studentData?.currency || 0) + coins;
+    }
+
+    if (updateStudentData) {
+      await updateStudentData(updates);
+    }
+
+    if (showToast && (xp || coins)) {
+      showToast(`${messages.join(' ')} +${xp} XP, +${coins} coin${coins !== 1 ? 's' : ''}!`, 'success');
+    }
+  };
+
   if (!studentAssignments) {
     return (
       <div className="bg-white rounded-xl p-6 md:p-8 text-center">
@@ -1522,6 +1588,40 @@ const StudentSpelling = ({
         </div>
       )}
 
+      {/* ── SPELLING BEE (featured) ── */}
+      {selectedList && selectedWords.length > 0 && (
+        isBeeCompatible(selectedList) ? (
+          <button
+            onClick={() => setShowBee(true)}
+            className="w-full text-left bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 rounded-2xl px-5 py-4 shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-4xl">🐝</span>
+              <div>
+                <h2 className="text-lg font-extrabold text-amber-900">Spelling Bee Challenge</h2>
+                <p className="text-sm text-amber-800/80 font-semibold">Hear each word out loud, spell it with no peeking — the real test!</p>
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0">
+              {studentData?.spellingBeeResults?.[selectedList.id] ? (
+                <>
+                  <div className="text-xl">{'⭐'.repeat(studentData.spellingBeeResults[selectedList.id].stars || 0) || '☆'}</div>
+                  <div className="text-xs font-bold text-amber-900/70">
+                    Best: {studentData.spellingBeeResults[selectedList.id].best}/{studentData.spellingBeeResults[selectedList.id].total}
+                  </div>
+                </>
+              ) : (
+                <span className="px-3 py-1.5 bg-white/80 rounded-xl text-sm font-extrabold text-amber-700">Take the test →</span>
+              )}
+            </div>
+          </button>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3 text-sm text-amber-700 font-semibold">
+            🐝 The Spelling Bee is off for this list — these words sound the same out loud! Practise them with the games below instead.
+          </div>
+        )
+      )}
+
       {/* ── SECTION 3: SPELLING ACTIVITIES (interactive) ── */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
@@ -1611,6 +1711,33 @@ const StudentSpelling = ({
           </div>
         ) : null;
       })()}
+
+      {/* ── SPELLING BEE MODAL ── */}
+      {showBee && selectedList && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl">
+            <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-5 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🐝</span>
+                <div>
+                  <h2 className="text-lg font-extrabold leading-tight">Spelling Bee</h2>
+                  <p className="text-white/80 text-xs font-semibold">{selectedList.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowBee(false)} className="text-white/70 hover:text-white text-3xl leading-none font-bold">×</button>
+            </div>
+            <div className="p-4 sm:p-5 overflow-y-auto flex-1">
+              <SpellingBee
+                key={`bee-${selectedList.id}`}
+                list={selectedList}
+                previousBest={studentData?.spellingBeeResults?.[selectedList.id] || null}
+                onFinished={handleBeeFinished}
+                onExit={() => setShowBee(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── ACTIVITY GAME MODAL ── */}
       {activeActivity && selectedList && (() => {
