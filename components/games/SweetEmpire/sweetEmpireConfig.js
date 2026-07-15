@@ -75,17 +75,17 @@ export const bulkBuildingCost = (building, owned, count) => {
 // so the weapon only ever grows mightier. Final relic stages need Ascensions.
 // ═══════════════════════════════════════════════════════════════════════════
 export const FORGE_STAGES = [
-  { name: 'Rusty Dagger',        img: '/Loot/Weapons/1.png',    req: { type: 'lifetime', value: 0 },     flavor: 'Every legend starts somewhere…' },
-  { name: 'Soldier’s Shortsword', img: '/Loot/Weapons/2.png',   req: { type: 'lifetime', value: 5000 },  flavor: 'Standard issue. Barely.' },
-  { name: 'Knight’s Blade',      img: '/Loot/Weapons/3.png',    req: { type: 'lifetime', value: 1e5 },   flavor: 'Now we’re getting somewhere.' },
-  { name: 'Champion’s Axe',      img: '/Loot/Weapons/4.png',    req: { type: 'lifetime', value: 2e6 },   flavor: 'Heavy. Loud. Effective.' },
-  { name: 'Enchanted Warhammer', img: '/Loot/Weapons/5.png',    req: { type: 'lifetime', value: 5e7 },   flavor: 'It hums when monsters are near.' },
-  { name: 'Runeblade',           img: '/Loot/Weapons/6.png',    req: { type: 'lifetime', value: 1e9 },   flavor: 'Ancient runes crawl along the steel.' },
-  { name: 'Dragonfang',          img: '/Loot/Weapons/7.png',    req: { type: 'lifetime', value: 2.5e10 }, flavor: 'Forged from a fang freely given. Mostly.' },
-  { name: 'Stormcaller',         img: '/Loot/Weapons/8.png',    req: { type: 'lifetime', value: 1e12 },  flavor: 'Thunder answers every swing.' },
-  { name: 'Soulrender',          img: '/Loot/Weapons/9.png',    req: { type: 'lifetime', value: 5e13 },  flavor: 'It whispers. Try not to listen.' },
-  { name: 'Blade of Eternity',   img: '/Loot/Weapons/10.png',   req: { type: 'lifetime', value: 1e15 },  flavor: 'Time bends around its edge.' },
-  { name: 'Godforged Edge',      img: '/Loot/Weapons/11.png',   req: { type: 'lifetime', value: 1e18 },  flavor: 'Hammered on the anvil of the gods.' },
+  { name: 'Worn Daggers',        img: '/Loot/Weapons/17.png',   req: { type: 'lifetime', value: 0 },     flavor: 'Every legend starts somewhere…' },
+  { name: 'Soldier’s Cutlass',   img: '/Loot/Weapons/16.png',   req: { type: 'lifetime', value: 5000 },  flavor: 'Standard issue. Barely.' },
+  { name: 'Knight’s Blade',      img: '/Loot/Weapons/1.png',    req: { type: 'lifetime', value: 1e5 },   flavor: 'Now we’re getting somewhere.' },
+  { name: 'Champion’s Axe',      img: '/Loot/Weapons/3.png',    req: { type: 'lifetime', value: 2e6 },   flavor: 'Heavy. Loud. Effective.' },
+  { name: 'Enchanted Warhammer', img: '/Loot/Weapons/7.png',    req: { type: 'lifetime', value: 5e7 },   flavor: 'It hums when monsters are near.' },
+  { name: 'Twin Runeblades',     img: '/Loot/Weapons/4.png',    req: { type: 'lifetime', value: 1e9 },   flavor: 'Ancient runes crawl along the steel.' },
+  { name: 'Skullcleaver',        img: '/Loot/Weapons/6.png',    req: { type: 'lifetime', value: 2.5e10 }, flavor: 'Taken from a warlord. He wasn’t using it anymore.' },
+  { name: 'Stormcaller',         img: '/Loot/Weapons/13.png',   req: { type: 'lifetime', value: 1e12 },  flavor: 'Thunder answers every swing.' },
+  { name: 'Soulrender',          img: '/Loot/Weapons/14.png',   req: { type: 'lifetime', value: 5e13 },  flavor: 'It whispers. Try not to listen.' },
+  { name: 'Scepter of Eternity', img: '/Loot/Weapons/9.png',    req: { type: 'lifetime', value: 1e15 },  flavor: 'Time bends around its orb.' },
+  { name: 'Godforged Maul',      img: '/Loot/Weapons/12.png',   req: { type: 'lifetime', value: 1e18 },  flavor: 'Hammered on the anvil of the gods.' },
   { name: 'Relic of the Ascended', img: '/Loot/Artifacts/1.png', req: { type: 'rebirths', value: 5 },    flavor: 'A relic only Ascended heroes may wield.' },
   { name: 'Crown Relic of Legends', img: '/Loot/Artifacts/5.png', req: { type: 'rebirths', value: 15 },  flavor: 'Legends kneel before it.' },
   { name: 'Heart of the Realm', img: '/Loot/Artifacts/9.png',   req: { type: 'rebirths', value: 30 },    flavor: 'The realm itself beats in your hands.' },
@@ -301,12 +301,38 @@ export const REALM_EVENTS = [
   { id: 'horde',    name: 'Goblin Horde', icon: '👺', weight: 14, kind: 'instant',
     desc: 'Goblins scatter loot as they flee — Momentum maxed + 5 min of GPS!' },
   { id: 'dragon',   name: 'DRAGON RAID!', icon: '🐉', weight: 8, kind: 'dragon',
-    desc: 'A dragon attacks! Strike it down before it escapes for a HUGE bounty!', duration: 20 },
+    desc: 'A dragon attacks! Strike it down before it escapes for a HUGE bounty!', duration: 35 },
+
+  // ── Choice events: tapping opens options, each with a different outcome ──
+  { id: 'wizard',   name: 'Mysterious Wizard', icon: '🧙', weight: 10, kind: 'choice',
+    desc: 'A hooded wizard offers to enchant your gold hoard… do you trust him?',
+    options: [
+      { id: 'accept',  label: '🪄 Accept the spell', hint: 'Could grow your hoard 20%… or shrink it' },
+      { id: 'decline', label: '🙅 Send him away', hint: 'A small, safe reward' },
+    ] },
+  { id: 'bard',     name: 'Wandering Bard', icon: '🎻', weight: 10, kind: 'choice',
+    desc: 'A bard offers a heroic ballad to inspire your recruits — for a price.',
+    options: [
+      { id: 'pay',    label: '💰 Pay 5% of hoard', hint: 'Production ×2 for 90s' },
+      { id: 'refuse', label: '🚪 Refuse politely', hint: 'Nothing ventured, nothing gained' },
+    ] },
+  { id: 'chest',    name: 'Ancient Chest', icon: '🗝️', weight: 10, kind: 'choice',
+    desc: 'A locked chest sits by the road. It could be treasure… or a mimic.',
+    options: [
+      { id: 'open',  label: '⛏️ Pry it open', hint: 'Probably treasure. Probably.' },
+      { id: 'leave', label: '🏃 Leave it alone', hint: 'Walk away with your teeth' },
+    ] },
+
+  // ── Bad events: tap in time to stop them — ignore them and pay the price ──
+  { id: 'thief',    name: 'Sneaky Thief!', icon: '🦹', weight: 9, kind: 'bad',
+    desc: 'A thief is creeping toward your hoard! Tap to catch him before he escapes with 5% of your gold!' },
+  { id: 'omen',     name: 'Grim Omen', icon: '🌩️', weight: 8, kind: 'bad',
+    desc: 'Dark clouds gather over the realm… tap to ward off the curse, or production is HALVED for 60s!', duration: 60 },
 ];
 
 // Dragon raid tuning: HP ≈ this many of your strikes; reward = minutes of GPS.
-export const DRAGON_HP_CLICKS = 25;
-export const DRAGON_TIME = 20;          // seconds to slay it
+export const DRAGON_HP_CLICKS = 60;
+export const DRAGON_TIME = 35;          // seconds to slay it
 export const DRAGON_REWARD_MINUTES = 30;
 export const DRAGON_IMAGES = [
   '/Bosses/Math/Boss 1.png', '/Bosses/Math/Boss 2.png', '/Bosses/Math/Boss 3.png', '/Bosses/Math/Boss 4.png',
@@ -316,9 +342,18 @@ export const DRAGON_IMAGES = [
 // ═══════════════════════════════════════════════════════════════════════════
 // BATTLE MOMENTUM combo (internally "Sugar Rush")
 // ═══════════════════════════════════════════════════════════════════════════
-export const COMBO_MAX = 100;          // combo points
-export const COMBO_MAX_BONUS = 1.0;    // +100% strike power at max momentum
-export const COMBO_DECAY_PER_SEC = 8;  // points lost per second idle
+export const COMBO_MAX = 100;            // combo points
+export const COMBO_MAX_BONUS = 1.0;      // +100% strike power at max momentum
+export const COMBO_GAIN_PER_CLICK = 4;   // points gained per strike (25 strikes to max)
+export const COMBO_DECAY_PER_SEC = 3;    // points lost per second idle
+export const COMBO_DECAY_GRACE_MS = 1200; // no decay this soon after a strike
+
+// Anti-autoclicker: if this many strikes land within the window, the weapon
+// overheats and can't be used for the cooldown period. 30 clicks in 2s = a
+// sustained 15 clicks/sec — beyond honest human clicking.
+export const AUTOCLICK_WINDOW_CLICKS = 30;
+export const AUTOCLICK_WINDOW_MS = 2000;
+export const WEAPON_BREAK_SECONDS = 20;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PROFILE UNLOCKS — the slow-grind chase items that theme student profiles

@@ -24,7 +24,8 @@ import {
   GOLDEN_MIN_GAP, GOLDEN_MAX_GAP, GOLDEN_LIFETIME, GOLDEN_EFFECTS, LOOT_CHEST_IMAGES,
   EVENT_MIN_GAP, EVENT_MAX_GAP, EVENT_LIFETIME, REALM_EVENTS,
   DRAGON_HP_CLICKS, DRAGON_TIME, DRAGON_REWARD_MINUTES, DRAGON_IMAGES,
-  COMBO_MAX, COMBO_MAX_BONUS, COMBO_DECAY_PER_SEC,
+  COMBO_MAX, COMBO_MAX_BONUS, COMBO_GAIN_PER_CLICK, COMBO_DECAY_PER_SEC, COMBO_DECAY_GRACE_MS,
+  AUTOCLICK_WINDOW_CLICKS, AUTOCLICK_WINDOW_MS, WEAPON_BREAK_SECONDS,
   FORGE_STAGES, forgeStageFor,
   SE_THEMES, SE_THEME_STYLES, SE_TITLES, SE_EFFECTS, meetsUnlockReq,
   OFFLINE_BASE_HOURS, OFFLINE_RATE,
@@ -90,6 +91,8 @@ const calcSps = (gs, buffs = {}) => {
   sps *= calcGlobalMult(gs);
   if (buffs.frenzyUntil && buffs.frenzyUntil > now()) sps *= 7;
   if (buffs.blessingUntil && buffs.blessingUntil > now()) sps *= 3;
+  if (buffs.inspiredUntil && buffs.inspiredUntil > now()) sps *= 2;
+  if (buffs.curseUntil && buffs.curseUntil > now()) sps *= 0.5;
   return sps;
 };
 
@@ -177,6 +180,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const [rebirthConfirm, setRebirthConfirm] = useState(false);
   const [weaponPop, setWeaponPop] = useState(false);
   const [stageFlash, setStageFlash] = useState(false);
+  const [brokenUntil, setBrokenUntil] = useState(0); // weapon overheated (anti-autoclick)
   const [, setTick] = useState(0);                 // forces countdown re-renders
 
   const gsRef = useRef(gs); gsRef.current = gs;
@@ -188,6 +192,10 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const eventTimer = useRef(null);
   const floatId = useRef(0);
   const stageIndexRef = useRef(null);
+  const lastClickAtRef = useRef(0);      // for momentum decay grace period
+  const clickTimesRef = useRef([]);      // rolling strike timestamps (anti-autoclick)
+  const brokenUntilRef = useRef(0);
+  const showToastRef = useRef(showToast); showToastRef.current = showToast;
 
   const sps = useMemo(() => calcSps(gs, buffs), [gs, buffs]);
   const clickPower = useMemo(() => calcClickPower(gs, buffs, combo), [gs, buffs, combo]);
@@ -239,7 +247,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
           lifetimeSweets: p.lifetimeSweets + gain,
         }));
       }
-      if (comboRef.current > 0) {
+      if (comboRef.current > 0 && now() - lastClickAtRef.current > COMBO_DECAY_GRACE_MS) {
         const slow = (cur.starUpgrades || []).includes('su_combo') ? 3 : 1;
         setCombo((c) => Math.max(0, c - COMBO_DECAY_PER_SEC / 10 / slow));
       }
@@ -248,9 +256,10 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   }, [loaded]);
 
   // ── Countdown ticker (only while something timed is on screen) ──────────────
-  const hasTimedThing = !!(dragon || event || golden ||
+  const hasTimedThing = !!(dragon || event || golden || brokenUntil > now() ||
     buffs.frenzyUntil > now() || buffs.clickFrenzyUntil > now() ||
-    buffs.blessingUntil > now() || buffs.trainingUntil > now() || buffs.merchantUntil > now());
+    buffs.blessingUntil > now() || buffs.trainingUntil > now() || buffs.merchantUntil > now() ||
+    buffs.inspiredUntil > now() || buffs.curseUntil > now());
   useEffect(() => {
     if (!loaded || !hasTimedThing) return;
     const t = setInterval(() => setTick((x) => x + 1), 250);
@@ -375,7 +384,22 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     eventTimer.current = setTimeout(() => {
       const def = pickWeighted(REALM_EVENTS);
       setEvent({ def, expiresAt: now() + EVENT_LIFETIME * 1000 });
-      eventTimer.current = setTimeout(() => { setEvent(null); scheduleEvent(); }, EVENT_LIFETIME * 1000);
+      eventTimer.current = setTimeout(() => {
+        // Bad events punish you for ignoring them!
+        if (def.kind === 'bad') {
+          if (def.id === 'thief') {
+            const stolen = gsRef.current.sweets * 0.05;
+            setGs((p) => ({ ...p, sweets: Math.max(0, p.sweets - p.sweets * 0.05) }));
+            showToastRef.current(`🦹 The thief got away with ${fmtNum(stolen)} gold!`, 'error');
+          } else if (def.id === 'omen') {
+            setBuffs((b) => ({ ...b, curseUntil: now() + def.duration * 1000 }));
+            showToastRef.current('🌩️ The curse takes hold — production HALVED for 60s!', 'error');
+          }
+          dirtyRef.current = true;
+        }
+        setEvent(null);
+        scheduleEvent();
+      }, EVENT_LIFETIME * 1000);
     }, eventGapMs(gsRef.current));
   }, []);
 
@@ -388,12 +412,32 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const answerEvent = () => {
     if (!event) return;
     const def = event.def;
+
+    // Choice events open their options instead of resolving straight away
+    // (the expiry timer is paused while you decide).
+    if (def.kind === 'choice' && !event.choosing) {
+      clearTimeout(eventTimer.current);
+      setEvent((ev) => (ev ? { ...ev, choosing: true } : ev));
+      // If they never decide, the moment passes on its own after 30s.
+      eventTimer.current = setTimeout(() => { setEvent(null); scheduleEvent(); }, 30000);
+      return;
+    }
+
     setEvent(null);
     scheduleEvent();
     const cur = gsRef.current;
     const baseSps = calcSps(cur, {});
 
-    if (def.id === 'merchant') {
+    if (def.id === 'thief') {
+      const gain = baseSps * 180 + 50;
+      setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+      showToast(`🦹 Thief caught! He drops his loot bag: +${fmtNum(gain)} gold!`, 'success');
+    } else if (def.id === 'omen') {
+      const gain = baseSps * 60 + 25;
+      setCombo((c) => Math.min(COMBO_MAX, c + 50));
+      setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+      showToast(`🌩️ Curse warded off! The realm rewards you: +${fmtNum(gain)} gold + momentum surge!`, 'success');
+    } else if (def.id === 'merchant') {
       setBuffs((b) => ({ ...b, merchantUntil: now() + def.duration * 1000 }));
       showToast('🧝 Travelling Merchant! All recruits 25% off — hire fast!', 'success');
     } else if (def.id === 'blessing') {
@@ -425,6 +469,62 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     dirtyRef.current = true;
   };
 
+  // ── Choice event resolution ─────────────────────────────────────────────────
+  const resolveChoice = (optionId) => {
+    if (!event) return;
+    const def = event.def;
+    setEvent(null);
+    scheduleEvent();
+    const cur = gsRef.current;
+    const baseSps = calcSps(cur, {});
+
+    if (def.id === 'wizard') {
+      if (optionId === 'accept') {
+        if (Math.random() < 0.6) {
+          const gain = cur.sweets * 0.2 + baseSps * 60 + 100;
+          setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+          showToast(`🧙 The spell works! Your hoard swells: +${fmtNum(gain)} gold!`, 'success');
+        } else {
+          const loss = cur.sweets * 0.1;
+          setGs((p) => ({ ...p, sweets: Math.max(0, p.sweets - loss) }));
+          showToast(`🧙 It was a TRICKSTER! He vanishes with ${fmtNum(loss)} of your gold…`, 'error');
+        }
+      } else {
+        const gain = baseSps * 120 + 40;
+        setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+        showToast(`🙅 Wise choice. He tosses you a coin purse anyway: +${fmtNum(gain)} gold.`, 'success');
+      }
+    } else if (def.id === 'bard') {
+      if (optionId === 'pay') {
+        const price = cur.sweets * 0.05;
+        setGs((p) => ({ ...p, sweets: Math.max(0, p.sweets - price) }));
+        setBuffs((b) => ({ ...b, inspiredUntil: now() + 90 * 1000 }));
+        showToast(`🎻 The ballad echoes across the realm — production ×2 for 90s! (−${fmtNum(price)} gold)`, 'success');
+      } else {
+        showToast('🚪 The bard shrugs and wanders off, humming something rude about you.', 'info');
+      }
+    } else if (def.id === 'chest') {
+      if (optionId === 'open') {
+        if (Math.random() < 0.7) {
+          const gain = baseSps * 480 + 150;
+          setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+          showToast(`🗝️ TREASURE! The chest bursts with gold: +${fmtNum(gain)}!`, 'success');
+        } else {
+          const loss = cur.sweets * 0.05;
+          setCombo(0);
+          setGs((p) => ({ ...p, sweets: Math.max(0, p.sweets - loss) }));
+          showToast(`👄 IT'S A MIMIC! It bites, scattering ${fmtNum(loss)} gold and your momentum!`, 'error');
+        }
+      } else {
+        const gain = baseSps * 30 + 15;
+        setGs((p) => ({ ...p, sweets: p.sweets + gain, runSweets: p.runSweets + gain, lifetimeSweets: p.lifetimeSweets + gain }));
+        showToast(`🏃 You find ${fmtNum(gain)} gold dropped on the road as you walk away. Probably fine.`, 'success');
+      }
+    }
+    setGs((p) => ({ ...p, eventsClaimed: (p.eventsClaimed || 0) + 1 }));
+    dirtyRef.current = true;
+  };
+
   // ── Dragon raid: escapes when the timer runs out ────────────────────────────
   useEffect(() => {
     if (!dragon) return;
@@ -440,6 +540,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const strikeDragon = (e) => {
     e.stopPropagation();
     if (!dragon) return;
+    if (!registerStrike()) return;
     const nextHp = dragon.hp - 1;
     if (nextHp > 0) { setDragon({ ...dragon, hp: nextHp }); return; }
     // SLAIN!
@@ -460,8 +561,30 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     dirtyRef.current = true;
   };
 
+  // ── Anti-autoclick gate: every strike passes through here ───────────────────
+  // Returns false if the weapon is overheated or this strike triggered the
+  // detector (an impossible sustained click rate = autoclicker).
+  const registerStrike = () => {
+    const t = now();
+    if (brokenUntilRef.current > t) return false;
+    const times = clickTimesRef.current;
+    times.push(t);
+    if (times.length > AUTOCLICK_WINDOW_CLICKS) times.shift();
+    if (times.length === AUTOCLICK_WINDOW_CLICKS && t - times[0] < AUTOCLICK_WINDOW_MS) {
+      brokenUntilRef.current = t + WEAPON_BREAK_SECONDS * 1000;
+      setBrokenUntil(brokenUntilRef.current);
+      clickTimesRef.current = [];
+      setCombo(0);
+      showToastRef.current(`🔥 Your weapon OVERHEATED from impossibly fast striking! It needs ${WEAPON_BREAK_SECONDS}s to cool down…`, 'error');
+      return false;
+    }
+    return true;
+  };
+
   // ── The Forge (main clickable) ──────────────────────────────────────────────
   const clickWeapon = (e) => {
+    if (!registerStrike()) return;
+    lastClickAtRef.current = now();
     const power = calcClickPower(gsRef.current, buffsRef.current, comboRef.current);
     setGs((p) => ({
       ...p,
@@ -470,7 +593,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       lifetimeSweets: p.lifetimeSweets + power,
       clicks: p.clicks + 1,
     }));
-    setCombo((c) => Math.min(COMBO_MAX, c + 1));
+    setCombo((c) => Math.min(COMBO_MAX, c + COMBO_GAIN_PER_CLICK));
     setWeaponPop(true);
     setTimeout(() => setWeaponPop(false), 90);
     dirtyRef.current = true;
@@ -536,6 +659,9 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     setBuffs({});
     setCombo(0);
     setDragon(null);
+    setBrokenUntil(0);
+    brokenUntilRef.current = 0;
+    clickTimesRef.current = [];
     setRebirthConfirm(false);
     setTab('bakery');
     showToast(`⭐ Heroic Ascension! +${stars} Glory Star${stars !== 1 ? 's' : ''} (${next.sugarStars} total, +${Math.round(next.sugarStars * STAR_SPS_BONUS * 100)}% production)`, 'success');
@@ -557,6 +683,9 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const blessingOn = buffs.blessingUntil > now();
   const trainingOn = buffs.trainingUntil > now();
   const merchantOn = buffs.merchantUntil > now();
+  const inspiredOn = buffs.inspiredUntil > now();
+  const cursedOn = buffs.curseUntil > now();
+  const brokenOn = brokenUntil > now();
   const availableUpgrades = UPGRADES.filter((u) => !gs.upgrades.includes(u.id) && u.unlock(gs)).sort((a, b) => a.cost - b.cost);
   const comboPct = Math.round((Math.min(combo, COMBO_MAX) / COMBO_MAX) * 100);
   const activeThemeStyle = gs.activeTheme ? SE_THEME_STYLES[gs.activeTheme] : null;
@@ -637,14 +766,38 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
             style={{ backgroundImage: "linear-gradient(rgba(10,10,30,0.55), rgba(10,10,30,0.7)), url('/Loot/Backgrounds/night.png')" }}
           >
             {/* realm event banner */}
-            {event && !dragon && (
+            {event && !dragon && !event.choosing && (
               <button
                 onClick={answerEvent}
-                className="absolute top-3 inset-x-3 z-30 bg-gradient-to-r from-purple-700 to-indigo-700 border-2 border-yellow-300/70 rounded-xl px-4 py-2.5 text-left shadow-xl hover:scale-[1.02] transition animate-pulse"
+                className={`absolute top-3 inset-x-3 z-30 border-2 rounded-xl px-4 py-2.5 text-left shadow-xl hover:scale-[1.02] transition animate-pulse ${
+                  event.def.kind === 'bad'
+                    ? 'bg-gradient-to-r from-red-800 to-rose-700 border-red-300/80'
+                    : 'bg-gradient-to-r from-purple-700 to-indigo-700 border-yellow-300/70'
+                }`}
               >
-                <p className="text-yellow-300 font-bold text-sm">{event.def.icon} REALM EVENT: {event.def.name}</p>
-                <p className="text-white/90 text-xs">{event.def.desc} <span className="font-bold text-yellow-200">Tap to answer the call! ({Math.max(0, Math.ceil((event.expiresAt - now()) / 1000))}s)</span></p>
+                <p className={`font-bold text-sm ${event.def.kind === 'bad' ? 'text-red-200' : 'text-yellow-300'}`}>{event.def.icon} REALM EVENT: {event.def.name}</p>
+                <p className="text-white/90 text-xs">{event.def.desc} <span className="font-bold text-yellow-200">{event.def.kind === 'bad' ? 'Tap to stop it!' : event.def.kind === 'choice' ? 'Tap to decide!' : 'Tap to answer the call!'} ({Math.max(0, Math.ceil((event.expiresAt - now()) / 1000))}s)</span></p>
               </button>
+            )}
+
+            {/* choice event: pick an option */}
+            {event && !dragon && event.choosing && (
+              <div className="absolute top-3 inset-x-3 z-30 bg-gradient-to-r from-purple-800 to-indigo-800 border-2 border-yellow-300/70 rounded-xl px-4 py-3 shadow-xl">
+                <p className="text-yellow-300 font-bold text-sm">{event.def.icon} {event.def.name}</p>
+                <p className="text-white/90 text-xs mb-2">{event.def.desc}</p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {(event.def.options || []).map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => resolveChoice(opt.id)}
+                      className="flex-1 bg-white/10 hover:bg-white/25 border border-white/30 rounded-lg px-3 py-2 text-left transition"
+                    >
+                      <p className="text-white font-bold text-xs">{opt.label}</p>
+                      <p className="text-indigo-200 text-[10px]">{opt.hint}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* loot chest */}
@@ -687,6 +840,16 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                   🧝 Merchant −25% · {Math.ceil((buffs.merchantUntil - now()) / 1000)}s
                 </span>
               )}
+              {inspiredOn && (
+                <span className="bg-pink-600 text-white text-xs font-bold rounded-full px-3 py-1 animate-pulse">
+                  🎻 Inspired ×2 · {Math.ceil((buffs.inspiredUntil - now()) / 1000)}s
+                </span>
+              )}
+              {cursedOn && (
+                <span className="bg-gray-700 text-red-300 text-xs font-bold rounded-full px-3 py-1 animate-pulse">
+                  🌩️ Cursed ×0.5 · {Math.ceil((buffs.curseUntil - now()) / 1000)}s
+                </span>
+              )}
             </div>
 
             {/* DRAGON RAID overlay */}
@@ -695,7 +858,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                 <p className="text-red-400 font-bold text-lg mb-1 animate-pulse">🐉 DRAGON RAID! {Math.max(0, Math.ceil((dragon.until - now()) / 1000))}s</p>
                 <button onClick={strikeDragon} className="active:scale-95 transition-transform" title="STRIKE THE DRAGON!">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={dragon.img} alt="Raiding dragon" className="w-44 h-44 md:w-56 md:h-56 object-contain" style={{ animation: 'cf-dragon 0.6s ease-in-out infinite' }} />
+                  <img src={dragon.img} alt="Raiding dragon" className={`w-44 h-44 md:w-56 md:h-56 object-contain ${brokenOn ? 'grayscale opacity-60' : ''}`} style={{ animation: 'cf-dragon 0.6s ease-in-out infinite' }} />
                 </button>
                 <div className="w-56 bg-black/50 rounded-full h-4 border border-red-400 mt-2">
                   <div className="h-full rounded-full bg-gradient-to-r from-red-600 to-red-400 transition-all" style={{ width: `${(dragon.hp / dragon.maxHp) * 100}%` }} />
@@ -720,10 +883,17 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                     <img
                       src={forgeStage.img}
                       alt={forgeStage.name}
-                      className="w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl"
+                      className={`w-40 h-40 md:w-52 md:h-52 object-contain drop-shadow-2xl ${brokenOn ? 'grayscale opacity-50' : ''}`}
                       draggable={false}
                     />
                   </button>
+                  {brokenOn && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <span className="bg-red-600/90 text-white text-xs font-bold rounded-xl px-3 py-2 text-center shadow-lg animate-pulse">
+                        🔥 OVERHEATED!<br />Cooling down… {Math.max(0, Math.ceil((brokenUntil - now()) / 1000))}s
+                      </span>
+                    </div>
+                  )}
                   {floaties.map((f) => (
                     <span
                       key={f.id}
@@ -1121,4 +1291,3 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
 };
 
 export default SweetEmpireGame;
-// EOF
