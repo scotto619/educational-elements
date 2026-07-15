@@ -4,6 +4,7 @@ import { DEFAULT_PET_IMAGE } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
 import { getSweetEmpireProfile } from '../games/SweetEmpire/sweetEmpireConfig';
+import { getMenagerieProfile } from '../games/Menagerie/menagerieConfig';
 
 const CLASS_REWARD_TIERS = [
   { xp: 1000, label: 'Class Prize 1' },
@@ -33,6 +34,9 @@ const StudentDashboard = ({
   // Sweet Empire profile style — earned in the Sweet Empire clicker game
   const seProfile = useMemo(() => getSweetEmpireProfile(studentData?.sweetEmpireData, false), [studentData?.sweetEmpireData]);
   const seAccent = seProfile?.theme?.accent;
+
+  // Champion's Menagerie profile — card companion + keeper title
+  const menProfile = useMemo(() => getMenagerieProfile(studentData?.menagerieData, false), [studentData?.menagerieData]);
 
   const classTotalXP = useMemo(() => {
     const roster = classData?.students || [];
@@ -67,6 +71,23 @@ const StudentDashboard = ({
             {seProfile.themeName && <span className="bg-white/25 rounded-full px-2.5 py-0.5">{seProfile.themeIcon} {seProfile.themeName}</span>}
             {seProfile.effectName && <span className="bg-white/25 rounded-full px-2.5 py-0.5">✨ {seProfile.effectName}</span>}
             <span className="bg-white/25 rounded-full px-2.5 py-0.5">⚔️ Earned in Champion&apos;s Forge</span>
+          </div>
+        )}
+        {menProfile && (menProfile.companion || menProfile.title) && (
+          <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] md:text-xs font-bold">
+            {menProfile.companion && (
+              <span className="bg-white/25 rounded-full pl-1 pr-2.5 py-0.5 flex items-center gap-1.5">
+                <img
+                  src={menProfile.companion.img}
+                  alt={menProfile.companion.name}
+                  className="w-5 h-5 rounded-full object-cover border border-white/60"
+                  style={menProfile.companion.shiny ? { filter: 'hue-rotate(45deg) saturate(1.7) brightness(1.05)' } : undefined}
+                />
+                {menProfile.companion.shiny && '✨ '}{menProfile.companion.name} · {menProfile.companion.stageName} Lv {menProfile.companion.level}
+              </span>
+            )}
+            {menProfile.title && <span className="bg-white/25 rounded-full px-2.5 py-0.5">📛 {menProfile.title.name}</span>}
+            <span className="bg-white/25 rounded-full px-2.5 py-0.5">🐣 Earned in Champion&apos;s Menagerie</span>
           </div>
         )}
       </div>

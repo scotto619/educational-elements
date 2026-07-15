@@ -20,6 +20,7 @@ const GAME_LOGO_MAP = {
   boggle: [`${GL}/boggle.svg`],
   'brain-blitz': [`${GL}/Brain Blitz.png`],
   'cell-battle': [`${GL}/cell-battle.png`],
+  'champions-menagerie': ['/shop/Egg/Egg.png'],
   chess: [`${GL}/Chess.png`, '/Logo/Game Logos/chess.svg'],
   'classroom-bingo': [`${GL}/classroom-bingo.png`],
   'coordinate-quest': [`${GL}/coordinate.png`],

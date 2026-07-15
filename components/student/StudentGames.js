@@ -19,6 +19,7 @@ const WordSearchGame = dynamic(() => import('../games/WordSearchGame'), { loadin
 const TicTacToeGame = dynamic(() => import('../games/TicTacToeGame'), { loading: GameLoadingSpinner, ssr: false });
 const BattleshipsGame = dynamic(() => import('../games/BattleshipsGame'), { loading: GameLoadingSpinner, ssr: false });
 const SweetEmpireGame = dynamic(() => import('../games/SweetEmpireGame'), { loading: GameLoadingSpinner, ssr: false });
+const ChampionsMenagerieGame = dynamic(() => import('../games/ChampionsMenagerieGame'), { loading: GameLoadingSpinner, ssr: false });
 const MathSpaceInvadersGame = dynamic(() => import('../games/MathSpaceInvadersGame'), { loading: GameLoadingSpinner, ssr: false });
 const MultiplayerAgarGame = dynamic(() => import('../games/MultiplayerAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 const StudentBingo = dynamic(() => import('../student/StudentBingo'), { loading: GameLoadingSpinner, ssr: false });
@@ -393,6 +394,19 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'fun',
       logo: getGameLogo('sweet-empire')
+    },
+    {
+      id: 'champions-menagerie',
+      name: "Champion's Menagerie",
+      icon: '🐣',
+      description: 'Hatch eggs powered by YOUR classroom XP, raise magical creatures through five life stages, hunt ultra-rare shinies, complete the Zoodex, and show off your companion on your class card!',
+      component: ChampionsMenagerieGame,
+      color: 'from-emerald-600 to-teal-700',
+      difficulty: 'Easy',
+      time: '5+ minutes',
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('champions-menagerie')
     },
     {
       id: 'battleships',

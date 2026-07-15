@@ -51,6 +51,7 @@ export async function createStudentV2(req, res) {
         
         // Game data
         sweetEmpireData: null,
+        menagerieData: null,
         moneyMastersProgress: null,
         keyboardQuestProgress: null,
         mathMentalsProgress: null,

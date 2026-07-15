@@ -4,6 +4,7 @@ import { DEFAULT_PET_IMAGE, getAvatarImage as resolveAvatarImage, getPetImage as
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
 import { getSweetEmpireProfile } from '../games/SweetEmpire/sweetEmpireConfig';
+import { getMenagerieProfile } from '../games/Menagerie/menagerieConfig';
 
 // ===============================================
 // HELPER FUNCTIONS (LOCAL FALLBACKS)
@@ -572,6 +573,10 @@ const StudentCard = ({
     const seTheme     = seProfile?.theme || null;
     const hasSeTheme  = !!seTheme;
 
+    // ── Champion's Menagerie profile (card companion + keeper title) ─────────
+    const menProfile  = getMenagerieProfile(student.menagerieData, isDark);
+    const companion   = menProfile?.companion || null;
+
     // ── Derived styling ───────────────────────────────────────────────────────
     const titleColor    = seProfile?.title ? seProfile.title.color : (isDark ? 'text-slate-500' : 'text-gray-500');
     const seEffectCls   = seProfile?.effectCls || '';
@@ -738,6 +743,18 @@ const StudentCard = ({
                             onMouseLeave={onHoverEnd}
                         />
                     )}
+                    {/* Menagerie companion (earned in Champion's Menagerie) */}
+                    {companion && (
+                        <img
+                            src={companion.img}
+                            alt={companion.name}
+                            className={`w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 rounded-full object-cover absolute -top-1 -left-1 border-2 border-white shadow-sm ring-2 ${companion.ringCls} transition-transform duration-200 hover:scale-125`}
+                            style={companion.shiny ? { filter: 'hue-rotate(45deg) saturate(1.7) brightness(1.05)' } : undefined}
+                            title={`${companion.shiny ? '✨ Shiny ' : ''}${companion.name} — ${companion.stageName} Lv ${companion.level} (Champion's Menagerie companion)`}
+                            onMouseEnter={() => onPetHover && onPetHover(companion.img, `${companion.shiny ? '✨ ' : ''}${companion.name} (companion)`)}
+                            onMouseLeave={onHoverEnd}
+                        />
+                    )}
                 </div>
 
                 {/* Name */}
@@ -779,6 +796,8 @@ const StudentCard = ({
                 <div className="text-[9px] sm:text-[10px] mt-0.5 leading-tight w-full flex items-center justify-center gap-1">
                     {seProfile?.title ? (
                         <span className={`font-bold ${titleColor}`}>{seProfile.title.name}</span>
+                    ) : menProfile?.title ? (
+                        <span className={`font-bold ${menProfile.title.color}`}>{menProfile.title.name}</span>
                     ) : (
                         <span className={`font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Hero</span>
                     )}

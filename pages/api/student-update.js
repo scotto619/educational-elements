@@ -67,6 +67,7 @@ export default async function handler(req, res) {
       'gameProgress', 'achievements', 'lastUpdated',
       'clickerGameData',
       'sweetEmpireData',      // Sweet Empire clicker game (replaces Hero Forge)
+      'menagerieData',        // Champion's Menagerie creature collector
       'moneyMastersProgress', // Money Masters financial literacy tool
       'keyboardQuestProgress', // Keyboard Quest typing program
       'mathMentalsProgress' // Math Mentals specific field
