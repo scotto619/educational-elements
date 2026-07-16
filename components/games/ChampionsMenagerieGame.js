@@ -50,6 +50,7 @@ const cleanSave = (gs) => ({
   food: Number(gs.food) || 0,
   lastFoodAt: gs.lastFoodAt || null,
   lastXpSnapshot: gs.lastXpSnapshot === null || gs.lastXpSnapshot === undefined ? null : Number(gs.lastXpSnapshot),
+  homesteadEssenceClaimed: Number(gs.homesteadEssenceClaimed) || 0,
   totalEssenceEarned: Number(gs.totalEssenceEarned) || 0,
   creatures: (gs.creatures || []).map((c) => ({
     uid: String(c.uid),
@@ -131,6 +132,16 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
       save.lastXpSnapshot = xpNow;
     }
 
+    // Wild Essence earned out in the Wildwood Homestead (discoveries, level-ups…)
+    const homesteadEarned = Number(studentData?.homesteadData?.menagerieEssenceEarned) || 0;
+    let essenceFromHomestead = 0;
+    if (homesteadEarned > (save.homesteadEssenceClaimed || 0)) {
+      essenceFromHomestead = homesteadEarned - (save.homesteadEssenceClaimed || 0);
+      save.essence += essenceFromHomestead;
+      save.totalEssenceEarned += essenceFromHomestead;
+    }
+    save.homesteadEssenceClaimed = homesteadEarned;
+
     // Daily gift
     let gift = false;
     if (save.lastGiftDay !== todayStr()) {
@@ -144,7 +155,7 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
     setGs(save);
     setLoaded(true);
     dirtyRef.current = true;
-    if (essenceFromXp > 0 || gift) setWelcome({ essenceFromXp, gift });
+    if (essenceFromXp > 0 || essenceFromHomestead > 0 || gift) setWelcome({ essenceFromXp, essenceFromHomestead, gift });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentData, loaded]);
 
@@ -528,7 +539,7 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
             <h3 className="font-bold text-gray-800 mb-1">🛒 Egg Dealer</h3>
             <p className="text-xs text-gray-500 mb-3">
-              Wild Essence comes from YOUR learning: every classroom XP you earn becomes ✨{ESSENCE_PER_CLASS_XP} essence — plus a daily visit gift, and bonus essence for playing with and training your creatures.
+              Wild Essence comes from YOUR learning: every classroom XP you earn becomes ✨{ESSENCE_PER_CLASS_XP} essence — plus a daily visit gift, bonus essence for playing with and training your creatures, and essence gathered on your Wildwood Homestead adventures 🏕️.
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               {EGG_TIERS.map((tier) => {
@@ -713,6 +724,13 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
                 Your classroom learning charged the incubator:
                 <span className="block text-2xl font-bold text-emerald-600 mt-1">+{fmtInt(welcome.essenceFromXp)} ✨ Wild Essence</span>
                 <span className="block text-[11px] text-gray-400 mt-0.5">(earned from the XP you gained in class)</span>
+              </p>
+            )}
+            {welcome.essenceFromHomestead > 0 && (
+              <p className="text-sm text-gray-600 mt-3">
+                Your Wildwood Homestead adventures gathered:
+                <span className="block text-xl font-bold text-green-700 mt-1">+{fmtInt(welcome.essenceFromHomestead)} ✨ Wild Essence</span>
+                <span className="block text-[11px] text-gray-400 mt-0.5">(from discoveries, level-ups, golden harvests and new dishes 🏕️)</span>
               </p>
             )}
             {welcome.gift && (

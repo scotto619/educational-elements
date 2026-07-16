@@ -21,6 +21,7 @@ const GAME_LOGO_MAP = {
   'brain-blitz': [`${GL}/Brain Blitz.png`],
   'cell-battle': [`${GL}/cell-battle.png`],
   'champions-menagerie': ['/shop/Egg/Egg.png'],
+  'wildwood-homestead': [`${GL}/Cozy Cottage.png`],
   chess: [`${GL}/Chess.png`, '/Logo/Game Logos/chess.svg'],
   'classroom-bingo': [`${GL}/classroom-bingo.png`],
   'coordinate-quest': [`${GL}/coordinate.png`],

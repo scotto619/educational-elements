@@ -266,6 +266,7 @@ export const defaultSave = () => ({
   food: 10,
   lastFoodAt: null,        // ISO — food regen anchor
   lastXpSnapshot: null,    // classroom XP watermark (essence is earned on the delta)
+  homesteadEssenceClaimed: 0, // watermark vs homesteadData.menagerieEssenceEarned
   totalEssenceEarned: 0,
   creatures: [],           // [{ uid, speciesId, shiny, xp, hatchedAt, lastPlayedAt, lastTrainedAt }]
   eggs: [],                // [{ uid, tier, hatchAt }]

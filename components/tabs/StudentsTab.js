@@ -5,6 +5,7 @@ import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } fro
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
 import { getSweetEmpireProfile } from '../games/SweetEmpire/sweetEmpireConfig';
 import { getMenagerieProfile } from '../games/Menagerie/menagerieConfig';
+import { getHomesteadProfile } from '../games/Homestead/homesteadConfig';
 
 // ===============================================
 // HELPER FUNCTIONS (LOCAL FALLBACKS)
@@ -577,6 +578,9 @@ const StudentCard = ({
     const menProfile  = getMenagerieProfile(student.menagerieData, isDark);
     const companion   = menProfile?.companion || null;
 
+    // ── Wildwood Homestead profile (prosperity + title) ───────────────────────
+    const homeProfile = getHomesteadProfile(student.homesteadData, isDark);
+
     // ── Derived styling ───────────────────────────────────────────────────────
     const titleColor    = seProfile?.title ? seProfile.title.color : (isDark ? 'text-slate-500' : 'text-gray-500');
     const seEffectCls   = seProfile?.effectCls || '';
@@ -798,8 +802,18 @@ const StudentCard = ({
                         <span className={`font-bold ${titleColor}`}>{seProfile.title.name}</span>
                     ) : menProfile?.title ? (
                         <span className={`font-bold ${menProfile.title.color}`}>{menProfile.title.name}</span>
+                    ) : homeProfile?.title ? (
+                        <span className={`font-bold ${homeProfile.title.color}`}>{homeProfile.title.name}</span>
                     ) : (
                         <span className={`font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Hero</span>
+                    )}
+                    {homeProfile && homeProfile.prosperity > 25 && (
+                        <span
+                            className={`inline-flex items-center rounded-full px-1 text-[8px] sm:text-[9px] font-bold leading-tight ${isDark ? 'bg-emerald-900/70 text-emerald-300' : 'bg-emerald-100 text-emerald-700'}`}
+                            title={`Wildwood Homestead: ${homeProfile.prosperity} Prosperity`}
+                        >
+                            🏡{homeProfile.prosperity}
+                        </span>
                     )}
                     {/* Effect badge */}
                     {cardEffect && (

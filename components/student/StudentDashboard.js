@@ -5,6 +5,7 @@ import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } fro
 import { CARD_EFFECT_MAP } from '../../constants/cardEffects';
 import { getSweetEmpireProfile } from '../games/SweetEmpire/sweetEmpireConfig';
 import { getMenagerieProfile } from '../games/Menagerie/menagerieConfig';
+import { getHomesteadProfile } from '../games/Homestead/homesteadConfig';
 
 const CLASS_REWARD_TIERS = [
   { xp: 1000, label: 'Class Prize 1' },
@@ -37,6 +38,9 @@ const StudentDashboard = ({
 
   // Champion's Menagerie profile — card companion + keeper title
   const menProfile = useMemo(() => getMenagerieProfile(studentData?.menagerieData, false), [studentData?.menagerieData]);
+
+  // Wildwood Homestead profile — prosperity + title
+  const homeProfile = useMemo(() => getHomesteadProfile(studentData?.homesteadData, false), [studentData?.homesteadData]);
 
   const classTotalXP = useMemo(() => {
     const roster = classData?.students || [];
@@ -88,6 +92,14 @@ const StudentDashboard = ({
             )}
             {menProfile.title && <span className="bg-white/25 rounded-full px-2.5 py-0.5">📛 {menProfile.title.name}</span>}
             <span className="bg-white/25 rounded-full px-2.5 py-0.5">🐣 Earned in Champion&apos;s Menagerie</span>
+          </div>
+        )}
+        {homeProfile && (
+          <div className="flex flex-wrap gap-2 mt-2 text-[11px] md:text-xs font-bold">
+            {homeProfile.title && <span className="bg-white/25 rounded-full px-2.5 py-0.5">📛 {homeProfile.title.name}</span>}
+            <span className="bg-white/25 rounded-full px-2.5 py-0.5">🏡 {homeProfile.prosperity} Prosperity</span>
+            {homeProfile.rares > 0 && <span className="bg-white/25 rounded-full px-2.5 py-0.5">🗄️ {homeProfile.rares} curios</span>}
+            <span className="bg-white/25 rounded-full px-2.5 py-0.5">🏕️ Earned in Wildwood Homestead</span>
           </div>
         )}
       </div>

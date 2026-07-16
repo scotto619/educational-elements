@@ -33,7 +33,7 @@ const DodgeballGame = dynamic(() => import('../games/DodgeballGame'), { loading:
 const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoadingSpinner, ssr: false });
 const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
-const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
+const WildwoodHomesteadGame = dynamic(() => import('../games/WildwoodHomesteadGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -368,17 +368,16 @@ const GamesTab = ({
       logo: getGameLogo('champions-menagerie')
     },
     {
-      id: 'sprout-bloom',
-      name: 'Cozy Cottage',
-      icon: '🏡',
-      description: 'A cozy farming simulator! Plant seeds, water crops, fill orders, upgrade your tools, and build the ultimate farm.',
-      component: SproutBloomGame,
-      color: 'from-green-500 to-emerald-600',
+      id: 'wildwood-homestead',
+      name: 'Wildwood Homestead Preview',
+      icon: '🏕️',
+      description: "Preview the Wildwood Homestead survival-crafting game your students play — gathering, fishing, cooking, rare discoveries and homestead building, with crossovers from Champion's Forge and the Menagerie.",
+      component: WildwoodHomesteadGame,
+      color: 'from-green-700 to-emerald-800',
       difficulty: 'Easy - Medium',
-      time: '10-30 minutes',
+      time: '10+ minutes',
       category: 'fun',
-      inDevelopment: true,
-      logo: getGameLogo('sprout-bloom')
+      logo: getGameLogo('wildwood-homestead')
     }
   ];
 

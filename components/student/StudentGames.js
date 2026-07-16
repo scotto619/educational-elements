@@ -36,7 +36,7 @@ const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoa
 const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: GameLoadingSpinner, ssr: false });
 const WordImposterGame = dynamic(() => import('../games/WordImposterGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
-const SproutBloomGame = dynamic(() => import('../games/SproutBloomGame'), { loading: GameLoadingSpinner, ssr: false });
+const WildwoodHomesteadGame = dynamic(() => import('../games/WildwoodHomesteadGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
 const CritterSortGame = dynamic(() => import('../games/CritterSortGame'), { loading: GameLoadingSpinner, ssr: false });
 const FruitFrenzyGame = dynamic(() => import('../games/FruitFrenzyGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -630,18 +630,18 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       logo: getGameLogo('word-hunt')
     },
     {
-      id: 'sprout-bloom',
-      name: 'Cozy Cottage',
-      icon: '🏡',
-      description: 'Build your own cozy farm! Plant seeds, water crops, unlock new plants as you level up, and fulfil daily orders for rewards.',
-      component: SproutBloomGame,
-      color: 'from-green-500 to-emerald-600',
+      id: 'wildwood-homestead',
+      name: 'Wildwood Homestead',
+      icon: '🏕️',
+      description: 'Survive and thrive in a magical wilderness! Chop, mine, fish and forage, cook buff meals over wood fires, discover secret recipes and rare treasures, and build your dream homestead. Your Forge weapon and Menagerie companion help out!',
+      component: WildwoodHomesteadGame,
+      color: 'from-green-700 to-emerald-800',
       difficulty: 'Easy - Medium',
-      time: '10-30 minutes',
+      time: '10+ minutes',
       featured: true,
+      new: true,
       category: 'fun',
-      inDevelopment: true,
-      logo: getGameLogo('sprout-bloom')
+      logo: getGameLogo('wildwood-homestead')
     },
     {
       id: 'food-chain-frenzy',

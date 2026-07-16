@@ -282,6 +282,7 @@ export async function createStudent(classId, studentData) {
       // Game data
       sweetEmpireData: null,
       menagerieData: null,
+      homesteadData: null,
       moneyMastersProgress: null,
       keyboardQuestProgress: null,
       mathMentalsProgress: null,
