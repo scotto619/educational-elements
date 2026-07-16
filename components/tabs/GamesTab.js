@@ -371,7 +371,7 @@ const GamesTab = ({
       id: 'wildwood-homestead',
       name: 'Wildwood Homestead Preview',
       icon: '🏕️',
-      description: "Preview the Wildwood Homestead survival-crafting game your students play — gathering, fishing, cooking, rare discoveries and homestead building, with crossovers from Champion's Forge and the Menagerie.",
+      description: "Preview the Wildwood Homestead survival-crafting game your students play — slow-burn gathering, timed hunting/scavenging expeditions, deep cooking, critter collecting and inventory management, with crossovers from Champion's Forge and the Menagerie.",
       component: WildwoodHomesteadGame,
       color: 'from-green-700 to-emerald-800',
       difficulty: 'Easy - Medium',

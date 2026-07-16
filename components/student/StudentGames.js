@@ -633,7 +633,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       id: 'wildwood-homestead',
       name: 'Wildwood Homestead',
       icon: '🏕️',
-      description: 'Survive and thrive in a magical wilderness! Chop, mine, fish and forage, cook buff meals over wood fires, discover secret recipes and rare treasures, and build your dream homestead. Your Forge weapon and Menagerie companion help out!',
+      description: 'Survive the magical wilds! Chop, mine, fish and forage, send hunting and scavenging expeditions, cook 40+ recipes over wood fires, collect 50 critters and rare curios — and craft bigger packs, chests and gear to master your inventory. Your Forge weapon and Menagerie companion help out!',
       component: WildwoodHomesteadGame,
       color: 'from-green-700 to-emerald-800',
       difficulty: 'Easy - Medium',

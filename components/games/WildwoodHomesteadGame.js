@@ -1,31 +1,36 @@
 // components/games/WildwoodHomesteadGame.js
 // ─────────────────────────────────────────────────────────────────────────────
-// WILDWOOD HOMESTEAD 🏕️ — survival-crafting incremental (replaces Cozy Cottage)
+// WILDWOOD HOMESTEAD v2 — survival-crafting incremental built around
+// INVENTORY MANAGEMENT. All item art is SVG from /public/game icons/Wildwood
+// (no emoji glyphs — they don't render on every machine).
 //
-// • CLICK to chop, mine and forage — tool tiers + skill levels + node respawns.
-// • FISH with a cast → wait → bite-window reflex catch. Legendary fish exist.
-// • FARM crops, SMELT bars and COOK buff meals in real time (offline too).
-// • Wood is FUEL: the kitchen and smelter burn the logs you chop.
-// • Recipes are known, levelled into, or found on rare Recipe Scrolls.
-// • Rare curios (ambers, gems, star fragments…) fill your Curio Shelf.
-// • BUILD a homestead on a tile grid — decor gives Prosperity (and buffs).
-// • CROSS-GAME: your Champion's Forge weapon boosts chopping/mining, and your
-//   Menagerie companion lends a family bonus.
-// • Anti-autoclicker: impossible click rates leave you Exhausted for a rest.
+// • Limited inventory slots + stack sizes; craft pouches, backpacks, crates
+//   and camp chests to expand. Overflow loot is auto-sold for gold.
+// • Slow, chunky gathering: trees/veins take many swings, deplete and regrow.
+// • Fishing spots unlock along the waterline, each with its own catch table.
+// • EXPEDITIONS: timed Scavenge and Hunt trips that return chance-based loot,
+//   critters (50 to collect!), seeds, scrolls and curios.
+// • Farming plots + animal pens (eggs/milk/honey over real time) + cheese.
+// • 45+ recipes across campfire/stove/oven + Cauldron potions; wood is fuel.
+// • Cross-game: Forge weapon boosts gathering; Menagerie companion helps;
+//   discoveries send Wild Essence back to the Menagerie.
 //
 // Saves to studentData.homesteadData via updateStudentData (Firestore-safe).
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  fmtQty, ITEMS, RARE_IDS,
-  ZONES, NODES,
-  FISH_TABLE, FISH_WAIT_MIN_S, FISH_WAIT_MAX_S, FISH_BITE_WINDOW_MS,
+  fmtQty, ITEMS, FALLBACK_ICON, RARITY_STYLE, CURIO_IDS,
+  CRITTERS, CRITTER_MAP, rollCritter,
+  INV_BASE_SLOTS, STACK_BASE,
+  ZONES, NODES, STUMP_ICON,
+  FISHING_SPOTS, JUNK_IDS, FISH_WAIT_MIN_S, FISH_WAIT_MAX_S, FISH_BITE_WINDOW_MS, FISH_XP,
   TOOL_TIERS, TOOL_DEFS, TOOL_COSTS, TOOL_LEVEL_REQ,
   SKILLS, skillLevel, skillProgress,
-  FARM_BASE_PLOTS, CROPS, CROP_BY_SEED, GOLDEN_CROP_CHANCE,
+  EXPEDITIONS, HUNT_XP_PER_ROLL, SCAV_XP_PER_ROLL, SEED_DROPS,
+  FARM_BASE_PLOTS, CROPS, CROP_BY_SEED, GOLDEN_CROP_CHANCE, PENS, PEN_MAP, CHEESE_RECIPE,
   SMELT_SLOTS, SMELT_RECIPES,
   KITCHEN_TIERS, BUFF_LABELS, RECIPES, RECIPE_MAP, SCROLL_RECIPES, MAX_ACTIVE_BUFFS,
-  CRAFTS, CRAFT_MAP, GRID_COLS, GRID_ROWS,
+  CRAFTS, CRAFT_MAP,
   prosperityOf, totalSkillLevel, HOMESTEAD_TITLES, HOMESTEAD_TITLE_MAP,
   defaultSave,
 } from './Homestead/homesteadConfig';
@@ -34,6 +39,7 @@ import { SPECIES_MAP as MENAGERIE_SPECIES, levelForXp as menLevelForXp } from '.
 
 const now = () => Date.now();
 const rand = (a, b) => a + Math.random() * (b - a);
+const newUid = () => `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 
 const fmtCountdown = (ms) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -44,13 +50,15 @@ const fmtCountdown = (ms) => {
   return `${s}s`;
 };
 
-// Companion family → homestead bonus (read from Menagerie save, never written)
+const ICN = '/game icons/Wildwood';
+
+// Companion family → homestead bonus (read-only peek at the Menagerie save)
 const COMPANION_BONUSES = {
   Tide:      { label: '+12% fishing luck & quick bites', buffs: { fishLuck: 12, fishFast: 12 } },
   Meadow:    { label: '+10% double drops',               buffs: { doubleDrop: 10 } },
   Wilds:     { label: '+10% gathering power',            buffs: { gatherSpeed: 10 } },
-  Clockwork: { label: '+18% helper output',              buffs: { autoBoost: 18 } },
-  Elemental: { label: '+18% smelting speed',             buffs: { smeltFast: 18 } },
+  Clockwork: { label: '+15% smelting speed',             buffs: { smeltFast: 15 } },
+  Elemental: { label: '+15% smelting speed',             buffs: { smeltFast: 15 } },
   Cosmic:    { label: '+6% rare find luck',              buffs: { rareLuck: 6 } },
   Mythic:    { label: '+12% skill XP',                   buffs: { xpBoost: 12 } },
   Golden:    { label: '+9% rare find luck',              buffs: { rareLuck: 9 } },
@@ -58,23 +66,25 @@ const COMPANION_BONUSES = {
 
 // Firestore-safe clean of the save object
 const cleanSave = (gs) => ({
-  inv: Object.fromEntries(Object.entries(gs.inv || {}).filter(([, v]) => (Number(v) || 0) > 0).map(([k, v]) => [k, Math.floor(Number(v) || 0)])),
+  inv: Object.fromEntries(Object.entries(gs.inv || {}).filter(([id, v]) => ITEMS[id] && (Number(v) || 0) > 0).map(([k, v]) => [k, Math.floor(Number(v) || 0)])),
+  chest: Object.fromEntries(Object.entries(gs.chest || {}).filter(([id, v]) => ITEMS[id] && (Number(v) || 0) > 0).map(([k, v]) => [k, Math.floor(Number(v) || 0)])),
   gold: Math.floor(Number(gs.gold) || 0),
   skills: Object.fromEntries(Object.keys(SKILLS).map((k) => [k, Number(gs.skills?.[k]) || 0])),
   tools: { axe: Number(gs.tools?.axe) || 0, pick: Number(gs.tools?.pick) || 0, rod: Number(gs.tools?.rod) || 0 },
-  crafted: [...(gs.crafted || [])],
-  grid: (gs.grid || []).map((g) => ({ slot: Number(g.slot) || 0, craftId: String(g.craftId) })),
+  crafted: (gs.crafted || []).filter((id) => CRAFT_MAP[id]),
   farm: (gs.farm || []).map((f) => ({ plot: Number(f.plot) || 0, seedId: String(f.seedId), readyAt: Number(f.readyAt) || 0 })),
   smelting: (gs.smelting || []).map((s) => ({ slot: Number(s.slot) || 0, barId: String(s.barId), doneAt: Number(s.doneAt) || 0 })),
-  knownRecipes: [...(gs.knownRecipes || [])],
+  pensAt: Object.fromEntries(Object.entries(gs.pensAt || {}).map(([k, v]) => [k, Number(v) || 0])),
+  expeditions: (gs.expeditions || []).map((e) => ({ id: String(e.id), type: String(e.type), tier: Number(e.tier) || 0, returnAt: Number(e.returnAt) || 0 })),
+  knownRecipes: (gs.knownRecipes || []).filter((id) => RECIPE_MAP[id]),
   unreadScrolls: Number(gs.unreadScrolls) || 0,
   activeBuffs: (gs.activeBuffs || []).filter((b) => (b.until || 0) > now()).map((b) => ({
     recipeId: String(b.recipeId), type: String(b.type), value: Number(b.value) || 0, until: Number(b.until) || 0,
   })),
-  autoCollectAt: Object.fromEntries(Object.entries(gs.autoCollectAt || {}).map(([k, v]) => [k, Number(v) || 0])),
-  discoveredRares: [...(gs.discoveredRares || [])],
-  caughtFish: [...(gs.caughtFish || [])],
-  cookedDishes: [...(gs.cookedDishes || [])],
+  discoveredRares: (gs.discoveredRares || []).filter((id) => ITEMS[id]),
+  critters: (gs.critters || []).filter((id) => CRITTER_MAP[id]),
+  caughtFish: (gs.caughtFish || []).filter((id) => ITEMS[id]),
+  cookedDishes: (gs.cookedDishes || []).filter((id) => RECIPE_MAP[id]),
   counters: {
     chops: Number(gs.counters?.chops) || 0,
     mines: Number(gs.counters?.mines) || 0,
@@ -82,22 +92,43 @@ const cleanSave = (gs) => ({
     forages: Number(gs.counters?.forages) || 0,
     cooks: Number(gs.counters?.cooks) || 0,
     crafts: Number(gs.counters?.crafts) || 0,
+    expeditions: Number(gs.counters?.expeditions) || 0,
   },
   menagerieEssenceEarned: Number(gs.menagerieEssenceEarned) || 0,
-  unlockedTitles: [...(gs.unlockedTitles || [])],
-  activeTitle: gs.activeTitle || null,
+  unlockedTitles: (gs.unlockedTitles || []).filter((id) => HOMESTEAD_TITLE_MAP[id]),
+  activeTitle: HOMESTEAD_TITLE_MAP[gs.activeTitle] ? gs.activeTitle : 'wanderer',
   lastSeen: new Date().toISOString(),
   lastSaved: new Date().toISOString(),
 });
 
 const TABS = [
-  { id: 'gather', name: 'Gather', icon: '🌲' },
-  { id: 'farm', name: 'Farm', icon: '🌾' },
-  { id: 'craft', name: 'Craft', icon: '🛠️' },
-  { id: 'cook', name: 'Kitchen', icon: '🍳' },
-  { id: 'home', name: 'Homestead', icon: '🏕️' },
-  { id: 'class', name: 'Class', icon: '👥' },
+  { id: 'gather', name: 'Gather', img: `${ICN}/Nature/018-forest.svg` },
+  { id: 'expeditions', name: 'Expeditions', img: `${ICN}/Camping/009-binoculars.svg` },
+  { id: 'farm', name: 'Farm', img: `${ICN}/Farm/001-gardening.svg` },
+  { id: 'craft', name: 'Craft', img: `${ICN}/Camping/010-axe.svg` },
+  { id: 'cook', name: 'Kitchen', img: `${ICN}/Cooking/012-frying pan.svg` },
+  { id: 'inventory', name: 'Pack', img: `${ICN}/Camping/007-backpack.svg` },
+  { id: 'class', name: 'Class', img: `${ICN}/Nature/007-world.svg` },
 ];
+
+// ── Icon components (SVG with graceful fallback) ─────────────────────────────
+const Ico = ({ src, tint, size = 'w-8 h-8', className = '', style = {} }) => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src={src || FALLBACK_ICON}
+    alt=""
+    draggable={false}
+    className={`${size} object-contain select-none ${className}`}
+    style={{ filter: tint || undefined, ...style }}
+    onError={(e) => { if (e.currentTarget.src.indexOf('magic%20box') === -1) e.currentTarget.src = FALLBACK_ICON; }}
+  />
+);
+const It = ({ id, size = 'w-8 h-8', className = '' }) => (
+  <Ico src={ITEMS[id]?.img} tint={ITEMS[id]?.tint} size={size} className={className} />
+);
+const Panel = ({ children, className = '' }) => (
+  <div className={`rounded-2xl border border-emerald-900/40 bg-slate-900 shadow-lg ${className}`}>{children}</div>
+);
 
 // ═════════════════════════════════════════════════════════════════════════════
 const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () => {}, classmates = [] }) => {
@@ -105,16 +136,19 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState('gather');
   const [zone, setZone] = useState('forest');
-  const [nodeState, setNodeState] = useState({});       // { key: { hitsLeft, stock, respawnAt } } (session-only)
-  const [fishing, setFishing] = useState({ phase: 'idle' }); // idle | waiting | bite
+  const [spot, setSpot] = useState('creek');
+  const [nodeState, setNodeState] = useState({});
+  const [fishing, setFishing] = useState({ phase: 'idle' });
   const [exhaustedUntil, setExhaustedUntil] = useState(0);
-  const [rareFind, setRareFind] = useState(null);       // modal { itemId }
-  const [newRecipe, setNewRecipe] = useState(null);     // modal { recipeId }
-  const [placeMode, setPlaceMode] = useState(null);     // decor craftId being placed
+  const [rareFind, setRareFind] = useState(null);       // { kind: 'curio'|'critter', id }
+  const [newRecipe, setNewRecipe] = useState(null);
+  const [expResult, setExpResult] = useState(null);     // { typeName, loot: [{id|critterId, qty}], soldGold }
   const [visitId, setVisitId] = useState(null);
   const [, setTick] = useState(0);
 
   const gsRef = useRef(gs); gsRef.current = gs;
+  const invRef = useRef(null);   // synchronous shadow of inv (rapid clicks)
+  const chestRef = useRef(null);
   const dirtyRef = useRef(false);
   const savingRef = useRef(false);
   const showToastRef = useRef(showToast); showToastRef.current = showToast;
@@ -123,13 +157,15 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const nodeStateRef = useRef({}); nodeStateRef.current = nodeState;
   const fishTimerRef = useRef(null);
   const fishingRef = useRef(fishing); fishingRef.current = fishing;
+  const floatIdRef = useRef(0);
+  const [floaties, setFloaties] = useState([]);         // [{ id, key, text }]
 
-  // ── Cross-game bonuses (read-only peeks at the other games' saves) ─────────
+  // ── Cross-game bonuses ──────────────────────────────────────────────────────
   const forgeBonus = useMemo(() => {
     const sed = studentData?.sweetEmpireData;
     if (!sed) return { power: 0, stageName: null };
     const stage = forgeStageFor(sed);
-    return { power: stage.index * 0.5, stageName: stage.index > 0 ? stage.name : null };
+    return { power: stage.index * 0.4, stageName: stage.index > 0 ? stage.name : null };
   }, [studentData?.sweetEmpireData]);
 
   const companionBonus = useMemo(() => {
@@ -140,10 +176,9 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if (!sp) return null;
     const bonus = COMPANION_BONUSES[sp.family];
     if (!bonus) return null;
-    return { name: sp.name, img: sp.img, shiny: !!comp.shiny, level: menLevelForXp(comp.xp), family: sp.family, ...bonus };
+    return { name: sp.name, img: sp.img, shiny: !!comp.shiny, level: menLevelForXp(comp.xp), ...bonus };
   }, [studentData?.menagerieData]);
 
-  // Aggregate a buff type: meals + decor effects + companion
   const buffVal = useCallback((type) => {
     const cur = gsRef.current;
     let v = 0;
@@ -153,6 +188,23 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     return v;
   }, [companionBonus]);
 
+  // ── Derived capacities ──────────────────────────────────────────────────────
+  const capsOf = (cur) => {
+    let slots = INV_BASE_SLOTS, stack = STACK_BASE, chestSlots = 0, scavBonus = 0, huntBonus = 0, expSpeed = 0, cropYield = 0;
+    (cur.crafted || []).forEach((id) => {
+      const c = CRAFT_MAP[id];
+      if (!c) return;
+      slots += c.slots || 0;
+      stack += c.stack || 0;
+      chestSlots += c.chestSlots || 0;
+      scavBonus += c.scavBonus || 0;
+      huntBonus += c.huntBonus || 0;
+      expSpeed += c.expSpeed || 0;
+      cropYield += c.effect?.cropYield || 0;
+    });
+    return { slots, stack, chestSlots, scavBonus, huntBonus, expSpeed, cropYield };
+  };
+  const caps = useMemo(() => capsOf(gs), [gs]);
   const prosperity = useMemo(() => prosperityOf(gs), [gs]);
   const kitchenTier = gs.crafted.includes('kitchen') ? 2 : gs.crafted.includes('stove') ? 1 : 0;
   const farmPlots = FARM_BASE_PLOTS + (gs.crafted || []).reduce((n, id) => n + (CRAFT_MAP[id]?.plots || 0), 0);
@@ -160,27 +212,43 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     () => Object.entries(gs.inv || {}).reduce((s, [id, q]) => s + (ITEMS[id]?.burn || 0) * q, 0),
     [gs.inv]
   );
+  const maxExpeditions = gs.crafted.includes('camp2') ? 2 : 1;
+  const usedSlots = Object.keys(gs.inv || {}).length;
 
-  // ── Load ────────────────────────────────────────────────────────────────────
+  // ── Load (migrates v1 saves — unknown ids are dropped by cleanSave rules) ──
   useEffect(() => {
     if (loaded) return;
     const raw = studentData?.homesteadData;
-    const save = { ...defaultSave(), ...(raw || {}) };
-    save.inv = { ...(raw?.inv || defaultSave().inv) };
-    save.skills = { ...defaultSave().skills, ...(raw?.skills || {}) };
-    save.tools = { ...defaultSave().tools, ...(raw?.tools || {}) };
-    save.counters = { ...defaultSave().counters, ...(raw?.counters || {}) };
-    save.farm = (raw?.farm || []).map((f) => ({ ...f }));
+    const d = defaultSave();
+    const save = { ...d, ...(raw || {}) };
+    save.inv = Object.fromEntries(Object.entries({ ...(raw?.inv || d.inv) }).filter(([id]) => ITEMS[id]));
+    save.chest = Object.fromEntries(Object.entries({ ...(raw?.chest || {}) }).filter(([id]) => ITEMS[id]));
+    save.skills = { ...d.skills, ...(raw?.skills || {}) };
+    save.tools = { ...d.tools, ...(raw?.tools || {}) };
+    save.counters = { ...d.counters, ...(raw?.counters || {}) };
+    save.crafted = (raw?.crafted || []).filter((id) => CRAFT_MAP[id]);
+    save.farm = (raw?.farm || []).filter((f) => CROP_BY_SEED[f.seedId]).map((f) => ({ ...f }));
     save.smelting = (raw?.smelting || []).map((s) => ({ ...s }));
-    save.grid = (raw?.grid || []).map((g) => ({ ...g }));
-    save.activeBuffs = (raw?.activeBuffs || []).filter((b) => (b.until || 0) > now());
+    save.pensAt = { ...(raw?.pensAt || {}) };
+    // Ensure every owned pen has a collection anchor
+    save.crafted.forEach((id) => { if (CRAFT_MAP[id]?.pen && !save.pensAt[CRAFT_MAP[id].pen]) save.pensAt[CRAFT_MAP[id].pen] = now(); });
+    save.expeditions = (raw?.expeditions || []).map((e) => ({ ...e }));
+    save.knownRecipes = (raw?.knownRecipes || d.knownRecipes).filter((id) => RECIPE_MAP[id]);
+    if (save.knownRecipes.length === 0) save.knownRecipes = d.knownRecipes;
+    save.activeBuffs = (raw?.activeBuffs || []).filter((b) => (b.until || 0) > now() && RECIPE_MAP[b.recipeId]);
+    save.discoveredRares = (raw?.discoveredRares || []).filter((id) => ITEMS[id]);
+    save.critters = (raw?.critters || []).filter((id) => CRITTER_MAP[id]);
+    save.caughtFish = (raw?.caughtFish || []).filter((id) => ITEMS[id]);
+    save.cookedDishes = (raw?.cookedDishes || []).filter((id) => RECIPE_MAP[id]);
+    invRef.current = { ...save.inv };
+    chestRef.current = { ...save.chest };
     setGs(save);
     setLoaded(true);
     dirtyRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentData, loaded]);
 
-  // ── Ticker (1s — countdowns, respawns, buff expiry) ────────────────────────
+  // ── Ticker ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!loaded) return;
     const t = setInterval(() => setTick((x) => x + 1), 1000);
@@ -194,7 +262,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       const cur = gsRef.current;
       const fresh = HOMESTEAD_TITLES.filter((ti) => !(cur.unlockedTitles || []).includes(ti.id) && ti.check(cur)).map((ti) => ti.id);
       if (fresh.length === 0) return;
-      fresh.forEach((id) => showToastRef.current(`📛 Title unlocked: ${HOMESTEAD_TITLE_MAP[id].name}!`, 'success'));
+      fresh.forEach((id) => showToastRef.current(`Title unlocked: ${HOMESTEAD_TITLE_MAP[id].name}!`, 'success'));
       setGs((p) => ({ ...p, unlockedTitles: [...(p.unlockedTitles || []), ...fresh] }));
       dirtyRef.current = true;
     }, 3000);
@@ -223,41 +291,109 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
 
   useEffect(() => () => clearTimeout(fishTimerRef.current), []);
 
-  // ── Inventory helpers ───────────────────────────────────────────────────────
-  const invCount = (id) => Math.floor(gsRef.current.inv?.[id] || 0);
-  const addItems = (changes) => {
-    setGs((p) => {
-      const inv = { ...p.inv };
-      Object.entries(changes).forEach(([id, d]) => { inv[id] = Math.max(0, (inv[id] || 0) + d); if (inv[id] === 0) delete inv[id]; });
-      return { ...p, inv };
-    });
-    dirtyRef.current = true;
-  };
-  const hasItems = (req) => Object.entries(req || {}).every(([id, q]) => q === 0 || invCount(id) >= q);
+  // ── Inventory core (slot + stack aware; overflow auto-sold) ────────────────
+  const countOf = (id) => Math.floor((invRef.current || gsRef.current.inv)?.[id] || 0);
 
-  // Consume `units` of fuel using the lowest-burn wood first. Returns false if short.
-  const consumeFuel = (units) => {
+  const addLoot = (gains, { sellOverflow = true } = {}) => {
     const cur = gsRef.current;
-    const woods = Object.keys(cur.inv || {})
-      .filter((id) => ITEMS[id]?.burn)
-      .sort((a, b) => ITEMS[a].burn - ITEMS[b].burn);
+    const c = capsOf(cur);
+    const inv = { ...(invRef.current || cur.inv) };
+    let soldGold = 0;
+    const soldItems = [];
+    Object.entries(gains).forEach(([id, q]) => {
+      q = Math.floor(q);
+      if (!ITEMS[id] || q === 0) return;
+      if (q < 0) {
+        inv[id] = Math.max(0, (inv[id] || 0) + q);
+        if (inv[id] === 0) delete inv[id];
+        return;
+      }
+      const have = inv[id] || 0;
+      const hasSlot = have > 0 || Object.keys(inv).length < c.slots;
+      const space = hasSlot ? Math.max(0, c.stack - have) : 0;
+      const add = Math.min(q, space);
+      if (add > 0) inv[id] = have + add;
+      const over = q - add;
+      if (over > 0 && sellOverflow) {
+        soldGold += (ITEMS[id].sell || 0) * over;
+        soldItems.push(`${over} ${ITEMS[id].name}`);
+      }
+    });
+    invRef.current = inv;
+    setGs((p) => ({ ...p, inv: { ...inv }, gold: p.gold + soldGold }));
+    dirtyRef.current = true;
+    if (soldItems.length > 0) {
+      showToastRef.current(`Pack full! Overflow sold: ${soldItems.join(', ')} (+${soldGold} gold). Craft bags & crates to carry more!`, 'info');
+    }
+    return { soldGold };
+  };
+
+  const canFit = (id, q = 1) => {
+    const c = capsOf(gsRef.current);
+    const inv = invRef.current || gsRef.current.inv;
+    const have = inv?.[id] || 0;
+    if (have > 0) return have + q <= c.stack;
+    return Object.keys(inv || {}).length < c.slots && q <= c.stack;
+  };
+
+  const hasItems = (req) => Object.entries(req || {}).every(([id, q]) => q === 0 || countOf(id) >= q);
+
+  const consumeFuel = (units) => {
+    const inv = invRef.current || gsRef.current.inv;
+    const woods = Object.keys(inv || {}).filter((id) => ITEMS[id]?.burn).sort((a, b) => ITEMS[a].burn - ITEMS[b].burn);
     let need = units;
     const spend = {};
     for (const id of woods) {
       if (need <= 0) break;
-      const take = Math.min(cur.inv[id], Math.ceil(need / ITEMS[id].burn));
+      const take = Math.min(inv[id], Math.ceil(need / ITEMS[id].burn));
       spend[id] = -take;
       need -= take * ITEMS[id].burn;
     }
     if (need > 0) return false;
-    addItems(spend);
+    addLoot(spend);
     return true;
   };
 
-  // Wild Essence flows back to Champion's Menagerie (claimed next time it's opened)
+  // Chest: move items between inventory and camp chest (chest stacks are 2×)
+  const chestMove = (id, qty, toChest) => {
+    const cur = gsRef.current;
+    const c = capsOf(cur);
+    if (c.chestSlots === 0) return;
+    const inv = { ...(invRef.current || cur.inv) };
+    const chest = { ...(chestRef.current || cur.chest) };
+    if (toChest) {
+      const n = Math.min(qty, inv[id] || 0);
+      if (n <= 0) return;
+      const have = chest[id] || 0;
+      const hasSlot = have > 0 || Object.keys(chest).length < c.chestSlots;
+      const space = hasSlot ? Math.max(0, c.stack * 2 - have) : 0;
+      const move = Math.min(n, space);
+      if (move <= 0) { showToastRef.current('Chest is full!', 'error'); return; }
+      chest[id] = have + move;
+      inv[id] -= move;
+      if (inv[id] <= 0) delete inv[id];
+    } else {
+      const n = Math.min(qty, chest[id] || 0);
+      if (n <= 0) return;
+      const have = inv[id] || 0;
+      const hasSlot = have > 0 || Object.keys(inv).length < c.slots;
+      const space = hasSlot ? Math.max(0, c.stack - have) : 0;
+      const move = Math.min(n, space);
+      if (move <= 0) { showToastRef.current('No room in your pack!', 'error'); return; }
+      inv[id] = have + move;
+      chest[id] -= move;
+      if (chest[id] <= 0) delete chest[id];
+    }
+    invRef.current = inv;
+    chestRef.current = chest;
+    setGs((p) => ({ ...p, inv: { ...inv }, chest: { ...chest } }));
+    dirtyRef.current = true;
+  };
+
+  // ── Essence / skills / discoveries ─────────────────────────────────────────
   const earnMenagerieEssence = (amount, reason) => {
     setGs((p) => ({ ...p, menagerieEssenceEarned: (p.menagerieEssenceEarned || 0) + amount }));
-    showToastRef.current(`✨ ${reason} +${amount} Wild Essence sent to your Menagerie!`, 'success');
+    showToastRef.current(`${reason} +${amount} Wild Essence sent to your Menagerie!`, 'success');
     dirtyRef.current = true;
   };
 
@@ -267,21 +403,33 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     setGs((p) => ({ ...p, skills: { ...p.skills, [skill]: (p.skills?.[skill] || 0) + boosted } }));
     const after = skillLevel((gsRef.current.skills?.[skill] || 0) + boosted);
     if (after > before) {
-      showToast(`⬆️ ${SKILLS[skill].name} level ${after}!`, 'success');
+      showToast(`${SKILLS[skill].name} reached level ${after}!`, 'success');
       earnMenagerieEssence(10, `${SKILLS[skill].name} level up!`);
     }
     dirtyRef.current = true;
   };
 
-  const foundRare = (itemId) => {
-    addItems({ [itemId]: 1 });
+  const foundCurio = (itemId) => {
+    addLoot({ [itemId]: 1 });
     const cur = gsRef.current;
     if (!(cur.discoveredRares || []).includes(itemId)) {
       setGs((p) => ({ ...p, discoveredRares: [...(p.discoveredRares || []), itemId] }));
-      setRareFind({ itemId });
+      setRareFind({ kind: 'curio', id: itemId });
       earnMenagerieEssence(40, `${ITEMS[itemId].name} discovered!`);
     } else {
-      showToast(`${ITEMS[itemId].icon} Another ${ITEMS[itemId].name}!`, 'success');
+      showToast(`Another ${ITEMS[itemId].name}!`, 'success');
+    }
+  };
+
+  const foundCritter = (critterId) => {
+    const cur = gsRef.current;
+    if (!(cur.critters || []).includes(critterId)) {
+      setGs((p) => ({ ...p, critters: [...(p.critters || []), critterId] }));
+      setRareFind({ kind: 'critter', id: critterId });
+      earnMenagerieEssence(20, `${CRITTER_MAP[critterId].name} collected!`);
+    } else {
+      setGs((p) => ({ ...p, gold: p.gold + 5 }));
+      showToast(`Another ${CRITTER_MAP[critterId].name} — released for 5 gold.`, 'info');
     }
   };
 
@@ -291,18 +439,18 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       if (Math.random() < r.chance * luck) {
         if (r.id === 'recipe_scroll') {
           setGs((p) => ({ ...p, unreadScrolls: (p.unreadScrolls || 0) + 1 }));
-          showToast('📜 You found a Recipe Scroll! Read it in the Kitchen.', 'success');
-        } else if (ITEMS[r.id]?.kind === 'rare') {
-          foundRare(r.id);
+          showToast('You found a Recipe Scroll! Read it in the Kitchen.', 'success');
+        } else if (ITEMS[r.id]?.kind === 'curio') {
+          foundCurio(r.id);
         } else {
-          addItems({ [r.id]: 1 });
-          showToast(`${ITEMS[r.id].icon} Bonus find: ${ITEMS[r.id].name}!`, 'success');
+          addLoot({ [r.id]: 1 });
+          showToast(`Bonus find: ${ITEMS[r.id].name}!`, 'success');
         }
       }
     });
   };
 
-  // ── Anti-autoclicker (same guard as Champion's Forge) ──────────────────────
+  // ── Anti-autoclicker ────────────────────────────────────────────────────────
   const registerStrike = () => {
     const t = now();
     if (exhaustedRef.current > t) return false;
@@ -313,7 +461,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       exhaustedRef.current = t + 15000;
       setExhaustedUntil(exhaustedRef.current);
       clickTimesRef.current = [];
-      showToastRef.current('😮‍💨 Whoa — nobody swings THAT fast! You need a 15s breather…', 'error');
+      showToastRef.current('Whoa — nobody swings THAT fast! You need a 15s breather…', 'error');
       return false;
     }
     return true;
@@ -321,12 +469,16 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
 
   // ── Gathering ───────────────────────────────────────────────────────────────
   const toolPower = (toolId) => {
-    if (!toolId) return 1 + buffVal('gatherSpeed') / 100 + forgeBonus.power * 0.5;
-    const tier = TOOL_TIERS[gsRef.current.tools?.[toolId] || 0];
-    return (tier?.power || 1) * (1 + buffVal('gatherSpeed') / 100) + forgeBonus.power;
+    const base = toolId ? (TOOL_TIERS[gsRef.current.tools?.[toolId] || 0]?.power || 1) : 1;
+    return base * (1 + buffVal('gatherSpeed') / 100) + forgeBonus.power;
   };
+  const clicksNeeded = (node, toolId) => Math.max(2, Math.ceil(node.hardness / toolPower(toolId)));
 
-  const clicksNeeded = (node, toolId) => Math.max(1, Math.ceil(node.hardness / toolPower(toolId)));
+  const pushFloaty = (key, text) => {
+    const id = floatIdRef.current++;
+    setFloaties((f) => [...f.slice(-8), { id, key, text }]);
+    setTimeout(() => setFloaties((f) => f.filter((x) => x.id !== id)), 900);
+  };
 
   const strikeNode = (zoneDef, node) => {
     if (!registerStrike()) return;
@@ -336,6 +488,10 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     const key = `${zoneDef.id}_${node.id}`;
     const st = nodeStateRef.current[key] || { stock: node.stock, hitsLeft: clicksNeeded(node, zoneDef.tool), respawnAt: 0 };
     if (st.respawnAt > now()) return;
+    if (!canFit(node.yieldId, 1)) {
+      showToastRef.current(`No room for ${ITEMS[node.yieldId].name}! Sell, store or craft a bigger pack.`, 'error');
+      return;
+    }
 
     if (st.hitsLeft > 1) {
       const next = { ...st, hitsLeft: st.hitsLeft - 1 };
@@ -345,10 +501,11 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     }
     // Yield!
     const dbl = Math.random() < buffVal('doubleDrop') / 100;
-    addItems({ [node.yieldId]: dbl ? 2 : 1 });
+    const qty = dbl ? 2 : 1;
+    addLoot({ [node.yieldId]: qty });
+    pushFloaty(key, `+${qty} ${ITEMS[node.yieldId].name}`);
     gainSkillXp(skill, node.xp);
     rollRares(node.rares || []);
-    if (dbl) showToast(`🎁 Double ${ITEMS[node.yieldId].name}!`, 'success');
     const counterKey = { wood: 'chops', mine: 'mines', forage: 'forages' }[skill];
     if (counterKey) setGs((p) => ({ ...p, counters: { ...p.counters, [counterKey]: (p.counters?.[counterKey] || 0) + 1 } }));
 
@@ -374,7 +531,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       setFishing({ phase: 'bite', windowUntil: now() + windowMs });
       fishTimerRef.current = setTimeout(() => {
         setFishing({ phase: 'idle' });
-        showToastRef.current('🐟 It slipped away… cast again!', 'error');
+        showToastRef.current('It slipped away… cast again!', 'error');
       }, windowMs);
     }, waitMs);
   };
@@ -384,42 +541,112 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if (f.phase === 'waiting') {
       clearTimeout(fishTimerRef.current);
       setFishing({ phase: 'idle' });
-      showToast('💦 Too eager! You scared it off — wait for the ❗', 'error');
+      showToast('Too eager! You scared it off — wait for the bite!', 'error');
       return;
     }
     if (f.phase !== 'bite') return;
     clearTimeout(fishTimerRef.current);
     setFishing({ phase: 'idle' });
 
-    const lvl = skillLevel(gsRef.current.skills?.fish || 0);
-    const rodTier = gsRef.current.tools?.rod || 0;
+    const spotDef = FISHING_SPOTS.find((s) => s.id === spot) || FISHING_SPOTS[0];
     const luck = 1 + buffVal('fishLuck') / 100;
-    const rows = FISH_TABLE.filter((r) => lvl >= r.level && rodTier >= r.rod);
-    const total = rows.reduce((s, r) => s + r.weight * (r.rare ? luck : 1), 0);
+    const rows = spotDef.table;
+    const weightOf = ([id, w]) => (ITEMS[id]?.rare || ITEMS[id]?.kind === 'curio' ? w * luck : w);
+    const total = rows.reduce((s, r) => s + weightOf(r), 0);
     let roll = Math.random() * total;
-    let picked = rows[0];
-    for (const r of rows) { roll -= r.weight * (r.rare ? luck : 1); if (roll <= 0) { picked = r; break; } }
+    let pickedId = rows[0][0];
+    for (const r of rows) { roll -= weightOf(r); if (roll <= 0) { pickedId = r[0]; break; } }
+    if (pickedId === 'old_junk') pickedId = JUNK_IDS[Math.floor(Math.random() * JUNK_IDS.length)];
 
-    const item = ITEMS[picked.id];
-    if (item.kind === 'rare') {
-      foundRare(picked.id);
+    const item = ITEMS[pickedId];
+    if (item.kind === 'curio') {
+      foundCurio(pickedId);
     } else {
-      addItems({ [picked.id]: 1 });
-      showToast(`${item.icon} Caught: ${item.name}!${item.rare ? ' INCREDIBLE!' : ''}`, item.rare ? 'success' : 'info');
+      addLoot({ [pickedId]: 1 });
+      showToast(`Caught: ${item.name}!${item.rare ? ' INCREDIBLE!' : ''}`, item.rare ? 'success' : 'info');
     }
-    if (item.kind === 'fish' && !(gsRef.current.caughtFish || []).includes(picked.id)) {
-      setGs((p) => ({ ...p, caughtFish: [...(p.caughtFish || []), picked.id] }));
-      if (item.rare) setRareFind({ itemId: picked.id });
+    if (item.kind === 'fish' && !(gsRef.current.caughtFish || []).includes(pickedId)) {
+      setGs((p) => ({ ...p, caughtFish: [...(p.caughtFish || []), pickedId] }));
+      if (item.rare) earnMenagerieEssence(40, `${item.name} caught!`);
     }
-    gainSkillXp('fish', picked.xp || 3);
+    gainSkillXp('fish', FISH_XP[pickedId] || 3);
   };
 
-  // ── Farming ─────────────────────────────────────────────────────────────────
+  // ── Expeditions ─────────────────────────────────────────────────────────────
+  const startExpedition = (type, tierIdx) => {
+    const cur = gsRef.current;
+    const def = EXPEDITIONS[type];
+    if (def.needs && !cur.crafted.includes(def.needs)) return;
+    if ((cur.expeditions || []).length >= maxExpeditions) {
+      showToast(maxExpeditions === 1 ? 'You can only run one expedition at a time — build a Forward Camp for two!' : 'Both expedition parties are already out!', 'error');
+      return;
+    }
+    const dur = def.durations[tierIdx];
+    const speed = 1 - Math.min(0.5, capsOf(cur).expSpeed / 100);
+    setGs((p) => ({
+      ...p,
+      expeditions: [...(p.expeditions || []), { id: newUid(), type, tier: tierIdx, returnAt: now() + dur.minutes * 60 * 1000 * speed }],
+      counters: { ...p.counters, expeditions: (p.counters?.expeditions || 0) + 1 },
+    }));
+    showToast(`${def.name} — ${dur.name} underway! Check back soon.`, 'success');
+    dirtyRef.current = true;
+    setTimeout(persist, 400);
+  };
+
+  const collectExpedition = (exp) => {
+    if (now() < exp.returnAt) return;
+    const cur = gsRef.current;
+    const def = EXPEDITIONS[exp.type];
+    const dur = def.durations[exp.tier] || def.durations[0];
+    const c = capsOf(cur);
+    const bonus = exp.type === 'hunt' ? c.huntBonus : c.scavBonus;
+    const rolls = Math.round(dur.rolls * (1 + bonus / 100));
+    const expLuck = 1 + buffVal('expLuck') / 100;
+
+    const isLucky = (id) => id === 'CURIO' || id === 'recipe_scroll' || ITEMS[id]?.kind === 'rareIng' || ITEMS[id]?.rarity === 'legendary';
+    const weightOf = ([id, w]) => (isLucky(id) ? w * expLuck : w);
+    const total = def.table.reduce((s, r) => s + weightOf(r), 0);
+
+    const loot = {};       // itemId -> qty
+    const critterFinds = [];
+    let scrolls = 0;
+    const curios = [];
+    for (let i = 0; i < rolls; i++) {
+      let roll = Math.random() * total;
+      let picked = def.table[0][0];
+      for (const r of def.table) { roll -= weightOf(r); if (roll <= 0) { picked = r[0]; break; } }
+      if (picked === 'CRITTER') critterFinds.push(rollCritter().id);
+      else if (picked === 'SEED') { const sid = SEED_DROPS[Math.floor(Math.random() * SEED_DROPS.length)]; loot[sid] = (loot[sid] || 0) + 1; }
+      else if (picked === 'CURIO') curios.push(CURIO_IDS[Math.floor(Math.random() * CURIO_IDS.length)]);
+      else if (picked === 'recipe_scroll') scrolls += 1;
+      else loot[picked] = (loot[picked] || 0) + 1;
+    }
+
+    setGs((p) => ({ ...p, expeditions: (p.expeditions || []).filter((e) => e.id !== exp.id) }));
+    const { soldGold } = addLoot(loot);
+    if (scrolls > 0) setGs((p) => ({ ...p, unreadScrolls: (p.unreadScrolls || 0) + scrolls }));
+    curios.forEach((id) => foundCurio(id));
+    critterFinds.forEach((id) => foundCritter(id));
+    gainSkillXp(exp.type === 'hunt' ? 'hunt' : 'forage', rolls * (exp.type === 'hunt' ? HUNT_XP_PER_ROLL : SCAV_XP_PER_ROLL));
+
+    setExpResult({
+      typeName: `${def.name} — ${dur.name}`,
+      loot: Object.entries(loot).map(([id, qty]) => ({ id, qty })),
+      critters: critterFinds,
+      scrolls,
+      curios,
+      soldGold,
+    });
+    dirtyRef.current = true;
+    setTimeout(persist, 400);
+  };
+
+  // ── Farm + pens + trade ─────────────────────────────────────────────────────
   const plantSeed = (plot, seedId) => {
     const crop = CROP_BY_SEED[seedId];
-    if (!crop || invCount(seedId) < 1) return;
-    const fast = 1 - Math.min(0.5, buffVal('cropFast') / 100);
-    addItems({ [seedId]: -1 });
+    if (!crop || countOf(seedId) < 1) return;
+    const fast = 1 - Math.min(0.6, buffVal('cropFast') / 100);
+    addLoot({ [seedId]: -1 });
     setGs((p) => ({ ...p, farm: [...p.farm, { plot, seedId, readyAt: now() + crop.growMin * 60 * 1000 * fast }] }));
     dirtyRef.current = true;
   };
@@ -428,24 +655,56 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if (now() < plotEntry.readyAt) return;
     const crop = CROP_BY_SEED[plotEntry.seedId];
     const golden = Math.random() < GOLDEN_CROP_CHANCE;
-    const qty = crop.yield * (golden ? 2 : 1);
-    addItems({ [crop.cropId]: qty });
-    setGs((p) => ({ ...p, farm: p.farm.filter((f) => f !== plotEntry && f.plot !== plotEntry.plot) }));
-    showToast(`${golden ? '✨ GOLDEN harvest! ' : '🌾 '}+${qty} ${ITEMS[crop.cropId].name}!`, 'success');
+    const qty = (crop.yield + caps.cropYield) * (golden ? 2 : 1);
+    setGs((p) => ({ ...p, farm: p.farm.filter((f) => f.plot !== plotEntry.plot) }));
+    addLoot({ [crop.cropId]: qty });
+    showToast(`${golden ? 'GOLDEN harvest! ' : ''}+${qty} ${ITEMS[crop.cropId].name}!`, 'success');
     if (golden) earnMenagerieEssence(15, 'Golden harvest!');
-    gainSkillXp('forage', Math.round(crop.growMin / 8) + 2);
+    gainSkillXp('forage', Math.round(crop.growMin / 10) + 3);
+  };
+
+  const pensOwned = PENS.concat([PEN_MAP.beebox, PEN_MAP.fishtrap]).filter((p) => gs.crafted.includes(p.id));
+  const penPending = (pen) => {
+    const anchor = gs.pensAt?.[pen.id] || now();
+    const hours = Math.min(pen.capHours, (now() - anchor) / 3600000);
+    return Math.floor(hours * pen.perHour * (1 + buffVal('penBoost') / 100));
+  };
+  const collectPen = (pen) => {
+    const n = penPending(pen);
+    if (n < 1) return;
+    setGs((p) => ({ ...p, pensAt: { ...p.pensAt, [pen.id]: now() } }));
+    addLoot({ [pen.produceId]: n });
+    showToast(`Collected ${n} ${ITEMS[pen.produceId].name} from the ${pen.name}!`, 'success');
+  };
+
+  const pressCheese = () => {
+    if (!gsRef.current.crafted.includes('cheesepress')) return;
+    if (!hasItems(CHEESE_RECIPE.in)) return;
+    if (!canFit(CHEESE_RECIPE.out, CHEESE_RECIPE.outQty)) { showToast('No room for cheese!', 'error'); return; }
+    addLoot({ ...Object.fromEntries(Object.entries(CHEESE_RECIPE.in).map(([id, q]) => [id, -q])), [CHEESE_RECIPE.out]: CHEESE_RECIPE.outQty });
+    showToast('Pressed a wheel of Wildwood Cheese!', 'success');
+    gainSkillXp('cook', 8);
   };
 
   const buySeed = (crop) => {
     if (gsRef.current.gold < crop.seedCost) return;
+    if (!canFit(crop.seedId, 1)) { showToast('No room in your pack!', 'error'); return; }
     setGs((p) => ({ ...p, gold: p.gold - crop.seedCost }));
-    addItems({ [crop.seedId]: 1 });
+    addLoot({ [crop.seedId]: 1 });
+  };
+
+  const buyTrade = (id) => {
+    const cost = ITEMS[id]?.cost || 0;
+    if (!cost || gsRef.current.gold < cost) return;
+    if (!canFit(id, 1)) { showToast('No room in your pack!', 'error'); return; }
+    setGs((p) => ({ ...p, gold: p.gold - cost }));
+    addLoot({ [id]: 1 });
   };
 
   const sellItem = (id, qty) => {
-    const n = Math.min(qty, invCount(id));
+    const n = Math.min(qty, countOf(id));
     if (n <= 0 || !ITEMS[id].sell) return;
-    addItems({ [id]: -n });
+    addLoot({ [id]: -n });
     setGs((p) => ({ ...p, gold: p.gold + ITEMS[id].sell * n }));
   };
 
@@ -453,12 +712,12 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const startSmelt = (recipe) => {
     const cur = gsRef.current;
     if (!cur.crafted.includes('smelter')) return;
-    const usedSlots = cur.smelting.map((s) => s.slot);
-    const slot = [0, 1].find((i) => i < SMELT_SLOTS && !usedSlots.includes(i));
-    if (slot === undefined) { showToast('🏭 Smelter is full!', 'error'); return; }
-    if (invCount(recipe.oreId) < recipe.ore) return;
-    if (!consumeFuel(recipe.fuel)) { showToast('🪵 Not enough wood fuel!', 'error'); return; }
-    addItems({ [recipe.oreId]: -recipe.ore });
+    const usedSmeltSlots = cur.smelting.map((s) => s.slot);
+    const slot = [0, 1].find((i) => i < SMELT_SLOTS && !usedSmeltSlots.includes(i));
+    if (slot === undefined) { showToast('The furnace is full!', 'error'); return; }
+    if (countOf(recipe.oreId) < recipe.ore) return;
+    if (!consumeFuel(recipe.fuel)) { showToast('Not enough wood fuel!', 'error'); return; }
+    addLoot({ [recipe.oreId]: -recipe.ore });
     const fast = 1 - Math.min(0.6, buffVal('smeltFast') / 100);
     setGs((p) => ({ ...p, smelting: [...p.smelting, { slot, barId: recipe.barId, doneAt: now() + recipe.minutes * 60 * 1000 * fast }] }));
     dirtyRef.current = true;
@@ -466,24 +725,29 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
 
   const collectBar = (job) => {
     if (now() < job.doneAt) return;
-    addItems({ [job.barId]: 1 });
-    setGs((p) => ({ ...p, smelting: p.smelting.filter((s) => s !== job && s.slot !== job.slot) }));
-    showToast(`${ITEMS[job.barId].icon} ${ITEMS[job.barId].name} ready!`, 'success');
-    gainSkillXp('mine', 6);
+    if (!canFit(job.barId, 1)) { showToast('No room for the bar — clear a slot first!', 'error'); return; }
+    setGs((p) => ({ ...p, smelting: p.smelting.filter((s) => s.slot !== job.slot) }));
+    addLoot({ [job.barId]: 1 });
+    showToast(`${ITEMS[job.barId].name} ready!`, 'success');
+    gainSkillXp('mine', 8);
   };
 
   // ── Cooking ─────────────────────────────────────────────────────────────────
+  const recipeKnown = (r, cur = gsRef.current) =>
+    cur.knownRecipes.includes(r.id) || r.start || (r.cookLevel && skillLevel(cur.skills?.cook || 0) >= r.cookLevel);
+
   const cookRecipe = (r) => {
     const cur = gsRef.current;
-    const known = cur.knownRecipes.includes(r.id) || r.start || (r.cookLevel && skillLevel(cur.skills?.cook || 0) >= r.cookLevel);
-    if (!known) return;
+    if (!recipeKnown(r, cur)) return;
     if (kitchenTier < r.tier) { showToast(`Needs a ${KITCHEN_TIERS[r.tier].name}!`, 'error'); return; }
+    if (r.cauldron && !cur.crafted.includes('cauldron')) { showToast('Needs the Witch Cauldron!', 'error'); return; }
     if ((cur.activeBuffs || []).filter((b) => b.until > now()).length >= MAX_ACTIVE_BUFFS) {
-      showToast(`🍽️ You're full! (max ${MAX_ACTIVE_BUFFS} active meals)`, 'error'); return;
+      showToast(`You're full! (max ${MAX_ACTIVE_BUFFS} active meals)`, 'error'); return;
     }
     if (!hasItems(r.ing)) return;
-    if (!consumeFuel(r.fuel)) { showToast('🪵 Not enough wood fuel — chop some logs!', 'error'); return; }
-    addItems(Object.fromEntries(Object.entries(r.ing).map(([id, q]) => [id, -q])));
+    if (!consumeFuel(r.fuel)) { showToast('Not enough wood fuel — chop some logs!', 'error'); return; }
+    addLoot(Object.fromEntries(Object.entries(r.ing).map(([id, q]) => [id, -q])));
+    if (!(cur.cookedDishes || []).includes(r.id)) earnMenagerieEssence(15, 'New dish mastered!');
     setGs((p) => ({
       ...p,
       activeBuffs: [...(p.activeBuffs || []).filter((b) => b.until > now()), { recipeId: r.id, type: r.buff.type, value: r.buff.value, until: now() + r.buff.minutes * 60 * 1000 }],
@@ -491,10 +755,9 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       knownRecipes: (p.knownRecipes || []).includes(r.id) ? p.knownRecipes : [...(p.knownRecipes || []), r.id],
       counters: { ...p.counters, cooks: (p.counters?.cooks || 0) + 1 },
     }));
-    if (!(cur.cookedDishes || []).includes(r.id)) earnMenagerieEssence(15, 'New dish mastered!');
     gainSkillXp('cook', r.xp);
     const bl = BUFF_LABELS[r.buff.type];
-    showToast(`${r.icon} Delicious! ${bl.icon} +${r.buff.value}% ${bl.name} for ${r.buff.minutes} min.`, 'success');
+    showToast(`Delicious! +${r.buff.value}% ${bl.name} for ${r.buff.minutes} min.`, 'success');
     dirtyRef.current = true;
   };
 
@@ -503,8 +766,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if ((cur.unreadScrolls || 0) < 1) return;
     const unknown = SCROLL_RECIPES.filter((id) => !cur.knownRecipes.includes(id));
     if (unknown.length === 0) {
-      setGs((p) => ({ ...p, unreadScrolls: p.unreadScrolls - 1, gold: p.gold + 25 }));
-      showToast('📜 A recipe you already know — you trade the scroll for 25 gold.', 'info');
+      setGs((p) => ({ ...p, unreadScrolls: p.unreadScrolls - 1, gold: p.gold + 30 }));
+      showToast('A recipe you already know — you trade the scroll for 30 gold.', 'info');
       return;
     }
     const id = unknown[Math.floor(Math.random() * unknown.length)];
@@ -514,17 +777,22 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     setTimeout(persist, 400);
   };
 
-  // ── Crafting + tools + building ─────────────────────────────────────────────
+  // ── Crafting + tools ────────────────────────────────────────────────────────
   const craftItem = (c) => {
     const cur = gsRef.current;
     if (cur.crafted.includes(c.id)) return;
     if ((c.needs || []).some((n) => !cur.crafted.includes(n))) return;
     if (c.skill && skillLevel(cur.skills?.[c.skill[0]] || 0) < c.skill[1]) return;
-    if (!hasItems(c.items)) return;
-    addItems(Object.fromEntries(Object.entries(c.items).filter(([, q]) => q > 0).map(([id, q]) => [id, -q])));
-    setGs((p) => ({ ...p, crafted: [...p.crafted, c.id], counters: { ...p.counters, crafts: (p.counters?.crafts || 0) + 1 } }));
-    if (c.autoId) setGs((p) => ({ ...p, autoCollectAt: { ...p.autoCollectAt, [c.id]: now() } }));
-    showToast(`${c.icon} ${c.name} built!${c.decor ? ' Place it on your homestead!' : ''}`, 'success');
+    const realItems = Object.fromEntries(Object.entries(c.items).filter(([id, q]) => ITEMS[id] && q > 0));
+    if (!hasItems(realItems)) return;
+    addLoot(Object.fromEntries(Object.entries(realItems).map(([id, q]) => [id, -q])));
+    setGs((p) => ({
+      ...p,
+      crafted: [...p.crafted, c.id],
+      pensAt: c.pen ? { ...p.pensAt, [c.pen]: now() } : p.pensAt,
+      counters: { ...p.counters, crafts: (p.counters?.crafts || 0) + 1 },
+    }));
+    showToast(`${c.name} built!`, 'success');
     dirtyRef.current = true;
     setTimeout(persist, 400);
   };
@@ -537,72 +805,28 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     const skillId = { axe: 'wood', pick: 'mine', rod: 'fish' }[toolId];
     if (skillLevel(cur.skills?.[skillId] || 0) < TOOL_LEVEL_REQ[nextTier]) return;
     if (!hasItems(cost)) return;
-    addItems(Object.fromEntries(Object.entries(cost).map(([id, q]) => [id, -q])));
+    addLoot(Object.fromEntries(Object.entries(cost).map(([id, q]) => [id, -q])));
     setGs((p) => ({ ...p, tools: { ...p.tools, [toolId]: nextTier } }));
-    showToast(`${TOOL_DEFS[toolId].icon} ${TOOL_TIERS[nextTier].name} ${TOOL_DEFS[toolId].name} forged!`, 'success');
+    showToast(`${TOOL_TIERS[nextTier].name} ${TOOL_DEFS[toolId].name} forged!`, 'success');
     dirtyRef.current = true;
     setTimeout(persist, 400);
-  };
-
-  const placeDecor = (slot) => {
-    if (!placeMode) return;
-    const cur = gsRef.current;
-    if (cur.grid.some((g) => g.slot === slot)) return;
-    setGs((p) => ({ ...p, grid: [...p.grid, { slot, craftId: placeMode }] }));
-    setPlaceMode(null);
-    dirtyRef.current = true;
-    setTimeout(persist, 400);
-  };
-
-  const removeDecor = (slot) => {
-    setGs((p) => ({ ...p, grid: p.grid.filter((g) => g.slot !== slot) }));
-    dirtyRef.current = true;
-  };
-
-  // ── Automation collection ───────────────────────────────────────────────────
-  const autoUnits = (gs.crafted || []).map((id) => CRAFT_MAP[id]).filter((c) => c?.autoId);
-  const autoPending = (c) => {
-    const anchor = gs.autoCollectAt?.[c.id] || now();
-    const hours = Math.min(c.capHours, (now() - anchor) / 3600000);
-    return Math.floor(hours * c.perHour * (1 + buffVal('autoBoost') / 100));
-  };
-  const collectAuto = (c) => {
-    const n = autoPending(c);
-    if (n < 1) return;
-    addItems({ [c.autoId]: n });
-    setGs((p) => ({ ...p, autoCollectAt: { ...p.autoCollectAt, [c.id]: now() } }));
-    showToast(`${c.icon} Collected ${n} × ${ITEMS[c.autoId].name}!`, 'success');
   };
 
   const equipTitle = (id) => {
-    setGs((p) => ({ ...p, activeTitle: p.activeTitle === id ? null : id }));
+    setGs((p) => ({ ...p, activeTitle: p.activeTitle === id ? 'wanderer' : id }));
     dirtyRef.current = true;
     setTimeout(persist, 400);
-    showToast('📛 Title updated — it shows on your class card!', 'success');
+    showToast('Title updated — it shows on your class card!', 'success');
   };
 
   // ── UI bits ─────────────────────────────────────────────────────────────────
   const exhausted = exhaustedUntil > now();
   const activeBuffs = (gs.activeBuffs || []).filter((b) => b.until > now());
 
-  const InventoryStrip = ({ kinds }) => {
-    const entries = Object.entries(gs.inv || {}).filter(([id]) => !kinds || kinds.includes(ITEMS[id]?.kind)).sort();
-    if (entries.length === 0) return <p className="text-xs text-gray-400 italic">Nothing yet — get gathering!</p>;
-    return (
-      <div className="flex flex-wrap gap-1.5">
-        {entries.map(([id, q]) => (
-          <span key={id} className="bg-white border border-gray-200 rounded-full px-2 py-0.5 text-xs font-bold text-gray-600" title={ITEMS[id]?.name}>
-            {ITEMS[id]?.icon} {fmtQty(q)}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
   if (!loaded) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-green-600 border-t-transparent" />
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-emerald-500 border-t-transparent" />
       </div>
     );
   }
@@ -611,86 +835,100 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     <div className="space-y-4 select-none">
       <style>{`
         @keyframes wh-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-        @keyframes wh-shake { 0%,100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
-        @keyframes wh-pulse { 0%,100% { opacity: .7; } 50% { opacity: 1; } }
+        @keyframes wh-shake { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+        @keyframes wh-float { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-44px); } }
+        @keyframes wh-glow { 0%,100% { filter: drop-shadow(0 0 4px rgba(251,191,36,.5)); } 50% { filter: drop-shadow(0 0 14px rgba(251,191,36,.9)); } }
       `}</style>
 
-      {/* Header */}
-      <div className="rounded-2xl p-5 text-white shadow-lg bg-gradient-to-r from-green-900 via-emerald-800 to-teal-900">
+      {/* ── Header ── */}
+      <div
+        className="rounded-2xl p-5 text-white shadow-xl border border-emerald-800/50 bg-cover bg-center"
+        style={{ backgroundImage: "linear-gradient(rgba(6,20,12,0.82), rgba(6,20,12,0.9)), url('/Loot/Backgrounds/day.png')" }}
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold drop-shadow">🏕️ Wildwood Homestead</h1>
-            <p className="text-white/85 text-sm">Chop. Mine. Fish. Cook. Build. Tame the wilds, one click at a time.</p>
+          <div className="flex items-center gap-3">
+            <Ico src={`${ICN}/Camping/001-fire.svg`} size="w-12 h-12" style={{ animation: 'wh-glow 2s ease-in-out infinite' }} />
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold drop-shadow">Wildwood Homestead</h1>
+              <p className="text-emerald-100/80 text-sm">Gather. Craft. Expand your pack. Tame the wilds.</p>
+            </div>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold drop-shadow">🏡 {fmtQty(prosperity)}</p>
-            <p className="text-white/85 text-sm font-semibold">Prosperity</p>
+            <p className="text-3xl font-bold text-amber-300 drop-shadow">{fmtQty(prosperity)}</p>
+            <p className="text-emerald-100/80 text-sm font-semibold">Prosperity</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-3 text-xs font-bold">
-          <span className="bg-white/20 rounded-full px-3 py-1">🪙 {fmtQty(gs.gold)} gold</span>
-          <span className="bg-white/20 rounded-full px-3 py-1">🪵 {fmtQty(fuelUnits)} fuel</span>
-          {Object.entries(SKILLS).map(([k, s]) => (
-            <span key={k} className="bg-white/20 rounded-full px-3 py-1">{s.icon} {skillLevel(gs.skills?.[k] || 0)}</span>
-          ))}
-          {gs.unreadScrolls > 0 && <span className="bg-yellow-300 text-amber-900 rounded-full px-3 py-1 animate-pulse">📜 {gs.unreadScrolls} scroll{gs.unreadScrolls !== 1 ? 's' : ''}!</span>}
+          <span className="bg-black/40 border border-amber-500/40 text-amber-300 rounded-full px-3 py-1">{fmtQty(gs.gold)} gold</span>
+          <span className={`rounded-full px-3 py-1 border ${usedSlots >= caps.slots ? 'bg-red-900/60 border-red-500/60 text-red-300' : 'bg-black/40 border-white/20 text-white/90'}`}>
+            Pack {usedSlots}/{caps.slots} slots
+          </span>
+          <span className="bg-black/40 border border-white/20 rounded-full px-3 py-1 text-white/90">Stacks of {caps.stack}</span>
+          <span className="bg-black/40 border border-white/20 rounded-full px-3 py-1 text-white/90">Fuel {fmtQty(fuelUnits)}</span>
+          {gs.unreadScrolls > 0 && (
+            <button onClick={() => setTab('cook')} className="bg-amber-400 text-amber-950 rounded-full px-3 py-1 animate-pulse flex items-center gap-1">
+              <Ico src={`${ICN}/Magic/030-scroll.svg`} size="w-4 h-4" /> {gs.unreadScrolls} scroll{gs.unreadScrolls !== 1 ? 's' : ''}!
+            </button>
+          )}
           {(gs.menagerieEssenceEarned || 0) > 0 && (
-            <span className="bg-white/20 rounded-full px-3 py-1" title="Discoveries, level-ups, golden harvests and new dishes send Wild Essence to your Champion's Menagerie">
-              ✨ {fmtQty(gs.menagerieEssenceEarned)} essence for your Menagerie
+            <span className="bg-black/40 border border-fuchsia-400/40 text-fuchsia-300 rounded-full px-3 py-1" title="Discoveries send Wild Essence to your Menagerie">
+              {fmtQty(gs.menagerieEssenceEarned)} essence for your Menagerie
             </span>
           )}
         </div>
         {(forgeBonus.stageName || companionBonus) && (
           <div className="flex flex-wrap gap-2 mt-2 text-[11px] font-bold">
             {forgeBonus.stageName && (
-              <span className="bg-indigo-500/40 border border-indigo-300/40 rounded-full px-3 py-1" title="Earned in Champion's Forge">
-                ⚔️ {forgeBonus.stageName} doubles as a fine axe: +{forgeBonus.power} power
+              <span className="bg-indigo-900/60 border border-indigo-400/40 text-indigo-200 rounded-full px-3 py-1">
+                Forge weapon “{forgeBonus.stageName}”: +{forgeBonus.power.toFixed(1)} gather power
               </span>
             )}
             {companionBonus && (
-              <span className="bg-amber-500/30 border border-amber-300/40 rounded-full px-3 py-1 flex items-center gap-1.5" title="Your Menagerie companion is helping!">
+              <span className="bg-amber-900/50 border border-amber-400/40 text-amber-200 rounded-full px-3 py-1 flex items-center gap-1.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={companionBonus.img} alt={companionBonus.name} className="w-4 h-4 rounded-full object-cover"
                   style={companionBonus.shiny ? { filter: 'hue-rotate(45deg) saturate(1.7)' } : undefined} />
-                {companionBonus.shiny && '✨'}{companionBonus.name} helps: {companionBonus.label}
+                {companionBonus.name} helps: {companionBonus.label}
               </span>
             )}
           </div>
         )}
       </div>
 
-      {/* Active meal buffs + exhaustion */}
+      {/* ── Active buffs + exhaustion ── */}
       {(activeBuffs.length > 0 || exhausted) && (
         <div className="flex flex-wrap gap-2">
           {activeBuffs.map((b, i) => {
             const r = RECIPE_MAP[b.recipeId];
             const bl = BUFF_LABELS[b.type];
             return (
-              <span key={i} className="bg-orange-100 border border-orange-200 text-orange-700 text-xs font-bold rounded-full px-3 py-1">
-                {r?.icon} {r?.name}: {bl.icon} +{b.value}% · {fmtCountdown(b.until - now())}
+              <span key={i} className="bg-orange-950 border border-orange-500/50 text-orange-300 text-xs font-bold rounded-full pl-1 pr-3 py-1 flex items-center gap-1.5">
+                <Ico src={r?.img} size="w-5 h-5" /> {r?.name}: +{b.value}% {bl.name} · {fmtCountdown(b.until - now())}
               </span>
             );
           })}
           {exhausted && (
-            <span className="bg-red-100 border border-red-300 text-red-700 text-xs font-bold rounded-full px-3 py-1 animate-pulse">
-              😮‍💨 Exhausted — resting {fmtCountdown(exhaustedUntil - now())}
+            <span className="bg-red-950 border border-red-500/60 text-red-300 text-xs font-bold rounded-full px-3 py-1 animate-pulse">
+              Exhausted — resting {fmtCountdown(exhaustedUntil - now())}
             </span>
           )}
         </div>
       )}
 
-      {/* Tabs */}
+      {/* ── Tabs ── */}
       <div className="flex flex-wrap gap-1.5">
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-3.5 py-2 rounded-xl text-sm font-bold transition ${
-              tab === t.id ? 'bg-green-700 text-white shadow' : 'bg-white border border-gray-200 text-gray-600 hover:bg-green-50'
+            className={`px-3 py-2 rounded-xl text-sm font-bold transition flex items-center gap-1.5 ${
+              tab === t.id ? 'bg-emerald-700 text-white shadow-lg border border-emerald-500' : 'bg-slate-800 border border-slate-700 text-slate-300 hover:border-emerald-600'
             }`}
           >
-            {t.icon} {t.name}
-            {t.id === 'cook' && gs.unreadScrolls > 0 && <span className="ml-1.5 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{gs.unreadScrolls}</span>}
+            <Ico src={t.img} size="w-5 h-5" className={tab === t.id ? '' : 'opacity-80'} /> {t.name}
+            {t.id === 'expeditions' && gs.expeditions.some((e) => now() >= e.returnAt) && (
+              <span className="bg-amber-400 text-amber-950 text-[10px] rounded-full px-1.5 animate-pulse">!</span>
+            )}
           </button>
         ))}
       </div>
@@ -701,8 +939,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
           <div className="flex flex-wrap gap-1.5">
             {ZONES.map((z) => (
               <button key={z.id} onClick={() => setZone(z.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${zone === z.id ? 'bg-emerald-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:bg-emerald-50'}`}>
-                {z.icon} {z.name}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${zone === z.id ? 'bg-emerald-600 text-white' : 'bg-slate-800 border border-slate-700 text-slate-300 hover:border-emerald-600'}`}>
+                <Ico src={z.img} size="w-4 h-4" /> {z.name}
               </button>
             ))}
           </div>
@@ -712,93 +950,136 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
             const prog = skillProgress(gs.skills?.[z.skill] || 0);
             return (
               <div key={z.id} className="space-y-3">
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 flex flex-wrap items-center gap-3">
-                  <span className="font-bold text-gray-800 text-sm">{SKILLS[z.skill].icon} {SKILLS[z.skill].name} Lv {lvl}</span>
-                  <div className="flex-1 min-w-[120px] bg-gray-100 rounded-full h-2">
-                    <div className="h-2 rounded-full bg-gradient-to-r from-emerald-400 to-green-600" style={{ width: prog.needed ? `${Math.round((prog.into / prog.needed) * 100)}%` : '100%' }} />
+                {/* skill bar */}
+                <Panel className="p-3 flex flex-wrap items-center gap-3">
+                  <span className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
+                    <Ico src={SKILLS[z.skill].img} size="w-5 h-5" /> {SKILLS[z.skill].name} Lv {lvl}
+                  </span>
+                  <div className="flex-1 min-w-[120px] bg-black/50 rounded-full h-2 border border-slate-700">
+                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-400" style={{ width: prog.needed ? `${Math.round((prog.into / prog.needed) * 100)}%` : '100%' }} />
                   </div>
                   {z.tool && (
-                    <span className="text-xs font-bold text-gray-500">
-                      {TOOL_DEFS[z.tool].icon} {TOOL_TIERS[gs.tools?.[z.tool] || 0].name} {TOOL_DEFS[z.tool].name}
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+                      <Ico src={TOOL_DEFS[z.tool].img} size="w-4 h-4" /> {TOOL_TIERS[gs.tools?.[z.tool] || 0].name} {TOOL_DEFS[z.tool].name}
                     </span>
                   )}
-                  <InventoryStrip kinds={z.id === 'lake' ? ['fish', 'junk'] : z.id === 'caves' ? ['stone', 'ore', 'bar'] : z.id === 'forest' ? ['wood'] : ['forage', 'fiber']} />
-                </div>
+                </Panel>
 
-                {/* Lake = fishing; others = click nodes */}
                 {z.id === 'lake' ? (
-                  <div className="bg-gradient-to-b from-sky-900 to-blue-950 rounded-2xl border-2 border-blue-900/50 p-8 text-center min-h-[300px] flex flex-col items-center justify-center">
-                    {fishing.phase === 'idle' && (
-                      <>
-                        <p className="text-5xl mb-3">🎣</p>
-                        <p className="text-blue-100 font-bold">The lake is still…</p>
-                        <p className="text-blue-300/80 text-xs mt-1 mb-4">Cast, wait for the ❗, then reel like the wind!</p>
-                        <button onClick={castLine} className="bg-sky-500 text-white px-8 py-3 rounded-xl font-bold hover:bg-sky-400 transition text-lg">
-                          Cast Line
-                        </button>
-                      </>
-                    )}
-                    {fishing.phase === 'waiting' && (
-                      <>
-                        <p className="text-5xl mb-3" style={{ animation: 'wh-bob 1.8s ease-in-out infinite' }}>🛶</p>
-                        <p className="text-blue-100 font-bold animate-pulse">Waiting for a bite…</p>
-                        <p className="text-blue-300/80 text-xs mt-1 mb-4">Patience, angler. Don&apos;t reel yet!</p>
-                        <button onClick={reelIn} className="bg-blue-800 text-blue-200 px-8 py-3 rounded-xl font-bold border border-blue-600 hover:bg-blue-700 transition">
-                          Reel In
-                        </button>
-                      </>
-                    )}
-                    {fishing.phase === 'bite' && (
-                      <>
-                        <p className="text-6xl mb-3" style={{ animation: 'wh-shake 0.15s linear infinite' }}>❗</p>
-                        <p className="text-yellow-300 font-bold text-xl animate-pulse">BITE! REEL IT IN!</p>
-                        <button onClick={reelIn} className="mt-4 bg-yellow-400 text-yellow-950 px-10 py-4 rounded-xl font-bold text-xl hover:bg-yellow-300 transition animate-pulse">
-                          🎣 REEL!
-                        </button>
-                      </>
-                    )}
-                    <p className="text-blue-300/60 text-[11px] mt-5">
-                      Fishing log: {(gs.caughtFish || []).length}/{FISH_TABLE.filter((f) => ITEMS[f.id].kind === 'fish').length} fish species
-                      {(gs.caughtFish || []).some((f) => ITEMS[f]?.rare) && ' · includes a LEGENDARY!'}
-                    </p>
+                  /* ── FISHING ── */
+                  <div className="rounded-2xl border-2 border-blue-900/60 overflow-hidden">
+                    <div className="p-3 bg-slate-900 flex flex-wrap gap-1.5 border-b border-blue-900/40">
+                      {FISHING_SPOTS.map((s) => {
+                        const locked = (gs.tools?.rod || 0) < s.rod || lvl < s.level;
+                        return (
+                          <button key={s.id} onClick={() => !locked && setSpot(s.id)} disabled={locked}
+                            className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ${
+                              spot === s.id ? 'bg-sky-600 text-white' : locked ? 'bg-slate-800 text-slate-600' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                            }`}
+                            title={locked ? `Needs ${TOOL_TIERS[s.rod].name} Rod + Fishing Lv ${s.level}` : s.name}>
+                            <Ico src={s.img} size="w-4 h-4" className={locked ? 'grayscale opacity-40' : ''} />
+                            {locked ? `Lv ${s.level}` : s.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="p-8 text-center min-h-[300px] flex flex-col items-center justify-center bg-cover bg-center" style={{ backgroundImage: z.bg }}>
+                      {(() => {
+                        const spotDef = FISHING_SPOTS.find((s) => s.id === spot) || FISHING_SPOTS[0];
+                        return (
+                          <>
+                            <p className="text-sky-200 font-bold text-lg mb-3 flex items-center gap-2">
+                              <Ico src={spotDef.img} size="w-8 h-8" /> {spotDef.name}
+                            </p>
+                            {fishing.phase === 'idle' && (
+                              <>
+                                <Ico src={`${ICN}/Nature/027-fish.svg`} size="w-20 h-20" className="opacity-40 mb-3" />
+                                <button onClick={castLine} className="bg-sky-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-sky-500 transition text-lg shadow-lg">
+                                  Cast Line
+                                </button>
+                                <p className="text-sky-300/70 text-xs mt-3">Wait for the bite, then reel like the wind!</p>
+                              </>
+                            )}
+                            {fishing.phase === 'waiting' && (
+                              <>
+                                <Ico src={`${ICN}/Water/006-drop.svg`} size="w-16 h-16" className="mb-3" style={{ animation: 'wh-bob 1.6s ease-in-out infinite' }} />
+                                <p className="text-sky-200 font-bold animate-pulse">Waiting for a bite…</p>
+                                <button onClick={reelIn} className="mt-4 bg-slate-800 text-sky-300 px-8 py-3 rounded-xl font-bold border border-sky-800 hover:bg-slate-700 transition">
+                                  Reel In
+                                </button>
+                              </>
+                            )}
+                            {fishing.phase === 'bite' && (
+                              <>
+                                <Ico src={`${ICN}/Nature/027-fish.svg`} size="w-24 h-24" className="mb-2" style={{ animation: 'wh-shake 0.15s linear infinite' }} />
+                                <p className="text-yellow-300 font-bold text-2xl animate-pulse">BITE!</p>
+                                <button onClick={reelIn} className="mt-3 bg-yellow-400 text-yellow-950 px-12 py-4 rounded-xl font-bold text-xl hover:bg-yellow-300 transition animate-pulse shadow-xl">
+                                  REEL IT IN!
+                                </button>
+                              </>
+                            )}
+                            <p className="text-sky-300/60 text-[11px] mt-5">
+                              Fishing log: {(gs.caughtFish || []).length}/{Object.keys(ITEMS).filter((i) => ITEMS[i].kind === 'fish').length} species
+                            </p>
+                          </>
+                        );
+                      })()}
+                    </div>
                   </div>
                 ) : (
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {NODES[z.id].map((node) => {
-                      const key = `${z.id}_${node.id}`;
-                      const st = nodeState[key] || { stock: node.stock, hitsLeft: clicksNeeded(node, z.tool), respawnAt: 0 };
-                      const locked = lvl < node.level;
-                      const respawning = st.respawnAt > now();
-                      const need = clicksNeeded(node, z.tool);
-                      return (
-                        <button
-                          key={node.id}
-                          onClick={() => strikeNode(z, node)}
-                          disabled={locked || respawning || exhausted}
-                          className={`rounded-2xl border-2 p-4 text-center transition active:scale-95 ${
-                            locked ? 'border-gray-200 bg-gray-50 opacity-60' : respawning ? 'border-gray-200 bg-gray-100' : 'border-emerald-200 bg-white hover:border-emerald-400 hover:shadow-md'
-                          }`}
-                        >
-                          <p className="text-4xl" style={{ animation: !locked && !respawning ? 'wh-bob 2.4s ease-in-out infinite' : undefined, filter: respawning ? 'grayscale(1) opacity(0.5)' : undefined }}>
-                            {node.icon}
-                          </p>
-                          <p className="font-bold text-gray-800 text-sm mt-1">{node.name}</p>
-                          {locked ? (
-                            <p className="text-xs text-gray-400 font-bold mt-1">🔒 {SKILLS[z.skill].name} Lv {node.level}</p>
-                          ) : respawning ? (
-                            <p className="text-xs text-amber-600 font-bold mt-1">Regrowing… {fmtCountdown(st.respawnAt - now())}</p>
-                          ) : (
-                            <>
-                              <p className="text-xs text-gray-500 mt-1">{ITEMS[node.yieldId].icon} {ITEMS[node.yieldId].name} · +{node.xp} XP</p>
-                              <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2">
-                                <div className="h-1.5 rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.round(((need - st.hitsLeft) / need) * 100)}%` }} />
-                              </div>
-                              <p className="text-[10px] text-gray-400 mt-1">{st.hitsLeft} {z.verb.toLowerCase()}{st.hitsLeft !== 1 ? 's' : ''} to go · {st.stock} left</p>
-                            </>
-                          )}
-                        </button>
-                      );
-                    })}
+                  /* ── CLICK NODES ── */
+                  <div className="rounded-2xl border-2 border-emerald-900/60 p-4 bg-cover bg-center" style={{ backgroundImage: z.bg }}>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {NODES[z.id].map((node) => {
+                        const key = `${z.id}_${node.id}`;
+                        const st = nodeState[key] || { stock: node.stock, hitsLeft: clicksNeeded(node, z.tool), respawnAt: 0 };
+                        const locked = lvl < node.level;
+                        const respawning = st.respawnAt > now();
+                        const need = clicksNeeded(node, z.tool);
+                        const yieldItem = ITEMS[node.yieldId];
+                        const rar = RARITY_STYLE[yieldItem?.rarity || 'common'];
+                        return (
+                          <button
+                            key={node.id}
+                            onClick={() => strikeNode(z, node)}
+                            disabled={locked || respawning || exhausted}
+                            className={`relative rounded-2xl border-2 p-4 text-center transition active:scale-95 bg-black/45 backdrop-blur-[1px] ${
+                              locked ? 'border-slate-700/60 opacity-50' : respawning ? 'border-slate-600/60' : `${rar.border} hover:bg-black/60 hover:scale-[1.02]`
+                            }`}
+                          >
+                            <div className="flex justify-center">
+                              <Ico
+                                src={z.id === 'forest' && respawning ? STUMP_ICON : node.img}
+                                tint={respawning ? 'grayscale(1) opacity(0.5)' : node.tint}
+                                size="w-16 h-16 md:w-20 md:h-20"
+                                style={{ animation: !locked && !respawning ? 'wh-bob 2.6s ease-in-out infinite' : undefined }}
+                              />
+                            </div>
+                            <p className="font-bold text-white text-sm mt-1 drop-shadow">{node.name}</p>
+                            {locked ? (
+                              <p className="text-xs text-slate-400 font-bold mt-1">{SKILLS[z.skill].name} Lv {node.level} required</p>
+                            ) : respawning ? (
+                              <p className="text-xs text-amber-400 font-bold mt-1">Regrowing… {fmtCountdown(st.respawnAt - now())}</p>
+                            ) : (
+                              <>
+                                <p className={`text-xs mt-0.5 flex items-center justify-center gap-1 ${rar.text}`}>
+                                  <It id={node.yieldId} size="w-4 h-4" /> {yieldItem.name} · +{node.xp} XP
+                                </p>
+                                <div className="w-full bg-black/60 rounded-full h-2 mt-2 border border-white/10">
+                                  <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all" style={{ width: `${Math.round(((need - st.hitsLeft) / need) * 100)}%` }} />
+                                </div>
+                                <p className="text-[10px] text-slate-300 mt-1">{st.hitsLeft} swing{st.hitsLeft !== 1 ? 's' : ''} left · {st.stock} in the {z.id === 'forest' ? 'tree' : 'node'}</p>
+                              </>
+                            )}
+                            {floaties.filter((f) => f.key === key).map((f) => (
+                              <span key={f.id} className="absolute left-1/2 top-3 -translate-x-1/2 text-amber-300 font-bold text-sm pointer-events-none drop-shadow whitespace-nowrap" style={{ animation: 'wh-float 0.9s ease-out forwards' }}>
+                                {f.text}
+                              </span>
+                            ))}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -807,28 +1088,116 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
         </div>
       )}
 
+      {/* ══ EXPEDITIONS ══ */}
+      {tab === 'expeditions' && (
+        <div className="space-y-3">
+          {/* Active */}
+          {gs.expeditions.length > 0 && (
+            <Panel className="p-4">
+              <h3 className="font-bold text-slate-200 mb-2">Parties in the field ({gs.expeditions.length}/{maxExpeditions})</h3>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {gs.expeditions.map((exp) => {
+                  const def = EXPEDITIONS[exp.type];
+                  const dur = def.durations[exp.tier] || def.durations[0];
+                  const ready = now() >= exp.returnAt;
+                  return (
+                    <button key={exp.id} onClick={() => collectExpedition(exp)} disabled={!ready}
+                      className={`rounded-xl border-2 p-3 flex items-center gap-3 text-left transition ${ready ? 'border-amber-400/70 bg-amber-950/40 animate-pulse' : 'border-slate-700 bg-black/30'}`}>
+                      <Ico src={def.img} size="w-10 h-10" />
+                      <div className="flex-1">
+                        <p className="font-bold text-slate-200 text-sm">{def.name} — {dur.name}</p>
+                        <p className={`text-xs font-bold ${ready ? 'text-amber-300' : 'text-slate-400'}`}>
+                          {ready ? 'RETURNED — open the haul!' : `Back in ${fmtCountdown(exp.returnAt - now())}`}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Panel>
+          )}
+
+          {/* Launch */}
+          <div className="grid lg:grid-cols-2 gap-3">
+            {Object.entries(EXPEDITIONS).map(([type, def]) => {
+              const gearLocked = def.needs && !gs.crafted.includes(def.needs);
+              const bonus = type === 'hunt' ? caps.huntBonus : caps.scavBonus;
+              return (
+                <div key={type} className="rounded-2xl border-2 border-emerald-900/60 overflow-hidden">
+                  <div className="p-4 bg-cover bg-center" style={{ backgroundImage: type === 'hunt' ? "linear-gradient(rgba(30,10,5,0.8), rgba(30,10,5,0.9)), url('/Loot/Backgrounds/bloodmoon.png')" : "linear-gradient(rgba(8,25,10,0.78), rgba(8,25,10,0.88)), url('/Loot/Backgrounds/day.png')" }}>
+                    <div className="flex items-center gap-3">
+                      <Ico src={def.img} size="w-12 h-12" />
+                      <div>
+                        <h3 className="font-bold text-white text-lg">{def.name}</h3>
+                        <p className="text-white/70 text-xs">{def.desc}</p>
+                        {bonus > 0 && <p className="text-amber-300 text-[11px] font-bold mt-0.5">Gear bonus: +{bonus}% loot{caps.expSpeed > 0 ? ` · ${caps.expSpeed}% faster` : ''}</p>}
+                      </div>
+                    </div>
+                    {gearLocked ? (
+                      <p className="mt-4 text-sm font-bold text-red-300 bg-black/40 rounded-xl p-3 border border-red-800/60">
+                        Craft a {CRAFT_MAP[def.needs]?.name} at the Workbench to unlock hunting!
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2 mt-4">
+                        {def.durations.map((d, i) => (
+                          <button key={i} onClick={() => startExpedition(type, i)}
+                            disabled={gs.expeditions.length >= maxExpeditions}
+                            className="bg-black/50 border border-white/20 rounded-xl p-2.5 text-center hover:border-amber-400/70 hover:bg-black/70 disabled:opacity-40 transition">
+                            <p className="text-white font-bold text-sm">{d.name}</p>
+                            <p className="text-white/60 text-[11px]">{d.minutes >= 60 ? `${Math.round(d.minutes / 60)}h` : `${d.minutes}min`} · ~{d.rolls} finds</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Critter collection */}
+          <Panel className="p-4">
+            <h3 className="font-bold text-slate-200 mb-1">Critter Collection — {(gs.critters || []).length}/{CRITTERS.length}</h3>
+            <p className="text-xs text-slate-400 mb-3">Critters turn up on expeditions. Each new species: +2 Prosperity and +20 Menagerie essence!</p>
+            <div className="grid grid-cols-5 sm:grid-cols-8 lg:grid-cols-10 gap-1.5">
+              {CRITTERS.map((c) => {
+                const found = (gs.critters || []).includes(c.id);
+                const rar = RARITY_STYLE[c.rarity];
+                return (
+                  <div key={c.id} className={`rounded-lg border p-1.5 text-center ${found ? `${rar.border} bg-black/30` : 'border-slate-800 bg-black/20'}`}
+                    title={found ? `${c.name} (${rar.name})` : '??? — keep exploring!'}>
+                    <Ico src={c.img} size="w-full aspect-square" className={found ? '' : 'grayscale opacity-20'} />
+                    <p className={`text-[8px] font-bold truncate ${found ? rar.text : 'text-slate-600'}`}>{found ? c.name : '???'}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+        </div>
+      )}
+
       {/* ══ FARM ══ */}
       {tab === 'farm' && (
         <div className="space-y-3">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <h3 className="font-bold text-gray-800 mb-3">🌾 Crop Plots ({gs.farm.length}/{farmPlots} planted)</h3>
+          <div className="rounded-2xl border-2 border-emerald-900/60 p-4 bg-cover bg-center" style={{ backgroundImage: "linear-gradient(rgba(15,25,5,0.72), rgba(15,25,5,0.85)), url('/Loot/Backgrounds/day.png')" }}>
+            <h3 className="font-bold text-white mb-3 drop-shadow">Crop Plots ({gs.farm.length}/{farmPlots} planted){caps.cropYield > 0 && <span className="text-amber-300 text-xs"> · Scythe: +{caps.cropYield} yield</span>}</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
               {Array.from({ length: farmPlots }).map((_, i) => {
                 const planted = gs.farm.find((f) => f.plot === i);
                 if (!planted) {
                   const seeds = Object.keys(gs.inv || {}).filter((id) => ITEMS[id]?.kind === 'seed' && gs.inv[id] > 0);
                   return (
-                    <div key={i} className="rounded-xl border-2 border-dashed border-amber-300 bg-amber-50/60 p-3 text-center min-h-[110px] flex flex-col items-center justify-center">
-                      <p className="text-2xl">🟫</p>
+                    <div key={i} className="rounded-xl border-2 border-dashed border-amber-600/50 bg-black/40 p-3 text-center min-h-[120px] flex flex-col items-center justify-center">
+                      <Ico src={`${ICN}/Farm/001-gardening.svg`} size="w-8 h-8" className="opacity-50" />
                       {seeds.length === 0 ? (
-                        <p className="text-[10px] text-amber-600 font-bold mt-1">No seeds — buy some below!</p>
+                        <p className="text-[10px] text-amber-300/80 font-bold mt-1">No seeds — visit the merchant below!</p>
                       ) : (
-                        <div className="flex flex-wrap justify-center gap-1 mt-1">
-                          {seeds.map((sid) => (
+                        <div className="flex flex-wrap justify-center gap-1 mt-1.5">
+                          {seeds.slice(0, 4).map((sid) => (
                             <button key={sid} onClick={() => plantSeed(i, sid)}
-                              className="text-[10px] font-bold bg-white border border-amber-300 rounded-full px-2 py-0.5 hover:bg-amber-100 transition"
+                              className="flex items-center gap-1 text-[10px] font-bold bg-black/60 border border-amber-600/50 text-amber-200 rounded-full px-2 py-1 hover:bg-amber-900/50 transition"
                               title={`Plant ${ITEMS[sid].name} (${gs.inv[sid]} owned)`}>
-                              {ITEMS[CROP_BY_SEED[sid]?.cropId]?.icon} Plant
+                              <It id={CROP_BY_SEED[sid]?.cropId} size="w-4 h-4" /> Plant
                             </button>
                           ))}
                         </div>
@@ -840,54 +1209,103 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                 const ready = now() >= planted.readyAt;
                 return (
                   <button key={i} onClick={() => harvest(planted)} disabled={!ready}
-                    className={`rounded-xl border-2 p-3 text-center min-h-[110px] transition ${ready ? 'border-green-400 bg-green-50 hover:shadow-md animate-pulse' : 'border-amber-200 bg-amber-50/40'}`}>
-                    <p className="text-2xl" style={{ animation: ready ? 'wh-bob 1s ease-in-out infinite' : undefined }}>
-                      {ready ? ITEMS[crop.cropId].icon : '🌱'}
-                    </p>
-                    <p className="font-bold text-gray-700 text-xs mt-1">{ITEMS[crop.cropId].name}</p>
-                    <p className={`text-[10px] font-bold mt-0.5 ${ready ? 'text-green-600' : 'text-amber-600'}`}>
+                    className={`rounded-xl border-2 p-3 text-center min-h-[120px] transition ${ready ? 'border-lime-400/80 bg-lime-950/50 animate-pulse' : 'border-amber-800/50 bg-black/40'}`}>
+                    <div className="flex justify-center">
+                      {ready
+                        ? <It id={crop.cropId} size="w-10 h-10" className="drop-shadow" />
+                        : <Ico src={`${ICN}/Farm/003-sprout.svg`} size="w-8 h-8" style={{ animation: 'wh-bob 2.4s ease-in-out infinite' }} />}
+                    </div>
+                    <p className="font-bold text-white text-xs mt-1 drop-shadow">{ITEMS[crop.cropId].name}</p>
+                    <p className={`text-[10px] font-bold mt-0.5 ${ready ? 'text-lime-300' : 'text-amber-300/90'}`}>
                       {ready ? 'HARVEST!' : fmtCountdown(planted.readyAt - now())}
                     </p>
                   </button>
                 );
               })}
             </div>
+
+            {/* Pens */}
+            {pensOwned.length > 0 && (
+              <div className="mt-4">
+                <h4 className="font-bold text-white/90 text-sm mb-2 drop-shadow">Pens &amp; Keepers</h4>
+                <div className="flex flex-wrap gap-2">
+                  {pensOwned.map((pen) => {
+                    const pending = penPending(pen);
+                    return (
+                      <button key={pen.id} onClick={() => collectPen(pen)} disabled={pending < 1}
+                        className={`rounded-xl border-2 px-3 py-2 flex items-center gap-2 transition ${pending > 0 ? 'border-lime-400/70 bg-lime-950/50' : 'border-slate-700 bg-black/40'}`}>
+                        <Ico src={pen.img} size="w-8 h-8" />
+                        <div className="text-left">
+                          <p className="text-white text-xs font-bold">{pen.name}</p>
+                          <p className={`text-[10px] font-bold ${pending > 0 ? 'text-lime-300' : 'text-slate-400'}`}>
+                            {pending > 0 ? `Collect ${pending} ${ITEMS[pen.produceId].name}` : 'Working…'}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {gs.crafted.includes('cheesepress') && (
+                    <button onClick={pressCheese} disabled={!hasItems(CHEESE_RECIPE.in)}
+                      className="rounded-xl border-2 border-amber-600/60 bg-black/40 px-3 py-2 flex items-center gap-2 hover:bg-amber-950/40 disabled:opacity-40 transition">
+                      <It id="cheese" size="w-8 h-8" />
+                      <div className="text-left">
+                        <p className="text-white text-xs font-bold">Cheese Press</p>
+                        <p className="text-[10px] text-amber-300 font-bold">3 Milk + 1 Salt → Cheese</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Seed shop + trading post */}
+          {/* Merchant */}
           <div className="grid lg:grid-cols-2 gap-3">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-              <h3 className="font-bold text-gray-800 mb-2">🌱 Seed Merchant <span className="text-xs text-gray-400 font-normal">— pay with 🪙 gold</span></h3>
-              <div className="divide-y divide-gray-50">
+            <Panel className="p-4">
+              <h3 className="font-bold text-slate-200 mb-2">Seed Merchant <span className="text-xs text-slate-500 font-normal">— pay with gold</span></h3>
+              <div className="divide-y divide-slate-800 max-h-80 overflow-y-auto pr-1">
                 {CROPS.map((c) => (
                   <div key={c.seedId} className="flex items-center gap-2 py-1.5">
-                    <span className="text-lg">{ITEMS[c.cropId].icon}</span>
+                    <It id={c.cropId} size="w-7 h-7" />
                     <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-700">{ITEMS[c.seedId].name} <span className="text-[10px] text-gray-400 font-normal">(owned: {invCount(c.seedId)})</span></p>
-                      <p className="text-[10px] text-gray-400">{c.growMin >= 60 ? `${Math.round(c.growMin / 60)}h` : `${c.growMin}min`} grow · yields {c.yield} {ITEMS[c.cropId].name}</p>
+                      <p className={`text-sm font-bold ${RARITY_STYLE[ITEMS[c.cropId].rarity].text}`}>{ITEMS[c.seedId].name} <span className="text-[10px] text-slate-500 font-normal">(own {countOf(c.seedId)})</span></p>
+                      <p className="text-[10px] text-slate-500">{c.growMin >= 60 ? `${Math.round(c.growMin / 60)}h` : `${c.growMin}min`} · yields {c.yield + caps.cropYield}</p>
                     </div>
                     <button onClick={() => buySeed(c)} disabled={gs.gold < c.seedCost}
-                      className="text-xs font-bold bg-green-100 text-green-700 rounded-lg px-3 py-1.5 hover:bg-green-200 disabled:opacity-40 transition">
-                      🪙 {c.seedCost}
+                      className="text-xs font-bold bg-emerald-900/70 border border-emerald-700 text-emerald-300 rounded-lg px-3 py-1.5 hover:bg-emerald-800 disabled:opacity-40 transition">
+                      {c.seedCost} gold
                     </button>
                   </div>
                 ))}
+                <div className="pt-2">
+                  <p className="text-xs font-bold text-slate-400 mb-1">Pantry goods</p>
+                  {Object.keys(ITEMS).filter((id) => ITEMS[id].cost).map((id) => (
+                    <div key={id} className="flex items-center gap-2 py-1.5">
+                      <It id={id} size="w-7 h-7" />
+                      <p className="flex-1 text-sm font-bold text-slate-300">{ITEMS[id].name} <span className="text-[10px] text-slate-500 font-normal">(own {countOf(id)})</span></p>
+                      <button onClick={() => buyTrade(id)} disabled={gs.gold < ITEMS[id].cost}
+                        className="text-xs font-bold bg-emerald-900/70 border border-emerald-700 text-emerald-300 rounded-lg px-3 py-1.5 hover:bg-emerald-800 disabled:opacity-40 transition">
+                        {ITEMS[id].cost} gold
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-              <h3 className="font-bold text-gray-800 mb-2">⚖️ Trading Post <span className="text-xs text-gray-400 font-normal">— sell surplus for gold</span></h3>
-              <div className="max-h-72 overflow-y-auto divide-y divide-gray-50 pr-1">
+            </Panel>
+            <Panel className="p-4">
+              <h3 className="font-bold text-slate-200 mb-2">Trading Post <span className="text-xs text-slate-500 font-normal">— sell surplus (also frees pack slots!)</span></h3>
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-800 pr-1">
                 {Object.entries(gs.inv || {}).filter(([id]) => ITEMS[id]?.sell > 0).sort((a, b) => (ITEMS[b[0]].sell - ITEMS[a[0]].sell)).map(([id, q]) => (
                   <div key={id} className="flex items-center gap-2 py-1.5">
-                    <span className="text-lg">{ITEMS[id].icon}</span>
-                    <p className="flex-1 text-sm font-bold text-gray-700">{ITEMS[id].name} <span className="text-[10px] text-gray-400 font-normal">× {fmtQty(q)}</span></p>
-                    <span className="text-[10px] text-gray-400">🪙{ITEMS[id].sell} ea</span>
-                    <button onClick={() => sellItem(id, 1)} className="text-xs font-bold bg-gray-100 text-gray-600 rounded-lg px-2 py-1 hover:bg-yellow-100 transition">Sell 1</button>
-                    <button onClick={() => sellItem(id, 10)} className="text-xs font-bold bg-gray-100 text-gray-600 rounded-lg px-2 py-1 hover:bg-yellow-100 transition">×10</button>
+                    <It id={id} size="w-7 h-7" />
+                    <p className={`flex-1 text-sm font-bold ${RARITY_STYLE[ITEMS[id].rarity || 'common'].text}`}>{ITEMS[id].name} <span className="text-[10px] text-slate-500 font-normal">× {fmtQty(q)}</span></p>
+                    <span className="text-[10px] text-slate-500">{ITEMS[id].sell}g ea</span>
+                    <button onClick={() => sellItem(id, 1)} className="text-xs font-bold bg-slate-800 text-slate-300 rounded-lg px-2 py-1 hover:bg-amber-900/60 transition">Sell 1</button>
+                    <button onClick={() => sellItem(id, 999999)} className="text-xs font-bold bg-slate-800 text-slate-300 rounded-lg px-2 py-1 hover:bg-amber-900/60 transition">All</button>
                   </div>
                 ))}
               </div>
-            </div>
+            </Panel>
           </div>
         </div>
       )}
@@ -896,8 +1314,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       {tab === 'craft' && (
         <div className="space-y-3">
           {/* Tools */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <h3 className="font-bold text-gray-800 mb-2">⚒️ Tools {!gs.crafted.includes('workbench') && <span className="text-xs text-red-500 font-normal">— build a Workbench first!</span>}</h3>
+          <Panel className="p-4">
+            <h3 className="font-bold text-slate-200 mb-2">Tools {!gs.crafted.includes('workbench') && <span className="text-xs text-red-400 font-normal">— build a Workbench first!</span>}</h3>
             <div className="grid sm:grid-cols-3 gap-2.5">
               {Object.entries(TOOL_DEFS).map(([toolId, def]) => {
                 const tier = gs.tools?.[toolId] || 0;
@@ -906,108 +1324,101 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                 const skillId = { axe: 'wood', pick: 'mine', rod: 'fish' }[toolId];
                 const lvlOk = !cost || skillLevel(gs.skills?.[skillId] || 0) >= TOOL_LEVEL_REQ[next];
                 return (
-                  <div key={toolId} className="rounded-xl border border-gray-200 p-3">
-                    <p className="font-bold text-gray-800 text-sm">{def.icon} {TOOL_TIERS[tier].name} {def.name}</p>
-                    <p className="text-[10px] text-gray-400">Power {TOOL_TIERS[tier].power}{forgeBonus.power > 0 && toolId !== 'rod' ? ` (+${forgeBonus.power} ⚔️)` : ''}</p>
+                  <div key={toolId} className="rounded-xl border border-slate-700 bg-black/30 p-3">
+                    <p className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
+                      <Ico src={def.img} size="w-6 h-6" /> {TOOL_TIERS[tier].name} {def.name}
+                    </p>
+                    <p className="text-[10px] text-slate-500">Power {TOOL_TIERS[tier].power}{forgeBonus.power > 0 ? ` (+${forgeBonus.power.toFixed(1)} Forge)` : ''}</p>
                     {cost ? (
                       <>
-                        <p className="text-[11px] text-gray-500 mt-1.5">
-                          Next: <b>{TOOL_TIERS[next].name}</b> — {Object.entries(cost).map(([id, q]) => `${q} ${ITEMS[id].icon}`).join(' + ')}
-                          {!lvlOk && <span className="text-red-400 font-bold"> · needs {SKILLS[skillId].name} {TOOL_LEVEL_REQ[next]}</span>}
-                        </p>
+                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                          <span className="text-[11px] text-slate-400 font-bold">{TOOL_TIERS[next].name}:</span>
+                          {Object.entries(cost).map(([id, q]) => (
+                            <span key={id} className={`flex items-center gap-0.5 text-[11px] font-bold ${countOf(id) >= q ? 'text-slate-300' : 'text-red-400'}`}>
+                              {q}<It id={id} size="w-4 h-4" />
+                            </span>
+                          ))}
+                        </div>
+                        {!lvlOk && <p className="text-[10px] text-red-400 font-bold">Needs {SKILLS[skillId].name} Lv {TOOL_LEVEL_REQ[next]}</p>}
                         <button onClick={() => upgradeTool(toolId)}
                           disabled={!gs.crafted.includes('workbench') || !lvlOk || !hasItems(cost)}
-                          className="w-full mt-2 text-xs font-bold bg-emerald-600 text-white rounded-lg py-1.5 hover:bg-emerald-700 disabled:opacity-40 transition">
+                          className="w-full mt-2 text-xs font-bold bg-emerald-700 text-white rounded-lg py-1.5 hover:bg-emerald-600 disabled:opacity-40 transition">
                           Upgrade
                         </button>
                       </>
                     ) : (
-                      <p className="text-[11px] text-amber-600 font-bold mt-1.5">✨ Fully mastered!</p>
+                      <p className="text-[11px] text-amber-400 font-bold mt-1.5">Fully mastered!</p>
                     )}
                   </div>
                 );
               })}
             </div>
-          </div>
+          </Panel>
 
-          {/* Smelter */}
+          {/* Furnace */}
           {gs.crafted.includes('smelter') && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-              <h3 className="font-bold text-gray-800 mb-2">🏭 Smelter <span className="text-xs text-gray-400 font-normal">— runs in real time, even while you&apos;re away</span></h3>
+            <Panel className="p-4">
+              <h3 className="font-bold text-slate-200 mb-2">Stone Furnace <span className="text-xs text-slate-500 font-normal">— real time, even while away · fuel: {fmtQty(fuelUnits)}</span></h3>
               <div className="flex flex-wrap gap-2 mb-3">
                 {gs.smelting.map((job) => {
                   const done = now() >= job.doneAt;
                   return (
                     <button key={job.slot} onClick={() => collectBar(job)} disabled={!done}
-                      className={`rounded-xl border-2 px-4 py-2 text-sm font-bold transition ${done ? 'border-amber-400 bg-amber-50 animate-pulse' : 'border-gray-200 bg-gray-50 text-gray-500'}`}>
-                      {ITEMS[job.barId].icon} {done ? `Collect ${ITEMS[job.barId].name}!` : `${ITEMS[job.barId].name} · ${fmtCountdown(job.doneAt - now())}`}
+                      className={`rounded-xl border-2 px-4 py-2 text-sm font-bold transition flex items-center gap-2 ${done ? 'border-amber-400/70 bg-amber-950/50 text-amber-300 animate-pulse' : 'border-slate-700 bg-black/30 text-slate-400'}`}>
+                      <It id={job.barId} size="w-6 h-6" />
+                      {done ? `Collect ${ITEMS[job.barId].name}!` : `${ITEMS[job.barId].name} · ${fmtCountdown(job.doneAt - now())}`}
                     </button>
                   );
                 })}
-                {gs.smelting.length === 0 && <p className="text-xs text-gray-400 italic">Furnace is cold. Load it up!</p>}
+                {gs.smelting.length === 0 && <p className="text-xs text-slate-500 italic">The furnace is cold. Load it up!</p>}
               </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {SMELT_RECIPES.map((r) => (
                   <button key={r.barId} onClick={() => startSmelt(r)}
-                    disabled={invCount(r.oreId) < r.ore || fuelUnits < r.fuel || gs.smelting.length >= SMELT_SLOTS}
-                    className="text-left rounded-xl border border-gray-200 p-2.5 hover:border-amber-300 hover:shadow disabled:opacity-40 transition">
-                    <p className="text-sm font-bold text-gray-700">{ITEMS[r.barId].icon} {ITEMS[r.barId].name}</p>
-                    <p className="text-[10px] text-gray-400">{r.ore} {ITEMS[r.oreId].icon} + {r.fuel}🪵 fuel · {r.minutes} min</p>
+                    disabled={countOf(r.oreId) < r.ore || fuelUnits < r.fuel || gs.smelting.length >= SMELT_SLOTS}
+                    className="text-left rounded-xl border border-slate-700 bg-black/30 p-2.5 hover:border-amber-500/60 disabled:opacity-40 transition">
+                    <p className="text-sm font-bold text-slate-200 flex items-center gap-1.5"><It id={r.barId} size="w-5 h-5" /> {ITEMS[r.barId].name}</p>
+                    <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
+                      {r.ore}<It id={r.oreId} size="w-3.5 h-3.5" /> + {r.fuel} fuel · {r.minutes} min
+                    </p>
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* Helpers (automation) */}
-          {autoUnits.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-              <h3 className="font-bold text-gray-800 mb-2">🤖 Helpers <span className="text-xs text-gray-400 font-normal">— they gather while you learn</span></h3>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {autoUnits.map((c) => {
-                  const pending = autoPending(c);
-                  return (
-                    <button key={c.id} onClick={() => collectAuto(c)} disabled={pending < 1}
-                      className={`text-left rounded-xl border-2 p-3 transition ${pending > 0 ? 'border-emerald-300 bg-emerald-50 hover:shadow' : 'border-gray-200 bg-gray-50'}`}>
-                      <p className="text-sm font-bold text-gray-700">{c.icon} {c.name}</p>
-                      <p className="text-[10px] text-gray-400">{c.perHour}/{ITEMS[c.autoId].icon} per hour · holds {c.capHours}h</p>
-                      <p className={`text-xs font-bold mt-1 ${pending > 0 ? 'text-emerald-600' : 'text-gray-400'}`}>
-                        {pending > 0 ? `Collect ${pending} × ${ITEMS[c.autoId].name}!` : 'Working…'}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            </Panel>
           )}
 
           {/* Build list */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <h3 className="font-bold text-gray-800 mb-2">🛠️ Build</h3>
-            {['station', 'auto', 'farm', 'decor'].map((cat) => (
-              <div key={cat} className="mb-3">
-                <h4 className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1.5">
-                  {{ station: '🏗️ Stations', auto: '🤖 Helpers', farm: '🌾 Farm', decor: '🎀 Decor (place on your Homestead)' }[cat]}
-                </h4>
+          <Panel className="p-4">
+            <h3 className="font-bold text-slate-200 mb-3">Build &amp; Gear</h3>
+            {[['station', 'Stations'], ['gear', 'Pack, Chest & Expedition Gear'], ['farm', 'Farm & Animals'], ['helper', 'Helpers']].map(([cat, label]) => (
+              <div key={cat} className="mb-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-500 mb-2">{label}</h4>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                   {CRAFTS.filter((c) => c.cat === cat).map((c) => {
                     const owned = gs.crafted.includes(c.id);
                     const needsOk = (c.needs || []).every((n) => gs.crafted.includes(n));
                     const skillOk = !c.skill || skillLevel(gs.skills?.[c.skill[0]] || 0) >= c.skill[1];
-                    const itemsOk = hasItems(c.items);
+                    const realItems = Object.fromEntries(Object.entries(c.items).filter(([id, q]) => ITEMS[id] && q > 0));
+                    const itemsOk = hasItems(realItems);
                     return (
-                      <div key={c.id} className={`rounded-xl border p-2.5 ${owned ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-200'}`}>
-                        <p className="text-sm font-bold text-gray-700">{c.icon} {c.name} {owned && '✓'}</p>
-                        <p className="text-[10px] text-gray-400 leading-snug">{c.desc}</p>
-                        <p className="text-[10px] text-gray-500 mt-1">
-                          {Object.entries(c.items).filter(([, q]) => q > 0).map(([id, q]) => `${q}${ITEMS[id].icon}`).join(' ')}
-                          {c.skill && <span className={skillOk ? '' : 'text-red-400 font-bold'}> · {SKILLS[c.skill[0]].name} {c.skill[1]}</span>}
-                          {(c.needs || []).length > 0 && !needsOk && <span className="text-red-400 font-bold"> · needs {c.needs.map((n) => CRAFT_MAP[n].name).join(', ')}</span>}
-                          <span className="text-amber-600"> · +{c.prosperity}🏡</span>
+                      <div key={c.id} className={`rounded-xl border p-2.5 ${owned ? 'border-emerald-600/60 bg-emerald-950/40' : 'border-slate-700 bg-black/30'}`}>
+                        <p className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
+                          <Ico src={c.img} tint={c.tint} size="w-6 h-6" /> {c.name} {owned && <span className="text-emerald-400 text-xs">BUILT</span>}
                         </p>
+                        <p className="text-[10px] text-slate-400 leading-snug mt-0.5">{c.desc}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                          {Object.entries(realItems).map(([id, q]) => (
+                            <span key={id} className={`flex items-center gap-0.5 text-[11px] font-bold ${countOf(id) >= q ? 'text-slate-300' : 'text-red-400'}`} title={ITEMS[id].name}>
+                              {q}<It id={id} size="w-4 h-4" />
+                            </span>
+                          ))}
+                          <span className="text-[10px] text-amber-400 font-bold">+{c.prosperity} Prosperity</span>
+                        </div>
+                        {c.skill && !skillOk && <p className="text-[10px] text-red-400 font-bold mt-0.5">Needs {SKILLS[c.skill[0]].name} Lv {c.skill[1]}</p>}
+                        {(c.needs || []).length > 0 && !needsOk && <p className="text-[10px] text-red-400 font-bold mt-0.5">Needs {c.needs.map((n) => CRAFT_MAP[n].name).join(', ')}</p>}
                         {!owned && (
                           <button onClick={() => craftItem(c)} disabled={!needsOk || !skillOk || !itemsOk}
-                            className="w-full mt-1.5 text-xs font-bold bg-green-700 text-white rounded-lg py-1.5 hover:bg-green-800 disabled:opacity-40 transition">
+                            className="w-full mt-1.5 text-xs font-bold bg-emerald-700 text-white rounded-lg py-1.5 hover:bg-emerald-600 disabled:opacity-40 transition">
                             Build
                           </button>
                         )}
@@ -1017,205 +1428,231 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                 </div>
               </div>
             ))}
-          </div>
+          </Panel>
         </div>
       )}
 
       {/* ══ KITCHEN ══ */}
       {tab === 'cook' && (
         <div className="space-y-3">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <h3 className="font-bold text-gray-800">{KITCHEN_TIERS[kitchenTier].icon} {KITCHEN_TIERS[kitchenTier].name} <span className="text-xs text-gray-400 font-normal">· fuel: 🪵 {fmtQty(fuelUnits)}</span></h3>
+          <div className="rounded-2xl border-2 border-orange-900/60 p-4 bg-cover bg-center" style={{ backgroundImage: "linear-gradient(rgba(30,12,4,0.82), rgba(30,12,4,0.9)), url('/Loot/Backgrounds/night.png')" }}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold text-white flex items-center gap-2 drop-shadow">
+                <Ico src={KITCHEN_TIERS[kitchenTier].img} size="w-8 h-8" /> {KITCHEN_TIERS[kitchenTier].name}
+                <span className="text-xs text-orange-200/70 font-normal">· Cooking Lv {skillLevel(gs.skills?.cook || 0)} · fuel {fmtQty(fuelUnits)}</span>
+              </h3>
               {gs.unreadScrolls > 0 && (
-                <button onClick={readScroll} className="bg-amber-500 text-white text-sm font-bold px-4 py-2 rounded-xl hover:bg-amber-600 animate-pulse transition">
-                  📜 Read Recipe Scroll ({gs.unreadScrolls})
+                <button onClick={readScroll} className="bg-amber-400 text-amber-950 text-sm font-bold px-4 py-2 rounded-xl hover:bg-amber-300 animate-pulse transition flex items-center gap-1.5">
+                  <Ico src={`${ICN}/Magic/030-scroll.svg`} size="w-5 h-5" /> Read Recipe Scroll ({gs.unreadScrolls})
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-500 mb-3">
-              Cooking burns wood as fuel and serves a timed buff (max {MAX_ACTIVE_BUFFS} meals at once). Find scroll recipes out in the wilds!
-              Cooking level {skillLevel(gs.skills?.cook || 0)}.
+            <p className="text-xs text-orange-100/70 mt-1">
+              Cooking burns wood as fuel and serves a timed buff (max {MAX_ACTIVE_BUFFS} meals). {RECIPES.length} recipes exist — levels, scrolls and the Cauldron unlock them all.
             </p>
-            <InventoryStrip kinds={['crop', 'forage', 'fish', 'ore']} />
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-            {RECIPES.map((r) => {
-              const known = gs.knownRecipes.includes(r.id) || r.start || (r.cookLevel && skillLevel(gs.skills?.cook || 0) >= r.cookLevel);
-              const cooked = (gs.cookedDishes || []).includes(r.id);
-              const tierOk = kitchenTier >= r.tier;
-              const canCook = known && tierOk && hasItems(r.ing) && fuelUnits >= r.fuel;
-              if (!known) {
-                return (
-                  <div key={r.id} className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-3 text-center">
-                    <p className="text-2xl opacity-30">❓</p>
-                    <p className="text-xs font-bold text-gray-400 mt-1">
-                      {r.scroll ? 'Secret recipe — find the scroll!' : `Unlocks at Cooking Lv ${r.cookLevel}`}
-                    </p>
-                  </div>
-                );
-              }
-              const bl = BUFF_LABELS[r.buff.type];
-              return (
-                <div key={r.id} className={`rounded-xl border-2 p-3 ${cooked ? 'border-orange-200 bg-orange-50/40' : 'border-gray-200 bg-white'}`}>
-                  <p className="font-bold text-gray-800 text-sm">{r.icon} {r.name} {cooked && <span title="Cooked before">🍽️</span>}</p>
-                  <p className="text-[10px] text-gray-400 italic leading-snug">{r.desc}</p>
-                  <p className="text-[11px] text-gray-600 mt-1.5">
-                    {Object.entries(r.ing).map(([id, q]) => {
-                      const have = invCount(id) >= q;
-                      return <span key={id} className={have ? '' : 'text-red-400 font-bold'}>{q}{ITEMS[id].icon} </span>;
-                    })}
-                    <span className={fuelUnits >= r.fuel ? 'text-gray-400' : 'text-red-400 font-bold'}>+ {r.fuel}🪵</span>
-                  </p>
-                  <p className="text-[11px] font-bold text-orange-600 mt-1">{bl.icon} +{r.buff.value}% {bl.name} · {r.buff.minutes} min</p>
-                  {!tierOk && <p className="text-[10px] text-red-400 font-bold mt-0.5">Needs {KITCHEN_TIERS[r.tier].name}</p>}
-                  <button onClick={() => cookRecipe(r)}
-                    disabled={!canCook}
-                    className="w-full mt-2 text-xs font-bold bg-orange-500 text-white rounded-lg py-1.5 hover:bg-orange-600 disabled:opacity-40 transition">
-                    Cook &amp; Eat
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          {[['dishes', 'Dishes'], ['cauldron', 'Cauldron Brews']].map(([group, label]) => (
+            <Panel key={group} className="p-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-orange-500 mb-2">{label}{group === 'cauldron' && !gs.crafted.includes('cauldron') && <span className="text-red-400 normal-case font-bold"> — craft the Witch Cauldron to brew</span>}</h4>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {RECIPES.filter((r) => (group === 'cauldron') === !!r.cauldron).map((r) => {
+                  const known = recipeKnown(r, gs);
+                  const cooked = (gs.cookedDishes || []).includes(r.id);
+                  const tierOk = kitchenTier >= r.tier && (!r.cauldron || gs.crafted.includes('cauldron'));
+                  const canCook = known && tierOk && hasItems(r.ing) && fuelUnits >= r.fuel;
+                  if (!known) {
+                    return (
+                      <div key={r.id} className="rounded-xl border border-dashed border-slate-700 bg-black/20 p-3 text-center">
+                        <Ico src={`${ICN}/Magic/030-scroll.svg`} size="w-8 h-8" className="mx-auto opacity-25" />
+                        <p className="text-xs font-bold text-slate-500 mt-1">
+                          {r.scroll ? 'Secret recipe — find the scroll!' : `Unlocks at Cooking Lv ${r.cookLevel}`}
+                        </p>
+                      </div>
+                    );
+                  }
+                  const bl = BUFF_LABELS[r.buff.type];
+                  return (
+                    <div key={r.id} className={`rounded-xl border p-3 bg-black/30 ${cooked ? 'border-orange-700/60' : 'border-slate-700'}`}>
+                      <p className="font-bold text-slate-200 text-sm flex items-center gap-1.5">
+                        <Ico src={r.img} size="w-7 h-7" /> {r.name}
+                      </p>
+                      <p className="text-[10px] text-slate-500 italic leading-snug mt-0.5">{r.desc}</p>
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                        {Object.entries(r.ing).map(([id, q]) => (
+                          <span key={id} className={`flex items-center gap-0.5 text-[11px] font-bold ${countOf(id) >= q ? 'text-slate-300' : 'text-red-400'}`} title={ITEMS[id].name}>
+                            {q}<It id={id} size="w-4 h-4" />
+                          </span>
+                        ))}
+                        <span className={`text-[10px] font-bold ${fuelUnits >= r.fuel ? 'text-slate-500' : 'text-red-400'}`}>+{r.fuel} fuel</span>
+                      </div>
+                      <p className="text-[11px] font-bold text-orange-400 mt-1 flex items-center gap-1">
+                        <Ico src={bl.img} size="w-4 h-4" /> +{r.buff.value}% {bl.name} · {r.buff.minutes} min
+                      </p>
+                      {!tierOk && <p className="text-[10px] text-red-400 font-bold mt-0.5">Needs {r.cauldron ? 'Witch Cauldron' : KITCHEN_TIERS[r.tier].name}</p>}
+                      <button onClick={() => cookRecipe(r)} disabled={!canCook}
+                        className="w-full mt-2 text-xs font-bold bg-orange-600 text-white rounded-lg py-1.5 hover:bg-orange-500 disabled:opacity-40 transition">
+                        Cook &amp; Eat
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </Panel>
+          ))}
         </div>
       )}
 
-      {/* ══ HOMESTEAD ══ */}
-      {tab === 'home' && (
+      {/* ══ PACK (inventory management) ══ */}
+      {tab === 'inventory' && (
         <div className="space-y-3">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <h3 className="font-bold text-gray-800">🏕️ Your Homestead <span className="text-amber-600 text-sm">· {fmtQty(prosperity)} Prosperity</span></h3>
-              {placeMode && (
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 animate-pulse">
-                  Placing {CRAFT_MAP[placeMode]?.icon} {CRAFT_MAP[placeMode]?.name} — tap a tile! <button onClick={() => setPlaceMode(null)} className="underline ml-1">cancel</button>
-                </span>
-              )}
+          <Panel className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h3 className="font-bold text-slate-200 flex items-center gap-2">
+                <Ico src={`${ICN}/Camping/007-backpack.svg`} size="w-7 h-7" /> Your Pack — {usedSlots}/{caps.slots} slots · stacks of {caps.stack}
+              </h3>
+              <p className="text-[11px] text-slate-500">Craft pouches, backpacks and crates in the Craft tab to carry more!</p>
             </div>
-            <div
-              className="grid gap-1.5 rounded-xl p-3 bg-gradient-to-b from-green-200 to-emerald-300 border-2 border-emerald-400/50"
-              style={{ gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))` }}
-            >
-              {Array.from({ length: GRID_COLS * GRID_ROWS }).map((_, slot) => {
-                const cabinSlot = Math.floor(GRID_ROWS / 2) * GRID_COLS + Math.floor(GRID_COLS / 2) - 1;
-                if (slot === cabinSlot) {
-                  return (
-                    <div key={slot} className="aspect-square rounded-lg bg-amber-100/80 border-2 border-amber-400 flex items-center justify-center text-2xl shadow" title="Your cabin">
-                      🛖
-                    </div>
-                  );
-                }
-                const placed = gs.grid.find((g) => g.slot === slot);
-                if (placed) {
-                  const c = CRAFT_MAP[placed.craftId];
-                  return (
-                    <button key={slot} onClick={() => removeDecor(slot)}
-                      className="aspect-square rounded-lg bg-white/60 border border-white/80 flex items-center justify-center text-xl hover:bg-red-100 transition shadow-sm"
-                      title={`${c?.name} — tap to pick up`}>
-                      {c?.icon}
-                    </button>
-                  );
-                }
+            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
+              {Object.entries(gs.inv || {}).sort((a, b) => (ITEMS[a[0]]?.name || '').localeCompare(ITEMS[b[0]]?.name || '')).map(([id, q]) => {
+                const rar = RARITY_STYLE[ITEMS[id]?.rarity || 'common'];
+                const full = q >= caps.stack;
                 return (
-                  <button key={slot} onClick={() => placeDecor(slot)} disabled={!placeMode}
-                    className={`aspect-square rounded-lg transition ${placeMode ? 'bg-white/40 hover:bg-white/80 border-2 border-dashed border-white cursor-pointer' : 'bg-white/10'}`} />
+                  <div key={id} className={`rounded-xl border-2 ${rar.border} bg-black/40 p-2 text-center relative`} title={`${ITEMS[id]?.name} (${rar.name}) — sells for ${ITEMS[id]?.sell || 0}g`}>
+                    <It id={id} size="w-10 h-10 mx-auto" />
+                    <p className={`text-[9px] font-bold truncate mt-1 ${rar.text}`}>{ITEMS[id]?.name}</p>
+                    <span className={`absolute top-1 right-1.5 text-[10px] font-bold ${full ? 'text-red-400' : 'text-slate-300'}`}>{q}</span>
+                    {caps.chestSlots > 0 && (
+                      <button onClick={() => chestMove(id, q, true)} className="w-full mt-1 text-[9px] font-bold bg-slate-800 text-slate-400 rounded py-0.5 hover:bg-slate-700 transition">
+                        Store all
+                      </button>
+                    )}
+                  </div>
                 );
               })}
-            </div>
-            {/* Unplaced decor */}
-            {(() => {
-              const placedIds = gs.grid.map((g) => g.craftId);
-              const unplaced = gs.crafted.filter((id) => CRAFT_MAP[id]?.decor && !placedIds.includes(id));
-              return unplaced.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  <span className="text-xs font-bold text-gray-500 py-1">In storage:</span>
-                  {unplaced.map((id) => (
-                    <button key={id} onClick={() => setPlaceMode(id)}
-                      className={`text-xs font-bold rounded-full px-3 py-1 border transition ${placeMode === id ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-emerald-50'}`}>
-                      {CRAFT_MAP[id].icon} {CRAFT_MAP[id].name}
-                    </button>
-                  ))}
+              {Array.from({ length: Math.max(0, caps.slots - usedSlots) }).map((_, i) => (
+                <div key={`e${i}`} className="rounded-xl border-2 border-dashed border-slate-800 bg-black/20 min-h-[86px] flex items-center justify-center">
+                  <p className="text-slate-700 text-[10px] font-bold">empty</p>
                 </div>
-              );
-            })()}
-          </div>
+              ))}
+            </div>
+          </Panel>
 
-          {/* Curio shelf */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <h3 className="font-bold text-gray-800 mb-1">🗄️ Curio Shelf — {(gs.discoveredRares || []).length}/{RARE_IDS.length} rare finds <span className="text-xs text-amber-600 font-normal">(+5 Prosperity each)</span></h3>
-            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 mt-2">
-              {RARE_IDS.map((id) => {
+          {/* Camp chest */}
+          <Panel className="p-4">
+            <h3 className="font-bold text-slate-200 flex items-center gap-2 mb-2">
+              <Ico src={`${ICN}/Camping/008-basket.svg`} size="w-7 h-7" /> Camp Chest — {Object.keys(gs.chest || {}).length}/{caps.chestSlots} slots · stacks of {caps.stack * 2}
+            </h3>
+            {caps.chestSlots === 0 ? (
+              <p className="text-xs text-slate-500">No chest yet — craft a <span className="text-emerald-400 font-bold">Camp Chest</span> at the Workbench to store items at camp.</p>
+            ) : Object.keys(gs.chest || {}).length === 0 ? (
+              <p className="text-xs text-slate-500 italic">The chest is empty. Store overflow here from your pack above.</p>
+            ) : (
+              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
+                {Object.entries(gs.chest || {}).sort((a, b) => (ITEMS[a[0]]?.name || '').localeCompare(ITEMS[b[0]]?.name || '')).map(([id, q]) => {
+                  const rar = RARITY_STYLE[ITEMS[id]?.rarity || 'common'];
+                  return (
+                    <div key={id} className={`rounded-xl border ${rar.border} bg-black/30 p-2 text-center relative`} title={ITEMS[id]?.name}>
+                      <It id={id} size="w-9 h-9 mx-auto" />
+                      <p className={`text-[9px] font-bold truncate mt-1 ${rar.text}`}>{ITEMS[id]?.name}</p>
+                      <span className="absolute top-1 right-1.5 text-[10px] font-bold text-slate-300">{q}</span>
+                      <button onClick={() => chestMove(id, q, false)} className="w-full mt-1 text-[9px] font-bold bg-slate-800 text-slate-400 rounded py-0.5 hover:bg-slate-700 transition">
+                        Take all
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Panel>
+
+          {/* Curio shelf + skills + titles */}
+          <Panel className="p-4">
+            <h3 className="font-bold text-slate-200 mb-2">Curio Shelf — {(gs.discoveredRares || []).length}/{CURIO_IDS.length} <span className="text-xs text-amber-500 font-normal">(+5 Prosperity each)</span></h3>
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
+              {CURIO_IDS.map((id) => {
                 const found = (gs.discoveredRares || []).includes(id);
+                const rar = RARITY_STYLE[ITEMS[id].rarity];
                 return (
-                  <div key={id} className={`rounded-xl border p-2 text-center ${found ? 'border-amber-200 bg-amber-50/50' : 'border-dashed border-gray-200 bg-gray-50'}`}
-                    title={found ? ITEMS[id].name : '??? — keep exploring!'}>
-                    <p className={`text-2xl ${found ? '' : 'opacity-20 grayscale'}`}>{found ? ITEMS[id].icon : '❔'}</p>
-                    <p className={`text-[9px] font-bold truncate ${found ? 'text-gray-600' : 'text-gray-300'}`}>{found ? ITEMS[id].name : '???'}</p>
+                  <div key={id} className={`rounded-lg border p-1.5 text-center ${found ? `${rar.border} bg-black/30` : 'border-slate-800 bg-black/20'}`}
+                    title={found ? `${ITEMS[id].name} (${rar.name})` : '??? — keep exploring!'}>
+                    <It id={id} size="w-full aspect-square" className={found ? '' : 'grayscale opacity-20'} />
+                    <p className={`text-[8px] font-bold truncate ${found ? rar.text : 'text-slate-600'}`}>{found ? ITEMS[id].name : '???'}</p>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </Panel>
 
-          {/* Titles */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-            <h3 className="font-bold text-gray-800 mb-2">📛 Wildwood Titles <span className="text-xs text-gray-400 font-normal">— the equipped one shows on your class card</span></h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <Panel className="p-4">
+            <h3 className="font-bold text-slate-200 mb-2">Skills</h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {Object.entries(SKILLS).map(([k, s]) => {
+                const prog = skillProgress(gs.skills?.[k] || 0);
+                return (
+                  <div key={k} className="rounded-xl border border-slate-700 bg-black/30 p-2.5">
+                    <p className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
+                      <Ico src={s.img} size="w-5 h-5" /> {s.name} <span className="text-emerald-400">Lv {prog.level}</span>
+                    </p>
+                    <div className="w-full bg-black/60 rounded-full h-1.5 mt-1.5 border border-slate-800">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-lime-400" style={{ width: prog.needed ? `${Math.round((prog.into / prog.needed) * 100)}%` : '100%' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Panel>
+
+          <Panel className="p-4">
+            <h3 className="font-bold text-slate-200 mb-2">Wildwood Titles <span className="text-xs text-slate-500 font-normal">— the equipped one shows on your class card</span></h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
               {HOMESTEAD_TITLES.map((t) => {
                 const unlocked = (gs.unlockedTitles || []).includes(t.id);
                 const active = gs.activeTitle === t.id;
                 return (
                   <button key={t.id} onClick={() => unlocked && equipTitle(t.id)} disabled={!unlocked}
-                    className={`text-left rounded-xl border-2 p-2.5 transition ${active ? 'border-green-500 bg-green-50 shadow' : unlocked ? 'border-gray-200 bg-white hover:shadow' : 'border-gray-200 bg-gray-50 opacity-60'}`}>
-                    <p className={`font-bold text-sm ${t.color}`}>{t.name} {active && '· ON'}</p>
-                    <p className="text-[11px] text-gray-500">{unlocked ? (active ? 'Tap to unequip' : 'Tap to equip') : `🔒 ${t.reqText}`}</p>
+                    className={`text-left rounded-xl border p-2.5 transition ${active ? 'border-emerald-500 bg-emerald-950/60' : unlocked ? 'border-slate-700 bg-black/30 hover:border-emerald-700' : 'border-slate-800 bg-black/20 opacity-50'}`}>
+                    <p className={`font-bold text-sm ${t.darkColor}`}>{t.name} {active && '· ON'}</p>
+                    <p className="text-[10px] text-slate-500">{unlocked ? (active ? 'Tap to unequip' : 'Tap to equip') : t.reqText}</p>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </Panel>
         </div>
       )}
 
       {/* ══ CLASS ══ */}
       {tab === 'class' && (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
-          <h3 className="font-bold text-gray-800 mb-1">👥 Valley Neighbours — Prosperity</h3>
-          <p className="text-xs text-gray-500 mb-3">Tap a neighbour to peek at their homestead stats!</p>
+        <Panel className="p-4">
+          <h3 className="font-bold text-slate-200 mb-1">Valley Neighbours — Prosperity</h3>
+          <p className="text-xs text-slate-500 mb-3">Tap a neighbour to peek at their homestead!</p>
           {(() => {
             const rows = [...(classmates || [])].map((s) => ({
-              id: s.id,
-              name: `${s.firstName || '?'} ${s.lastName?.charAt(0) || ''}`,
-              data: s.homesteadData || null,
-              isMe: s.id === studentData?.id,
+              id: s.id, name: `${s.firstName || '?'} ${s.lastName?.charAt(0) || ''}`, data: s.homesteadData || null, isMe: s.id === studentData?.id,
             }));
-            if (!rows.some((r) => r.isMe) && studentData) {
-              rows.push({ id: studentData.id, name: `${studentData.firstName || 'You'}`, data: gs, isMe: true });
-            } else {
-              const me = rows.find((r) => r.isMe);
-              if (me) me.data = gs;
-            }
+            if (!rows.some((r) => r.isMe) && studentData) rows.push({ id: studentData.id, name: `${studentData.firstName || 'You'}`, data: gs, isMe: true });
+            else { const me = rows.find((r) => r.isMe); if (me) me.data = gs; }
             const scored = rows.map((r) => ({ ...r, p: prosperityOf(r.data), skills: totalSkillLevel(r.data) })).sort((a, b) => b.p - a.p);
             return (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-slate-800">
                 {scored.slice(0, 30).map((r, i) => (
                   <div key={r.id || i}>
                     <button onClick={() => setVisitId(visitId === r.id ? null : r.id)}
-                      className={`w-full flex items-center gap-3 py-2.5 px-2 rounded-lg text-left transition hover:bg-green-50 ${r.isMe ? 'bg-green-50' : ''}`}>
-                      <span className="w-8 text-center font-bold text-gray-400">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
-                      <p className="flex-1 font-semibold text-gray-800 text-sm truncate">{r.name} {r.isMe && '(you)'}</p>
-                      <span className="text-xs font-bold text-gray-400">📚 {r.skills}</span>
-                      <span className="font-bold text-green-700 text-sm">🏡 {fmtQty(r.p)}</span>
+                      className={`w-full flex items-center gap-3 py-2.5 px-2 rounded-lg text-left transition hover:bg-emerald-950/50 ${r.isMe ? 'bg-emerald-950/50' : ''}`}>
+                      <span className="w-8 text-center font-bold text-slate-500">#{i + 1}</span>
+                      <p className="flex-1 font-semibold text-slate-200 text-sm truncate">{r.name} {r.isMe && '(you)'}</p>
+                      <span className="text-xs font-bold text-slate-500">Skills {r.skills}</span>
+                      <span className="font-bold text-emerald-400 text-sm">{fmtQty(r.p)} Prosperity</span>
                     </button>
                     {visitId === r.id && r.data && (
-                      <div className="px-12 pb-3 text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1">
-                        <span>🍳 {(r.data.knownRecipes || []).length} recipes</span>
-                        <span>🗄️ {(r.data.discoveredRares || []).length} curios</span>
-                        <span>🎣 {(r.data.caughtFish || []).length} fish species</span>
-                        <span>🛠️ {(r.data.crafted || []).length} builds</span>
-                        {(r.data.caughtFish || []).includes('leviathan') && <span className="text-purple-600 font-bold">🐉 LEVIATHAN SLAYER</span>}
+                      <div className="px-12 pb-3 text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1">
+                        <span>{(r.data.knownRecipes || []).length} recipes</span>
+                        <span>{(r.data.discoveredRares || []).length} curios</span>
+                        <span>{(r.data.critters || []).length} critters</span>
+                        <span>{(r.data.caughtFish || []).length} fish species</span>
+                        <span>{(r.data.crafted || []).length} builds</span>
+                        {(r.data.caughtFish || []).includes('leviathan') && <span className="text-purple-400 font-bold">LEVIATHAN SLAYER</span>}
                       </div>
                     )}
                   </div>
@@ -1223,18 +1660,68 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
               </div>
             );
           })()}
+        </Panel>
+      )}
+
+      {/* ── Expedition results modal ── */}
+      {expResult && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setExpResult(null)}>
+          <div className="bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-bold text-amber-400 uppercase tracking-widest text-center">The party returns!</p>
+            <h3 className="text-xl font-bold text-white text-center mt-1">{expResult.typeName}</h3>
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-4 max-h-64 overflow-y-auto">
+              {expResult.loot.map(({ id, qty }) => (
+                <div key={id} className={`rounded-xl border ${RARITY_STYLE[ITEMS[id]?.rarity || 'common'].border} bg-black/40 p-2 text-center`} title={ITEMS[id]?.name}>
+                  <It id={id} size="w-9 h-9 mx-auto" />
+                  <p className="text-[9px] font-bold text-slate-300 truncate">{ITEMS[id]?.name}</p>
+                  <p className="text-[10px] font-bold text-amber-400">×{qty}</p>
+                </div>
+              ))}
+              {expResult.critters.map((cid, i) => (
+                <div key={`c${i}`} className={`rounded-xl border ${RARITY_STYLE[CRITTER_MAP[cid]?.rarity || 'common'].border} bg-black/40 p-2 text-center`} title={CRITTER_MAP[cid]?.name}>
+                  <Ico src={CRITTER_MAP[cid]?.img} size="w-9 h-9 mx-auto" />
+                  <p className="text-[9px] font-bold text-emerald-300 truncate">{CRITTER_MAP[cid]?.name}</p>
+                </div>
+              ))}
+              {expResult.curios.map((id, i) => (
+                <div key={`r${i}`} className="rounded-xl border border-amber-400/70 bg-black/40 p-2 text-center" title={ITEMS[id]?.name}>
+                  <It id={id} size="w-9 h-9 mx-auto" />
+                  <p className="text-[9px] font-bold text-amber-300 truncate">{ITEMS[id]?.name}</p>
+                </div>
+              ))}
+              {expResult.scrolls > 0 && (
+                <div className="rounded-xl border border-amber-400/70 bg-black/40 p-2 text-center">
+                  <Ico src={`${ICN}/Magic/030-scroll.svg`} size="w-9 h-9 mx-auto" />
+                  <p className="text-[9px] font-bold text-amber-300">Scroll ×{expResult.scrolls}</p>
+                </div>
+              )}
+            </div>
+            {expResult.soldGold > 0 && <p className="text-[11px] text-amber-400 font-bold text-center mt-2">Pack overflow sold for {expResult.soldGold} gold — craft bigger bags!</p>}
+            <button onClick={() => setExpResult(null)} className="w-full mt-4 bg-amber-500 text-amber-950 px-8 py-2.5 rounded-xl font-bold hover:bg-amber-400 transition">
+              Stash the haul
+            </button>
+          </div>
         </div>
       )}
 
       {/* ── Rare find modal ── */}
       {rareFind && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setRareFind(null)}>
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm font-bold text-amber-500 uppercase tracking-widest animate-pulse">✨ Rare discovery! ✨</p>
-            <p className="text-7xl my-4" style={{ animation: 'wh-bob 1.2s ease-in-out infinite' }}>{ITEMS[rareFind.itemId]?.icon}</p>
-            <h3 className="text-2xl font-bold text-gray-800">{ITEMS[rareFind.itemId]?.name}</h3>
-            <p className="text-sm text-gray-500 mt-2">Added to your Curio Shelf (+5 Prosperity) — only the luckiest wanderers ever find one.</p>
-            <button onClick={() => setRareFind(null)} className="mt-5 bg-amber-500 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-amber-600 transition">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setRareFind(null)}>
+          <div className="bg-slate-900 border-2 border-amber-500/60 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-bold text-amber-400 uppercase tracking-widest animate-pulse">Rare discovery!</p>
+            <div className="flex justify-center my-4" style={{ animation: 'wh-bob 1.2s ease-in-out infinite' }}>
+              {rareFind.kind === 'curio'
+                ? <It id={rareFind.id} size="w-28 h-28" />
+                : <Ico src={CRITTER_MAP[rareFind.id]?.img} size="w-28 h-28" />}
+            </div>
+            <h3 className="text-2xl font-bold text-white">{rareFind.kind === 'curio' ? ITEMS[rareFind.id]?.name : CRITTER_MAP[rareFind.id]?.name}</h3>
+            <p className={`text-sm font-bold ${RARITY_STYLE[(rareFind.kind === 'curio' ? ITEMS[rareFind.id]?.rarity : CRITTER_MAP[rareFind.id]?.rarity) || 'rare'].text}`}>
+              {RARITY_STYLE[(rareFind.kind === 'curio' ? ITEMS[rareFind.id]?.rarity : CRITTER_MAP[rareFind.id]?.rarity) || 'rare'].name}
+            </p>
+            <p className="text-sm text-slate-400 mt-2">
+              {rareFind.kind === 'curio' ? 'Added to your Curio Shelf (+5 Prosperity).' : 'Added to your Critter Collection (+2 Prosperity).'}
+            </p>
+            <button onClick={() => setRareFind(null)} className="mt-5 bg-amber-500 text-amber-950 px-8 py-2.5 rounded-xl font-bold hover:bg-amber-400 transition">
               Treasure it
             </button>
           </div>
@@ -1243,18 +1730,20 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
 
       {/* ── New recipe modal ── */}
       {newRecipe && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setNewRecipe(null)}>
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm font-bold text-orange-500 uppercase tracking-widest">📜 The scroll reveals…</p>
-            <p className="text-6xl my-4">{RECIPE_MAP[newRecipe.recipeId]?.icon}</p>
-            <h3 className="text-2xl font-bold text-gray-800">{RECIPE_MAP[newRecipe.recipeId]?.name}</h3>
-            <p className="text-sm text-gray-500 italic mt-1">“{RECIPE_MAP[newRecipe.recipeId]?.desc}”</p>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setNewRecipe(null)}>
+          <div className="bg-slate-900 border-2 border-orange-500/60 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-bold text-orange-400 uppercase tracking-widest">The scroll reveals…</p>
+            <div className="flex justify-center my-4">
+              <Ico src={RECIPE_MAP[newRecipe.recipeId]?.img} size="w-24 h-24" />
+            </div>
+            <h3 className="text-2xl font-bold text-white">{RECIPE_MAP[newRecipe.recipeId]?.name}</h3>
+            <p className="text-sm text-slate-400 italic mt-1">“{RECIPE_MAP[newRecipe.recipeId]?.desc}”</p>
             {(() => {
               const r = RECIPE_MAP[newRecipe.recipeId];
               const bl = r && BUFF_LABELS[r.buff.type];
-              return r && <p className="text-sm font-bold text-orange-600 mt-2">{bl.icon} +{r.buff.value}% {bl.name} for {r.buff.minutes} min</p>;
+              return r && <p className="text-sm font-bold text-orange-400 mt-2">+{r.buff.value}% {bl.name} for {r.buff.minutes} min</p>;
             })()}
-            <button onClick={() => setNewRecipe(null)} className="mt-5 bg-orange-500 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-orange-600 transition">
+            <button onClick={() => setNewRecipe(null)} className="mt-5 bg-orange-500 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-orange-400 transition">
               To the kitchen!
             </button>
           </div>
