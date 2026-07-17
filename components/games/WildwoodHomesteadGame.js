@@ -30,7 +30,7 @@ import {
   FARM_BASE_PLOTS, CROPS, CROP_BY_SEED, GOLDEN_CROP_CHANCE, PENS, PEN_MAP, CHEESE_RECIPE,
   SMELT_SLOTS, SMELT_RECIPES,
   KITCHEN_TIERS, BUFF_LABELS, RECIPES, RECIPE_MAP, SCROLL_RECIPES, MAX_ACTIVE_BUFFS,
-  CRAFTS, CRAFT_MAP,
+  CRAFTS, CRAFT_MAP, GOLD_ICON, dishIdOf,
   prosperityOf, totalSkillLevel, HOMESTEAD_TITLES, HOMESTEAD_TITLE_MAP,
   defaultSave,
 } from './Homestead/homesteadConfig';
@@ -51,6 +51,10 @@ const fmtCountdown = (ms) => {
 };
 
 const ICN = '/game icons/Wildwood';
+
+// Items can span MULTIPLE stacks — each stack takes one slot.
+const slotsUsedOf = (inv, stackSize) =>
+  Object.values(inv || {}).reduce((s, q) => s + Math.ceil((Number(q) || 0) / stackSize), 0);
 
 // Companion family → homestead bonus (read-only peek at the Menagerie save)
 const COMPANION_BONUSES = {
@@ -213,7 +217,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     [gs.inv]
   );
   const maxExpeditions = gs.crafted.includes('camp2') ? 2 : 1;
-  const usedSlots = Object.keys(gs.inv || {}).length;
+  const usedSlots = slotsUsedOf(gs.inv, caps.stack);
+  const chestUsedSlots = slotsUsedOf(gs.chest, caps.stack * 2);
 
   // ── Load (migrates v1 saves — unknown ids are dropped by cleanSave rules) ──
   useEffect(() => {
@@ -308,10 +313,12 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
         if (inv[id] === 0) delete inv[id];
         return;
       }
+      // Multi-stack: this item may occupy several slots (one per stack of `c.stack`)
       const have = inv[id] || 0;
-      const hasSlot = have > 0 || Object.keys(inv).length < c.slots;
-      const space = hasSlot ? Math.max(0, c.stack - have) : 0;
-      const add = Math.min(q, space);
+      const used = slotsUsedOf(inv, c.stack);
+      const freeSlots = c.slots - used + Math.ceil(have / c.stack); // slots available to THIS item
+      const maxTotal = freeSlots * c.stack;
+      const add = Math.max(0, Math.min(q, maxTotal - have));
       if (add > 0) inv[id] = have + add;
       const over = q - add;
       if (over > 0 && sellOverflow) {
@@ -332,8 +339,9 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     const c = capsOf(gsRef.current);
     const inv = invRef.current || gsRef.current.inv;
     const have = inv?.[id] || 0;
-    if (have > 0) return have + q <= c.stack;
-    return Object.keys(inv || {}).length < c.slots && q <= c.stack;
+    const used = slotsUsedOf(inv, c.stack);
+    const newUsed = used - Math.ceil(have / c.stack) + Math.ceil((have + q) / c.stack);
+    return newUsed <= c.slots;
   };
 
   const hasItems = (req) => Object.entries(req || {}).every(([id, q]) => q === 0 || countOf(id) >= q);
@@ -361,26 +369,27 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if (c.chestSlots === 0) return;
     const inv = { ...(invRef.current || cur.inv) };
     const chest = { ...(chestRef.current || cur.chest) };
+    // Multi-stack capacity on both sides
+    const capacityFor = (store, itemId, stackSize, slotLimit) => {
+      const have = store[itemId] || 0;
+      const used = slotsUsedOf(store, stackSize);
+      const freeSlots = slotLimit - used + Math.ceil(have / stackSize);
+      return Math.max(0, freeSlots * stackSize - have);
+    };
     if (toChest) {
       const n = Math.min(qty, inv[id] || 0);
       if (n <= 0) return;
-      const have = chest[id] || 0;
-      const hasSlot = have > 0 || Object.keys(chest).length < c.chestSlots;
-      const space = hasSlot ? Math.max(0, c.stack * 2 - have) : 0;
-      const move = Math.min(n, space);
+      const move = Math.min(n, capacityFor(chest, id, c.stack * 2, c.chestSlots));
       if (move <= 0) { showToastRef.current('Chest is full!', 'error'); return; }
-      chest[id] = have + move;
+      chest[id] = (chest[id] || 0) + move;
       inv[id] -= move;
       if (inv[id] <= 0) delete inv[id];
     } else {
       const n = Math.min(qty, chest[id] || 0);
       if (n <= 0) return;
-      const have = inv[id] || 0;
-      const hasSlot = have > 0 || Object.keys(inv).length < c.slots;
-      const space = hasSlot ? Math.max(0, c.stack - have) : 0;
-      const move = Math.min(n, space);
+      const move = Math.min(n, capacityFor(inv, id, c.stack, c.slots));
       if (move <= 0) { showToastRef.current('No room in your pack!', 'error'); return; }
-      inv[id] = have + move;
+      inv[id] = (inv[id] || 0) + move;
       chest[id] -= move;
       if (chest[id] <= 0) delete chest[id];
     }
@@ -603,9 +612,10 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     const rolls = Math.round(dur.rolls * (1 + bonus / 100));
     const expLuck = 1 + buffVal('expLuck') / 100;
 
-    const isLucky = (id) => id === 'CURIO' || id === 'recipe_scroll' || ITEMS[id]?.kind === 'rareIng' || ITEMS[id]?.rarity === 'legendary';
+    const table = dur.table || def.table; // hunts have per-quarry loot tables
+    const isLucky = (id) => id === 'CURIO' || id === 'recipe_scroll' || ITEMS[id]?.kind === 'rareIng' || ITEMS[id]?.kind === 'curio' || ITEMS[id]?.rarity === 'legendary';
     const weightOf = ([id, w]) => (isLucky(id) ? w * expLuck : w);
-    const total = def.table.reduce((s, r) => s + weightOf(r), 0);
+    const total = table.reduce((s, r) => s + weightOf(r), 0);
 
     const loot = {};       // itemId -> qty
     const critterFinds = [];
@@ -613,12 +623,13 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     const curios = [];
     for (let i = 0; i < rolls; i++) {
       let roll = Math.random() * total;
-      let picked = def.table[0][0];
-      for (const r of def.table) { roll -= weightOf(r); if (roll <= 0) { picked = r[0]; break; } }
+      let picked = table[0][0];
+      for (const r of table) { roll -= weightOf(r); if (roll <= 0) { picked = r[0]; break; } }
       if (picked === 'CRITTER') critterFinds.push(rollCritter().id);
       else if (picked === 'SEED') { const sid = SEED_DROPS[Math.floor(Math.random() * SEED_DROPS.length)]; loot[sid] = (loot[sid] || 0) + 1; }
       else if (picked === 'CURIO') curios.push(CURIO_IDS[Math.floor(Math.random() * CURIO_IDS.length)]);
       else if (picked === 'recipe_scroll') scrolls += 1;
+      else if (ITEMS[picked]?.kind === 'curio') curios.push(picked); // named curios (amber, crest…)
       else loot[picked] = (loot[picked] || 0) + 1;
     }
 
@@ -736,26 +747,40 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const recipeKnown = (r, cur = gsRef.current) =>
     cur.knownRecipes.includes(r.id) || r.start || (r.cookLevel && skillLevel(cur.skills?.cook || 0) >= r.cookLevel);
 
+  // Cooking PRODUCES a dish item — stash it, sell it, or eat it when needed.
   const cookRecipe = (r) => {
     const cur = gsRef.current;
     if (!recipeKnown(r, cur)) return;
     if (kitchenTier < r.tier) { showToast(`Needs a ${KITCHEN_TIERS[r.tier].name}!`, 'error'); return; }
     if (r.cauldron && !cur.crafted.includes('cauldron')) { showToast('Needs the Witch Cauldron!', 'error'); return; }
-    if ((cur.activeBuffs || []).filter((b) => b.until > now()).length >= MAX_ACTIVE_BUFFS) {
-      showToast(`You're full! (max ${MAX_ACTIVE_BUFFS} active meals)`, 'error'); return;
-    }
     if (!hasItems(r.ing)) return;
+    if (!canFit(dishIdOf(r.id), 1)) { showToast('No room to plate it up — clear a pack slot!', 'error'); return; }
     if (!consumeFuel(r.fuel)) { showToast('Not enough wood fuel — chop some logs!', 'error'); return; }
-    addLoot(Object.fromEntries(Object.entries(r.ing).map(([id, q]) => [id, -q])));
+    addLoot({ ...Object.fromEntries(Object.entries(r.ing).map(([id, q]) => [id, -q])), [dishIdOf(r.id)]: 1 });
     if (!(cur.cookedDishes || []).includes(r.id)) earnMenagerieEssence(15, 'New dish mastered!');
     setGs((p) => ({
       ...p,
-      activeBuffs: [...(p.activeBuffs || []).filter((b) => b.until > now()), { recipeId: r.id, type: r.buff.type, value: r.buff.value, until: now() + r.buff.minutes * 60 * 1000 }],
       cookedDishes: (p.cookedDishes || []).includes(r.id) ? p.cookedDishes : [...(p.cookedDishes || []), r.id],
       knownRecipes: (p.knownRecipes || []).includes(r.id) ? p.knownRecipes : [...(p.knownRecipes || []), r.id],
       counters: { ...p.counters, cooks: (p.counters?.cooks || 0) + 1 },
     }));
     gainSkillXp('cook', r.xp);
+    showToast(`${r.name} cooked and packed! Eat it whenever you need the boost.`, 'success');
+    dirtyRef.current = true;
+  };
+
+  const eatDish = (dishId) => {
+    const r = RECIPE_MAP[ITEMS[dishId]?.recipeId];
+    if (!r || countOf(dishId) < 1) return;
+    const cur = gsRef.current;
+    if ((cur.activeBuffs || []).filter((b) => b.until > now()).length >= MAX_ACTIVE_BUFFS) {
+      showToast(`You're full! (max ${MAX_ACTIVE_BUFFS} active meals)`, 'error'); return;
+    }
+    addLoot({ [dishId]: -1 });
+    setGs((p) => ({
+      ...p,
+      activeBuffs: [...(p.activeBuffs || []).filter((b) => b.until > now()), { recipeId: r.id, type: r.buff.type, value: r.buff.value, until: now() + r.buff.minutes * 60 * 1000 }],
+    }));
     const bl = BUFF_LABELS[r.buff.type];
     showToast(`Delicious! +${r.buff.value}% ${bl.name} for ${r.buff.minutes} min.`, 'success');
     dirtyRef.current = true;
@@ -859,7 +884,9 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-3 text-xs font-bold">
-          <span className="bg-black/40 border border-amber-500/40 text-amber-300 rounded-full px-3 py-1">{fmtQty(gs.gold)} gold</span>
+          <span className="bg-black/40 border border-amber-500/40 text-amber-300 rounded-full px-3 py-1 flex items-center gap-1.5">
+            <Ico src={GOLD_ICON} size="w-4 h-4" /> {fmtQty(gs.gold)}
+          </span>
           <span className={`rounded-full px-3 py-1 border ${usedSlots >= caps.slots ? 'bg-red-900/60 border-red-500/60 text-red-300' : 'bg-black/40 border-white/20 text-white/90'}`}>
             Pack {usedSlots}/{caps.slots} slots
           </span>
@@ -1103,7 +1130,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                   return (
                     <button key={exp.id} onClick={() => collectExpedition(exp)} disabled={!ready}
                       className={`rounded-xl border-2 p-3 flex items-center gap-3 text-left transition ${ready ? 'border-amber-400/70 bg-amber-950/40 animate-pulse' : 'border-slate-700 bg-black/30'}`}>
-                      <Ico src={def.img} size="w-10 h-10" />
+                      <Ico src={dur.img || def.img} size="w-10 h-10" />
                       <div className="flex-1">
                         <p className="font-bold text-slate-200 text-sm">{def.name} — {dur.name}</p>
                         <p className={`text-xs font-bold ${ready ? 'text-amber-300' : 'text-slate-400'}`}>
@@ -1143,6 +1170,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                           <button key={i} onClick={() => startExpedition(type, i)}
                             disabled={gs.expeditions.length >= maxExpeditions}
                             className="bg-black/50 border border-white/20 rounded-xl p-2.5 text-center hover:border-amber-400/70 hover:bg-black/70 disabled:opacity-40 transition">
+                            {d.img && <Ico src={d.img} size="w-9 h-9 mx-auto mb-1" />}
                             <p className="text-white font-bold text-sm">{d.name}</p>
                             <p className="text-white/60 text-[11px]">{d.minutes >= 60 ? `${Math.round(d.minutes / 60)}h` : `${d.minutes}min`} · ~{d.rolls} finds</p>
                           </button>
@@ -1269,7 +1297,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                     <It id={c.cropId} size="w-7 h-7" />
                     <div className="flex-1">
                       <p className={`text-sm font-bold ${RARITY_STYLE[ITEMS[c.cropId].rarity].text}`}>{ITEMS[c.seedId].name} <span className="text-[10px] text-slate-500 font-normal">(own {countOf(c.seedId)})</span></p>
-                      <p className="text-[10px] text-slate-500">{c.growMin >= 60 ? `${Math.round(c.growMin / 60)}h` : `${c.growMin}min`} · yields {c.yield + caps.cropYield}</p>
+                      <p className="text-[10px] text-slate-500">{c.growMin >= 60 ? `${Math.round(c.growMin / 60)}h` : c.growMin >= 1 ? `${c.growMin}min` : `${Math.round(c.growMin * 60)}s`} · yields {c.yield + caps.cropYield}</p>
                     </div>
                     <button onClick={() => buySeed(c)} disabled={gs.gold < c.seedCost}
                       className="text-xs font-bold bg-emerald-900/70 border border-emerald-700 text-emerald-300 rounded-lg px-3 py-1.5 hover:bg-emerald-800 disabled:opacity-40 transition">
@@ -1490,10 +1518,17 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                         <Ico src={bl.img} size="w-4 h-4" /> +{r.buff.value}% {bl.name} · {r.buff.minutes} min
                       </p>
                       {!tierOk && <p className="text-[10px] text-red-400 font-bold mt-0.5">Needs {r.cauldron ? 'Witch Cauldron' : KITCHEN_TIERS[r.tier].name}</p>}
-                      <button onClick={() => cookRecipe(r)} disabled={!canCook}
-                        className="w-full mt-2 text-xs font-bold bg-orange-600 text-white rounded-lg py-1.5 hover:bg-orange-500 disabled:opacity-40 transition">
-                        Cook &amp; Eat
-                      </button>
+                      <div className="flex gap-1.5 mt-2">
+                        <button onClick={() => cookRecipe(r)} disabled={!canCook}
+                          className="flex-1 text-xs font-bold bg-orange-600 text-white rounded-lg py-1.5 hover:bg-orange-500 disabled:opacity-40 transition">
+                          Cook
+                        </button>
+                        <button onClick={() => eatDish(dishIdOf(r.id))} disabled={countOf(dishIdOf(r.id)) < 1}
+                          className="flex-1 text-xs font-bold bg-emerald-700 text-white rounded-lg py-1.5 hover:bg-emerald-600 disabled:opacity-40 transition"
+                          title="Eat one from your pack">
+                          Eat ({countOf(dishIdOf(r.id))})
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -1516,12 +1551,19 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
             <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
               {Object.entries(gs.inv || {}).sort((a, b) => (ITEMS[a[0]]?.name || '').localeCompare(ITEMS[b[0]]?.name || '')).map(([id, q]) => {
                 const rar = RARITY_STYLE[ITEMS[id]?.rarity || 'common'];
-                const full = q >= caps.stack;
+                const itemSlots = Math.ceil(q / caps.stack);
+                const isDish = ITEMS[id]?.kind === 'dish';
                 return (
-                  <div key={id} className={`rounded-xl border-2 ${rar.border} bg-black/40 p-2 text-center relative`} title={`${ITEMS[id]?.name} (${rar.name}) — sells for ${ITEMS[id]?.sell || 0}g`}>
+                  <div key={id} className={`rounded-xl border-2 ${rar.border} bg-black/40 p-2 text-center relative`} title={`${ITEMS[id]?.name} (${rar.name}) — sells for ${ITEMS[id]?.sell || 0}g${itemSlots > 1 ? ` · fills ${itemSlots} slots` : ''}`}>
                     <It id={id} size="w-10 h-10 mx-auto" />
                     <p className={`text-[9px] font-bold truncate mt-1 ${rar.text}`}>{ITEMS[id]?.name}</p>
-                    <span className={`absolute top-1 right-1.5 text-[10px] font-bold ${full ? 'text-red-400' : 'text-slate-300'}`}>{q}</span>
+                    <span className="absolute top-1 right-1.5 text-[10px] font-bold text-slate-300">{q}</span>
+                    {itemSlots > 1 && <span className="absolute top-1 left-1.5 text-[8px] font-bold text-amber-400/90" title={`${itemSlots} slots`}>{itemSlots}▮</span>}
+                    {isDish && (
+                      <button onClick={() => eatDish(id)} className="w-full mt-1 text-[9px] font-bold bg-emerald-800 text-emerald-200 rounded py-0.5 hover:bg-emerald-700 transition">
+                        Eat
+                      </button>
+                    )}
                     {caps.chestSlots > 0 && (
                       <button onClick={() => chestMove(id, q, true)} className="w-full mt-1 text-[9px] font-bold bg-slate-800 text-slate-400 rounded py-0.5 hover:bg-slate-700 transition">
                         Store all
@@ -1541,7 +1583,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
           {/* Camp chest */}
           <Panel className="p-4">
             <h3 className="font-bold text-slate-200 flex items-center gap-2 mb-2">
-              <Ico src={`${ICN}/Camping/008-basket.svg`} size="w-7 h-7" /> Camp Chest — {Object.keys(gs.chest || {}).length}/{caps.chestSlots} slots · stacks of {caps.stack * 2}
+              <Ico src={`${ICN}/Camping/008-basket.svg`} size="w-7 h-7" /> Camp Chest — {chestUsedSlots}/{caps.chestSlots} slots · stacks of {caps.stack * 2}
             </h3>
             {caps.chestSlots === 0 ? (
               <p className="text-xs text-slate-500">No chest yet — craft a <span className="text-emerald-400 font-bold">Camp Chest</span> at the Workbench to store items at camp.</p>

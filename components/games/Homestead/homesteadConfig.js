@@ -23,6 +23,12 @@ const SWEET = `${IC}/Sweets`;
 const TREE = `${IC}/Trees`;
 const WATER = `${IC}/Water`;
 const BUGS = `${IC}/Bugs`;
+const MINE = `${IC}/Mining`;
+const FISH = `${IC}/Fishing`;
+const HUNT = `${IC}/Hunting`;
+const MORE = `${IC}/More`;
+
+export const GOLD_ICON = `${MINE}/016-coin.svg`;
 
 export const FALLBACK_ICON = `${MAGIC}/037-magic box.svg`;
 
@@ -66,18 +72,21 @@ export const ITEMS = {
   tree_sap:     { name: 'Amber Sap',     img: `${SWEET}/019-maple syrup.svg`, kind: 'rareIng', sell: 22, rarity: 'rare' },
 
   // ── Stone + ores + bars ───────────────────────────────────────────────────
-  stone:        { name: 'Stone',         img: `${NAT}/024-mountain.svg`, tint: T.dark, kind: 'stone', sell: 1, rarity: 'common' },
-  copper_ore:   { name: 'Copper Ore',    img: `${NAT}/024-mountain.svg`, tint: T.copper, kind: 'ore', sell: 3, rarity: 'common' },
-  iron_ore:     { name: 'Iron Ore',      img: `${NAT}/024-mountain.svg`, tint: T.iron, kind: 'ore', sell: 6, rarity: 'uncommon' },
-  silver_ore:   { name: 'Silver Ore',    img: `${NAT}/024-mountain.svg`, tint: T.silver, kind: 'ore', sell: 11, rarity: 'rare' },
-  gold_ore:     { name: 'Gold Ore',      img: `${NAT}/024-mountain.svg`, tint: T.gold, kind: 'ore', sell: 18, rarity: 'rare' },
-  mithril_ore:  { name: 'Mithril Ore',   img: `${MAGIC}/017-crystal.svg`, tint: T.mythic, kind: 'ore', sell: 38, rarity: 'epic' },
+  stone:        { name: 'Stone',         img: `${MINE}/002-stone.svg`, kind: 'stone', sell: 1, rarity: 'common' },
+  copper_ore:   { name: 'Copper Ore',    img: `${MINE}/001-copper-ore.svg`, kind: 'ore', sell: 3, rarity: 'common' },
+  iron_ore:     { name: 'Iron Ore',      img: `${MINE}/004-iron-ore.svg`, kind: 'ore', sell: 6, rarity: 'uncommon' },
+  silver_ore:   { name: 'Silver Ore',    img: `${MINE}/005-silver-ore.svg`, kind: 'ore', sell: 11, rarity: 'rare' },
+  gold_ore:     { name: 'Gold Ore',      img: `${MINE}/001-copper-ore.svg`, tint: T.gold, kind: 'ore', sell: 18, rarity: 'rare' },
+  mithril_ore:  { name: 'Mithril Ore',   img: `${MINE}/006-crystals.svg`, kind: 'ore', sell: 38, rarity: 'epic' },
   salt:         { name: 'Rock Salt',     img: `${COOK}/024-salt and pepper.svg`, kind: 'trade', sell: 3, cost: 6, rarity: 'common' },
-  copper_bar:   { name: 'Copper Bar',    img: `${SWEET}/027-chocolate bar.svg`, tint: T.copper, kind: 'bar', sell: 10, rarity: 'common' },
-  iron_bar:     { name: 'Iron Bar',      img: `${SWEET}/027-chocolate bar.svg`, tint: T.iron, kind: 'bar', sell: 20, rarity: 'uncommon' },
-  silver_bar:   { name: 'Silver Bar',    img: `${SWEET}/027-chocolate bar.svg`, tint: T.silver, kind: 'bar', sell: 34, rarity: 'rare' },
-  gold_bar:     { name: 'Gold Bar',      img: `${SWEET}/027-chocolate bar.svg`, tint: T.gold, kind: 'bar', sell: 55, rarity: 'rare' },
-  mithril_bar:  { name: 'Mithril Bar',   img: `${SWEET}/027-chocolate bar.svg`, tint: T.mythic, kind: 'bar', sell: 110, rarity: 'epic' },
+  copper_bar:   { name: 'Copper Bar',    img: `${MINE}/009-copper-ingots.svg`, kind: 'bar', sell: 10, rarity: 'common' },
+  iron_bar:     { name: 'Iron Bar',      img: `${MINE}/003-silver-ingots.svg`, tint: T.iron, kind: 'bar', sell: 20, rarity: 'uncommon' },
+  silver_bar:   { name: 'Silver Bar',    img: `${MINE}/003-silver-ingots.svg`, kind: 'bar', sell: 34, rarity: 'rare' },
+  gold_bar:     { name: 'Gold Bar',      img: `${MINE}/008-gold-ingots.svg`, kind: 'bar', sell: 55, rarity: 'rare' },
+  mithril_bar:  { name: 'Mithril Bar',   img: `${MINE}/007-crystal-ingots.svg`, kind: 'bar', sell: 110, rarity: 'epic' },
+  emerald:      { name: 'Emerald',       img: `${MINE}/012-emerald.svg`, kind: 'rareIng', sell: 55, rarity: 'rare' },
+  ruby:         { name: 'Ruby',          img: `${MINE}/013-ruby.svg`, kind: 'rareIng', sell: 85, rarity: 'epic' },
+  diamond:      { name: 'Diamond',       img: `${MINE}/014-diamond.svg`, kind: 'rareIng', sell: 150, rarity: 'legendary' },
 
   // ── Foraged + herbs ───────────────────────────────────────────────────────
   berries:      { name: 'Wild Berries',  img: `${SNACK}/049-berries.svg`, kind: 'forage', sell: 2, rarity: 'common' },
@@ -118,27 +127,35 @@ export const ITEMS = {
   // ── Hunted materials ──────────────────────────────────────────────────────
   meat:         { name: 'Game Meat',     img: `${COOK}/015-meat.svg`, kind: 'meat', sell: 8, rarity: 'common' },
   bacon:        { name: 'Smoked Bacon',  img: `${COOK}/018-bacon.svg`, kind: 'meat', sell: 12, rarity: 'uncommon' },
-  hide:         { name: 'Animal Hide',   img: `${MAGIC}/038-bag.svg`, tint: T.copper, kind: 'material', sell: 9, rarity: 'uncommon' },
-  bone:         { name: 'Bone',          img: `${MAGIC}/048-skull.svg`, kind: 'material', sell: 6, rarity: 'common' },
+  hide:         { name: 'Animal Hide',   img: `${HUNT}/001-hide.svg`, kind: 'material', sell: 9, rarity: 'uncommon' },
+  bone:         { name: 'Bone',          img: `${HUNT}/002-bone.svg`, kind: 'material', sell: 6, rarity: 'common' },
   feather:      { name: 'Feather',       img: `${MAGIC}/031-feather.svg`, kind: 'material', sell: 5, rarity: 'common' },
   golden_feather: { name: 'Golden Feather', img: `${MAGIC}/031-feather.svg`, tint: T.gold, kind: 'rareIng', sell: 70, rarity: 'legendary' },
 
-  // ── Fish (shared base icon, tinted per species) ───────────────────────────
-  minnow:       { name: 'Minnow',        img: `${NAT}/027-fish.svg`, kind: 'fish', sell: 2, rarity: 'common' },
-  perch:        { name: 'Perch',         img: `${NAT}/027-fish.svg`, tint: T.green, kind: 'fish', sell: 4, rarity: 'common' },
-  trout:        { name: 'Speckled Trout', img: `${NAT}/027-fish.svg`, tint: T.copper, kind: 'fish', sell: 7, rarity: 'common' },
-  bass:         { name: 'Shadow Bass',   img: `${NAT}/027-fish.svg`, tint: T.dark, kind: 'fish', sell: 10, rarity: 'uncommon' },
-  catfish:      { name: 'Whisker Catfish', img: `${NAT}/027-fish.svg`, tint: T.iron, kind: 'fish', sell: 14, rarity: 'uncommon' },
-  eel:          { name: 'Marsh Eel',     img: `${NAT}/027-fish.svg`, tint: T.teal, kind: 'fish', sell: 18, rarity: 'uncommon' },
-  salmon:       { name: 'Silver Salmon', img: `${NAT}/027-fish.svg`, tint: T.silver, kind: 'fish', sell: 24, rarity: 'rare' },
-  pike:         { name: 'Duskwater Pike', img: `${NAT}/027-fish.svg`, tint: T.purple, kind: 'fish', sell: 30, rarity: 'rare' },
-  sturgeon:     { name: 'Sturgeon',      img: `${NAT}/027-fish.svg`, tint: T.bright, kind: 'fish', sell: 40, rarity: 'rare' },
-  ghostfin:     { name: 'Ghostfin',      img: `${NAT}/027-fish.svg`, tint: 'grayscale(1) brightness(1.6) opacity(0.75)', kind: 'fish', sell: 70, rarity: 'epic', rare: true },
-  golden_koi:   { name: 'Golden Koi',    img: `${NAT}/027-fish.svg`, tint: T.gold, kind: 'fish', sell: 140, rarity: 'legendary', rare: true },
-  leviathan:    { name: 'Ancient Leviathan', img: `${NAT}/027-fish.svg`, tint: T.red, kind: 'fish', sell: 450, rarity: 'legendary', rare: true },
+  // ── Fish (18 species!) ────────────────────────────────────────────────────
+  minnow:       { name: 'Minnow',        img: `${FISH}/003-clown-fish.svg`, tint: T.silver, kind: 'fish', sell: 2, rarity: 'common' },
+  shrimp:       { name: 'Creek Shrimp',  img: `${FISH}/013-shrimp.svg`, kind: 'fish', sell: 3, rarity: 'common' },
+  perch:        { name: 'Perch',         img: `${FISH}/016-perch.svg`, kind: 'fish', sell: 4, rarity: 'common' },
+  trout:        { name: 'Speckled Trout', img: `${FISH}/020-trout.svg`, kind: 'fish', sell: 7, rarity: 'common' },
+  codfish:      { name: 'Mistveil Cod',  img: `${FISH}/007-codfish.svg`, kind: 'fish', sell: 8, rarity: 'common' },
+  bass:         { name: 'Shadow Bass',   img: `${FISH}/005-blue-mao-mao.svg`, tint: T.dark, kind: 'fish', sell: 10, rarity: 'uncommon' },
+  prawn:        { name: 'River Prawn',   img: `${FISH}/015-prawn.svg`, kind: 'fish', sell: 11, rarity: 'uncommon' },
+  catfish:      { name: 'Whisker Catfish', img: `${FISH}/010-atlantic-cod.svg`, tint: T.copper, kind: 'fish', sell: 14, rarity: 'uncommon' },
+  flyingfish:   { name: 'Skimmer',       img: `${FISH}/017-flying-fish.svg`, kind: 'fish', sell: 16, rarity: 'uncommon' },
+  eel:          { name: 'Marsh Eel',     img: `${FISH}/021-eel.svg`, kind: 'fish', sell: 18, rarity: 'uncommon' },
+  puffer:       { name: 'Puffborb',      img: `${FISH}/008-puffer-fish.svg`, kind: 'fish', sell: 22, rarity: 'rare' },
+  salmon:       { name: 'Silver Salmon', img: `${FISH}/004-salmon.svg`, kind: 'fish', sell: 24, rarity: 'rare' },
+  tang:         { name: 'Sunburst Tang', img: `${FISH}/012-yellow-tang.svg`, kind: 'fish', sell: 27, rarity: 'rare' },
+  pike:         { name: 'Duskwater Pike', img: `${FISH}/009-pike.svg`, kind: 'fish', sell: 30, rarity: 'rare' },
+  sturgeon:     { name: 'Sturgeon',      img: `${FISH}/006-tuna.svg`, kind: 'fish', sell: 40, rarity: 'rare' },
+  lionfish:     { name: 'Duskmane Lionfish', img: `${FISH}/019-lion-fish.svg`, kind: 'fish', sell: 55, rarity: 'epic', rare: true },
+  ghostfin:     { name: 'Ghostfin',      img: `${FISH}/014-angel-fish.svg`, tint: 'grayscale(1) brightness(1.6) opacity(0.75)', kind: 'fish', sell: 70, rarity: 'epic', rare: true },
+  golden_koi:   { name: 'Golden Koi',    img: `${FISH}/011-surgeon-fish.svg`, tint: T.gold, kind: 'fish', sell: 140, rarity: 'legendary', rare: true },
+  leviathan:    { name: 'Ancient Leviathan', img: `${FISH}/018-anglerfish.svg`, kind: 'fish', sell: 450, rarity: 'legendary', rare: true },
   kelp:         { name: 'Lake Kelp',     img: `${NAT}/008-leaf.svg`, tint: T.teal, kind: 'junk', sell: 1, rarity: 'common' },
   driftwood:    { name: 'Driftwood',     img: `${NAT}/003-wood.svg`, tint: T.dark, kind: 'junk', sell: 1, rarity: 'common' },
-  pearl:        { name: 'Lake Pearl',    img: `${WATER}/010-dew.svg`, kind: 'curio', sell: 90, rarity: 'epic' },
+  old_boot:     { name: 'Old Boot',      img: `${FISH}/022-boot.svg`, kind: 'junk', sell: 1, rarity: 'common' },
+  pearl:        { name: 'Lake Pearl',    img: `${FISH}/023-pearl.svg`, kind: 'curio', sell: 90, rarity: 'epic' },
 
   // ── Trader goods (bought with gold) ──────────────────────────────────────
   rice:         { name: 'Rice',          img: `${COOK}/022-rice.svg`, kind: 'trade', sell: 3, cost: 6, rarity: 'common' },
@@ -162,6 +179,9 @@ export const ITEMS = {
   glacier_shard: { name: 'Glacier Shard', img: `${WATER}/014-iceberg.svg`, kind: 'curio', sell: 75, rarity: 'epic' },
   fate_card:    { name: 'Fate Card',     img: `${MAGIC}/002-tarot.svg`, kind: 'curio', sell: 45, rarity: 'rare' },
   honey_comb:   { name: 'Great Honeycomb', img: `${BUGS}/043-honeycomb.svg`, kind: 'curio', sell: 60, rarity: 'rare' },
+  fossil:       { name: 'Ancient Fossil', img: `${MORE}/001-fossil.svg`, kind: 'curio', sell: 70, rarity: 'epic' },
+  amber:        { name: 'Amber Relic',   img: `${MORE}/002-amber.svg`, kind: 'curio', sell: 60, rarity: 'rare' },
+  hunters_crest: { name: "Hunter's Crest", img: `${HUNT}/003-courage.svg`, kind: 'curio', sell: 100, rarity: 'legendary' },
 
   recipe_scroll: { name: 'Recipe Scroll', img: `${MAGIC}/030-scroll.svg`, kind: 'scroll', sell: 0, rarity: 'rare' },
 };
@@ -274,18 +294,18 @@ export const NODES = {
       rares: [{ id: 'glimmer_dust', chance: 0.012 }, { id: 'bottled_fairy', chance: 0.003 }, { id: 'recipe_scroll', chance: 0.018 }] },
   ],
   caves: [
-    { id: 'stone',   name: 'Stone Outcrop',  img: `${NAT}/024-mountain.svg`, tint: T.dark,   yieldId: 'stone',       hardness: 7,  stock: 6, respawnSec: 40,  xp: 4,  level: 1,
-      rares: [{ id: 'bone', chance: 0.04 }] },
-    { id: 'copper',  name: 'Copper Vein',    img: `${NAT}/024-mountain.svg`, tint: T.copper, yieldId: 'copper_ore',  hardness: 13, stock: 5, respawnSec: 80,  xp: 9,  level: 3,
-      rares: [{ id: 'salt', chance: 0.10 }] },
-    { id: 'iron',    name: 'Iron Vein',      img: `${NAT}/024-mountain.svg`, tint: T.iron,   yieldId: 'iron_ore',    hardness: 24, stock: 5, respawnSec: 150, xp: 16, level: 8,
-      rares: [{ id: 'salt', chance: 0.10 }, { id: 'old_talisman', chance: 0.004 }] },
-    { id: 'silver',  name: 'Silver Seam',    img: `${NAT}/024-mountain.svg`, tint: T.silver, yieldId: 'silver_ore',  hardness: 36, stock: 4, respawnSec: 240, xp: 24, level: 12,
-      rares: [{ id: 'lost_ring', chance: 0.005 }, { id: 'recipe_scroll', chance: 0.010 }] },
-    { id: 'gold',    name: 'Gold Seam',      img: `${NAT}/024-mountain.svg`, tint: T.gold,   yieldId: 'gold_ore',    hardness: 50, stock: 4, respawnSec: 420, xp: 35, level: 16,
-      rares: [{ id: 'puzzle_box', chance: 0.006 }, { id: 'glimmer_dust', chance: 0.008 }] },
-    { id: 'mithril', name: 'Mithril Heart',  img: `${MAGIC}/017-crystal.svg`, tint: T.mythic, yieldId: 'mithril_ore', hardness: 85, stock: 3, respawnSec: 900, xp: 65, level: 22,
-      rares: [{ id: 'glimmer_dust', chance: 0.02 }, { id: 'dragon_idol', chance: 0.003 }, { id: 'seers_orb', chance: 0.005 }] },
+    { id: 'stone',   name: 'Stone Outcrop',  img: `${MINE}/002-stone.svg`,      yieldId: 'stone',       hardness: 7,  stock: 6, respawnSec: 40,  xp: 4,  level: 1,
+      rares: [{ id: 'bone', chance: 0.04 }, { id: 'fossil', chance: 0.002 }] },
+    { id: 'copper',  name: 'Copper Vein',    img: `${MINE}/001-copper-ore.svg`, yieldId: 'copper_ore',  hardness: 13, stock: 5, respawnSec: 80,  xp: 9,  level: 3,
+      rares: [{ id: 'salt', chance: 0.10 }, { id: 'emerald', chance: 0.005 }] },
+    { id: 'iron',    name: 'Iron Vein',      img: `${MINE}/004-iron-ore.svg`,   yieldId: 'iron_ore',    hardness: 24, stock: 5, respawnSec: 150, xp: 16, level: 8,
+      rares: [{ id: 'salt', chance: 0.10 }, { id: 'emerald', chance: 0.008 }, { id: 'fossil', chance: 0.004 }, { id: 'old_talisman', chance: 0.004 }] },
+    { id: 'silver',  name: 'Silver Seam',    img: `${MINE}/005-silver-ore.svg`, yieldId: 'silver_ore',  hardness: 36, stock: 4, respawnSec: 240, xp: 24, level: 12,
+      rares: [{ id: 'ruby', chance: 0.006 }, { id: 'lost_ring', chance: 0.005 }, { id: 'recipe_scroll', chance: 0.010 }] },
+    { id: 'gold',    name: 'Gold Seam',      img: `${MINE}/001-copper-ore.svg`, tint: T.gold, yieldId: 'gold_ore', hardness: 50, stock: 4, respawnSec: 420, xp: 35, level: 16,
+      rares: [{ id: 'ruby', chance: 0.009 }, { id: 'diamond', chance: 0.003 }, { id: 'puzzle_box', chance: 0.006 }, { id: 'glimmer_dust', chance: 0.008 }] },
+    { id: 'mithril', name: 'Mithril Heart',  img: `${MINE}/006-crystals.svg`,   yieldId: 'mithril_ore', hardness: 85, stock: 3, respawnSec: 900, xp: 65, level: 22,
+      rares: [{ id: 'diamond', chance: 0.009 }, { id: 'glimmer_dust', chance: 0.02 }, { id: 'dragon_idol', chance: 0.003 }, { id: 'seers_orb', chance: 0.005 }] },
   ],
   meadow: [
     { id: 'berry',   name: 'Berry Bush',    img: `${SNACK}/049-berries.svg`,  yieldId: 'berries',  hardness: 5,  stock: 5, respawnSec: 50,  xp: 4,  level: 1,
@@ -312,23 +332,23 @@ export const NODES = {
 // ═══════════════════════════════════════════════════════════════════════════
 export const FISHING_SPOTS = [
   { id: 'creek',  name: 'Babbling Creek', img: `${WATER}/011-creek.svg`, rod: 0, level: 1,
-    table: [['old_junk', 10], ['minnow', 40], ['perch', 25], ['trout', 12]] },
+    table: [['old_junk', 10], ['minnow', 36], ['shrimp', 22], ['perch', 22], ['trout', 10]] },
   { id: 'lake',   name: 'Mistveil Lake',  img: `${WATER}/023-lake.svg`, rod: 1, level: 5,
-    table: [['old_junk', 8], ['perch', 25], ['trout', 22], ['bass', 16], ['catfish', 9], ['pearl', 0.8]] },
+    table: [['old_junk', 8], ['perch', 22], ['trout', 20], ['codfish', 16], ['bass', 14], ['prawn', 10], ['catfish', 7], ['pearl', 0.8]] },
   { id: 'river',  name: 'Silverrun River', img: `${WATER}/021-river.svg`, rod: 2, level: 9,
-    table: [['old_junk', 6], ['trout', 20], ['bass', 18], ['eel', 12], ['salmon', 9], ['pearl', 1], ['ghostfin', 0.7]] },
+    table: [['old_junk', 6], ['trout', 18], ['bass', 16], ['prawn', 12], ['eel', 12], ['flyingfish', 9], ['salmon', 8], ['pearl', 1], ['ghostfin', 0.7]] },
   { id: 'grotto', name: 'Echo Grotto',    img: `${WATER}/008-grotto.svg`, rod: 3, level: 13,
-    table: [['catfish', 18], ['eel', 16], ['salmon', 12], ['pike', 9], ['ghostfin', 1.4], ['pearl', 1.4], ['glacier_shard', 0.4]] },
+    table: [['catfish', 16], ['eel', 15], ['flyingfish', 12], ['salmon', 11], ['puffer', 8], ['pike', 8], ['ghostfin', 1.4], ['pearl', 1.4], ['glacier_shard', 0.4]] },
   { id: 'hotspring', name: 'Ember Spring', img: `${WATER}/003-hot spring.svg`, rod: 4, level: 17,
-    table: [['salmon', 16], ['pike', 14], ['sturgeon', 9], ['golden_koi', 1], ['ghostfin', 1.6], ['enchanted_mirror', 0.3]] },
+    table: [['salmon', 15], ['tang', 13], ['pike', 12], ['puffer', 9], ['sturgeon', 8], ['lionfish', 1.6], ['golden_koi', 1], ['ghostfin', 1.5], ['enchanted_mirror', 0.3]] },
   { id: 'deep',   name: 'The Deepshine',  img: `${WATER}/048-ocean.svg`, rod: 5, level: 22,
-    table: [['pike', 16], ['sturgeon', 14], ['golden_koi', 2], ['ghostfin', 2], ['leviathan', 0.5], ['glacier_shard', 0.7], ['pearl', 2]] },
+    table: [['pike', 15], ['sturgeon', 13], ['tang', 10], ['lionfish', 2.5], ['golden_koi', 2], ['ghostfin', 2], ['leviathan', 0.5], ['glacier_shard', 0.7], ['pearl', 2]] },
 ];
-export const JUNK_IDS = ['kelp', 'driftwood'];
+export const JUNK_IDS = ['kelp', 'driftwood', 'old_boot'];
 export const FISH_WAIT_MIN_S = 5;
 export const FISH_WAIT_MAX_S = 20;
 export const FISH_BITE_WINDOW_MS = 2400;
-export const FISH_XP = { minnow: 4, perch: 6, trout: 10, bass: 14, catfish: 18, eel: 22, salmon: 28, pike: 36, sturgeon: 46, ghostfin: 60, golden_koi: 90, leviathan: 220, pearl: 35, glacier_shard: 40, enchanted_mirror: 40, old_junk: 1 };
+export const FISH_XP = { minnow: 4, shrimp: 5, perch: 6, trout: 10, codfish: 11, bass: 14, prawn: 15, catfish: 18, flyingfish: 20, eel: 22, puffer: 26, salmon: 28, tang: 31, pike: 36, sturgeon: 46, lionfish: 55, ghostfin: 60, golden_koi: 90, leviathan: 220, pearl: 35, glacier_shard: 40, enchanted_mirror: 40, old_junk: 1 };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TOOLS (slower growth — upgrades matter)
@@ -343,8 +363,8 @@ export const TOOL_TIERS = [
 ];
 export const TOOL_DEFS = {
   axe:  { name: 'Axe',     img: `${CAMP}/010-axe.svg` },
-  pick: { name: 'Pickaxe', img: `${FARM}/009-hoe.svg` },
-  rod:  { name: 'Rod',     img: `${CAMP}/006-rope.svg` },
+  pick: { name: 'Pickaxe', img: `${MINE}/010-pickaxe.svg` },
+  rod:  { name: 'Rod',     img: `${FISH}/001-fishing-rod.svg` },
 };
 export const TOOL_COSTS = {
   1: { copper_bar: 5,  beech_wood: 15 },
@@ -360,11 +380,11 @@ export const TOOL_LEVEL_REQ = { 1: 3, 2: 8, 3: 12, 4: 16, 5: 22 };
 // ═══════════════════════════════════════════════════════════════════════════
 export const SKILLS = {
   wood:   { name: 'Woodcutting', img: `${CAMP}/010-axe.svg` },
-  mine:   { name: 'Mining',      img: `${NAT}/024-mountain.svg` },
-  fish:   { name: 'Fishing',     img: `${NAT}/027-fish.svg` },
+  mine:   { name: 'Mining',      img: `${MINE}/010-pickaxe.svg` },
+  fish:   { name: 'Fishing',     img: `${FISH}/001-fishing-rod.svg` },
   forage: { name: 'Foraging',    img: `${NAT}/008-leaf.svg` },
   cook:   { name: 'Cooking',     img: `${COOK}/012-frying pan.svg` },
-  hunt:   { name: 'Hunting',     img: `${CAMP}/003-knife.svg` },
+  hunt:   { name: 'Hunting',     img: `${HUNT}/004-lance.svg` },
 };
 export const SKILL_MAX = 30;
 export const skillXpToNext = (level) => 40 + level * 30;
@@ -396,21 +416,32 @@ export const EXPEDITIONS = {
       ['stone', 8], ['beech_wood', 8], ['wild_egg', 6], ['CRITTER', 6], ['SEED', 5],
       ['honey', 3], ['rosemary', 3], ['avocado', 2], ['recipe_scroll', 1.2],
       ['mandrake', 0.8], ['tree_sap', 0.8], ['CURIO', 0.5], ['glimmer_dust', 0.3],
+      ['fossil', 0.25], ['amber', 0.3],
     ],
   },
   hunt: {
-    name: 'Hunt', img: `${CAMP}/003-knife.svg`,
-    desc: 'Track game for meat, hides, bones and feathers.',
+    name: 'Hunt', img: `${HUNT}/004-lance.svg`,
+    desc: 'Choose your quarry — each beast yields different spoils.',
     needs: 'knife1', // hunting gear craft required
     durations: [
-      { minutes: 30,  rolls: 5,  name: 'Short Stalk' },
-      { minutes: 120, rolls: 12, name: 'Day Hunt' },
-      { minutes: 360, rolls: 26, name: 'Great Hunt' },
-    ],
-    table: [
-      ['meat', 26], ['bone', 18], ['feather', 16], ['hide', 14], ['wild_egg', 8],
-      ['bacon', 5], ['CRITTER', 4], ['meat', 4], ['recipe_scroll', 1],
-      ['golden_feather', 0.5], ['CURIO', 0.5], ['truffle', 0.7],
+      { minutes: 30,  rolls: 6,  name: 'Rabbit Run', img: `${HUNT}/007-rabbit.svg`,
+        table: [
+          ['meat', 30], ['hide', 12], ['bone', 12], ['feather', 14], ['fiber', 10],
+          ['wild_egg', 8], ['carrot', 6], ['CRITTER', 5], ['recipe_scroll', 0.8],
+          ['CURIO', 0.3],
+        ] },
+      { minutes: 120, rolls: 13, name: 'Boar Trail', img: `${HUNT}/008-boar.svg`,
+        table: [
+          ['meat', 30], ['hide', 15], ['bone', 15], ['bacon', 9], ['mushroom', 7],
+          ['acorn', 7], ['truffle', 2.2], ['CRITTER', 4], ['recipe_scroll', 1],
+          ['CURIO', 0.5],
+        ] },
+      { minutes: 360, rolls: 26, name: 'Great Deer Hunt', img: `${HUNT}/006-deer.svg`,
+        table: [
+          ['meat', 24], ['hide', 24], ['bone', 13], ['bacon', 7], ['feather', 8],
+          ['golden_feather', 1], ['amber', 0.8], ['glimmer_dust', 0.6],
+          ['hunters_crest', 0.35], ['recipe_scroll', 1.2], ['CRITTER', 4], ['CURIO', 0.7],
+        ] },
     ],
   },
 };
@@ -422,20 +453,21 @@ export const SEED_DROPS = ['carrot_seed', 'potato_seed', 'cabbage_seed', 'oats_s
 // FARMING
 // ═══════════════════════════════════════════════════════════════════════════
 export const FARM_BASE_PLOTS = 3;
+// growMin ranges from 30 seconds (0.5) up to 1 hour (60) — active farming!
 export const CROPS = [
-  { seedId: 'carrot_seed',   cropId: 'carrot',     growMin: 30,   yield: 2, seedCost: 5 },
-  { seedId: 'potato_seed',   cropId: 'potato',     growMin: 45,   yield: 3, seedCost: 6 },
-  { seedId: 'cabbage_seed',  cropId: 'cabbage',    growMin: 70,   yield: 2, seedCost: 8 },
-  { seedId: 'oats_seed',     cropId: 'oats',       growMin: 90,   yield: 3, seedCost: 9 },
-  { seedId: 'tomato_seed',   cropId: 'tomato',     growMin: 140,  yield: 3, seedCost: 12 },
-  { seedId: 'onion_seed',    cropId: 'onion',      growMin: 180,  yield: 3, seedCost: 14 },
-  { seedId: 'corn_seed',     cropId: 'corn',       growMin: 260,  yield: 4, seedCost: 18 },
-  { seedId: 'strawberry_seed', cropId: 'strawberry', growMin: 320, yield: 3, seedCost: 22 },
-  { seedId: 'garlic_seed',   cropId: 'garlic',     growMin: 400,  yield: 3, seedCost: 24 },
-  { seedId: 'chili_seed',    cropId: 'chili',      growMin: 540,  yield: 2, seedCost: 35 },
-  { seedId: 'pumpkin_seed',  cropId: 'pumpkin',    growMin: 720,  yield: 2, seedCost: 45 },
-  { seedId: 'watermelon_seed', cropId: 'watermelon', growMin: 900, yield: 2, seedCost: 55 },
-  { seedId: 'sunfruit_seed', cropId: 'sunfruit',   growMin: 1440, yield: 1, seedCost: 200 },
+  { seedId: 'carrot_seed',   cropId: 'carrot',     growMin: 0.5, yield: 2, seedCost: 3 },
+  { seedId: 'potato_seed',   cropId: 'potato',     growMin: 1,   yield: 3, seedCost: 4 },
+  { seedId: 'cabbage_seed',  cropId: 'cabbage',    growMin: 2,   yield: 2, seedCost: 5 },
+  { seedId: 'oats_seed',     cropId: 'oats',       growMin: 3,   yield: 3, seedCost: 6 },
+  { seedId: 'tomato_seed',   cropId: 'tomato',     growMin: 5,   yield: 3, seedCost: 8 },
+  { seedId: 'onion_seed',    cropId: 'onion',      growMin: 8,   yield: 3, seedCost: 10 },
+  { seedId: 'corn_seed',     cropId: 'corn',       growMin: 12,  yield: 4, seedCost: 13 },
+  { seedId: 'strawberry_seed', cropId: 'strawberry', growMin: 18, yield: 3, seedCost: 16 },
+  { seedId: 'garlic_seed',   cropId: 'garlic',     growMin: 25,  yield: 3, seedCost: 20 },
+  { seedId: 'chili_seed',    cropId: 'chili',      growMin: 33,  yield: 2, seedCost: 26 },
+  { seedId: 'pumpkin_seed',  cropId: 'pumpkin',    growMin: 45,  yield: 2, seedCost: 32 },
+  { seedId: 'watermelon_seed', cropId: 'watermelon', growMin: 52, yield: 2, seedCost: 40 },
+  { seedId: 'sunfruit_seed', cropId: 'sunfruit',   growMin: 60,  yield: 1, seedCost: 90 },
 ];
 export const CROP_BY_SEED = Object.fromEntries(CROPS.map((c) => [c.seedId, c]));
 export const GOLDEN_CROP_CHANCE = 0.04;
@@ -516,6 +548,9 @@ export const RECIPES = [
   R('sushi', 'Riverside Sushi', `${SNACK}/024-sushi.svg`, 1, { cookLevel: 17 }, { rice: 2, salmon: 1, kelp: 1 }, 4, 30, { type: 'fishLuck', value: 28, minutes: 25 }, 'Kelp: finally useful.'),
   R('poke_bowl', 'Angler Poke Bowl', `${SNACK}/023-poke bowl.svg`, 1, { cookLevel: 18 }, { rice: 2, bass: 1, avocado: 1 }, 4, 30, { type: 'fishFast', value: 30, minutes: 25 }, 'Fresh from three worlds.'),
   R('cookies', 'Acorn Cookies', `${SWEET}/008-cookies.svg`, 1, { cookLevel: 19 }, { acorn: 3, sugar: 2, egg: 1 }, 5, 30, { type: 'xpBoost', value: 30, minutes: 25 }, 'Squirrel-approved.'),
+  R('garlic_prawns', 'Garlic Prawns', `${SNACK}/018-cowboy caviar.svg`, 1, { cookLevel: 15 }, { prawn: 2, garlic: 2, olive_oil: 1 }, 5, 26, { type: 'fishLuck', value: 24, minutes: 22 }, 'The river’s finest, sizzling.'),
+  R('shrimp_rice', 'Shrimp Fried Rice', `${SNACK}/041-kimbap.svg`, 1, { cookLevel: 9 }, { shrimp: 3, rice: 2, egg: 1 }, 4, 19, { type: 'doubleDrop', value: 16, minutes: 18 }, 'Wok skills: improvising.'),
+  R('melon_cooler', 'Melon Cooler', `${SNACK}/021-smoothie.svg`, 0, { cookLevel: 13 }, { watermelon: 1, mint: 2, honey: 1 }, 1, 24, { type: 'cropFast', value: 20, minutes: 25 }, 'Summer in a cup.'),
 
   // ── Wildwood Oven (tier 2) ────────────────────────────────────────────────
   R('apple_pie', 'Orchard Pie', `${SWEET}/015-apple pie.svg`, 2, { cookLevel: 20 }, { strawberry: 2, oats: 2, sugar: 2, egg: 1 }, 8, 36, { type: 'doubleDrop', value: 25, minutes: 30 }, 'Technically a strawberry pie. Shh.'),
@@ -535,24 +570,40 @@ export const RECIPES = [
   R('crepes', 'Fairy Crepes', `${SWEET}/022-crepe.svg`, 2, { scroll: true }, { oats: 2, egg: 2, glimmer_dust: 1 }, 7, 55, { type: 'expLuck', value: 45, minutes: 40 }, 'Impossibly thin. Slightly floaty.'),
   R('hunters_wrap', "Hunter's Wrap", `${SNACK}/019-wrap.svg`, 1, { scroll: true }, { meat: 2, cabbage: 1, cheese: 1 }, 5, 34, { type: 'gatherSpeed', value: 30, minutes: 30 }, 'Portable. Devourable.'),
   R('leviathan_feast', 'Leviathan Feast', `${COOK}/035-cooking pot.svg`, 2, { scroll: true }, { leviathan: 1, pumpkin: 1, moonpetal: 1, salt: 2 }, 16, 160, { type: 'gatherSpeed', value: 50, minutes: 60 }, 'A meal spoken of in legends.'),
+  R('puffer_surprise', 'Puffborb Surprise', `${SNACK}/045-onigiri.svg`, 2, { scroll: true }, { puffer: 1, rice: 2, salt: 2 }, 6, 50, { type: 'expLuck', value: 40, minutes: 30 }, 'Prepared VERY carefully.'),
+  R('lion_grill', 'Duskmane Grill', `${COOK}/041-wok.svg`, 2, { scroll: true }, { lionfish: 1, chili: 1, olive_oil: 1 }, 7, 55, { type: 'gatherSpeed', value: 42, minutes: 35 }, 'Handled with tongs and respect.'),
 
   // ── Cauldron brews (need the Cauldron station) ────────────────────────────
   R('lucky_brew', 'Lucky Clover Brew', `${MAGIC}/010-potion.svg`, 0, { cauldron: true, cookLevel: 10 }, { mandrake: 1, mint: 2, honey: 1 }, 4, 30, { type: 'rareLuck', value: 30, minutes: 30 }, 'Fortune favours the brewer.'),
   R('growth_tonic', 'Growth Tonic', `${MAGIC}/013-potion.svg`, 0, { cauldron: true, cookLevel: 14 }, { tree_sap: 1, moonpetal: 1, milk: 1 }, 5, 36, { type: 'cropFast', value: 40, minutes: 40 }, 'The pumpkins whisper thanks.'),
   R('miners_draught', "Deepdelver's Draught", `${MAGIC}/027-potion.svg`, 0, { cauldron: true, cookLevel: 18 }, { glimmer_dust: 1, mushroom: 3, salt: 1 }, 6, 44, { type: 'gatherSpeed', value: 40, minutes: 40 }, 'You can smell the ore veins.'),
   R('stargazer_elixir', 'Stargazer Elixir', `${MAGIC}/047-flame.svg`, 0, { cauldron: true, cookLevel: 24 }, { glimmer_dust: 2, sunfruit: 1, moonpetal: 1 }, 10, 80, { type: 'rareLuck', value: 50, minutes: 45 }, 'Drink the night sky.'),
+  R('emerald_tonic', 'Emerald Tonic', `${MAGIC}/019-cup.svg`, 0, { cauldron: true, cookLevel: 12 }, { emerald: 1, basil: 3, honey: 1 }, 4, 34, { type: 'penBoost', value: 45, minutes: 40 }, 'The animals adore its glow.'),
+  R('ruby_draught', 'Ruby Draught', `${MAGIC}/010-potion.svg`, 0, { cauldron: true, cookLevel: 16 }, { ruby: 1, chili: 1, tree_sap: 1 }, 6, 42, { type: 'smeltFast', value: 45, minutes: 40 }, 'The furnace drinks first.'),
+  R('diamond_elixir', 'Diamond Elixir', `${MAGIC}/027-potion.svg`, 0, { cauldron: true, cookLevel: 26 }, { diamond: 1, glimmer_dust: 1, milk: 2 }, 8, 95, { type: 'xpBoost', value: 60, minutes: 45 }, 'Clarity, bottled.'),
 ];
 export const RECIPE_MAP = Object.fromEntries(RECIPES.map((r) => [r.id, r]));
 export const SCROLL_RECIPES = RECIPES.filter((r) => r.scroll).map((r) => r.id);
+
+// Every recipe produces a storable DISH item — cook now, eat when you need it.
+RECIPES.forEach((r) => {
+  ITEMS[`dish_${r.id}`] = {
+    name: r.name, img: r.img, kind: 'dish',
+    sell: Math.max(4, Math.round(r.xp * 1.5)),
+    rarity: r.cauldron || r.scroll ? 'epic' : r.tier === 2 ? 'rare' : 'uncommon',
+    recipeId: r.id,
+  };
+});
+export const dishIdOf = (recipeId) => `dish_${recipeId}`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CRAFTS — stations, gear (inventory!), farm, helpers
 // ═══════════════════════════════════════════════════════════════════════════
 export const CRAFTS = [
   // Stations
-  { id: 'workbench', cat: 'station', name: 'Workbench', img: `${CAMP}/003-knife.svg`, prosperity: 10,
+  { id: 'workbench', cat: 'station', name: 'Workbench', img: `${MORE}/003-workbench.svg`, prosperity: 10,
     items: { beech_wood: 25, stone: 12, fiber: 10 }, desc: 'Unlocks tool upgrades and serious building.' },
-  { id: 'smelter', cat: 'station', name: 'Stone Furnace', img: `${MAGIC}/023-burner.svg`, prosperity: 15, needs: ['workbench'],
+  { id: 'smelter', cat: 'station', name: 'Stone Furnace', img: `${MINE}/011-furnace.svg`, prosperity: 15, needs: ['workbench'],
     items: { stone: 40, copper_ore: 10, beech_wood: 20 }, desc: 'Smelt ores into bars (real-time, offline too).' },
   { id: 'stove', cat: 'station', name: 'Stone Stove', img: `${COOK}/006-gas stove.svg`, prosperity: 15, needs: ['workbench'],
     items: { stone: 30, iron_bar: 4, cherry_wood: 18 }, skill: ['cook', 8], desc: 'Kitchen tier 2 — hearty recipes.' },
@@ -572,24 +623,32 @@ export const CRAFTS = [
     items: { hide: 20, glimmer_dust: 2, silver_bar: 6, moonpetal: 1 }, slots: 9, desc: '+9 inventory slots. Don’t look inside.' },
   { id: 'ropebundle', cat: 'gear', name: 'Rope Bindings', img: `${CAMP}/006-rope.svg`, prosperity: 8,
     items: { fiber: 40, beech_wood: 10 }, stack: 15, desc: 'Bundle items tighter: +15 stack size.' },
-  { id: 'crates', cat: 'gear', name: 'Packing Crates', img: `${MAGIC}/037-magic box.svg`, prosperity: 16, needs: ['ropebundle', 'workbench'],
-    items: { cherry_wood: 30, iron_bar: 3, rope_placeholder: 0, fiber: 20 }, stack: 25, desc: '+25 stack size.' },
-  { id: 'enchcrate', cat: 'gear', name: 'Enchanted Crates', img: `${MAGIC}/037-magic box.svg`, tint: T.purple, prosperity: 28, needs: ['crates'],
-    items: { banyan_wood: 30, glimmer_dust: 2, silver_bar: 4 }, stack: 40, desc: '+40 stack size. Bigger on the inside.' },
+  { id: 'crates', cat: 'gear', name: 'Packing Crates', img: `${MORE}/004-crate.svg`, prosperity: 16, needs: ['ropebundle', 'workbench'],
+    items: { cherry_wood: 30, iron_bar: 3, fiber: 20 }, stack: 25, desc: '+25 stack size.' },
+  { id: 'barrels', cat: 'gear', name: 'Supply Barrels', img: `${MORE}/004-crate.svg`, tint: T.copper, prosperity: 20, needs: ['crates'],
+    items: { banyan_wood: 25, iron_bar: 5, tree_sap: 2 }, stack: 30, desc: '+30 stack size. Smells of cedar.' },
+  { id: 'enchcrate', cat: 'gear', name: 'Enchanted Crates', img: `${MORE}/004-crate.svg`, tint: T.purple, prosperity: 28, needs: ['barrels'],
+    items: { ironroot_wood: 25, glimmer_dust: 2, silver_bar: 4 }, stack: 40, desc: '+40 stack size. Bigger on the inside.' },
   { id: 'chest1', cat: 'gear', name: 'Camp Chest', img: `${CAMP}/008-basket.svg`, prosperity: 10, needs: ['workbench'],
     items: { cherry_wood: 25, iron_bar: 2 }, chestSlots: 10, desc: 'Camp storage: 10 chest slots (double stacks).' },
   { id: 'chest2', cat: 'gear', name: 'Iron-bound Chest', img: `${CAMP}/008-basket.svg`, tint: T.iron, prosperity: 18, needs: ['chest1'],
     items: { ironroot_wood: 15, iron_bar: 8 }, chestSlots: 10, desc: '+10 chest slots.' },
   { id: 'chest3', cat: 'gear', name: 'Enchanted Chest', img: `${CAMP}/008-basket.svg`, tint: T.purple, prosperity: 30, needs: ['chest2'],
     items: { elder_wood: 10, mithril_bar: 2, glimmer_dust: 1 }, chestSlots: 15, desc: '+15 chest slots.' },
+  { id: 'chest4', cat: 'gear', name: 'Treasure Vault', img: `${MINE}/015-treasure-chest.svg`, prosperity: 45, needs: ['chest3'],
+    items: { mithril_bar: 4, gold_bar: 6, diamond: 1, hide: 20 }, chestSlots: 20, desc: '+20 chest slots. Fit for a dragon.' },
 
   // Gear — expedition upgrades
   { id: 'knife1', cat: 'gear', name: 'Hunting Knife', img: `${CAMP}/003-knife.svg`, prosperity: 8, needs: ['workbench'],
     items: { copper_bar: 3, beech_wood: 8, fiber: 10 }, desc: 'Unlocks HUNT expeditions.' },
-  { id: 'knife2', cat: 'gear', name: 'Skinning Kit', img: `${CAMP}/003-knife.svg`, tint: T.iron, prosperity: 14, needs: ['knife1'],
+  { id: 'knife2', cat: 'gear', name: 'Snare Kit', img: `${HUNT}/005-trap.svg`, prosperity: 14, needs: ['knife1'],
     items: { iron_bar: 5, hide: 6, bone: 8 }, huntBonus: 25, desc: 'Hunts return 25% more loot.' },
-  { id: 'knife3', cat: 'gear', name: 'Master Trapper Set', img: `${CAMP}/003-knife.svg`, tint: T.gold, prosperity: 24, needs: ['knife2'],
+  { id: 'knife3', cat: 'gear', name: 'Master Hunting Lance', img: `${HUNT}/004-lance.svg`, prosperity: 24, needs: ['knife2'],
     items: { silver_bar: 6, hide: 12, feather: 15, bone: 15 }, huntBonus: 35, skill: ['hunt', 12], desc: 'Hunts return another 35% more loot.' },
+  { id: 'gemlance', cat: 'gear', name: 'Ruby-Tipped Lance', img: `${HUNT}/004-lance.svg`, tint: T.red, prosperity: 34, needs: ['knife3'],
+    items: { mithril_bar: 2, ruby: 1, hide: 15 }, huntBonus: 40, skill: ['hunt', 20], desc: 'Hunts return another 40% more loot.' },
+  { id: 'driftnet', cat: 'gear', name: 'Drift Net', img: `${FISH}/002-fishing-net.svg`, prosperity: 18, needs: ['workbench'],
+    items: { fiber: 50, cherry_wood: 15, copper_bar: 3 }, pen: 'driftnet', skill: ['fish', 8], desc: 'Nets perch on its own, day and night.' },
   { id: 'torch', cat: 'gear', name: 'Trail Torch', img: `${CAMP}/005-flashlight.svg`, prosperity: 6,
     items: { beech_wood: 12, fiber: 10, tree_sap: 1 }, scavBonus: 20, desc: 'Scavenges return 20% more loot.' },
   { id: 'binoculars', cat: 'gear', name: 'Field Binoculars', img: `${CAMP}/009-binoculars.svg`, prosperity: 16, needs: ['torch', 'workbench'],
@@ -631,6 +690,7 @@ export const CRAFT_MAP = Object.fromEntries(CRAFTS.map((c) => [c.id, c]));
 // helper pens (extend PEN_MAP)
 PEN_MAP.beebox = { id: 'beebox', name: 'Bee Box', img: `${BUGS}/032-beehive.svg`, produceId: 'honey', perHour: 1, capHours: 12 };
 PEN_MAP.fishtrap = { id: 'fishtrap', name: 'Fish Trap', img: `${CAMP}/008-basket.svg`, produceId: 'minnow', perHour: 2, capHours: 10 };
+PEN_MAP.driftnet = { id: 'driftnet', name: 'Drift Net', img: `${FISH}/002-fishing-net.svg`, produceId: 'perch', perHour: 1.5, capHours: 12 };
 
 // Cheese pressing (simple conversion at the Cheese Press)
 export const CHEESE_RECIPE = { in: { milk: 3, salt: 1 }, out: 'cheese', outQty: 1 };
@@ -669,6 +729,12 @@ export const HOMESTEAD_TITLES = [
     reqText: '300 Prosperity', check: (s) => prosperityOf(s) >= 300 },
   { id: 'angler', name: 'Legend Angler', color: 'text-cyan-600', darkColor: 'text-cyan-400',
     reqText: 'Catch a legendary fish', check: (s) => ['ghostfin', 'golden_koi', 'leviathan'].some((f) => (s.caughtFish || []).includes(f)) },
+  { id: 'angler2', name: 'Master Angler', color: 'text-sky-600', darkColor: 'text-sky-400',
+    reqText: 'Catch 14 fish species', check: (s) => (s.caughtFish || []).length >= 14 },
+  { id: 'chef', name: 'Chef Supreme', color: 'text-rose-600', darkColor: 'text-rose-400',
+    reqText: 'Master 25 different dishes', check: (s) => (s.cookedDishes || []).length >= 25 },
+  { id: 'gemhoarder', name: 'Gem Hoarder', color: 'text-teal-600', darkColor: 'text-teal-400',
+    reqText: 'Own an emerald, ruby and diamond at once', check: (s) => ['emerald', 'ruby', 'diamond'].every((g) => ((s.inv?.[g] || 0) + (s.chest?.[g] || 0)) >= 1) },
   { id: 'master', name: 'Master of the Wilds', color: 'text-purple-600', darkColor: 'text-purple-400',
     reqText: 'Total skill level 90', check: (s) => totalSkillLevel(s) >= 90 },
   { id: 'legend', name: 'Wildwood Legend', color: 'text-amber-600', darkColor: 'text-amber-400',
