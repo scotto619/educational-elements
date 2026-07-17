@@ -27,6 +27,9 @@ const MINE = `${IC}/Mining`;
 const FISH = `${IC}/Fishing`;
 const HUNT = `${IC}/Hunting`;
 const MORE = `${IC}/More`;
+const ADV = `${IC}/Adventure`;
+const SURV = `${IC}/Survival`;
+const ANIM = `${IC}/Animals`;
 
 export const GOLD_ICON = `${MINE}/016-coin.svg`;
 
@@ -131,6 +134,9 @@ export const ITEMS = {
   bone:         { name: 'Bone',          img: `${HUNT}/002-bone.svg`, kind: 'material', sell: 6, rarity: 'common' },
   feather:      { name: 'Feather',       img: `${MAGIC}/031-feather.svg`, kind: 'material', sell: 5, rarity: 'common' },
   golden_feather: { name: 'Golden Feather', img: `${MAGIC}/031-feather.svg`, tint: T.gold, kind: 'rareIng', sell: 70, rarity: 'legendary' },
+  wolf_pelt:    { name: 'Wolf Pelt',      img: `${HUNT}/001-hide.svg`, tint: T.silver, kind: 'rareIng', sell: 45, rarity: 'epic' },
+  bear_claw:    { name: 'Bear Claw',      img: `${HUNT}/002-bone.svg`, tint: T.copper, kind: 'rareIng', sell: 60, rarity: 'epic' },
+  plank:        { name: 'Wood Plank',     img: `${MORE}/002-wood-plank.svg`, kind: 'material', sell: 5, rarity: 'common' },
 
   // ── Fish (18 species!) ────────────────────────────────────────────────────
   minnow:       { name: 'Minnow',        img: `${FISH}/003-clown-fish.svg`, tint: T.silver, kind: 'fish', sell: 2, rarity: 'common' },
@@ -182,11 +188,15 @@ export const ITEMS = {
   fossil:       { name: 'Ancient Fossil', img: `${MORE}/001-fossil.svg`, kind: 'curio', sell: 70, rarity: 'epic' },
   amber:        { name: 'Amber Relic',   img: `${MORE}/002-amber.svg`, kind: 'curio', sell: 60, rarity: 'rare' },
   hunters_crest: { name: "Hunter's Crest", img: `${HUNT}/003-courage.svg`, kind: 'curio', sell: 100, rarity: 'legendary' },
+  wanderers_compass: { name: "Wanderer's Compass", img: `${ADV}/001-compass.svg`, tint: T.gold, kind: 'curio', sell: 200, rarity: 'legendary' },
+  lost_map:     { name: 'Faded Treasure Map', img: `${ADV}/018-map-1.svg`, kind: 'curio', sell: 65, rarity: 'rare' },
 
   recipe_scroll: { name: 'Recipe Scroll', img: `${MAGIC}/030-scroll.svg`, kind: 'scroll', sell: 0, rarity: 'rare' },
 };
 
 export const CURIO_IDS = Object.keys(ITEMS).filter((id) => ITEMS[id].kind === 'curio');
+// Random curio drops exclude the special ones earned through specific feats
+export const RANDOM_CURIO_IDS = CURIO_IDS.filter((id) => !['wanderers_compass', 'hunters_crest'].includes(id));
 export const RARE_ING_IDS = Object.keys(ITEMS).filter((id) => ITEMS[id].kind === 'rareIng');
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -442,6 +452,19 @@ export const EXPEDITIONS = {
           ['golden_feather', 1], ['amber', 0.8], ['glimmer_dust', 0.6],
           ['hunters_crest', 0.35], ['recipe_scroll', 1.2], ['CRITTER', 4], ['CURIO', 0.7],
         ] },
+      // Apex hunts — unlocked by discovering their lairs on the Wild Map
+      { minutes: 720, rolls: 42, name: 'Wolf Pack', img: `${SURV}/024-wolf.svg`, needsLandmark: 'wolf_den', needsCraft: 'bow',
+        table: [
+          ['wolf_pelt', 6], ['meat', 26], ['hide', 20], ['bone', 13], ['feather', 4],
+          ['golden_feather', 1.2], ['glimmer_dust', 0.8], ['recipe_scroll', 1.4],
+          ['CRITTER', 3], ['CURIO', 0.8],
+        ] },
+      { minutes: 1440, rolls: 64, name: 'The Great Bear', img: `${SURV}/023-bear.svg`, needsLandmark: 'bear_cave', needsCraft: 'bow',
+        table: [
+          ['bear_claw', 5], ['meat', 28], ['bacon', 10], ['hide', 16], ['honey', 8],
+          ['golden_feather', 1.4], ['hunters_crest', 0.5], ['glimmer_dust', 1],
+          ['recipe_scroll', 1.6], ['CRITTER', 3], ['CURIO', 1],
+        ] },
     ],
   },
 };
@@ -617,6 +640,12 @@ export const CRAFTS = [
     items: { banyan_wood: 25, silver_bar: 6, gold_bar: 2, hide: 6 }, skill: ['cook', 18], desc: 'Kitchen tier 3 — masterpiece dishes.' },
   { id: 'cauldron', cat: 'station', name: 'Witch Cauldron', img: `${MAGIC}/008-cauldron.svg`, prosperity: 25, needs: ['stove'],
     items: { iron_bar: 8, mandrake: 1, glimmer_dust: 1 }, skill: ['cook', 10], desc: 'Brew potent potions from rare ingredients.' },
+  { id: 'sawmill', cat: 'station', name: 'Sawmill', img: `${MORE}/003-table-saw.svg`, prosperity: 20, needs: ['workbench', 'smelter'],
+    items: { cherry_wood: 20, iron_bar: 4, stone: 15 }, desc: 'Saw logs into planks (real-time, 2 slots). Planks build the best gear.' },
+  { id: 'toolshed', cat: 'station', name: 'Tool Shed', img: `${MORE}/001-tool-shed.svg`, prosperity: 22, needs: ['sawmill'],
+    items: { plank: 12, stone: 10, iron_bar: 3 }, effect: { respawnFast: 20 }, desc: 'Sharp tools, tidy racks — nodes regrow 20% faster.' },
+  { id: 'bonfire', cat: 'station', name: 'Great Bonfire', img: `${ADV}/037-bonfire.svg`, prosperity: 12, needs: ['workbench'],
+    items: { beech_wood: 30, stone: 12, tree_sap: 1 }, effect: { fuelSave: 20 }, desc: 'A roaring heart for camp — cooking & smelting use 20% less fuel.' },
 
   // Gear — INVENTORY expansion (the big goals)
   { id: 'pouch', cat: 'gear', name: 'Fiber Pouch', img: `${MAGIC}/038-bag.svg`, prosperity: 6,
@@ -653,8 +682,22 @@ export const CRAFTS = [
     items: { silver_bar: 6, hide: 12, feather: 15, bone: 15 }, huntBonus: 35, skill: ['hunt', 12], desc: 'Hunts return another 35% more loot.' },
   { id: 'gemlance', cat: 'gear', name: 'Ruby-Tipped Lance', img: `${HUNT}/004-lance.svg`, tint: T.red, prosperity: 34, needs: ['knife3'],
     items: { mithril_bar: 2, ruby: 1, hide: 15 }, huntBonus: 40, skill: ['hunt', 20], desc: 'Hunts return another 40% more loot.' },
+  { id: 'bow', cat: 'gear', name: 'Wildwood Bow', img: `${SURV}/006-bow.svg`, prosperity: 20, needs: ['sawmill'],
+    items: { plank: 8, fiber: 25, hide: 6 }, skill: ['hunt', 8], desc: 'Required to face the wolves and the Great Bear.' },
   { id: 'driftnet', cat: 'gear', name: 'Drift Net', img: `${FISH}/002-fishing-net.svg`, prosperity: 18, needs: ['workbench'],
     items: { fiber: 50, cherry_wood: 15, copper_bar: 3 }, pen: 'driftnet', skill: ['fish', 8], desc: 'Nets perch on its own, day and night.' },
+  { id: 'compass', cat: 'gear', name: 'Wayfarer Compass', img: `${ADV}/001-compass.svg`, prosperity: 15, needs: ['workbench'],
+    items: { copper_bar: 4, silver_bar: 2, glimmer_dust: 1 }, desc: 'Unlocks THE WILD MAP — journey to 10 lost landmarks.' },
+  { id: 'kayak', cat: 'gear', name: 'River Kayak', img: `${ADV}/034-kayak.svg`, prosperity: 18, needs: ['sawmill'],
+    items: { plank: 15, hide: 8, tree_sap: 2 }, desc: 'Reach the Roaring Rapids (and look great doing it).' },
+  { id: 'tent', cat: 'gear', name: 'Cozy Camp Tent', img: `${ADV}/045-tent.svg`, prosperity: 14, needs: ['workbench'],
+    items: { fiber: 30, hide: 10, plank: 6 }, expSpeed: 10, desc: 'Rested parties travel 10% faster.' },
+  { id: 'journal', cat: 'gear', name: "Explorer's Journal", img: `${ADV}/035-journal.svg`, prosperity: 12, needs: ['workbench'],
+    items: { plank: 4, hide: 3, feather: 5 }, effect: { xpBoost: 10 }, desc: 'Writing it down makes it stick: +10% all skill XP.' },
+  { id: 'wolfcloak', cat: 'gear', name: 'Wolfhide Cloak', img: `${HUNT}/001-hide.svg`, tint: T.silver, prosperity: 32, needs: ['bow'],
+    items: { wolf_pelt: 4, fiber: 20, hide: 10 }, expSpeed: 10, scavBonus: 10, desc: 'Move like the pack: expeditions 10% faster, +10% scavenge loot.' },
+  { id: 'bearcharm', cat: 'gear', name: 'Bearclaw Charm', img: `${HUNT}/002-bone.svg`, tint: T.gold, prosperity: 36, needs: ['bow'],
+    items: { bear_claw: 3, gold_bar: 2, fiber: 10 }, huntBonus: 15, effect: { gatherSpeed: 5 }, desc: 'Bear strength: +15% hunt loot, +5% gathering power.' },
   { id: 'torch', cat: 'gear', name: 'Trail Torch', img: `${CAMP}/005-flashlight.svg`, prosperity: 6,
     items: { beech_wood: 12, fiber: 10, tree_sap: 1 }, scavBonus: 20, desc: 'Scavenges return 20% more loot.' },
   { id: 'binoculars', cat: 'gear', name: 'Field Binoculars', img: `${CAMP}/009-binoculars.svg`, prosperity: 16, needs: ['torch', 'workbench'],
@@ -691,15 +734,104 @@ export const CRAFTS = [
     items: { cherry_wood: 18, honey: 3, fiber: 12 }, pen: 'beebox', desc: 'Bees deliver honey while you learn.' },
   { id: 'fishtrap', cat: 'helper', name: 'Wicker Fish Trap', img: `${CAMP}/008-basket.svg`, tint: T.teal, prosperity: 12, needs: ['workbench'],
     items: { fiber: 35, beech_wood: 12 }, pen: 'fishtrap', desc: 'Traps minnows overnight.' },
+  { id: 'quarrypen', cat: 'helper', name: 'Stone Quarry', img: `${MORE}/004-quarry.svg`, prosperity: 22, needs: ['smelter2', 'sawmill'],
+    items: { plank: 10, iron_bar: 5, stone: 20 }, pen: 'quarrypen', desc: 'Chips away at the cliff face all day long.' },
 ];
 export const CRAFT_MAP = Object.fromEntries(CRAFTS.map((c) => [c.id, c]));
 // helper pens (extend PEN_MAP)
 PEN_MAP.beebox = { id: 'beebox', name: 'Bee Box', img: `${BUGS}/032-beehive.svg`, produceId: 'honey', perHour: 1, capHours: 12 };
 PEN_MAP.fishtrap = { id: 'fishtrap', name: 'Fish Trap', img: `${CAMP}/008-basket.svg`, produceId: 'minnow', perHour: 2, capHours: 10 };
 PEN_MAP.driftnet = { id: 'driftnet', name: 'Drift Net', img: `${FISH}/002-fishing-net.svg`, produceId: 'perch', perHour: 1.5, capHours: 12 };
+PEN_MAP.quarrypen = { id: 'quarrypen', name: 'Stone Quarry', img: `${MORE}/004-quarry.svg`, produceId: 'stone', perHour: 4, capHours: 10 };
 
 // Cheese pressing (simple conversion at the Cheese Press)
 export const CHEESE_RECIPE = { in: { milk: 3, salt: 1 }, out: 'cheese', outQty: 1 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAWMILL — timed log-to-plank conversion (like the furnace, 2 slots).
+// Better wood saws into more planks per job.
+// ═══════════════════════════════════════════════════════════════════════════
+export const SAW_SLOTS = 2;
+export const SAW_RECIPES = [
+  { woodId: 'beech_wood',    wood: 3, planks: 1, minutes: 4 },
+  { woodId: 'cherry_wood',   wood: 3, planks: 2, minutes: 8 },
+  { woodId: 'banyan_wood',   wood: 3, planks: 3, minutes: 15 },
+  { woodId: 'ironroot_wood', wood: 3, planks: 5, minutes: 25 },
+  { woodId: 'elder_wood',    wood: 3, planks: 8, minutes: 40 },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THE WILD MAP — a chain of 10 landmarks. Craft the Wayfarer Compass, then
+// journey out (uses an expedition slot, real time). Each discovery grants a
+// one-time reward AND a permanent perk. Discover them all to reach the Edge.
+// ═══════════════════════════════════════════════════════════════════════════
+export const LANDMARKS = [
+  { id: 'old_signpost', name: 'Old Signpost', img: `${ADV}/032-sign.svg`, hours: 1,
+    needs: [], effect: { expSpeed: 5 },
+    reward: { gold: 40, items: { carrot_seed: 2, berries: 5 } },
+    perkText: 'Expeditions 5% faster', flavor: 'Someone came this way long ago. The arrows point everywhere.' },
+  { id: 'glow_clearing', name: 'Glowworm Clearing', img: `${ADV}/043-forest.svg`, hours: 2,
+    needs: ['torch'], effect: { scavBonus: 5 },
+    reward: { items: { honey: 3, fiber: 10 }, scrolls: 1 },
+    perkText: '+5% scavenge loot', flavor: 'The clearing hums with tiny green lights.' },
+  { id: 'hermits_hut', name: "Hermit's Hut", img: `${ADV}/006-hut.svg`, hours: 4,
+    needs: ['knife1'], effect: { xpBoost: 3 },
+    reward: { scrolls: 2, gold: 60 },
+    perkText: '+3% all skill XP', flavor: 'The hermit trades wisdom for a moment of company.' },
+  { id: 'kayak_rapids', name: 'Roaring Rapids', img: `${ADV}/034-kayak.svg`, hours: 6,
+    needs: ['kayak'], effect: { fishLuck: 5 },
+    reward: { items: { pearl: 1, salmon: 2 }, gold: 80 },
+    perkText: '+5% fishing luck', flavor: 'You shot the rapids and lived. The fish are impressed.' },
+  { id: 'ancient_quarry', name: 'Ancient Quarry', img: `${MORE}/004-quarry.svg`, hours: 8,
+    needs: ['smelter2'], effect: { smeltFast: 10 },
+    reward: { items: { iron_ore: 10, silver_ore: 6, emerald: 1 } },
+    perkText: '+10% smelting speed', flavor: 'Whoever dug here knew secrets about stone.' },
+  { id: 'misty_island', name: 'Misty Isle', img: `${SURV}/017-island.svg`, hours: 12,
+    needs: ['driftnet'], effect: { fishFast: 8 },
+    reward: { items: { golden_koi: 1 }, curio: 'enchanted_mirror' },
+    perkText: '+8% quick bites', flavor: 'An island that is not always there.' },
+  { id: 'wolf_den', name: 'Wolf Den', img: `${SURV}/024-wolf.svg`, hours: 16,
+    needs: ['bow'], effect: { huntBonus: 10 },
+    reward: { items: { wolf_pelt: 2 }, gold: 150 },
+    perkText: '+10% hunt loot · unlocks WOLF PACK hunts', flavor: 'Amber eyes watch from the dark. A challenge.' },
+  { id: 'bear_cave', name: 'Bear Hollow', img: `${SURV}/023-bear.svg`, hours: 24,
+    needs: ['gemlance'], effect: { gatherSpeed: 5 },
+    reward: { items: { bear_claw: 2, honey: 5 } },
+    perkText: '+5% gathering power · unlocks GREAT BEAR hunts', flavor: 'The cave breathes. Slowly. Enormously.' },
+  { id: 'frozen_peak', name: 'Frozen Peak', img: `${ADV}/042-mountain.svg`, hours: 36,
+    needs: ['chest3'], effect: { xpBoost: 5 },
+    reward: { items: { diamond: 1 }, curio: 'glacier_shard' },
+    perkText: '+5% all skill XP', flavor: 'From up here, the whole Wildwood fits in your eye.' },
+  { id: 'worlds_edge', name: "World's Edge", img: `${ADV}/025-globe.svg`, hours: 48,
+    needs: ['voidbag'], effect: { expLuck: 10 },
+    reward: { gold: 500, essence: 200, curio: 'wanderers_compass' },
+    perkText: '+10% expedition luck', flavor: 'The map ends. You do not.' },
+];
+export const LANDMARK_MAP = Object.fromEntries(LANDMARKS.map((l) => [l.id, l]));
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WILD FRIENDS — befriend 16 animals by feeding them their favourite dish.
+// Each friend gives +4 Prosperity, and some lend a permanent perk.
+// ═══════════════════════════════════════════════════════════════════════════
+export const FRIENDS = [
+  { id: 'mouse',    name: 'Meadow Mouse',   img: `${ANIM}/016-mouse.svg`,     dish: 'berry_jam',      feeds: 2, desc: 'Squeaks approvingly at jam.' },
+  { id: 'frog',     name: 'Pond Frog',      img: `${ANIM}/004-frog.svg`,      dish: 'boiled_eggs',    feeds: 2, desc: 'A connoisseur of round foods.' },
+  { id: 'squirrel', name: 'Spry Squirrel',  img: `${ANIM}/011-squirrel.svg`,  dish: 'cookies',        feeds: 3, effect: { doubleDrop: 3 }, desc: 'Shows you where things fall. +3% double drops.' },
+  { id: 'dog',      name: 'Camp Dog',       img: `${ANIM}/002-dog.svg`,       dish: 'kebab',          feeds: 3, effect: { huntBonus: 5 }, desc: 'The best boy. +5% hunt loot.' },
+  { id: 'cat',      name: 'Barn Cat',       img: `${ANIM}/006-cat.svg`,       dish: 'campfire_fish',  feeds: 3, effect: { penBoost: 5 }, desc: 'Keeps the pens mouse-free. +5% animal output.' },
+  { id: 'bee',      name: 'Royal Bee',      img: `${ANIM}/003-bee.svg`,       dish: 'oatmeal',        feeds: 3, effect: { cropFast: 3 }, desc: 'Pollinates with purpose. +3% crop speed.' },
+  { id: 'sheep',    name: 'Cloud Sheep',    img: `${ANIM}/012-sheep.svg`,     dish: 'salad',          feeds: 3, effect: { scavBonus: 5 }, desc: 'Finds soft things in hedges. +5% scavenge loot.' },
+  { id: 'fox',      name: 'Sly Fox',        img: `${ANIM}/001-fox.svg`,       dish: 'bacon_brekky',   feeds: 3, effect: { rareLuck: 3 }, desc: 'Knows where shiny things hide. +3% rare luck.' },
+  { id: 'parrot',   name: 'Chatter Parrot', img: `${ANIM}/008-parrot.svg`,    dish: 'trail_mix',      feeds: 3, effect: { expLuck: 4 }, desc: 'Repeats rumours of treasure. +4% expedition luck.' },
+  { id: 'owl',      name: 'Wise Owl',       img: `${ANIM}/014-owl.svg`,       dish: 'moon_tart',      feeds: 2, effect: { xpBoost: 5 }, desc: 'Hoots helpful corrections. +5% skill XP.' },
+  { id: 'crab',     name: 'Rock Crab',      img: `${ANIM}/005-crab.svg`,      dish: 'garlic_prawns',  feeds: 3, effect: { fishLuck: 5 }, desc: 'Pinches the best spots. +5% fishing luck.' },
+  { id: 'monkey',   name: 'Cheeky Monkey',  img: `${ANIM}/013-monkey.svg`,    dish: 'pancakes',       feeds: 4, effect: { gatherSpeed: 3 }, desc: 'Lends a third hand. +3% gathering power.' },
+  { id: 'turtle',   name: 'Old Turtle',     img: `${ANIM}/010-sea-turtle.svg`, dish: 'sushi',         feeds: 3, effect: { fishFast: 5 }, desc: 'Tells the fish to hurry up. +5% quick bites.' },
+  { id: 'jelly',    name: 'Moon Jelly',     img: `${ANIM}/009-jellyfish.svg`, dish: 'gelato',         feeds: 2, effect: { expSpeed: 4 }, desc: 'Drifts ahead to scout. Expeditions 4% faster.' },
+  { id: 'croc',     name: 'Grinning Croc',  img: `${ANIM}/015-crocodile.svg`, dish: 'big_roast',      feeds: 3, effect: { huntBonus: 6 }, desc: 'Professional ambusher. +6% hunt loot.' },
+  { id: 'elephant', name: 'Forest Elephant', img: `${ANIM}/007-elephant.svg`, dish: 'leviathan_feast', feeds: 1, effect: { gatherSpeed: 6 }, desc: 'Never forgets a feast. +6% gathering power.' },
+];
+export const FRIEND_MAP = Object.fromEntries(FRIENDS.map((f) => [f.id, f]));
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PROSPERITY + TITLES + PROFILE (same external API as v1)
@@ -712,6 +844,8 @@ export const prosperityOf = (save) => {
   p += (save.critters || []).length * 2;
   p += (save.knownRecipes || []).length * 3;
   p += (save.caughtFish || []).length * 2;
+  p += (save.discoveredLandmarks || []).length * 10;
+  p += (save.friends || []).length * 4;
   return p;
 };
 
@@ -741,6 +875,12 @@ export const HOMESTEAD_TITLES = [
     reqText: 'Master 25 different dishes', check: (s) => (s.cookedDishes || []).length >= 25 },
   { id: 'gemhoarder', name: 'Gem Hoarder', color: 'text-teal-600', darkColor: 'text-teal-400',
     reqText: 'Own an emerald, ruby and diamond at once', check: (s) => ['emerald', 'ruby', 'diamond'].every((g) => ((s.inv?.[g] || 0) + (s.chest?.[g] || 0)) >= 1) },
+  { id: 'pathfinder', name: 'Pathfinder', color: 'text-indigo-600', darkColor: 'text-indigo-400',
+    reqText: 'Discover 4 landmarks', check: (s) => (s.discoveredLandmarks || []).length >= 4 },
+  { id: 'beastfriend', name: 'Friend of the Wilds', color: 'text-emerald-700', darkColor: 'text-emerald-300',
+    reqText: 'Befriend 8 wild animals', check: (s) => (s.friends || []).length >= 8 },
+  { id: 'edgewalker', name: 'Edge Walker', color: 'text-violet-600', darkColor: 'text-violet-400',
+    reqText: 'Discover all 10 landmarks', check: (s) => (s.discoveredLandmarks || []).length >= 10 },
   { id: 'master', name: 'Master of the Wilds', color: 'text-purple-600', darkColor: 'text-purple-400',
     reqText: 'Total skill level 90', check: (s) => totalSkillLevel(s) >= 90 },
   { id: 'legend', name: 'Wildwood Legend', color: 'text-amber-600', darkColor: 'text-amber-400',
@@ -774,8 +914,12 @@ export const defaultSave = () => ({
   crafted: [],
   farm: [],                 // [{ plot, seedId, readyAt }]
   smelting: [],             // [{ slot, barId, doneAt }]
+  sawing: [],               // [{ slot, planks, doneAt }]
   pensAt: {},               // { penId: lastCollect ts }
-  expeditions: [],          // [{ id, type, tier, returnAt }]
+  expeditions: [],          // [{ id, type, tier, returnAt, landmarkId? }]
+  discoveredLandmarks: [],  // Wild Map progress
+  friendsFed: {},           // { friendId: feed count }
+  friends: [],              // befriended animal ids
   knownRecipes: ['berry_jam', 'campfire_fish', 'herb_tea', 'boiled_eggs'],
   unreadScrolls: 0,
   activeBuffs: [],          // [{ recipeId, type, value, until }]

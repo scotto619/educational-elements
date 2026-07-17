@@ -28,7 +28,8 @@ import {
   SKILLS, skillLevel, skillProgress,
   EXPEDITIONS, HUNT_XP_PER_ROLL, SCAV_XP_PER_ROLL, SEED_DROPS,
   FARM_BASE_PLOTS, CROPS, CROP_BY_SEED, GOLDEN_CROP_CHANCE, PENS, PEN_MAP, CHEESE_RECIPE,
-  SMELT_SLOTS, SMELT_RECIPES,
+  SMELT_SLOTS, SMELT_RECIPES, SAW_SLOTS, SAW_RECIPES,
+  LANDMARKS, LANDMARK_MAP, FRIENDS, FRIEND_MAP, RANDOM_CURIO_IDS,
   KITCHEN_TIERS, BUFF_LABELS, RECIPES, RECIPE_MAP, SCROLL_RECIPES, MAX_ACTIVE_BUFFS,
   CRAFTS, CRAFT_MAP, GOLD_ICON, dishIdOf,
   prosperityOf, totalSkillLevel, HOMESTEAD_TITLES, HOMESTEAD_TITLE_MAP,
@@ -78,8 +79,12 @@ const cleanSave = (gs) => ({
   crafted: (gs.crafted || []).filter((id) => CRAFT_MAP[id]),
   farm: (gs.farm || []).map((f) => ({ plot: Number(f.plot) || 0, seedId: String(f.seedId), readyAt: Number(f.readyAt) || 0 })),
   smelting: (gs.smelting || []).map((s) => ({ slot: Number(s.slot) || 0, barId: String(s.barId), doneAt: Number(s.doneAt) || 0 })),
+  sawing: (gs.sawing || []).map((s) => ({ slot: Number(s.slot) || 0, planks: Number(s.planks) || 0, doneAt: Number(s.doneAt) || 0 })),
   pensAt: Object.fromEntries(Object.entries(gs.pensAt || {}).map(([k, v]) => [k, Number(v) || 0])),
-  expeditions: (gs.expeditions || []).map((e) => ({ id: String(e.id), type: String(e.type), tier: Number(e.tier) || 0, returnAt: Number(e.returnAt) || 0 })),
+  expeditions: (gs.expeditions || []).map((e) => ({ id: String(e.id), type: String(e.type), tier: Number(e.tier) || 0, returnAt: Number(e.returnAt) || 0, ...(e.landmarkId ? { landmarkId: String(e.landmarkId) } : {}) })),
+  discoveredLandmarks: (gs.discoveredLandmarks || []).filter((id) => LANDMARK_MAP[id]),
+  friendsFed: Object.fromEntries(Object.entries(gs.friendsFed || {}).filter(([k]) => FRIEND_MAP[k]).map(([k, v]) => [k, Number(v) || 0])),
+  friends: (gs.friends || []).filter((id) => FRIEND_MAP[id]),
   knownRecipes: (gs.knownRecipes || []).filter((id) => RECIPE_MAP[id]),
   unreadScrolls: Number(gs.unreadScrolls) || 0,
   activeBuffs: (gs.activeBuffs || []).filter((b) => (b.until || 0) > now()).map((b) => ({
@@ -112,6 +117,7 @@ const TABS = [
   { id: 'craft', name: 'Craft', img: `${ICN}/Camping/010-axe.svg` },
   { id: 'cook', name: 'Kitchen', img: `${ICN}/Cooking/012-frying pan.svg` },
   { id: 'inventory', name: 'Pack', img: `${ICN}/Camping/007-backpack.svg` },
+  { id: 'friends', name: 'Friends', img: `${ICN}/Animals/011-squirrel.svg` },
   { id: 'class', name: 'Class', img: `${ICN}/Nature/007-world.svg` },
 ];
 
@@ -145,6 +151,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const [fishing, setFishing] = useState({ phase: 'idle' });
   const [exhaustedUntil, setExhaustedUntil] = useState(0);
   const [rareFind, setRareFind] = useState(null);       // { kind: 'curio'|'critter', id }
+  const [journeyDone, setJourneyDone] = useState(null); // { landmarkId }
   const [newRecipe, setNewRecipe] = useState(null);
   const [expResult, setExpResult] = useState(null);     // { typeName, loot: [{id|critterId, qty}], soldGold }
   const [visitId, setVisitId] = useState(null);
@@ -183,11 +190,20 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     return { name: sp.name, img: sp.img, shiny: !!comp.shiny, level: menLevelForXp(comp.xp), ...bonus };
   }, [studentData?.menagerieData]);
 
+  // Permanent passives: crafted gear effects + Wild Map landmark perks + friends
+  const passivesOf = (cur) => {
+    const total = {};
+    const add = (eff) => eff && Object.entries(eff).forEach(([k, v]) => { total[k] = (total[k] || 0) + v; });
+    (cur.crafted || []).forEach((id) => add(CRAFT_MAP[id]?.effect));
+    (cur.discoveredLandmarks || []).forEach((id) => add(LANDMARK_MAP[id]?.effect));
+    (cur.friends || []).forEach((id) => add(FRIEND_MAP[id]?.effect));
+    return total;
+  };
+
   const buffVal = useCallback((type) => {
     const cur = gsRef.current;
-    let v = 0;
+    let v = passivesOf(cur)[type] || 0;
     (cur.activeBuffs || []).forEach((b) => { if (b.type === type && b.until > now()) v += b.value; });
-    (cur.crafted || []).forEach((id) => { const e = CRAFT_MAP[id]?.effect; if (e && e[type]) v += e[type]; });
     if (companionBonus?.buffs?.[type]) v += companionBonus.buffs[type];
     return v;
   }, [companionBonus]);
@@ -207,6 +223,11 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       cropYield += c.effect?.cropYield || 0;
       smeltSlots += c.smeltSlots || 0;
     });
+    // Landmark perks + wild friends also feed expedition stats
+    const P = passivesOf(cur);
+    scavBonus += P.scavBonus || 0;
+    huntBonus += P.huntBonus || 0;
+    expSpeed += P.expSpeed || 0;
     return { slots, stack, chestSlots, scavBonus, huntBonus, expSpeed, cropYield, smeltSlots };
   };
   const caps = useMemo(() => capsOf(gs), [gs]);
@@ -235,6 +256,10 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     save.crafted = (raw?.crafted || []).filter((id) => CRAFT_MAP[id]);
     save.farm = (raw?.farm || []).filter((f) => CROP_BY_SEED[f.seedId]).map((f) => ({ ...f }));
     save.smelting = (raw?.smelting || []).map((s) => ({ ...s }));
+    save.sawing = (raw?.sawing || []).map((s) => ({ ...s }));
+    save.discoveredLandmarks = (raw?.discoveredLandmarks || []).filter((id) => LANDMARK_MAP[id]);
+    save.friendsFed = { ...(raw?.friendsFed || {}) };
+    save.friends = (raw?.friends || []).filter((id) => FRIEND_MAP[id]);
     save.pensAt = { ...(raw?.pensAt || {}) };
     // Ensure every owned pen has a collection anchor
     save.crafted.forEach((id) => { if (CRAFT_MAP[id]?.pen && !save.pensAt[CRAFT_MAP[id].pen]) save.pensAt[CRAFT_MAP[id].pen] = now(); });
@@ -350,7 +375,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const consumeFuel = (units) => {
     const inv = invRef.current || gsRef.current.inv;
     const woods = Object.keys(inv || {}).filter((id) => ITEMS[id]?.burn).sort((a, b) => ITEMS[a].burn - ITEMS[b].burn);
-    let need = units;
+    let need = Math.max(1, Math.ceil(units * (1 - Math.min(0.5, buffVal('fuelSave') / 100))));
     const spend = {};
     for (const id of woods) {
       if (need <= 0) break;
@@ -520,8 +545,9 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if (counterKey) setGs((p) => ({ ...p, counters: { ...p.counters, [counterKey]: (p.counters?.[counterKey] || 0) + 1 } }));
 
     const nextStock = st.stock - 1;
+    const respawnMs = node.respawnSec * 1000 * (1 - Math.min(0.5, buffVal('respawnFast') / 100));
     const next = nextStock <= 0
-      ? { stock: node.stock, hitsLeft: clicksNeeded(node, zoneDef.tool), respawnAt: now() + node.respawnSec * 1000 }
+      ? { stock: node.stock, hitsLeft: clicksNeeded(node, zoneDef.tool), respawnAt: now() + respawnMs }
       : { stock: nextStock, hitsLeft: clicksNeeded(node, zoneDef.tool), respawnAt: 0 };
     nodeStateRef.current = { ...nodeStateRef.current, [key]: next };
     setNodeState(nodeStateRef.current);
@@ -583,15 +609,23 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   };
 
   // ── Expeditions ─────────────────────────────────────────────────────────────
+  const expeditionSlotFree = () => {
+    const cur = gsRef.current;
+    if ((cur.expeditions || []).length >= maxExpeditions) {
+      showToast(maxExpeditions === 1 ? 'You can only run one expedition at a time — build a Forward Camp for two!' : 'Both expedition parties are already out!', 'error');
+      return false;
+    }
+    return true;
+  };
+
   const startExpedition = (type, tierIdx) => {
     const cur = gsRef.current;
     const def = EXPEDITIONS[type];
     if (def.needs && !cur.crafted.includes(def.needs)) return;
-    if ((cur.expeditions || []).length >= maxExpeditions) {
-      showToast(maxExpeditions === 1 ? 'You can only run one expedition at a time — build a Forward Camp for two!' : 'Both expedition parties are already out!', 'error');
-      return;
-    }
     const dur = def.durations[tierIdx];
+    if (dur.needsCraft && !cur.crafted.includes(dur.needsCraft)) return;
+    if (dur.needsLandmark && !(cur.discoveredLandmarks || []).includes(dur.needsLandmark)) return;
+    if (!expeditionSlotFree()) return;
     const speed = 1 - Math.min(0.5, capsOf(cur).expSpeed / 100);
     setGs((p) => ({
       ...p,
@@ -603,8 +637,54 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     setTimeout(persist, 400);
   };
 
+  // ── Wild Map journeys ───────────────────────────────────────────────────────
+  const landmarkState = (lm) => {
+    const cur = gsRef.current;
+    const idx = LANDMARKS.findIndex((l) => l.id === lm.id);
+    if ((cur.discoveredLandmarks || []).includes(lm.id)) return 'discovered';
+    if (idx > 0 && !(cur.discoveredLandmarks || []).includes(LANDMARKS[idx - 1].id)) return 'locked';
+    if ((cur.expeditions || []).some((e) => e.type === 'journey' && e.landmarkId === lm.id)) return 'travelling';
+    if ((lm.needs || []).some((n) => !cur.crafted.includes(n))) return 'gearLocked';
+    return 'ready';
+  };
+
+  const startJourney = (lm) => {
+    if (landmarkState(lm) !== 'ready') return;
+    if (!expeditionSlotFree()) return;
+    const speed = 1 - Math.min(0.5, capsOf(gsRef.current).expSpeed / 100);
+    setGs((p) => ({
+      ...p,
+      expeditions: [...(p.expeditions || []), { id: newUid(), type: 'journey', tier: 0, landmarkId: lm.id, returnAt: now() + lm.hours * 3600 * 1000 * speed }],
+      counters: { ...p.counters, expeditions: (p.counters?.expeditions || 0) + 1 },
+    }));
+    showToast(`Setting out for the ${lm.name} — a ${lm.hours}h journey!`, 'success');
+    dirtyRef.current = true;
+    setTimeout(persist, 400);
+  };
+
+  const collectJourney = (exp) => {
+    const lm = LANDMARK_MAP[exp.landmarkId];
+    if (!lm || now() < exp.returnAt) return;
+    setGs((p) => ({
+      ...p,
+      expeditions: (p.expeditions || []).filter((e) => e.id !== exp.id),
+      discoveredLandmarks: (p.discoveredLandmarks || []).includes(lm.id) ? p.discoveredLandmarks : [...(p.discoveredLandmarks || []), lm.id],
+      gold: p.gold + (lm.reward.gold || 0),
+      unreadScrolls: (p.unreadScrolls || 0) + (lm.reward.scrolls || 0),
+    }));
+    if (lm.reward.items) addLoot(lm.reward.items);
+    if (lm.reward.curio) foundCurio(lm.reward.curio);
+    if (lm.reward.essence) earnMenagerieEssence(lm.reward.essence, `${lm.name} discovered!`);
+    else earnMenagerieEssence(50, `${lm.name} discovered!`);
+    gainSkillXp('forage', 30 + lm.hours * 5);
+    setJourneyDone({ landmarkId: lm.id });
+    dirtyRef.current = true;
+    setTimeout(persist, 400);
+  };
+
   const collectExpedition = (exp) => {
     if (now() < exp.returnAt) return;
+    if (exp.type === 'journey') { collectJourney(exp); return; }
     const cur = gsRef.current;
     const def = EXPEDITIONS[exp.type];
     const dur = def.durations[exp.tier] || def.durations[0];
@@ -628,7 +708,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       for (const r of table) { roll -= weightOf(r); if (roll <= 0) { picked = r[0]; break; } }
       if (picked === 'CRITTER') critterFinds.push(rollCritter().id);
       else if (picked === 'SEED') { const sid = SEED_DROPS[Math.floor(Math.random() * SEED_DROPS.length)]; loot[sid] = (loot[sid] || 0) + 1; }
-      else if (picked === 'CURIO') curios.push(CURIO_IDS[Math.floor(Math.random() * CURIO_IDS.length)]);
+      else if (picked === 'CURIO') curios.push(RANDOM_CURIO_IDS[Math.floor(Math.random() * RANDOM_CURIO_IDS.length)]);
       else if (picked === 'recipe_scroll') scrolls += 1;
       else if (ITEMS[picked]?.kind === 'curio') curios.push(picked); // named curios (amber, crest…)
       else loot[picked] = (loot[picked] || 0) + 1;
@@ -743,6 +823,52 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     addLoot({ [job.barId]: 1 });
     showToast(`${ITEMS[job.barId].name} ready!`, 'success');
     gainSkillXp('mine', 8);
+  };
+
+  // ── Sawmill (logs → planks, real time) ─────────────────────────────────────
+  const startSaw = (recipe) => {
+    const cur = gsRef.current;
+    if (!cur.crafted.includes('sawmill')) return;
+    const usedSawSlots = (cur.sawing || []).map((s) => s.slot);
+    const slot = Array.from({ length: SAW_SLOTS }, (_, i) => i).find((i) => !usedSawSlots.includes(i));
+    if (slot === undefined) { showToast('The sawmill is busy!', 'error'); return; }
+    if (countOf(recipe.woodId) < recipe.wood) return;
+    addLoot({ [recipe.woodId]: -recipe.wood });
+    setGs((p) => ({ ...p, sawing: [...(p.sawing || []), { slot, planks: recipe.planks, doneAt: now() + recipe.minutes * 60 * 1000 }] }));
+    dirtyRef.current = true;
+  };
+
+  const collectPlanks = (job) => {
+    if (now() < job.doneAt) return;
+    if (!canFit('plank', job.planks)) { showToast('No room for the planks — clear a slot first!', 'error'); return; }
+    setGs((p) => ({ ...p, sawing: (p.sawing || []).filter((s) => s.slot !== job.slot) }));
+    addLoot({ plank: job.planks });
+    showToast(`${job.planks} Wood Plank${job.planks !== 1 ? 's' : ''} ready!`, 'success');
+    gainSkillXp('wood', 6);
+  };
+
+  // ── Wild Friends (feed dishes to befriend) ─────────────────────────────────
+  const feedFriend = (friend) => {
+    const cur = gsRef.current;
+    if ((cur.friends || []).includes(friend.id)) return;
+    const dishId = dishIdOf(friend.dish);
+    if (countOf(dishId) < 1) { showToast(`The ${friend.name} wants ${RECIPE_MAP[friend.dish]?.name} — cook one first!`, 'error'); return; }
+    addLoot({ [dishId]: -1 });
+    const fed = (cur.friendsFed?.[friend.id] || 0) + 1;
+    if (fed >= friend.feeds) {
+      setGs((p) => ({
+        ...p,
+        friendsFed: { ...p.friendsFed, [friend.id]: fed },
+        friends: [...(p.friends || []), friend.id],
+      }));
+      showToast(`The ${friend.name} is now your friend! ${friend.effect ? friend.desc : ''}`, 'success');
+      earnMenagerieEssence(25, `${friend.name} befriended!`);
+    } else {
+      setGs((p) => ({ ...p, friendsFed: { ...p.friendsFed, [friend.id]: fed } }));
+      showToast(`The ${friend.name} munches happily… (${fed}/${friend.feeds})`, 'success');
+    }
+    dirtyRef.current = true;
+    setTimeout(persist, 400);
   };
 
   // ── Cooking ─────────────────────────────────────────────────────────────────
@@ -1120,23 +1246,75 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       {/* ══ EXPEDITIONS ══ */}
       {tab === 'expeditions' && (
         <div className="space-y-3">
+          {/* The Wild Map */}
+          <div className="rounded-2xl border-2 border-indigo-900/60 p-4 bg-cover bg-center" style={{ backgroundImage: "linear-gradient(rgba(12,10,35,0.82), rgba(12,10,35,0.92)), url('/Loot/Backgrounds/night.png')" }}>
+            <div className="flex items-center gap-3 mb-1">
+              <Ico src={`${ICN}/Adventure/018-map-1.svg`} size="w-9 h-9" />
+              <div>
+                <h3 className="font-bold text-white text-lg drop-shadow">The Wild Map — {(gs.discoveredLandmarks || []).length}/{LANDMARKS.length} landmarks</h3>
+                <p className="text-indigo-200/70 text-xs">Long journeys to lost places. Each discovery grants a permanent perk (+10 Prosperity).</p>
+              </div>
+            </div>
+            {!gs.crafted.includes('compass') ? (
+              <p className="mt-3 text-sm font-bold text-indigo-200 bg-black/40 rounded-xl p-3 border border-indigo-700/60 flex items-center gap-2">
+                <Ico src={`${ICN}/Adventure/001-compass.svg`} size="w-6 h-6" />
+                Craft the Wayfarer Compass at the Workbench to reveal the map…
+              </p>
+            ) : (
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                {LANDMARKS.map((lm) => {
+                  const st = landmarkState(lm);
+                  return (
+                    <div key={lm.id}
+                      className={`shrink-0 w-32 rounded-xl border-2 p-2.5 text-center ${
+                        st === 'discovered' ? 'border-emerald-500/70 bg-emerald-950/40'
+                        : st === 'ready' ? 'border-amber-400/70 bg-black/50'
+                        : st === 'travelling' ? 'border-sky-500/70 bg-sky-950/40'
+                        : 'border-slate-700/60 bg-black/40'
+                      }`}
+                      title={st === 'locked' ? 'Discover the previous landmark first' : lm.flavor}>
+                      <Ico src={lm.img} size="w-10 h-10 mx-auto" className={st === 'locked' ? 'grayscale opacity-30' : st === 'gearLocked' ? 'grayscale opacity-60' : ''} />
+                      <p className={`text-[11px] font-bold mt-1 leading-tight ${st === 'discovered' ? 'text-emerald-300' : st === 'locked' ? 'text-slate-600' : 'text-white'}`}>
+                        {st === 'locked' ? '???' : lm.name}
+                      </p>
+                      {st === 'discovered' && <p className="text-[9px] text-emerald-400/90 font-bold mt-0.5 leading-tight">{lm.perkText}</p>}
+                      {st === 'ready' && (
+                        <button onClick={() => startJourney(lm)} className="w-full mt-1.5 text-[10px] font-bold bg-amber-500 text-amber-950 rounded-lg py-1 hover:bg-amber-400 transition">
+                          Set out ({lm.hours}h)
+                        </button>
+                      )}
+                      {st === 'travelling' && <p className="text-[9px] text-sky-300 font-bold mt-1 animate-pulse">Travelling…</p>}
+                      {st === 'gearLocked' && (
+                        <p className="text-[9px] text-red-400/90 font-bold mt-0.5 leading-tight">
+                          Needs {(lm.needs || []).map((n) => CRAFT_MAP[n]?.name).join(' + ')}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Active */}
           {gs.expeditions.length > 0 && (
             <Panel className="p-4">
               <h3 className="font-bold text-slate-200 mb-2">Parties in the field ({gs.expeditions.length}/{maxExpeditions})</h3>
               <div className="grid sm:grid-cols-2 gap-2">
                 {gs.expeditions.map((exp) => {
-                  const def = EXPEDITIONS[exp.type];
-                  const dur = def.durations[exp.tier] || def.durations[0];
+                  const isJourney = exp.type === 'journey';
+                  const lm = isJourney ? LANDMARK_MAP[exp.landmarkId] : null;
+                  const def = isJourney ? null : EXPEDITIONS[exp.type];
+                  const dur = isJourney ? null : (def.durations[exp.tier] || def.durations[0]);
                   const ready = now() >= exp.returnAt;
                   return (
                     <button key={exp.id} onClick={() => collectExpedition(exp)} disabled={!ready}
                       className={`rounded-xl border-2 p-3 flex items-center gap-3 text-left transition ${ready ? 'border-amber-400/70 bg-amber-950/40 animate-pulse' : 'border-slate-700 bg-black/30'}`}>
-                      <Ico src={dur.img || def.img} size="w-10 h-10" />
+                      <Ico src={isJourney ? lm?.img : (dur.img || def.img)} size="w-10 h-10" />
                       <div className="flex-1">
-                        <p className="font-bold text-slate-200 text-sm">{def.name} — {dur.name}</p>
+                        <p className="font-bold text-slate-200 text-sm">{isJourney ? `Journey — ${lm?.name}` : `${def.name} — ${dur.name}`}</p>
                         <p className={`text-xs font-bold ${ready ? 'text-amber-300' : 'text-slate-400'}`}>
-                          {ready ? 'RETURNED — open the haul!' : `Back in ${fmtCountdown(exp.returnAt - now())}`}
+                          {ready ? (isJourney ? 'ARRIVED — see what you found!' : 'RETURNED — open the haul!') : `Back in ${fmtCountdown(exp.returnAt - now())}`}
                         </p>
                       </div>
                     </button>
@@ -1168,15 +1346,25 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                       </p>
                     ) : (
                       <div className="grid grid-cols-3 gap-2 mt-4">
-                        {def.durations.map((d, i) => (
-                          <button key={i} onClick={() => startExpedition(type, i)}
-                            disabled={gs.expeditions.length >= maxExpeditions}
-                            className="bg-black/50 border border-white/20 rounded-xl p-2.5 text-center hover:border-amber-400/70 hover:bg-black/70 disabled:opacity-40 transition">
-                            {d.img && <Ico src={d.img} size="w-9 h-9 mx-auto mb-1" />}
-                            <p className="text-white font-bold text-sm">{d.name}</p>
-                            <p className="text-white/60 text-[11px]">{d.minutes >= 60 ? `${Math.round(d.minutes / 60)}h` : `${d.minutes}min`} · ~{d.rolls} finds</p>
-                          </button>
-                        ))}
+                        {def.durations.map((d, i) => {
+                          const lmLocked = d.needsLandmark && !(gs.discoveredLandmarks || []).includes(d.needsLandmark);
+                          const craftLocked = d.needsCraft && !gs.crafted.includes(d.needsCraft);
+                          const locked = lmLocked || craftLocked;
+                          return (
+                            <button key={i} onClick={() => startExpedition(type, i)}
+                              disabled={locked || gs.expeditions.length >= maxExpeditions}
+                              className={`bg-black/50 border rounded-xl p-2.5 text-center transition ${locked ? 'border-white/10 opacity-50' : 'border-white/20 hover:border-amber-400/70 hover:bg-black/70 disabled:opacity-40'}`}
+                              title={lmLocked ? `Discover the ${LANDMARK_MAP[d.needsLandmark]?.name} on the Wild Map first!` : craftLocked ? `Craft a ${CRAFT_MAP[d.needsCraft]?.name} first!` : d.name}>
+                              {d.img && <Ico src={d.img} size="w-9 h-9 mx-auto mb-1" className={locked ? 'grayscale' : ''} />}
+                              <p className="text-white font-bold text-sm">{d.name}</p>
+                              <p className="text-white/60 text-[11px]">
+                                {locked
+                                  ? (lmLocked ? `Find the ${LANDMARK_MAP[d.needsLandmark]?.name}` : `Needs ${CRAFT_MAP[d.needsCraft]?.name}`)
+                                  : `${d.minutes >= 60 ? `${Math.round(d.minutes / 60)}h` : `${d.minutes}min`} · ~${d.rolls} finds`}
+                              </p>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -1414,6 +1602,41 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                     <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
                       {r.ore}<It id={r.oreId} size="w-3.5 h-3.5" /> + {r.fuel} fuel · {r.minutes} min
                     </p>
+                  </button>
+                ))}
+              </div>
+            </Panel>
+          )}
+
+          {/* Sawmill */}
+          {gs.crafted.includes('sawmill') && (
+            <Panel className="p-4">
+              <h3 className="font-bold text-slate-200 mb-2 flex items-center gap-2">
+                <Ico src={`${ICN}/More/003-table-saw.svg`} size="w-6 h-6" /> Sawmill
+                <span className="text-xs text-slate-500 font-normal">— {(gs.sawing || []).length}/{SAW_SLOTS} slots · planks build the finest gear</span>
+              </h3>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {(gs.sawing || []).map((job) => {
+                  const done = now() >= job.doneAt;
+                  return (
+                    <button key={job.slot} onClick={() => collectPlanks(job)} disabled={!done}
+                      className={`rounded-xl border-2 px-4 py-2 text-sm font-bold transition flex items-center gap-2 ${done ? 'border-amber-400/70 bg-amber-950/50 text-amber-300 animate-pulse' : 'border-slate-700 bg-black/30 text-slate-400'}`}>
+                      <It id="plank" size="w-6 h-6" />
+                      {done ? `Collect ${job.planks} plank${job.planks !== 1 ? 's' : ''}!` : `${job.planks} plank${job.planks !== 1 ? 's' : ''} · ${fmtCountdown(job.doneAt - now())}`}
+                    </button>
+                  );
+                })}
+                {(gs.sawing || []).length === 0 && <p className="text-xs text-slate-500 italic">The saw is idle. Feed it logs!</p>}
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
+                {SAW_RECIPES.map((r) => (
+                  <button key={r.woodId} onClick={() => startSaw(r)}
+                    disabled={countOf(r.woodId) < r.wood || (gs.sawing || []).length >= SAW_SLOTS}
+                    className="text-left rounded-xl border border-slate-700 bg-black/30 p-2.5 hover:border-amber-500/60 disabled:opacity-40 transition">
+                    <p className="text-sm font-bold text-slate-200 flex items-center gap-1.5">
+                      {r.wood}<It id={r.woodId} size="w-5 h-5" /> <span className="text-slate-500">→</span> {r.planks}<It id="plank" size="w-5 h-5" />
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{r.minutes} min</p>
                   </button>
                 ))}
               </div>
@@ -1669,6 +1892,56 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
         </div>
       )}
 
+      {/* ══ WILD FRIENDS ══ */}
+      {tab === 'friends' && (
+        <div className="space-y-3">
+          <div className="rounded-2xl border-2 border-emerald-900/60 p-4 bg-cover bg-center" style={{ backgroundImage: "linear-gradient(rgba(8,25,10,0.75), rgba(8,25,10,0.88)), url('/Loot/Backgrounds/day.png')" }}>
+            <h3 className="font-bold text-white text-lg drop-shadow">Wild Friends — {(gs.friends || []).length}/{FRIENDS.length} befriended</h3>
+            <p className="text-emerald-100/70 text-xs mt-0.5">
+              Shy creatures live around your camp. Cook their favourite dish and share it a few times to win them over —
+              each friend adds +4 Prosperity, and many lend a permanent helping paw.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {FRIENDS.map((f) => {
+              const befriended = (gs.friends || []).includes(f.id);
+              const fed = gs.friendsFed?.[f.id] || 0;
+              const dishId = dishIdOf(f.dish);
+              const recipe = RECIPE_MAP[f.dish];
+              const haveDish = countOf(dishId) > 0;
+              const dishKnown = recipe && recipeKnown(recipe, gs);
+              return (
+                <div key={f.id} className={`rounded-xl border-2 p-3 text-center ${befriended ? 'border-emerald-500/70 bg-emerald-950/40' : 'border-slate-700 bg-slate-900'}`}>
+                  <div className="flex justify-center" style={{ animation: befriended ? 'wh-bob 2.4s ease-in-out infinite' : undefined }}>
+                    <Ico src={f.img} size="w-16 h-16" className={befriended ? '' : 'grayscale opacity-60'} />
+                  </div>
+                  <p className={`font-bold text-sm mt-1 ${befriended ? 'text-emerald-300' : 'text-slate-200'}`}>{befriended ? f.name : `Shy ${f.name}`}</p>
+                  <p className="text-[10px] text-slate-400 leading-snug mt-0.5">{befriended ? f.desc : 'Watches you from a distance…'}</p>
+                  {!befriended && (
+                    <>
+                      <p className="text-[11px] text-slate-300 font-bold mt-1.5 flex items-center justify-center gap-1">
+                        Craves: <Ico src={recipe?.img} size="w-5 h-5" /> {recipe?.name}
+                      </p>
+                      <div className="flex justify-center gap-1 mt-1">
+                        {Array.from({ length: f.feeds }).map((_, i) => (
+                          <span key={i} className={`w-2.5 h-2.5 rounded-full ${i < fed ? 'bg-emerald-400' : 'bg-slate-700'}`} />
+                        ))}
+                      </div>
+                      <button onClick={() => feedFriend(f)} disabled={!haveDish}
+                        className="w-full mt-2 text-xs font-bold bg-emerald-700 text-white rounded-lg py-1.5 hover:bg-emerald-600 disabled:opacity-40 transition"
+                        title={haveDish ? `Share a ${recipe?.name}` : dishKnown ? `Cook a ${recipe?.name} first` : 'You haven’t learned this recipe yet…'}>
+                        {haveDish ? 'Share a meal' : dishKnown ? `Cook ${recipe?.name}` : 'Recipe unknown…'}
+                      </button>
+                    </>
+                  )}
+                  {befriended && <p className="text-[10px] text-emerald-400 font-bold mt-1.5">Your friend!</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ══ CLASS ══ */}
       {tab === 'class' && (
         <Panel className="p-4">
@@ -1750,6 +2023,28 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
           </div>
         </div>
       )}
+
+      {/* ── Landmark discovery modal ── */}
+      {journeyDone && (() => {
+        const lm = LANDMARK_MAP[journeyDone.landmarkId];
+        return lm && (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setJourneyDone(null)}>
+            <div className="bg-slate-900 border-2 border-indigo-500/60 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <p className="text-sm font-bold text-indigo-400 uppercase tracking-widest animate-pulse">Landmark discovered!</p>
+              <div className="flex justify-center my-4" style={{ animation: 'wh-bob 1.4s ease-in-out infinite' }}>
+                <Ico src={lm.img} size="w-28 h-28" />
+              </div>
+              <h3 className="text-2xl font-bold text-white">{lm.name}</h3>
+              <p className="text-sm text-slate-400 italic mt-1">“{lm.flavor}”</p>
+              <p className="text-sm font-bold text-emerald-400 mt-3">Permanent perk: {lm.perkText}</p>
+              <p className="text-[11px] text-slate-500 mt-1">Rewards added to your pack (+10 Prosperity). The map stretches on…</p>
+              <button onClick={() => setJourneyDone(null)} className="mt-5 bg-indigo-500 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-indigo-400 transition">
+                Onward!
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Rare find modal ── */}
       {rareFind && (

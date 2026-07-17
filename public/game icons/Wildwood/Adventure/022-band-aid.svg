@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve">
+<path style="fill:#FFE05F;" d="M256,7.5L256,7.5c35.346,0,64,28.654,64,64v369c0,35.346-28.654,64-64,64l0,0
+	c-35.346,0-64-28.654-64-64v-369C192,36.154,220.654,7.5,256,7.5z"/>
+<g>
+	<rect x="192" y="320" style="fill:#FFBE14;" width="128" height="32"/>
+	<rect x="192" y="160" style="fill:#FFBE14;" width="128" height="32"/>
+</g>
+<g>
+	<rect x="272" y="72.5" style="fill:#FFFFFF;" width="16" height="15"/>
+	<rect x="224" y="72.5" style="fill:#FFFFFF;" width="16" height="15"/>
+	<rect x="248" y="120.5" style="fill:#FFFFFF;" width="16" height="15"/>
+	<rect x="248" y="376.5" style="fill:#FFFFFF;" width="16" height="15"/>
+	<rect x="272" y="424.5" style="fill:#FFFFFF;" width="16" height="15"/>
+	<rect x="224" y="424.5" style="fill:#FFFFFF;" width="16" height="15"/>
+</g>
+<path style="fill:#FFE05F;" d="M7.5,256L7.5,256c0-35.346,28.654-64,64-64h369c35.346,0,64,28.654,64,64l0,0
+	c0,35.346-28.654,64-64,64h-369C36.154,320,7.5,291.346,7.5,256z"/>
+<g>
+	<rect x="208" y="224" style="fill:#FFFFFF;" width="96" height="64"/>
+	<rect x="72.5" y="224" style="fill:#FFFFFF;" width="15" height="16"/>
+	<rect x="72.5" y="272" style="fill:#FFFFFF;" width="15" height="16"/>
+	<rect x="120.5" y="248" style="fill:#FFFFFF;" width="15" height="16"/>
+	<rect x="376.5" y="248" style="fill:#FFFFFF;" width="15" height="16"/>
+	<rect x="424.5" y="224" style="fill:#FFFFFF;" width="15" height="16"/>
+	<rect x="424.5" y="272" style="fill:#FFFFFF;" width="15" height="16"/>
+</g>
+<path d="M440.5,185H199V71.5c0-31.154,25.346-56.5,56.5-56.5S312,40.346,312,71.5V160h15V71.5C327,32.075,294.925,0,255.5,0
+	S184,32.075,184,71.5V185H71.5C32.075,185,0,217.075,0,256.5S32.075,328,71.5,328H312v112.5c0,31.154-25.346,56.5-56.5,56.5
+	S199,471.654,199,440.5V352h-15v88.5c0,39.425,32.075,71.5,71.5,71.5s71.5-32.075,71.5-71.5V328h113.5
+	c39.425,0,71.5-32.075,71.5-71.5S479.925,185,440.5,185z M440.5,313h-369C40.346,313,15,287.654,15,256.5S40.346,200,71.5,200h369
+	c31.154,0,56.5,25.346,56.5,56.5S471.654,313,440.5,313z"/>
+<path d="M200,296h111v-79H200V296z M215,232h81v49h-81V232z"/>
+<rect x="152" y="208" width="15" height="96"/>
+<rect x="344" y="208" width="15" height="96"/>
+<rect x="208" y="153" width="96" height="15"/>
+<rect x="208" y="345" width="96" height="15"/>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+<g>
+</g>
+</svg>
