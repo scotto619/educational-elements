@@ -1911,7 +1911,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
               const haveDish = countOf(dishId) > 0;
               const dishKnown = recipe && recipeKnown(recipe, gs);
               return (
-                <div key={f.id} className={`rounded-xl border-2 p-3 text-center ${befriended ? 'border-emerald-500/70 bg-emerald-950/40' : 'border-slate-700 bg-slate-900'}`}>
+                <div key={f.id} className={`rounded-xl border-2 p-3 text-center ${befriended ? 'border-emerald-500/70 bg-emerald-950' : 'border-slate-700 bg-slate-900'}`}>
                   <div className="flex justify-center" style={{ animation: befriended ? 'wh-bob 2.4s ease-in-out infinite' : undefined }}>
                     <Ico src={f.img} size="w-16 h-16" className={befriended ? '' : 'grayscale opacity-60'} />
                   </div>
