@@ -1330,8 +1330,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
               const gearLocked = def.needs && !gs.crafted.includes(def.needs);
               const bonus = type === 'hunt' ? caps.huntBonus : caps.scavBonus;
               return (
-                <div key={type} className="rounded-2xl border-2 border-emerald-900/60 overflow-hidden">
-                  <div className="p-4 bg-cover bg-center" style={{ backgroundImage: type === 'hunt' ? "linear-gradient(rgba(30,10,5,0.8), rgba(30,10,5,0.9)), url('/Loot/Backgrounds/bloodmoon.png')" : "linear-gradient(rgba(8,25,10,0.78), rgba(8,25,10,0.88)), url('/Loot/Backgrounds/day.png')" }}>
+                <div key={type} className="rounded-2xl border-2 border-emerald-900/60 overflow-hidden bg-slate-900 flex">
+                  <div className="p-4 bg-cover bg-center flex-1 flex flex-col" style={{ backgroundImage: type === 'hunt' ? "linear-gradient(rgba(30,10,5,0.8), rgba(30,10,5,0.9)), url('/Loot/Backgrounds/bloodmoon.png')" : "linear-gradient(rgba(8,25,10,0.78), rgba(8,25,10,0.88)), url('/Loot/Backgrounds/day.png')" }}>
                     <div className="flex items-center gap-3">
                       <Ico src={def.img} size="w-12 h-12" />
                       <div>
