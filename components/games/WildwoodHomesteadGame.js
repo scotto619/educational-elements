@@ -194,7 +194,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
 
   // ── Derived capacities ──────────────────────────────────────────────────────
   const capsOf = (cur) => {
-    let slots = INV_BASE_SLOTS, stack = STACK_BASE, chestSlots = 0, scavBonus = 0, huntBonus = 0, expSpeed = 0, cropYield = 0;
+    let slots = INV_BASE_SLOTS, stack = STACK_BASE, chestSlots = 0, scavBonus = 0, huntBonus = 0, expSpeed = 0, cropYield = 0, smeltSlots = SMELT_SLOTS;
     (cur.crafted || []).forEach((id) => {
       const c = CRAFT_MAP[id];
       if (!c) return;
@@ -205,8 +205,9 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       huntBonus += c.huntBonus || 0;
       expSpeed += c.expSpeed || 0;
       cropYield += c.effect?.cropYield || 0;
+      smeltSlots += c.smeltSlots || 0;
     });
-    return { slots, stack, chestSlots, scavBonus, huntBonus, expSpeed, cropYield };
+    return { slots, stack, chestSlots, scavBonus, huntBonus, expSpeed, cropYield, smeltSlots };
   };
   const caps = useMemo(() => capsOf(gs), [gs]);
   const prosperity = useMemo(() => prosperityOf(gs), [gs]);
@@ -723,13 +724,14 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const startSmelt = (recipe) => {
     const cur = gsRef.current;
     if (!cur.crafted.includes('smelter')) return;
+    const maxSlots = capsOf(cur).smeltSlots;
     const usedSmeltSlots = cur.smelting.map((s) => s.slot);
-    const slot = [0, 1].find((i) => i < SMELT_SLOTS && !usedSmeltSlots.includes(i));
-    if (slot === undefined) { showToast('The furnace is full!', 'error'); return; }
+    const slot = Array.from({ length: maxSlots }, (_, i) => i).find((i) => !usedSmeltSlots.includes(i));
+    if (slot === undefined) { showToast('The furnace is full — upgrade it for more slots!', 'error'); return; }
     if (countOf(recipe.oreId) < recipe.ore) return;
     if (!consumeFuel(recipe.fuel)) { showToast('Not enough wood fuel!', 'error'); return; }
     addLoot({ [recipe.oreId]: -recipe.ore });
-    const fast = 1 - Math.min(0.6, buffVal('smeltFast') / 100);
+    const fast = 1 - Math.min(0.75, buffVal('smeltFast') / 100);
     setGs((p) => ({ ...p, smelting: [...p.smelting, { slot, barId: recipe.barId, doneAt: now() + recipe.minutes * 60 * 1000 * fast }] }));
     dirtyRef.current = true;
   };
@@ -1386,7 +1388,10 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
           {/* Furnace */}
           {gs.crafted.includes('smelter') && (
             <Panel className="p-4">
-              <h3 className="font-bold text-slate-200 mb-2">Stone Furnace <span className="text-xs text-slate-500 font-normal">— real time, even while away · fuel: {fmtQty(fuelUnits)}</span></h3>
+              <h3 className="font-bold text-slate-200 mb-2">
+                {gs.crafted.includes('smelter4') ? 'Mithril Forgeheart' : gs.crafted.includes('smelter3') ? 'Blast Furnace' : gs.crafted.includes('smelter2') ? 'Twin-Bellows Furnace' : 'Stone Furnace'}
+                <span className="text-xs text-slate-500 font-normal"> — {gs.smelting.length}/{caps.smeltSlots} slots · fuel {fmtQty(fuelUnits)}{buffVal('smeltFast') > 0 ? ` · ${Math.min(75, buffVal('smeltFast'))}% faster` : ''} · runs while you're away</span>
+              </h3>
               <div className="flex flex-wrap gap-2 mb-3">
                 {gs.smelting.map((job) => {
                   const done = now() >= job.doneAt;
@@ -1403,7 +1408,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 {SMELT_RECIPES.map((r) => (
                   <button key={r.barId} onClick={() => startSmelt(r)}
-                    disabled={countOf(r.oreId) < r.ore || fuelUnits < r.fuel || gs.smelting.length >= SMELT_SLOTS}
+                    disabled={countOf(r.oreId) < r.ore || fuelUnits < r.fuel || gs.smelting.length >= caps.smeltSlots}
                     className="text-left rounded-xl border border-slate-700 bg-black/30 p-2.5 hover:border-amber-500/60 disabled:opacity-40 transition">
                     <p className="text-sm font-bold text-slate-200 flex items-center gap-1.5"><It id={r.barId} size="w-5 h-5" /> {ITEMS[r.barId].name}</p>
                     <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
