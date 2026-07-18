@@ -141,7 +141,7 @@ const Panel = ({ children, className = '' }) => (
 );
 
 // ═════════════════════════════════════════════════════════════════════════════
-const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () => {}, classmates = [] }) => {
+const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () => {}, classmates = [], onSwitchGame = null }) => {
   const [gs, setGs] = useState(defaultSave);
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState('gather');
@@ -1046,6 +1046,25 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                 {companionBonus.name} helps: {companionBonus.label}
               </span>
             )}
+          </div>
+        )}
+        {onSwitchGame && (
+          <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] font-bold">
+            <span className="text-white/50">Linked worlds:</span>
+            <button onClick={() => onSwitchGame('sweet-empire')}
+              className="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 border border-indigo-400/40 text-indigo-200 rounded-full px-3 py-1 transition"
+              title="Forge a mightier weapon — it boosts your gathering here!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Loot/Weapons/1.png" alt="" className="w-4 h-4 object-contain" />
+              Champion&apos;s Forge
+            </button>
+            <button onClick={() => onSwitchGame('champions-menagerie')}
+              className="flex items-center gap-1.5 bg-black/40 hover:bg-black/60 border border-amber-400/40 text-amber-200 rounded-full px-3 py-1 transition"
+              title="Raise a companion — it lends its talents here, and your discoveries feed it essence!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/shop/Egg/Egg.png" alt="" className="w-4 h-4 object-contain" />
+              Champion&apos;s Menagerie
+            </button>
           </div>
         )}
       </div>

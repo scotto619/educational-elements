@@ -165,7 +165,7 @@ const TABS = [
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════
-const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {}, classmates = [] }) => {
+const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {}, classmates = [], onSwitchGame = null }) => {
   const [gs, setGs] = useState(defaultSave);
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState('bakery');
@@ -735,6 +735,25 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
             </button>
           )}
         </div>
+        {onSwitchGame && (
+          <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] font-bold">
+            <span className="text-white/60">Linked worlds:</span>
+            <button onClick={() => onSwitchGame('champions-menagerie')}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/30 border border-white/25 rounded-full px-3 py-1 transition"
+              title="Your weapon's legend powers nothing here — but your essence discoveries flow to your creatures!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/shop/Egg/Egg.png" alt="" className="w-4 h-4 object-contain" />
+              Champion&apos;s Menagerie
+            </button>
+            <button onClick={() => onSwitchGame('wildwood-homestead')}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/30 border border-white/25 rounded-full px-3 py-1 transition"
+              title="Your legendary weapon doubles as a mighty axe in the Wildwood!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/game icons/Wildwood/Camping/001-fire.svg" alt="" className="w-4 h-4 object-contain" />
+              Wildwood Homestead
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

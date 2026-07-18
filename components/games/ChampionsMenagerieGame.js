@@ -87,7 +87,7 @@ const TABS = [
 const shinyFilter = 'hue-rotate(45deg) saturate(1.7) brightness(1.05)';
 
 // ═════════════════════════════════════════════════════════════════════════════
-const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = () => {}, classmates = [] }) => {
+const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = () => {}, classmates = [], onSwitchGame = null }) => {
   const [gs, setGs] = useState(defaultSave);
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState('menagerie');
@@ -360,6 +360,25 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
           <span className="bg-white/20 rounded-full px-3 py-1">🏆 {fmtInt(score)} collection score</span>
           {gs.creatures.some((c) => c.shiny) && <span className="bg-white/20 rounded-full px-3 py-1">✨ shiny owner!</span>}
         </div>
+        {onSwitchGame && (
+          <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] font-bold">
+            <span className="text-white/60">Linked worlds:</span>
+            <button onClick={() => onSwitchGame('sweet-empire')}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/30 border border-white/25 rounded-full px-3 py-1 transition"
+              title="Strike the forge — essence flows back to your creatures!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Loot/Weapons/1.png" alt="" className="w-4 h-4 object-contain" />
+              Champion&apos;s Forge
+            </button>
+            <button onClick={() => onSwitchGame('wildwood-homestead')}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/30 border border-white/25 rounded-full px-3 py-1 transition"
+              title="Your companion lends its talents in the Wildwood, and discoveries there earn essence!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/game icons/Wildwood/Camping/001-fire.svg" alt="" className="w-4 h-4 object-contain" />
+              Wildwood Homestead
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

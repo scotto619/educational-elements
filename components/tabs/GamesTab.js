@@ -463,6 +463,7 @@ const GamesTab = ({
             classData={currentClassData}
             storageKeySuffix={selectedGame.storageKeySuffix || ''}
             saveClassData={saveClassData}
+            onSwitchGame={(id) => { const g = availableGames.find((x) => x.id === id); if (g) setSelectedGame(g); }}
           />
         </div>
       </div>

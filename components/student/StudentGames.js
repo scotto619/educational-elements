@@ -822,6 +822,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
             classData={classData}
             classmates={classmates}
             storageKeySuffix={selectedGame.storageKeySuffix}
+            onSwitchGame={(id) => { const g = availableGames.find((x) => x.id === id); if (g) setSelectedGame(g); }}
           />
         </div>
       </div>
