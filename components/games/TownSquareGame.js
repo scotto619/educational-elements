@@ -26,7 +26,7 @@ import { ITEMS, GOLD_ICON, fmtQty } from './Homestead/homesteadConfig';
 import {
   PLOTS, STALL_TIERS, STALL_THEMES, MINIGAMES, MINIGAME_MAP, ringColorFor,
   canAfford, deductCost, fmtCost, DECOR, NETWORK_RATE, CHAT_BUBBLE_MS,
-  INTERACT_RADIUS, WORLD_MIN, WORLD_MAX, MOVE_SPEED,
+  INTERACT_RADIUS, WORLD_W, WORLD_H, MARGIN, MOVE_SPEED, CAMERA_LERP, EMPTY_PLOT_IMG,
 } from './TownSquare/townSquareConfig';
 import ChallengeOverlay from './TownSquare/MiniGames';
 
@@ -59,8 +59,11 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   const [, forceTick] = useState(0); // cheap re-render pulse for bubble expiry / gold display
 
   const containerRef = useRef(null);
+  const worldDivRef = useRef(null);
   const avatarDivRef = useRef(null);
-  const myPosRef = useRef({ x: 48, y: 55 });
+  const myPosRef = useRef({ x: WORLD_W / 2, y: WORLD_H / 2 });
+  const cameraRef = useRef({ x: 0, y: 0 });
+  const viewportSizeRef = useRef({ w: 900, h: 600 });
   const keysRef = useRef({ up: false, down: false, left: false, right: false });
   const remotePlayersStoreRef = useRef({});
   const challengesRef = useRef({});
@@ -163,14 +166,30 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     if (dx || dy) {
       const len = Math.hypot(dx, dy) || 1;
       const p = myPosRef.current;
-      const nx = clamp(p.x + (dx / len) * MOVE_SPEED, WORLD_MIN, WORLD_MAX);
-      const ny = clamp(p.y + (dy / len) * MOVE_SPEED, WORLD_MIN, WORLD_MAX);
+      const nx = clamp(p.x + (dx / len) * MOVE_SPEED, MARGIN, WORLD_W - MARGIN);
+      const ny = clamp(p.y + (dy / len) * MOVE_SPEED, MARGIN, WORLD_H - MARGIN);
       myPosRef.current = { x: nx, y: ny };
       if (avatarDivRef.current) {
-        avatarDivRef.current.style.left = `${nx}%`;
-        avatarDivRef.current.style.top = `${ny}%`;
+        avatarDivRef.current.style.left = `${nx}px`;
+        avatarDivRef.current.style.top = `${ny}px`;
       }
     }
+
+    // Camera smoothly follows the local player, clamped so we never scroll
+    // past the edges of the world (or beyond its extent, on tiny worlds).
+    const vp = viewportSizeRef.current;
+    const p = myPosRef.current;
+    const maxCamX = Math.max(0, WORLD_W - vp.w);
+    const maxCamY = Math.max(0, WORLD_H - vp.h);
+    const targetCamX = clamp(p.x - vp.w / 2, 0, maxCamX);
+    const targetCamY = clamp(p.y - vp.h / 2, 0, maxCamY);
+    const cam = cameraRef.current;
+    cam.x += (targetCamX - cam.x) * CAMERA_LERP;
+    cam.y += (targetCamY - cam.y) * CAMERA_LERP;
+    if (worldDivRef.current) {
+      worldDivRef.current.style.transform = `translate3d(${-cam.x}px, ${-cam.y}px, 0)`;
+    }
+
     animFrameRef.current = requestAnimationFrame(loop);
   }, []);
 
@@ -185,8 +204,12 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     localHomesteadRef.current = cloneHomestead(studentData?.homesteadData);
     localTownSquareRef.current = cloneTownSquare(studentData?.townSquareData);
 
-    const spawn = { x: 44 + Math.random() * 12, y: 55 + Math.random() * 10 };
+    const spawn = { x: WORLD_W / 2 + (Math.random() - 0.5) * 200, y: WORLD_H * 0.58 + (Math.random() - 0.5) * 140 };
     myPosRef.current = spawn;
+    cameraRef.current = {
+      x: clamp(spawn.x - viewportSizeRef.current.w / 2, 0, Math.max(0, WORLD_W - viewportSizeRef.current.w)),
+      y: clamp(spawn.y - viewportSizeRef.current.h / 2, 0, Math.max(0, WORLD_H - viewportSizeRef.current.h)),
+    };
 
     const me = getMeInfo();
     const playerRef = ref(database, `worldRooms/${code}/players/${myId}`);
@@ -203,7 +226,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
 
     networkIntervalRef.current = setInterval(() => {
       if (!myPlayerDbRef.current) return;
-      update(myPlayerDbRef.current, { x: Math.round(myPosRef.current.x * 10) / 10, y: Math.round(myPosRef.current.y * 10) / 10, updatedAt: Date.now() }).catch(() => {});
+      update(myPlayerDbRef.current, { x: Math.round(myPosRef.current.x), y: Math.round(myPosRef.current.y), updatedAt: Date.now() }).catch(() => {});
     }, NETWORK_RATE);
 
     flushIntervalRef.current = setInterval(() => {
@@ -268,6 +291,21 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
   }, []);
+
+  // Track the actual rendered viewport size so the camera knows how much of
+  // the (much bigger) world it can show at once.
+  useEffect(() => {
+    if (screen !== 'playing' || !containerRef.current) return;
+    const el = containerRef.current;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      viewportSizeRef.current = { w: rect.width || 900, h: rect.height || 600 };
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [screen, isFullscreen]);
 
   // ═══════════════════════════════════════════════════════════════════════
   // CHAT
@@ -470,7 +508,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
             Town Square
           </h2>
           <p className="text-lg mb-6 text-amber-100">
-            Walk around with your classmates, chat, build a market stall with Wildwood resources to trade your spare loot, and challenge friends to quick minigames!
+            Explore a big plaza with your classmates — the view follows you as you walk! Chat, build a market stall with Wildwood resources to trade your spare loot, and challenge friends to quick minigames.
           </p>
 
           <div className="grid grid-cols-2 gap-3 text-left text-sm mb-6 bg-black/20 rounded-2xl p-4">
@@ -556,62 +594,85 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         </div>
       </div>
 
-      {/* World */}
-      <div className="absolute inset-0">
-        {DECOR.map((d, i) => (
-          <div key={i} className="absolute pointer-events-none opacity-90" style={{ left: `${d.x}%`, top: `${d.y}%`, fontSize: d.size, transform: 'translate(-50%,-50%)' }}>
-            {d.emoji}
-          </div>
-        ))}
-
-        {/* Plots */}
-        {PLOTS.map((plot) => {
-          const stall = stallsByPlot[plot.id];
-          return (
-            <button
-              key={plot.id}
-              onClick={() => setActiveModal(stall ? (stall.ownerId === myIdRef.current ? { type: 'manage' } : { type: 'browse', sellerId: stall.ownerId }) : { type: 'build', plotId: plot.id })}
-              className="absolute flex flex-col items-center z-10"
-              style={{ left: `${plot.x}%`, top: `${plot.y}%`, transform: 'translate(-50%,-50%)' }}
+      {/* World — a viewport clipped to the panel, with a much bigger scrollable
+          world inside it. The inner div is moved directly via a ref in the
+          animation loop (not React state) so following the player stays smooth. */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          ref={worldDivRef}
+          className="absolute top-0 left-0"
+          style={{
+            width: WORLD_W,
+            height: WORLD_H,
+            background: `radial-gradient(circle at 50% 50%, #d6b370 0%, #c2a05e 22%, #a9884d 45%, #7f6b3a 70%, #5d4f2c 100%)`,
+            willChange: 'transform',
+            transform: `translate3d(${-cameraRef.current.x}px, ${-cameraRef.current.y}px, 0)`,
+          }}
+        >
+          {DECOR.map((d, i) => (
+            <div
+              key={i}
+              className="absolute pointer-events-none opacity-95"
+              style={{ left: d.x, top: d.y, transform: 'translate(-50%,-50%)' }}
             >
-              {stall ? (
-                <div className="rounded-xl px-2 py-1.5 shadow-lg text-center border-2 border-white/40" style={{ background: themeColor(stall.theme) }}>
-                  <div className="text-2xl leading-none">{STALL_TIERS[stall.tier - 1]?.icon}</div>
-                  <div className="text-[10px] font-bold text-white max-w-[70px] truncate">{stall.ownerName}</div>
-                </div>
+              {d.img ? (
+                <img src={d.img} alt="" style={{ width: d.size, height: d.size }} className="object-contain drop-shadow" />
               ) : (
-                <div className="rounded-xl px-2 py-1.5 border-2 border-dashed border-white/50 text-white/80 text-center bg-black/25">
-                  <div className="text-lg leading-none">➕</div>
-                  <div className="text-[9px]">Empty Plot</div>
-                </div>
+                <span style={{ fontSize: d.size, lineHeight: 1 }}>{d.emoji}</span>
               )}
+            </div>
+          ))}
+
+          {/* Plots */}
+          {PLOTS.map((plot) => {
+            const stall = stallsByPlot[plot.id];
+            const tierCfg = stall ? STALL_TIERS[stall.tier - 1] : null;
+            return (
+              <button
+                key={plot.id}
+                onClick={() => setActiveModal(stall ? (stall.ownerId === myIdRef.current ? { type: 'manage' } : { type: 'browse', sellerId: stall.ownerId }) : { type: 'build', plotId: plot.id })}
+                className="absolute flex flex-col items-center z-10"
+                style={{ left: plot.x, top: plot.y, transform: 'translate(-50%,-50%)' }}
+              >
+                {stall ? (
+                  <div className="rounded-xl px-2 py-1.5 shadow-lg text-center border-2 border-white/40" style={{ background: themeColor(stall.theme) }}>
+                    <img src={tierCfg?.img} alt="" className="w-9 h-9 mx-auto object-contain drop-shadow" />
+                    <div className="text-[10px] font-bold text-white max-w-[70px] truncate">{stall.ownerName}</div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl px-2 py-1.5 border-2 border-dashed border-white/50 text-white/80 text-center bg-black/25">
+                    <img src={EMPTY_PLOT_IMG} alt="" className="w-8 h-8 mx-auto object-contain opacity-70" />
+                    <div className="text-[9px]">Empty Plot</div>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Remote players */}
+          {Object.entries(remotePlayers).map(([id, p]) => (
+            <button
+              key={id}
+              onClick={() => setActiveModal({ type: 'player', id, name: p.name, x: p.x, y: p.y, avatarBase: p.avatarBase, level: p.level })}
+              className="absolute flex flex-col items-center z-20"
+              style={{ left: p.x, top: p.y, transition: 'left 0.15s linear, top 0.15s linear', transform: 'translate(-50%,-50%)' }}
+            >
+              {p.bubble && p.bubble.expiresAt > now && (
+                <div className="bg-white text-slate-800 text-xs rounded-xl px-2 py-1 mb-1 shadow max-w-[110px] truncate">{p.bubble.text}</div>
+              )}
+              <img src={getAvatarImage(p.avatarBase, p.level)} alt="" className="w-10 h-10 rounded-full border-2 shadow-lg bg-white/80" style={{ borderColor: p.ring || '#fff' }} />
+              <div className="text-[10px] font-bold text-white bg-black/55 rounded px-1.5 mt-0.5 max-w-[80px] truncate">{p.name}</div>
             </button>
-          );
-        })}
+          ))}
 
-        {/* Remote players */}
-        {Object.entries(remotePlayers).map(([id, p]) => (
-          <button
-            key={id}
-            onClick={() => setActiveModal({ type: 'player', id, name: p.name, x: p.x, y: p.y, avatarBase: p.avatarBase, level: p.level })}
-            className="absolute flex flex-col items-center z-20"
-            style={{ left: `${p.x}%`, top: `${p.y}%`, transition: 'left 0.15s linear, top 0.15s linear', transform: 'translate(-50%,-50%)' }}
-          >
-            {p.bubble && p.bubble.expiresAt > now && (
-              <div className="bg-white text-slate-800 text-xs rounded-xl px-2 py-1 mb-1 shadow max-w-[110px] truncate">{p.bubble.text}</div>
+          {/* Me */}
+          <div ref={avatarDivRef} className="absolute flex flex-col items-center z-20 pointer-events-none" style={{ left: myPosRef.current.x, top: myPosRef.current.y, transform: 'translate(-50%,-50%)' }}>
+            {myBubble && myBubble.expiresAt > now && (
+              <div className="bg-yellow-300 text-slate-900 text-xs rounded-xl px-2 py-1 mb-1 shadow max-w-[110px] truncate">{myBubble.text}</div>
             )}
-            <img src={getAvatarImage(p.avatarBase, p.level)} alt="" className="w-10 h-10 rounded-full border-2 shadow-lg bg-white/80" style={{ borderColor: p.ring || '#fff' }} />
-            <div className="text-[10px] font-bold text-white bg-black/55 rounded px-1.5 mt-0.5 max-w-[80px] truncate">{p.name}</div>
-          </button>
-        ))}
-
-        {/* Me */}
-        <div ref={avatarDivRef} className="absolute flex flex-col items-center z-20 pointer-events-none" style={{ left: `${myPosRef.current.x}%`, top: `${myPosRef.current.y}%`, transform: 'translate(-50%,-50%)' }}>
-          {myBubble && myBubble.expiresAt > now && (
-            <div className="bg-yellow-300 text-slate-900 text-xs rounded-xl px-2 py-1 mb-1 shadow max-w-[110px] truncate">{myBubble.text}</div>
-          )}
-          <img src={myAvatarSrc} alt="" className="w-11 h-11 rounded-full border-2 border-yellow-300 shadow-xl bg-white/80" />
-          <div className="text-[10px] font-bold text-white bg-black/65 rounded px-1.5 mt-0.5">{myName}</div>
+            <img src={myAvatarSrc} alt="" className="w-11 h-11 rounded-full border-2 border-yellow-300 shadow-xl bg-white/80" />
+            <div className="text-[10px] font-bold text-white bg-black/65 rounded px-1.5 mt-0.5">{myName}</div>
+          </div>
         </div>
       </div>
 
@@ -699,7 +760,11 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       {incomingChallenge && (
         <div className="fixed inset-0 z-[190] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-yellow-400/40 rounded-3xl p-6 max-w-sm w-full text-center text-white shadow-2xl">
-            <div className="text-5xl mb-3">{MINIGAME_MAP[incomingChallenge[1].game]?.icon}</div>
+            {MINIGAME_MAP[incomingChallenge[1].game]?.iconImg ? (
+              <img src={MINIGAME_MAP[incomingChallenge[1].game].iconImg} alt="" className="w-16 h-16 mx-auto mb-3 object-contain" />
+            ) : (
+              <div className="text-5xl mb-3">{MINIGAME_MAP[incomingChallenge[1].game]?.icon}</div>
+            )}
             <div className="text-lg font-bold mb-1">{incomingChallenge[1].from.name} challenges you!</div>
             <div className="text-white/60 text-sm mb-5">{MINIGAME_MAP[incomingChallenge[1].game]?.name}</div>
             <div className="flex gap-3">
@@ -742,11 +807,14 @@ const DpadBtn = ({ label, onDown, onUp }) => (
   </button>
 );
 
-const ModalShell = ({ title, icon, onClose, children }) => (
+const ModalShell = ({ title, icon, iconSrc, onClose, children }) => (
   <div className="absolute inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div className="bg-gradient-to-b from-slate-800 to-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-sm max-h-[90%] overflow-y-auto p-5 text-white">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-extrabold flex items-center gap-2"><span className="text-xl">{icon}</span>{title}</h3>
+        <h3 className="text-lg font-extrabold flex items-center gap-2">
+          {iconSrc ? <img src={iconSrc} alt="" className="w-6 h-6 object-contain" /> : <span className="text-xl">{icon}</span>}
+          {title}
+        </h3>
         <button onClick={onClose} className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg px-2.5 py-1">✕</button>
       </div>
       {children}
@@ -773,14 +841,14 @@ const CostRow = ({ cost, inv }) => (
 function BuildModal({ plotId, myStall, near, inv, onBuild, onClose }) {
   const tier = STALL_TIERS[0];
   return (
-    <ModalShell title="Empty Plot" icon="➕" onClose={onClose}>
+    <ModalShell title="Empty Plot" iconSrc={EMPTY_PLOT_IMG} onClose={onClose}>
       {myStall ? (
         <div className="text-center text-white/70 text-sm py-4">
           You already own a stall. Abandon it from &quot;Manage Stall&quot; first if you&apos;d like to build here instead.
         </div>
       ) : (
         <>
-          <div className="text-center text-4xl mb-2">{tier.icon}</div>
+          <img src={tier.img} alt="" className="w-16 h-16 mx-auto mb-2 object-contain" />
           <div className="text-center font-bold mb-1">{tier.name}</div>
           <div className="text-center text-white/50 text-xs mb-3">Holds {tier.slots} items for sale</div>
           <CostRow cost={tier.cost} inv={inv} />
@@ -807,7 +875,7 @@ function ManageStallModal({ stall, inv, near, onStock, onUnstock, onUpgrade, onT
   const invOptions = Object.entries(inv).filter(([, v]) => v > 0);
 
   return (
-    <ModalShell title={`Your ${tierCfg.name}`} icon={tierCfg.icon} onClose={onClose}>
+    <ModalShell title={`Your ${tierCfg.name}`} iconSrc={tierCfg.img} onClose={onClose}>
       <div className="mb-4">
         <div className="text-xs text-white/50 mb-1">Stock ({Object.keys(stall.listings).length}/{tierCfg.slots} slots)</div>
         {Object.keys(stall.listings).length === 0 && <div className="text-white/40 text-xs italic mb-2">Nothing stocked yet.</div>}
@@ -873,7 +941,7 @@ function BrowseStallModal({ stall, myGold, near, onBuy, onClose }) {
   const tierCfg = STALL_TIERS[stall.tier - 1];
   const listings = Object.entries(stall.listings || {});
   return (
-    <ModalShell title={`${stall.ownerName}'s ${tierCfg?.name || 'Stall'}`} icon={tierCfg?.icon || '🏪'} onClose={onClose}>
+    <ModalShell title={`${stall.ownerName}'s ${tierCfg?.name || 'Stall'}`} iconSrc={tierCfg?.img} onClose={onClose}>
       <div className="flex items-center gap-2 mb-3 text-sm text-white/60">
         <img src={GOLD_ICON} alt="" className="w-4 h-4" /> You have {fmtQty(myGold)} gold
       </div>
@@ -914,7 +982,11 @@ function PlayerModal({ player, near, onChallenge, onClose }) {
           <div className="grid grid-cols-2 gap-2">
             {MINIGAMES.map((g) => (
               <button key={g.id} onClick={() => onChallenge(g.id)} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 text-center">
-                <div className="text-2xl mb-1">{g.icon}</div>
+                {g.iconImg ? (
+                  <img src={g.iconImg} alt="" className="w-8 h-8 mx-auto mb-1 object-contain" />
+                ) : (
+                  <div className="text-2xl mb-1">{g.icon}</div>
+                )}
                 <div className="text-xs font-semibold">{g.name}</div>
               </button>
             ))}

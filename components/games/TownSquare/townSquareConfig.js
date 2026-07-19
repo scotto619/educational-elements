@@ -12,28 +12,42 @@
 // studentData.homesteadData (inv/gold) via updateStudentData, exactly like
 // WildwoodHomesteadGame.js, so building/trading really consumes & rewards
 // real Wildwood resources.
+//
+// The plaza is a big scrollable world (WORLD_W x WORLD_H pixels) — bigger
+// than any single screen — with a camera that follows the local player, so
+// there's real room to walk around. All positions below are plain pixel
+// coordinates inside that world.
 // ─────────────────────────────────────────────────────────────────────────────
+
+const TS = '/game icons/Town Square';
+const WW = '/game icons/Wildwood';
 
 export const NETWORK_RATE = 120; // ms between position/state syncs
 export const CHAT_BUBBLE_MS = 5000;
-export const INTERACT_RADIUS = 9; // % units — how close you must be to a stall/player to interact
-export const WORLD_MIN = 3;
-export const WORLD_MAX = 97;
-export const MOVE_SPEED = 0.5; // % of world per animation tick at full key-hold
+
+export const WORLD_W = 2200;
+export const WORLD_H = 1400;
+export const MARGIN = 60; // keep the avatar this far from the world edge
+export const INTERACT_RADIUS = 150; // px — how close you must be to a stall/player to interact
+export const MOVE_SPEED = 4.2; // px per animation frame at full key-hold
+export const CAMERA_LERP = 0.12; // how quickly the camera catches up to the player
+
+const CX = WORLD_W / 2;
+const CY = WORLD_H / 2;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// STALL PLOTS — fixed claimable locations around the plaza (percentage coords)
+// STALL PLOTS — fixed claimable locations around the plaza (pixel coords)
 // ═══════════════════════════════════════════════════════════════════════════
 export const PLOTS = [
-  { id: 'plot1', x: 10, y: 34 },
-  { id: 'plot2', x: 18, y: 14 },
-  { id: 'plot3', x: 37, y: 6 },
-  { id: 'plot4', x: 63, y: 6 },
-  { id: 'plot5', x: 82, y: 14 },
-  { id: 'plot6', x: 90, y: 34 },
-  { id: 'plot7', x: 16, y: 82 },
-  { id: 'plot8', x: 84, y: 82 },
-  { id: 'plot9', x: 50, y: 90 },
+  { id: 'plot1', x: WORLD_W * 0.10, y: WORLD_H * 0.34 },
+  { id: 'plot2', x: WORLD_W * 0.18, y: WORLD_H * 0.14 },
+  { id: 'plot3', x: WORLD_W * 0.37, y: WORLD_H * 0.06 },
+  { id: 'plot4', x: WORLD_W * 0.63, y: WORLD_H * 0.06 },
+  { id: 'plot5', x: WORLD_W * 0.82, y: WORLD_H * 0.14 },
+  { id: 'plot6', x: WORLD_W * 0.90, y: WORLD_H * 0.34 },
+  { id: 'plot7', x: WORLD_W * 0.16, y: WORLD_H * 0.82 },
+  { id: 'plot8', x: WORLD_W * 0.84, y: WORLD_H * 0.82 },
+  { id: 'plot9', x: WORLD_W * 0.50, y: WORLD_H * 0.90 },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -43,7 +57,7 @@ export const STALL_TIERS = [
   {
     tier: 1,
     name: 'Roadside Cart',
-    icon: '🛒',
+    img: `${TS}/009-cart.svg`,
     slots: 3,
     cost: { beech_wood: 12, stone: 6 },
     color: '#a16207',
@@ -51,7 +65,7 @@ export const STALL_TIERS = [
   {
     tier: 2,
     name: 'Timber Stall',
-    icon: '🏪',
+    img: `${TS}/002-market.svg`,
     slots: 5,
     cost: { cherry_wood: 10, stone: 15, fiber: 12 },
     color: '#b45309',
@@ -59,12 +73,14 @@ export const STALL_TIERS = [
   {
     tier: 3,
     name: 'Grand Bazaar Stand',
-    icon: '🏛️',
+    img: `${TS}/003-medieval-house.svg`,
     slots: 8,
     cost: { ironroot_wood: 15, iron_bar: 6, emerald: 2 },
     color: '#7c3aed',
   },
 ];
+
+export const EMPTY_PLOT_IMG = `${TS}/001-stand.svg`;
 
 export const STALL_THEMES = [
   { id: 'red', label: 'Crimson', color: '#dc2626' },
@@ -79,14 +95,24 @@ export const STALL_THEMES = [
 // MINIGAMES — quick head-to-head challenges playable anywhere in the plaza
 // ═══════════════════════════════════════════════════════════════════════════
 export const MINIGAMES = [
-  { id: 'rps', name: 'Rock Paper Scissors', icon: '✊', desc: 'Best of 3 throws' },
-  { id: 'coinflip', name: 'Coin Flip', icon: '🪙', desc: 'Call it in the air' },
+  { id: 'rps', name: 'Rock Paper Scissors', icon: '✊', iconImg: `${TS}/013-rock-paper-scissors.svg`, desc: 'Best of 3 throws' },
+  { id: 'coinflip', name: 'Coin Flip', icon: '🪙', iconImg: `${TS}/017-coin-heads.svg`, desc: 'Call it in the air' },
   { id: 'tictactoe', name: 'Tic Tac Toe', icon: '⭕', desc: 'Classic 3x3 grid' },
   { id: 'connect4', name: 'Connect Four', icon: '🔴', desc: 'Line up 4 in a row' },
   { id: 'quickdraw', name: 'Quick Draw', icon: '⚡', desc: 'Fastest tap wins' },
 ];
 
 export const MINIGAME_MAP = Object.fromEntries(MINIGAMES.map((m) => [m.id, m]));
+
+// Rock/Paper/Scissors throw icons (rock reuses the "stone" icon from the
+// Town Square pack — there's no dedicated rock icon, and it's a perfect fit).
+export const RPS_THROWS = [
+  { id: 'rock', img: `${TS}/012-stone.svg` },
+  { id: 'paper', img: `${TS}/014-paper.svg` },
+  { id: 'scissors', img: `${TS}/015-scissors.svg` },
+];
+export const COIN_HEADS_IMG = `${TS}/017-coin-heads.svg`;
+export const COIN_TAILS_IMG = `${TS}/016-coin-tails.svg`;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AVATAR helpers
@@ -125,18 +151,57 @@ export const fmtCost = (cost, ITEMS) =>
     .map(([id, qty]) => `${qty}× ${ITEMS[id]?.name || id}`)
     .join(', ');
 
-// Decorative plaza scenery (purely visual — emoji layered on CSS gradients so
-// no new art assets are required).
+// ═══════════════════════════════════════════════════════════════════════════
+// Decorative plaza scenery — real SVGs from the Town Square icon pack and the
+// Wildwood icon folders (trees/flowers/lamps), spread across the bigger
+// world. `emoji` entries are used only where no matching icon exists (the
+// fountain centerpiece).
+// ═══════════════════════════════════════════════════════════════════════════
 export const DECOR = [
-  { emoji: '⛲', x: 50, y: 48, size: 64 },
-  { emoji: '🌳', x: 6, y: 8, size: 40 },
-  { emoji: '🌳', x: 95, y: 8, size: 40 },
-  { emoji: '🌳', x: 3, y: 60, size: 36 },
-  { emoji: '🌳', x: 97, y: 60, size: 36 },
-  { emoji: '🎪', x: 50, y: 4, size: 48 },
-  { emoji: '🏮', x: 30, y: 20, size: 26 },
-  { emoji: '🏮', x: 70, y: 20, size: 26 },
-  { emoji: '🪧', x: 50, y: 20, size: 30 },
-  { emoji: '🌸', x: 12, y: 50, size: 22 },
-  { emoji: '🌸', x: 88, y: 50, size: 22 },
+  // Centerpiece
+  { emoji: '⛲', x: CX, y: CY, size: 90 },
+
+  // Landmark + flavor buildings from the Town Square pack
+  { img: `${TS}/006-tower.svg`, x: CX, y: WORLD_H * 0.075, size: 140 },
+  { img: `${TS}/005-banners.svg`, x: WORLD_W * 0.32, y: WORLD_H * 0.12, size: 70 },
+  { img: `${TS}/005-banners.svg`, x: WORLD_W * 0.68, y: WORLD_H * 0.12, size: 70 },
+  { img: `${TS}/010-caravan.svg`, x: WORLD_W * 0.05, y: CY, size: 110 },
+  { img: `${TS}/007-old-map.svg`, x: WORLD_W * 0.95, y: CY, size: 90 },
+  { img: `${TS}/008-medieval-house-1.svg`, x: WORLD_W * 0.06, y: WORLD_H * 0.09, size: 100 },
+  { img: `${TS}/008-medieval-house-1.svg`, x: WORLD_W * 0.94, y: WORLD_H * 0.09, size: 100 },
+
+  // Trees ringing the outer edges (Wildwood)
+  { img: `${WW}/Trees/001-beech.svg`, x: WORLD_W * 0.03, y: WORLD_H * 0.05, size: 90 },
+  { img: `${WW}/Trees/005-banyan.svg`, x: WORLD_W * 0.97, y: WORLD_H * 0.05, size: 90 },
+  { img: `${WW}/Trees/007-cherry-tree.svg`, x: WORLD_W * 0.03, y: WORLD_H * 0.95, size: 90 },
+  { img: `${WW}/Trees/001-beech.svg`, x: WORLD_W * 0.97, y: WORLD_H * 0.95, size: 90 },
+  { img: `${WW}/Trees/006-olive-tree.svg`, x: WORLD_W * 0.23, y: WORLD_H * 0.95, size: 70 },
+  { img: `${WW}/Trees/007-cherry-tree.svg`, x: WORLD_W * 0.77, y: WORLD_H * 0.95, size: 70 },
+  { img: `${WW}/Trees/005-banyan.svg`, x: WORLD_W * 0.50, y: WORLD_H * 0.03, size: 80 },
+
+  // Flowers + nature accents nearer the plaza ring
+  { img: `${WW}/Nature/010-tulip.svg`, x: WORLD_W * 0.25, y: WORLD_H * 0.44, size: 42 },
+  { img: `${WW}/Nature/011-sunflower.svg`, x: WORLD_W * 0.75, y: WORLD_H * 0.44, size: 46 },
+  { img: `${WW}/Nature/006-mushroom.svg`, x: WORLD_W * 0.25, y: WORLD_H * 0.62, size: 36 },
+  { img: `${WW}/Nature/010-tulip.svg`, x: WORLD_W * 0.75, y: WORLD_H * 0.62, size: 40 },
+  { img: `${WW}/Nature/025-grass.svg`, x: WORLD_W * 0.14, y: WORLD_H * 0.22, size: 32 },
+  { img: `${WW}/Nature/025-grass.svg`, x: WORLD_W * 0.86, y: WORLD_H * 0.22, size: 32 },
+  { img: `${WW}/Nature/025-grass.svg`, x: WORLD_W * 0.14, y: WORLD_H * 0.78, size: 32 },
+  { img: `${WW}/Nature/025-grass.svg`, x: WORLD_W * 0.86, y: WORLD_H * 0.78, size: 32 },
+  { img: `${WW}/Nature/025-grass.svg`, x: CX, y: WORLD_H * 0.20, size: 30 },
+
+  // Lamp posts between plots
+  { img: `${WW}/Camping/002-oil-lamp.svg`, x: WORLD_W * 0.27, y: WORLD_H * 0.30, size: 40 },
+  { img: `${WW}/Camping/002-oil-lamp.svg`, x: WORLD_W * 0.73, y: WORLD_H * 0.30, size: 40 },
+  { img: `${WW}/Camping/002-oil-lamp.svg`, x: WORLD_W * 0.27, y: WORLD_H * 0.70, size: 40 },
+  { img: `${WW}/Camping/002-oil-lamp.svg`, x: WORLD_W * 0.73, y: WORLD_H * 0.70, size: 40 },
+
+  // Crates near the fountain — a bit of marketplace clutter
+  { img: `${WW}/More/004-crate.svg`, x: CX - 70, y: CY + 60, size: 38 },
+  { img: `${WW}/More/004-crate.svg`, x: CX + 80, y: CY - 50, size: 34 },
+
+  // Sky flavor
+  { img: `${WW}/Nature/017-sun.svg`, x: WORLD_W * 0.06, y: WORLD_H * 0.045, size: 64 },
+  { img: `${WW}/Nature/015-cloud.svg`, x: WORLD_W * 0.40, y: WORLD_H * 0.04, size: 60 },
+  { img: `${WW}/Nature/015-cloud.svg`, x: WORLD_W * 0.88, y: WORLD_H * 0.04, size: 54 },
 ];

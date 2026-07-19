@@ -17,21 +17,26 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { database } from '../../../utils/firebase';
 import { ref, onValue, update, runTransaction, remove } from 'firebase/database';
+import { RPS_THROWS, COIN_HEADS_IMG, COIN_TAILS_IMG } from './townSquareConfig';
 
 const pathFor = (classCode, challengeId) => `worldRooms/${classCode}/challenges/${challengeId}`;
 
 // ── Shared shell every minigame renders inside ──────────────────────────────
-const Shell = ({ title, icon, opponentName, onForfeit, children }) => (
+const Shell = ({ title, icon, iconSrc, opponentName, onForfeit, children }) => (
   <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <motion.div
       initial={{ scale: 0.85, opacity: 0, y: 20 }}
       animate={{ scale: 1, opacity: 1, y: 0 }}
       className="bg-gradient-to-b from-slate-800 to-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-md p-6 text-white relative overflow-hidden"
     >
-      <div className="absolute -top-10 -right-10 text-8xl opacity-10 select-none">{icon}</div>
+      {iconSrc ? (
+        <img src={iconSrc} alt="" className="absolute -top-8 -right-8 w-32 h-32 opacity-10 select-none object-contain" />
+      ) : (
+        <div className="absolute -top-10 -right-10 text-8xl opacity-10 select-none">{icon}</div>
+      )}
       <div className="flex items-center justify-between mb-4 relative">
         <h3 className="text-xl font-extrabold flex items-center gap-2">
-          <span className="text-2xl">{icon}</span> {title}
+          {iconSrc ? <img src={iconSrc} alt="" className="w-7 h-7 object-contain" /> : <span className="text-2xl">{icon}</span>} {title}
         </h3>
         <button
           onClick={onForfeit}
@@ -66,11 +71,7 @@ const ResultBanner = ({ result, myId }) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // ROCK PAPER SCISSORS
 // ═══════════════════════════════════════════════════════════════════════════
-const THROWS = [
-  { id: 'rock', icon: '🪨' },
-  { id: 'paper', icon: '📄' },
-  { id: 'scissors', icon: '✂️' },
-];
+const THROWS = RPS_THROWS;
 const beats = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
 
 function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, onForfeit }) {
@@ -125,7 +126,7 @@ function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, i
   if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
 
   return (
-    <Shell title="Rock Paper Scissors" icon="✊" opponentName={opponentName} onForfeit={onForfeit}>
+    <Shell title="Rock Paper Scissors" icon="✊" iconSrc="/game icons/Town Square/013-rock-paper-scissors.svg" opponentName={opponentName} onForfeit={onForfeit}>
       <div className="flex justify-center gap-6 mb-5 text-sm">
         <div className="bg-white/5 rounded-xl px-4 py-2 text-center">
           <div className="text-white/50 text-xs">You</div>
@@ -139,9 +140,9 @@ function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, i
 
       {bothIn ? (
         <div className="flex items-center justify-center gap-8 mb-4">
-          <div className="text-6xl">{THROWS.find((t) => t.id === myThrow)?.icon}</div>
+          <img src={THROWS.find((t) => t.id === myThrow)?.img} alt={myThrow} className="w-16 h-16 object-contain" />
           <div className="text-2xl text-white/40">vs</div>
-          <div className="text-6xl">{THROWS.find((t) => t.id === oppThrow)?.icon}</div>
+          <img src={THROWS.find((t) => t.id === oppThrow)?.img} alt={oppThrow} className="w-16 h-16 object-contain" />
         </div>
       ) : (
         <div className="text-center text-white/60 mb-4 h-16 flex items-center justify-center">
@@ -167,11 +168,11 @@ function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, i
               key={t.id}
               disabled={!!myThrow}
               onClick={() => throwHand(t.id)}
-              className={`text-4xl py-4 rounded-2xl border-2 transition-all ${
+              className={`py-4 rounded-2xl border-2 transition-all flex items-center justify-center ${
                 myThrow === t.id ? 'border-emerald-400 bg-emerald-500/20 scale-105' : 'border-white/10 bg-white/5 hover:bg-white/10 hover:scale-105'
               } ${myThrow && myThrow !== t.id ? 'opacity-30' : ''}`}
             >
-              {t.icon}
+              <img src={t.img} alt={t.id} className="w-10 h-10 object-contain" />
             </button>
           ))}
         </div>
@@ -224,14 +225,14 @@ function CoinFlip({ classCode, challengeId, myId, myName, opponentId, opponentNa
   const winnerName = winnerId === myId ? myName : opponentName;
 
   return (
-    <Shell title="Coin Flip" icon="🪙" opponentName={opponentName} onForfeit={onForfeit}>
+    <Shell title="Coin Flip" icon="🪙" iconSrc={COIN_HEADS_IMG} opponentName={opponentName} onForfeit={onForfeit}>
       <div className="text-center py-6">
         <motion.div
           animate={result || flipping ? { rotateY: [0, 1440] } : {}}
           transition={{ duration: 1.1 }}
-          className="text-8xl mb-4 inline-block"
+          className="mb-4 inline-block"
         >
-          {result === 'tails' ? '🪙' : '🪙'}
+          <img src={result === 'tails' ? COIN_TAILS_IMG : COIN_HEADS_IMG} alt="" className="w-24 h-24 object-contain drop-shadow-lg" />
         </motion.div>
         <div className="text-white/60 text-sm mb-4">
           {!state.call && isCaller && 'Call it in the air!'}
