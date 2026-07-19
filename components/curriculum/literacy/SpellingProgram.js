@@ -1,6 +1,6 @@
 // components/curriculum/literacy/SpellingProgram.js
 // ENHANCED SPELLING PROGRAM WITH ALL LEVELS AND FEATURES
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 // Reading passage collections
 import { LEVEL_1_PASSAGES } from './passages/Level1Passages';
@@ -714,13 +714,29 @@ const SpellingProgram = ({
   showToast = () => {},
   students = [],
   saveData = () => {},
-  loadedData = {}
+  loadedData = {},
+  onDirtyChange = () => {}
 }) => {
   const [groups, setGroups] = useState(loadedData?.spellingGroups || []);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showListSelector, setShowListSelector] = useState(false);
   const [viewingList, setViewingList] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSavingGroups, setIsSavingGroups] = useState(false);
+  // Tracks whether we've ever hydrated groups from Firebase in THIS mount, so
+  // a later re-render with a differently-shaped (but still loading/partial)
+  // loadedData object can't quietly reset real assignments back to defaults.
+  const hasHydratedRef = useRef(false);
+  const hasUnsavedChangesRef = useRef(false);
+  hasUnsavedChangesRef.current = hasUnsavedChanges;
+
+  // Let the parent (ResourcesTab) know whether it's safe to navigate away
+  // without losing edits — used to guard the "Back to Resources" button.
+  useEffect(() => {
+    onDirtyChange(hasUnsavedChanges);
+    return () => onDirtyChange(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasUnsavedChanges]);
   const [showActivityInstructions, setShowActivityInstructions] = useState(null);
   const [showStudentAssignment, setShowStudentAssignment] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState('1');
@@ -782,13 +798,32 @@ const SpellingProgram = ({
     return selectedList.texts.find(text => text.type === selectedTextType) || selectedList.texts[0] || null;
   }, [selectedList, selectedTextType]);
 
-  // Initialize groups if empty
+  // ── Hydrate groups from Firebase, safely ────────────────────────────────────
+  // This single effect replaces two overlapping ones that used to run on every
+  // identity change of `loadedData` (which happens on ANY class-data update,
+  // not just spelling saves). The old logic could reset real assignments back
+  // to empty defaults if a re-render delivered a `loadedData` that momentarily
+  // looked empty/stale — most commonly right after a save, when this
+  // component remounts (tool picker → tool) faster than the fresh class
+  // snapshot arrives. That "reset to defaults" then got saved over the real
+  // data if the teacher, confused, edited or re-saved.
+  //
+  // Guards now in place:
+  //  - Never stomp on local edits: skip syncing while hasUnsavedChanges is true.
+  //  - Only fall back to "create default groups" once per mount, and only if
+  //    Firebase has truly never had spelling groups saved before.
   useEffect(() => {
-    // Load from Firebase data only
+    if (hasUnsavedChangesRef.current) return; // don't clobber in-progress edits
+
     if (loadedData?.spellingGroups && loadedData.spellingGroups.length > 0) {
-      setGroups(loadedData.spellingGroups);
-      setHasUnsavedChanges(false);
-    } else if (loadedData?.fluencyGroups && loadedData.fluencyGroups.length > 0) {
+      if (JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
+        setGroups(loadedData.spellingGroups);
+      }
+      hasHydratedRef.current = true;
+      return;
+    }
+
+    if (loadedData?.fluencyGroups && loadedData.fluencyGroups.length > 0) {
       const converted = loadedData.fluencyGroups.map(group => ({
         id: group.id,
         name: group.name,
@@ -797,9 +832,15 @@ const SpellingProgram = ({
         assignedLists: Array.from(new Set((group.assignedTexts || []).map(textId => textId.split('-')[0]))),
       }));
       setGroups(converted);
-      setHasUnsavedChanges(false);
-    } else if (loadedData !== undefined && groups.length === 0) {
-      // Only create defaults if no groups exist in Firebase and local state is empty
+      hasHydratedRef.current = true;
+      return;
+    }
+
+    // No spelling or fluency groups in Firebase. Only seed local defaults the
+    // FIRST time we observe this in a given mount — never again afterwards,
+    // so a later transient/incomplete loadedData object can't wipe real
+    // groups that were already created locally (or arrived just after).
+    if (!hasHydratedRef.current && groups.length === 0) {
       const defaultGroups = [
         { id: 1, name: "Group 1", color: "bg-blue-500", students: [], assignedLists: [] },
         { id: 2, name: "Group 2", color: "bg-green-500", students: [], assignedLists: [] },
@@ -808,31 +849,8 @@ const SpellingProgram = ({
       setGroups(defaultGroups);
       setHasUnsavedChanges(true);
     }
+    hasHydratedRef.current = true;
   }, [loadedData]);
-
-  // Update groups when loadedData changes (Firebase data loaded) - but avoid infinite loops
-  useEffect(() => {
-    if (loadedData?.spellingGroups &&
-        Array.isArray(loadedData.spellingGroups) &&
-        loadedData.spellingGroups.length > 0 &&
-        JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
-      setGroups(loadedData.spellingGroups);
-      setHasUnsavedChanges(false);
-    } else if (loadedData?.fluencyGroups &&
-               Array.isArray(loadedData.fluencyGroups) &&
-               loadedData.fluencyGroups.length > 0 &&
-               (!loadedData?.spellingGroups || loadedData.spellingGroups.length === 0)) {
-      const converted = loadedData.fluencyGroups.map(group => ({
-        id: group.id,
-        name: group.name,
-        color: group.color || 'bg-blue-500',
-        students: group.students || [],
-        assignedLists: Array.from(new Set((group.assignedTexts || []).map(textId => textId.split('-')[0]))),
-      }));
-      setGroups(converted);
-      setHasUnsavedChanges(false);
-    }
-  }, [loadedData?.spellingGroups, loadedData?.fluencyGroups]);
 
   // Clean up groups when students change (remove deleted students from groups)
   useEffect(() => {
@@ -856,19 +874,36 @@ const SpellingProgram = ({
     }
   }, [students]);
 
-  // Manual save function
-  const saveGroups = () => {
-    try {
-      if (!saveData || typeof saveData !== 'function') {
-        console.error('❌ saveData function not available');
-        return;
-      }
+  // Manual save function — now genuinely async, with real success/failure
+  // feedback (previously flipped "Unsaved changes" off immediately, before
+  // the network call even resolved, which is what made failed/slow saves
+  // look successful right up until the assignment quietly reverted).
+  const saveGroups = async () => {
+    if (!saveData || typeof saveData !== 'function') {
+      console.error('❌ saveData function not available');
+      showToast('Could not save — please try again', 'error');
+      return;
+    }
 
-      if (!groups || groups.length === 0) {
-        console.error('❌ No groups to save');
-        return;
-      }
-      
+    if (!groups || groups.length === 0) {
+      console.error('❌ No groups to save');
+      return;
+    }
+
+    // Safety net: if every group is about to be saved with NO assigned lists
+    // and NO students, but Firebase currently holds real assignments, this is
+    // almost certainly a stale-state accident (e.g. reopened the tool before
+    // a previous save had synced down) rather than an intentional wipe.
+    // Refuse and tell the teacher, rather than silently destroying data.
+    const aboutToSaveIsEmpty = groups.every(g => (g.assignedLists?.length || 0) === 0 && (g.students?.length || 0) === 0);
+    const firebaseHasRealData = (loadedData?.spellingGroups || []).some(g => (g.assignedLists?.length || 0) > 0 || (g.students?.length || 0) > 0);
+    if (aboutToSaveIsEmpty && firebaseHasRealData) {
+      showToast('⚠️ This looks like it would erase existing assignments — refresh the page and try again.', 'error');
+      return;
+    }
+
+    setIsSavingGroups(true);
+    try {
       // Get existing toolkit data and merge spelling groups
       const existingToolkitData = loadedData || {};
       const updatedToolkitData = {
@@ -876,13 +911,22 @@ const SpellingProgram = ({
         spellingGroups: groups,
         lastSaved: new Date().toISOString()
       };
-      
+
       // Save to toolkitData to match loading location
-      saveData({ toolkitData: updatedToolkitData });
+      const result = await saveData({ toolkitData: updatedToolkitData });
+
+      if (result === false) {
+        showToast('❌ Could not save spelling groups — check your connection and try again.', 'error');
+        return;
+      }
+
       setHasUnsavedChanges(false);
-      
+      showToast('✅ Spelling groups saved!', 'success');
     } catch (error) {
       console.error('❌ Error saving spelling groups:', error);
+      showToast('❌ Could not save spelling groups — check your connection and try again.', 'error');
+    } finally {
+      setIsSavingGroups(false);
     }
   };
 
@@ -1304,17 +1348,24 @@ const SpellingProgram = ({
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">🌀 Spelling & Fluency Studio</h1>
             <p className="text-white/70 text-sm mt-0.5">{SPELLING_LISTS.length} lists · {READING_PASSAGES.length} passages · 6 levels</p>
-            {loadedData?.spellingGroups?.length > 0 && !hasUnsavedChanges && (
+            {!hasUnsavedChanges && !isSavingGroups && groups.length > 0 && (
               <p className="text-green-300 text-xs mt-1">✅ Groups saved</p>
             )}
-            {hasUnsavedChanges && <p className="text-yellow-300 text-xs mt-1">⚠️ Unsaved changes</p>}
+            {isSavingGroups && <p className="text-blue-200 text-xs mt-1">💫 Saving…</p>}
+            {hasUnsavedChanges && !isSavingGroups && <p className="text-yellow-300 text-xs mt-1">⚠️ Unsaved changes — click Save Groups before leaving</p>}
           </div>
           <div className="flex flex-wrap gap-2">
             <button onClick={() => setShowStudentAssignment(true)} className="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition">👥 Assign Students</button>
             <button onClick={() => setShowListSelector(true)} className="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition">📋 Browse Lists</button>
             <button onClick={togglePresentationMode} className="bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition">🎭 Present</button>
             {hasUnsavedChanges && (
-              <button onClick={saveGroups} className="bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 shadow">💾 Save Groups</button>
+              <button
+                onClick={saveGroups}
+                disabled={isSavingGroups}
+                className="bg-emerald-400 hover:bg-emerald-300 disabled:opacity-60 disabled:cursor-wait text-emerald-950 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 shadow"
+              >
+                {isSavingGroups ? '💫 Saving…' : '💾 Save Groups'}
+              </button>
             )}
           </div>
         </div>

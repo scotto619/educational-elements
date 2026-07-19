@@ -224,27 +224,36 @@ export async function getTeacherClasses(teacherUserId) {
 }
 
 /**
- * Update class data (transactional)
+ * Update class data
+ *
+ * NOTE: This intentionally uses a direct updateDoc() rather than a
+ * runTransaction(). Transactions require a real round-trip to the Firestore
+ * server for both the read and the write, so the local onSnapshot listener
+ * doesn't get an optimistic "pending write" echo the way a plain updateDoc
+ * does. That extra latency created a real race: a teacher could save a
+ * spelling group assignment, immediately navigate away and back into the
+ * tool, and have it remount using a still-stale class snapshot (because the
+ * transaction's server round-trip hadn't resolved yet) — making saved
+ * assignments appear to have vanished. A direct updateDoc applies to the
+ * local cache immediately, so listeners fire right away.
  */
 export async function updateClassData(classId, updates) {
-  return await runTransaction(firestore, async (transaction) => {
-    const classRef = doc(firestore, 'classes', classId);
-    const classDoc = await transaction.get(classRef);
-    
-    if (!classDoc.exists()) {
-      throw new Error('Class not found');
-    }
-    
-    const updatedData = {
-      ...updates,
-      updatedAt: new Date().toISOString(),
-      lastActivity: new Date().toISOString()
-    };
-    
-    transaction.update(classRef, updatedData);
-    
-    return updatedData;
-  });
+  const classRef = doc(firestore, 'classes', classId);
+
+  const classDoc = await getDoc(classRef);
+  if (!classDoc.exists()) {
+    throw new Error('Class not found');
+  }
+
+  const updatedData = {
+    ...updates,
+    updatedAt: new Date().toISOString(),
+    lastActivity: new Date().toISOString()
+  };
+
+  await updateDoc(classRef, updatedData);
+
+  return updatedData;
 }
 
 // ===============================================

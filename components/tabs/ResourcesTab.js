@@ -146,6 +146,21 @@ const ResourcesTab = ({
   currentClassData = {},
 }) => {
   const [activeTool, setActiveTool] = useState(null);
+  // Set by the active tool (currently just SpellingProgram) via onDirtyChange
+  // whenever it has local edits that haven't been saved yet. Lets "Back to
+  // Resources" warn before it unmounts the tool and throws those edits away.
+  const [toolHasUnsavedChanges, setToolHasUnsavedChanges] = useState(false);
+
+  const handleBackToResources = () => {
+    if (toolHasUnsavedChanges) {
+      const confirmed = typeof window !== 'undefined'
+        ? window.confirm('You have unsaved changes that will be lost if you leave now. Are you sure you want to go back without saving?')
+        : true;
+      if (!confirmed) return;
+    }
+    setToolHasUnsavedChanges(false);
+    setActiveTool(null);
+  };
 
   // Tools call saveData({ toolkitData: updatedData }) — pass straight through to saveClassData.
   // Returns true on success, false on failure so tools can surface save errors.
@@ -178,10 +193,11 @@ const ResourcesTab = ({
     return (
       <div className="space-y-4">
         <button
-          onClick={() => setActiveTool(null)}
+          onClick={handleBackToResources}
           className="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-50 transition font-semibold text-sm shadow-sm"
         >
           ← Back to Resources
+          {toolHasUnsavedChanges && <span className="text-amber-500 text-xs font-bold">● unsaved</span>}
         </button>
 
         <Suspense fallback={<LoadingSpinner />}>
@@ -191,6 +207,7 @@ const ResourcesTab = ({
               showToast={showToast}
               saveData={handleSaveData}
               loadedData={loadedData}
+              onDirtyChange={setToolHasUnsavedChanges}
             />
           )}
         </Suspense>

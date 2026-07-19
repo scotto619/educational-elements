@@ -1714,7 +1714,7 @@ const StudentSpelling = ({
 
       {/* ── SPELLING BEE MODAL ── */}
       {showBee && selectedList && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl">
             <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-5 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
@@ -1746,7 +1746,7 @@ const StudentSpelling = ({
         const handleComplete = () => markActivityComplete(activeActivity.id);
         const GameComponent = activeActivity.component;
         return (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-3 sm:p-4">
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl">
               <div className={`bg-gradient-to-r ${activeActivity.gradient} text-white px-5 py-4 rounded-t-2xl flex items-center justify-between flex-shrink-0`}>
                 <div className="flex items-center gap-3">
