@@ -64,6 +64,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   const keysRef = useRef({ up: false, down: false, left: false, right: false });
   const remotePlayersStoreRef = useRef({});
   const challengesRef = useRef({});
+  const joinedAtRef = useRef(0); // messages sent before this timestamp are old history — hide them for a freshly-joined student
   const localHomesteadRef = useRef(cloneHomestead(studentData?.homesteadData));
   const localTownSquareRef = useRef(cloneTownSquare(studentData?.townSquareData));
   const myIdRef = useRef(studentData?.id || `anon_${Date.now()}`);
@@ -133,6 +134,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     onChildAdded(chatQ, (snap) => {
       const msg = snap.val();
       if (!msg) return;
+      if ((msg.at || 0) < joinedAtRef.current) return; // old history from before I joined — skip it
       setChatLog((prev) => [...prev.slice(-49), { id: snap.key, ...msg }]);
       const bubble = { text: msg.text, expiresAt: Date.now() + CHAT_BUBBLE_MS };
       if (msg.pid === myId) setMyBubble(bubble);
@@ -178,6 +180,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     roomCodeRef.current = code;
     const myId = studentData?.id || `anon_${Date.now()}`;
     myIdRef.current = myId;
+    joinedAtRef.current = Date.now();
 
     localHomesteadRef.current = cloneHomestead(studentData?.homesteadData);
     localTownSquareRef.current = cloneTownSquare(studentData?.townSquareData);
