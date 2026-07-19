@@ -167,13 +167,14 @@ const ResourcesTab = ({
   const handleSaveData = async (dataObj) => {
     try {
       if (dataObj && dataObj.toolkitData) {
+        // saveClassData already surfaces a detailed error toast on failure —
+        // don't duplicate it here, just report success/failure back to the tool.
         await saveClassData({ toolkitData: dataObj.toolkitData });
         return true;
       }
       return false;
     } catch (err) {
       console.error('ResourcesTab: error saving toolkit data', err);
-      showToast('Error saving data', 'error');
       return false;
     }
   };

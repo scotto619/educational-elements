@@ -41,6 +41,32 @@ import { LEVEL_4_PASSAGES_11 } from './passages/Level4Passages11';
 import { LEVEL_4_PASSAGES_12 } from './passages/Level4Passages12';
 import { LEVEL_4_PASSAGES_13 } from './passages/Level4Passages13';
 
+// Firestore rejects any write containing a literal `undefined` value
+// anywhere in the payload (including nested inside arrays/objects) — the
+// whole update fails, not just the offending field. Student/group objects
+// built up client-side can pick up stray `undefined` properties (e.g. an
+// optional field that was never set), so recursively strip them before any
+// save. This is defensive: it prevents one bad field from silently blocking
+// an entire "Save Groups" click with no obvious cause.
+const sanitizeForFirestore = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .filter(item => item !== undefined)
+      .map(sanitizeForFirestore);
+  }
+  if (value && typeof value === 'object' && !(value instanceof Date)) {
+    const cleaned = {};
+    Object.keys(value).forEach(key => {
+      const v = value[key];
+      if (v !== undefined) {
+        cleaned[key] = sanitizeForFirestore(v);
+      }
+    });
+    return cleaned;
+  }
+  return value;
+};
+
 // ===============================================
 // ALL SPELLING LISTS WITH FEATURES
 // ===============================================
@@ -890,33 +916,39 @@ const SpellingProgram = ({
       return;
     }
 
-    // Safety net: if every group is about to be saved with NO assigned lists
-    // and NO students, but Firebase currently holds real assignments, this is
-    // almost certainly a stale-state accident (e.g. reopened the tool before
-    // a previous save had synced down) rather than an intentional wipe.
-    // Refuse and tell the teacher, rather than silently destroying data.
+    // Heads-up (not a hard block): if every group is about to be saved with
+    // NO assigned lists and NO students, but Firebase currently holds real
+    // assignments, double-check with the teacher before wiping it — but
+    // never silently refuse the save outright, since that just looks like
+    // "saving is broken" if this ever fires on a false positive.
     const aboutToSaveIsEmpty = groups.every(g => (g.assignedLists?.length || 0) === 0 && (g.students?.length || 0) === 0);
     const firebaseHasRealData = (loadedData?.spellingGroups || []).some(g => (g.assignedLists?.length || 0) > 0 || (g.students?.length || 0) > 0);
     if (aboutToSaveIsEmpty && firebaseHasRealData) {
-      showToast('⚠️ This looks like it would erase existing assignments — refresh the page and try again.', 'error');
-      return;
+      const confirmed = typeof window !== 'undefined'
+        ? window.confirm('This will clear ALL currently saved group assignments. Are you sure you want to save empty groups?')
+        : true;
+      if (!confirmed) return;
     }
 
     setIsSavingGroups(true);
     try {
-      // Get existing toolkit data and merge spelling groups
+      // Get existing toolkit data and merge spelling groups. Firestore
+      // rejects writes containing `undefined` anywhere in the payload
+      // (a common source of silent-looking save failures), so strip any
+      // out defensively rather than letting the whole save fail.
       const existingToolkitData = loadedData || {};
-      const updatedToolkitData = {
+      const updatedToolkitData = sanitizeForFirestore({
         ...existingToolkitData,
         spellingGroups: groups,
         lastSaved: new Date().toISOString()
-      };
+      });
 
-      // Save to toolkitData to match loading location
+      // Save to toolkitData to match loading location. Note: on failure the
+      // save chain (saveClassData, upstream) already shows a detailed error
+      // toast with the real reason, so we don't duplicate a generic one here.
       const result = await saveData({ toolkitData: updatedToolkitData });
 
       if (result === false) {
-        showToast('❌ Could not save spelling groups — check your connection and try again.', 'error');
         return;
       }
 
@@ -924,7 +956,8 @@ const SpellingProgram = ({
       showToast('✅ Spelling groups saved!', 'success');
     } catch (error) {
       console.error('❌ Error saving spelling groups:', error);
-      showToast('❌ Could not save spelling groups — check your connection and try again.', 'error');
+      const detail = error?.message ? ` (${error.message})` : '';
+      showToast(`❌ Could not save spelling groups${detail} — check your connection and try again.`, 'error');
     } finally {
       setIsSavingGroups(false);
     }
@@ -968,10 +1001,15 @@ const SpellingProgram = ({
   };
 
   const assignStudentToGroup = (studentId, groupId) => {
+    // Guard against a stale/mismatched studentId: if it's no longer in the
+    // current students list, .find() would return undefined, and pushing
+    // that into the group's students array would make the ENTIRE next save
+    // fail (Firestore rejects any undefined value anywhere in the payload).
+    const studentToAdd = students.find(s => s.id === studentId);
     const updatedGroups = groups.map(group => ({
       ...group,
-      students: group.id === groupId 
-        ? [...group.students.filter(s => s.id !== studentId), students.find(s => s.id === studentId)]
+      students: group.id === groupId
+        ? [...group.students.filter(s => s.id !== studentId), ...(studentToAdd ? [studentToAdd] : [])]
         : group.students.filter(s => s.id !== studentId)
     }));
     updateGroups(updatedGroups);

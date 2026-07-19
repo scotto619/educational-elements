@@ -493,7 +493,8 @@ const ClassroomChampions = () => {
       }
     } catch (error) {
       console.error('❌ Error saving class data:', error);
-      showToast('Error saving data', 'error');
+      const detail = error?.message ? `: ${error.message}` : '';
+      showToast(`Error saving data${detail}`, 'error');
       throw error;
     }
   };

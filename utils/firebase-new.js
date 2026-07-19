@@ -238,12 +238,11 @@ export async function getTeacherClasses(teacherUserId) {
  * local cache immediately, so listeners fire right away.
  */
 export async function updateClassData(classId, updates) {
-  const classRef = doc(firestore, 'classes', classId);
-
-  const classDoc = await getDoc(classRef);
-  if (!classDoc.exists()) {
-    throw new Error('Class not found');
+  if (!classId) {
+    throw new Error('updateClassData: classId is missing');
   }
+
+  const classRef = doc(firestore, 'classes', classId);
 
   const updatedData = {
     ...updates,
@@ -251,6 +250,10 @@ export async function updateClassData(classId, updates) {
     lastActivity: new Date().toISOString()
   };
 
+  // No pre-read here on purpose — updateDoc() already throws its own clear
+  // "No document to update" error if the class doesn't exist, so an extra
+  // getDoc() round-trip before it would only add latency without adding
+  // any real safety.
   await updateDoc(classRef, updatedData);
 
   return updatedData;

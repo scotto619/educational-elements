@@ -7,15 +7,164 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Dinner Planner">
-  <title>8-Week Dinner Planner</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="styles.css">
+  <title>8-Week Healthier Dinner Planner</title>
+  
+  
+  <style>
+:root {
+  --ink:#2f3349;
+  --muted:#6d7188;
+  --purple:#6f7dba;
+  --purple-dark:#54639e;
+  --mint:#a8c7c3;
+  --peach:#f5d7a1;
+  --lavender:#eee8f7;
+  --paper:#fbfafc;
+  --white:#fff;
+  --line:#ded9e9;
+  --danger:#b84e58;
+  --shadow:0 10px 30px rgba(47,51,73,.12);
+}
+* { box-sizing:border-box; }
+html { background:var(--paper); }
+body {
+  margin:0; color:var(--ink); background:
+    radial-gradient(circle at top right, rgba(168,199,195,.35), transparent 32%),
+    linear-gradient(180deg,#f8f5fb 0,#fbfafc 45%);
+  font-family:Inter, ui-rounded, "SF Pro Rounded", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height:100vh;
+}
+button,input,select { font:inherit; }
+button { cursor:pointer; }
+.app-header {
+  position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between;
+  padding:calc(14px + env(safe-area-inset-top)) 18px 14px;
+  background:rgba(251,250,252,.92); backdrop-filter:blur(18px); border-bottom:1px solid rgba(222,217,233,.8);
+}
+h1,h2,h3,p { margin-top:0; }
+h1 { margin-bottom:0; font-size:1.7rem; letter-spacing:-.03em; }
+h2 { letter-spacing:-.02em; }
+.eyebrow { margin-bottom:4px; color:var(--purple-dark); text-transform:uppercase; font-weight:800; font-size:.72rem; letter-spacing:.1em; }
+.icon-button { border:0; background:var(--white); width:42px; height:42px; border-radius:14px; box-shadow:0 4px 14px rgba(47,51,73,.1); }
+main { padding:18px 16px calc(100px + env(safe-area-inset-bottom)); max-width:760px; margin:auto; }
+.view { display:none; }
+.view.active { display:block; animation:fade .22s ease; }
+@keyframes fade { from{opacity:.35;transform:translateY(4px)} to{opacity:1;transform:none} }
+.hero-card {
+  background:linear-gradient(135deg,var(--purple),#8f78b7); color:white; border-radius:28px; padding:24px;
+  box-shadow:0 16px 40px rgba(84,99,158,.25); overflow:hidden; position:relative;
+}
+.hero-card:after { content:""; position:absolute; width:170px;height:170px;border-radius:50%;right:-65px;top:-65px;background:rgba(255,255,255,.12); }
+.hero-date { opacity:.88; font-weight:700; margin-bottom:22px; }
+.hero-card h2 { font-size:2rem; margin-bottom:8px; max-width:85%; }
+.hero-card p { margin-bottom:0; }
+.card {
+  margin-top:16px; background:rgba(255,255,255,.9); border:1px solid var(--line); border-radius:22px; padding:18px; box-shadow:var(--shadow);
+}
+.card-title-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.pill { display:inline-flex; align-items:center; padding:7px 10px; border-radius:999px; background:var(--lavender); color:var(--purple-dark); font-size:.78rem; font-weight:800; }
+.quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+.action-card { border:0; text-align:left; border-radius:20px; padding:18px; color:var(--ink); min-height:120px; box-shadow:var(--shadow); }
+.action-card:first-child { background:var(--peach); }
+.action-card:last-child { background:var(--mint); }
+.action-card span { display:block; font-size:1.7rem; margin-bottom:16px; }
+.section-heading { display:flex; align-items:end; justify-content:space-between; margin:4px 2px 14px; }
+.section-heading h2 { margin-bottom:0; }
+.section-heading p { margin:0; color:var(--muted); font-size:.9rem; }
+.week-card { background:white; border:1px solid var(--line); border-radius:22px; padding:16px; margin-bottom:16px; box-shadow:0 7px 20px rgba(47,51,73,.07); }
+.week-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.week-title h3 { margin:0; }
+.day-row { display:grid; grid-template-columns:62px 1fr auto; align-items:center; gap:10px; padding:12px 0; border-top:1px dashed var(--line); }
+.day-row:first-of-type { border-top:0; }
+.day-date { font-size:.78rem; color:var(--muted); font-weight:700; }
+.day-name { font-weight:800; font-size:.78rem; color:var(--purple-dark); }
+.meal-button { border:0; background:transparent; color:var(--ink); text-align:left; padding:0; font-weight:750; }
+.meal-button:hover { color:var(--purple); }
+.fixed-meal { color:var(--muted); font-weight:700; }
+.serves { font-size:.75rem; background:#f4f1f7; padding:6px 8px; border-radius:999px; white-space:nowrap; }
+.search-box {
+  width:100%; border:1px solid var(--line); background:white; border-radius:16px; padding:14px 15px; margin-bottom:14px; outline:none;
+}
+.search-box:focus { border-color:var(--purple); box-shadow:0 0 0 4px rgba(111,125,186,.13); }
+.recipe-list { display:grid; gap:12px; }
+.recipe-card { border:1px solid var(--line); background:white; border-radius:19px; padding:16px; box-shadow:0 5px 16px rgba(47,51,73,.06); }
+.recipe-card button { width:100%; border:0; background:transparent; text-align:left; padding:0; color:inherit; }
+.recipe-card h3 { margin-bottom:7px; }
+.recipe-card p { color:var(--muted); margin-bottom:0; font-size:.9rem; }
+.week-selector { display:flex; gap:8px; overflow-x:auto; padding:2px 0 12px; scrollbar-width:none; }
+.week-selector::-webkit-scrollbar{display:none}
+.week-chip { border:1px solid var(--line); background:white; padding:10px 13px; border-radius:999px; white-space:nowrap; color:var(--ink); font-weight:750; }
+.week-chip.active { background:var(--purple); color:white; border-color:var(--purple); }
+.shopping-header { background:linear-gradient(135deg,var(--mint),#c9ddd0); border-radius:22px; padding:18px; margin-bottom:14px; }
+.shopping-header h2 { margin-bottom:5px; }
+.shopping-header p { margin:0; color:#42595a; }
+.progress { height:10px; border-radius:999px; background:rgba(255,255,255,.65); margin-top:14px; overflow:hidden; }
+.progress > div { height:100%; background:var(--purple); transition:width .2s ease; }
+.category { background:white; border:1px solid var(--line); border-radius:20px; padding:15px; margin-bottom:12px; }
+.category h3 { margin-bottom:10px; font-size:1rem; }
+.shop-item { display:grid; grid-template-columns:28px 1fr 38px; align-items:center; gap:8px; padding:9px 0; border-top:1px solid #eeeaf2; }
+.shop-item:first-of-type { border-top:0; }
+.shop-item input[type=checkbox] { width:20px; height:20px; accent-color:var(--purple); }
+.shop-item input[type=text] { width:100%; border:0; border-bottom:1px solid transparent; padding:5px 2px; color:var(--ink); background:transparent; }
+.shop-item input[type=text]:focus { outline:0; border-bottom-color:var(--purple); }
+.shop-item.checked input[type=text] { text-decoration:line-through; color:#9799a8; }
+.delete-item { border:0; background:transparent; color:#aaa; font-size:1.1rem; }
+.add-row { display:flex; gap:8px; margin-top:12px; }
+.add-row input { flex:1; min-width:0; border:1px solid var(--line); border-radius:12px; padding:11px; }
+.add-row button { border:0; border-radius:12px; padding:0 14px; background:var(--purple); color:white; font-weight:800; }
+.primary-button,.secondary-button,.danger-button {
+  display:flex; align-items:center; justify-content:center; width:100%; min-height:48px; border-radius:14px; padding:12px; font-weight:800;
+}
+.primary-button { border:0; background:var(--purple); color:white; }
+.secondary-button { border:1px solid var(--line); background:white; color:var(--ink); }
+.danger-button { border:1px solid #ecc9cd; background:#fff4f5; color:var(--danger); }
+.file-button input { display:none; }
+.settings-actions { display:grid; gap:10px; }
+.helper { color:var(--muted); font-size:.84rem; margin:16px 0 0; }
+.bottom-nav {
+  position:fixed; z-index:30; left:0; right:0; bottom:0; display:grid; grid-template-columns:repeat(4,1fr);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.95); backdrop-filter:blur(18px); border-top:1px solid var(--line);
+}
+.nav-button { border:0; background:transparent; color:var(--muted); font-size:.72rem; font-weight:800; padding:6px 2px; }
+.nav-button span { display:block; font-size:1.35rem; margin-bottom:2px; filter:grayscale(.7); }
+.nav-button.active { color:var(--purple-dark); }
+.nav-button.active span { filter:none; }
+.sheet-dialog {
+  width:min(720px,100%); max-height:92vh; border:0; border-radius:28px 28px 0 0; padding:0; margin:auto auto 0;
+  color:var(--ink); box-shadow:0 -10px 50px rgba(47,51,73,.25);
+}
+.sheet-dialog::backdrop { background:rgba(30,31,43,.5); backdrop-filter:blur(3px); }
+.sheet-dialog > * { padding-left:20px; padding-right:20px; }
+.dialog-head { position:sticky; top:0; z-index:2; display:flex; justify-content:space-between; align-items:flex-start; padding-top:20px; padding-bottom:15px; background:white; border-bottom:1px solid var(--line); }
+#recipeBody { padding-top:18px; padding-bottom:40px; }
+#recipeBody h3 { margin-top:24px; }
+.ingredient-list,.step-list { padding-left:22px; }
+.ingredient-list li,.step-list li { margin-bottom:10px; line-height:1.45; }
+.small-dialog { padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
+.small-dialog .settings-actions,.small-dialog .helper { margin-left:20px; margin-right:20px; }
+.empty-state { text-align:center; padding:50px 20px; color:var(--muted); }
+.empty-icon { font-size:3rem; margin-bottom:12px; }
+@media (min-width:700px) {
+  .bottom-nav { left:50%; transform:translateX(-50%); max-width:760px; border:1px solid var(--line); border-bottom:0; border-radius:22px 22px 0 0; }
+  .recipe-list { grid-template-columns:1fr 1fr; }
+}
+
+.button-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.button-row .primary-button,.button-row .secondary-button{margin:0}
+.day-actions{display:flex;align-items:flex-end;gap:6px;flex-direction:column}
+.replace-mini{border:1px solid var(--line);background:white;color:var(--purple-dark);border-radius:10px;padding:5px 8px;font-size:.72rem;font-weight:800}
+.recipe-section-title{margin:22px 2px 10px}
+.replace-content{padding-top:18px;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+.replace-content label{display:block;margin-bottom:7px}
+.replace-preview{background:var(--lavender);border-radius:16px;padding:14px;margin:-2px 0 14px}
+.replace-preview p{margin:5px 0 0;color:var(--muted);font-size:.88rem}
+@media(max-width:480px){.day-row{grid-template-columns:55px 1fr}.day-actions{grid-column:2;flex-direction:row;align-items:center}.button-row{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
   <header class="app-header">
     <div>
-      <p class="eyebrow">Easy • Affordable • Editable</p>
+      <p class="eyebrow">Healthier • 30 Spares • Editable</p>
       <h1>Dinner Planner</h1>
     </div>
     <button id="menuButton" class="icon-button" aria-label="Open settings">⚙️</button>
@@ -46,6 +195,25 @@
     <div id="recipeBody"></div>
   </dialog>
 
+
+  <dialog id="replaceDialog" class="sheet-dialog small-dialog">
+    <div class="dialog-head">
+      <div>
+        <p class="eyebrow">Choose from 30 spare meals</p>
+        <h2>Replace meal</h2>
+      </div>
+      <button class="icon-button" data-close-dialog aria-label="Close">✕</button>
+    </div>
+    <div class="replace-content">
+      <p id="replaceCurrent" class="helper"></p>
+      <label for="spareSelect"><strong>New meal</strong></label>
+      <select id="spareSelect" class="search-box"></select>
+      <div id="replacePreview"></div>
+      <button id="confirmReplace" class="primary-button">Replace meal</button>
+      <p class="helper">The removed meal will move into the spare list. The recipe and shopping list update automatically.</p>
+    </div>
+  </dialog>
+
   <dialog id="settingsDialog" class="sheet-dialog small-dialog">
     <div class="dialog-head">
       <h2>App settings</h2>
@@ -70,7 +238,217 @@
     </div>
   </template>
 
-  <script src="data.js"></script>
-  <script src="app.js"></script>
+  <script>window.DEFAULT_APP_DATA = {"weeks": [{"number": 1, "start": "2026-07-20", "end": "2026-07-26", "days": [{"date": "2026-07-20", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-07-21", "day": "Tuesday", "type": "meal", "name": "Lean Beef Taco Bowls", "serves": 3}, {"date": "2026-07-22", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-07-23", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-07-24", "day": "Friday", "type": "meal", "name": "Chicken and Salad Wraps", "serves": 3}, {"date": "2026-07-25", "day": "Saturday", "type": "meal", "name": "Salmon, Potato and Green Bean Tray Bake", "serves": 3}, {"date": "2026-07-26", "day": "Sunday", "type": "meal", "name": "Mild Chicken and Vegetable Curry", "serves": 3}], "shoppingDate": "2026-07-19"}, {"number": 2, "start": "2026-07-27", "end": "2026-08-02", "days": [{"date": "2026-07-27", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-07-28", "day": "Tuesday", "type": "meal", "name": "Turkey and Vegetable Meatballs with Mash", "serves": 5}, {"date": "2026-07-29", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-07-30", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-07-31", "day": "Friday", "type": "meal", "name": "Healthy Homemade Burgers", "serves": 5}, {"date": "2026-08-01", "day": "Saturday", "type": "meal", "name": "Chicken Fajita Bowls", "serves": 5}, {"date": "2026-08-02", "day": "Sunday", "type": "meal", "name": "Slow-Cooker Beef and Vegetable Stew", "serves": 5}], "shoppingDate": "2026-07-25"}, {"number": 3, "start": "2026-08-03", "end": "2026-08-09", "days": [{"date": "2026-08-03", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-08-04", "day": "Tuesday", "type": "meal", "name": "Chicken and Vegetable Fried Rice", "serves": 3}, {"date": "2026-08-05", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-08-06", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-08-07", "day": "Friday", "type": "meal", "name": "Loaded Sweet Potatoes", "serves": 3}, {"date": "2026-08-08", "day": "Saturday", "type": "meal", "name": "Lean Beef Meatballs with Roast Vegetables", "serves": 3}, {"date": "2026-08-09", "day": "Sunday", "type": "meal", "name": "Chicken Schnitzel with Sweet Potato and Peas", "serves": 3}], "shoppingDate": "2026-08-01"}, {"number": 4, "start": "2026-08-10", "end": "2026-08-16", "days": [{"date": "2026-08-10", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-08-11", "day": "Tuesday", "type": "meal", "name": "Healthy Beef Nacho Bowls", "serves": 5}, {"date": "2026-08-12", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-08-13", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-08-14", "day": "Friday", "type": "meal", "name": "BBQ Chicken Salad Rolls", "serves": 5}, {"date": "2026-08-15", "day": "Saturday", "type": "meal", "name": "Chicken and Vegetable Stir-Fry", "serves": 5}, {"date": "2026-08-16", "day": "Sunday", "type": "meal", "name": "Slow-Cooker Chicken and Vegetable Soup", "serves": 5}], "shoppingDate": "2026-08-08"}, {"number": 5, "start": "2026-08-17", "end": "2026-08-23", "days": [{"date": "2026-08-17", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-08-18", "day": "Tuesday", "type": "meal", "name": "Lean Beef Rissoles with Mash and Greens", "serves": 3}, {"date": "2026-08-19", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-08-20", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-08-21", "day": "Friday", "type": "meal", "name": "Fish Finger Salad Tacos", "serves": 3}, {"date": "2026-08-22", "day": "Saturday", "type": "meal", "name": "Chicken Pesto Zucchini Pasta", "serves": 3}, {"date": "2026-08-23", "day": "Sunday", "type": "meal", "name": "Sausage, Bean and Vegetable Hotpot", "serves": 3}], "shoppingDate": "2026-08-15"}, {"number": 6, "start": "2026-08-24", "end": "2026-08-30", "days": [{"date": "2026-08-24", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-08-25", "day": "Tuesday", "type": "meal", "name": "Chicken Parmigiana with Roast Vegetables", "serves": 5}, {"date": "2026-08-26", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-08-27", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-08-28", "day": "Friday", "type": "meal", "name": "Mini Chicken Meatball Subs", "serves": 5}, {"date": "2026-08-29", "day": "Saturday", "type": "meal", "name": "Lean Beef Burrito Bowls", "serves": 5}, {"date": "2026-08-30", "day": "Sunday", "type": "meal", "name": "Chicken and Vegetable Pot Pie", "serves": 5}], "shoppingDate": "2026-08-22"}, {"number": 7, "start": "2026-08-31", "end": "2026-09-06", "days": [{"date": "2026-08-31", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-09-01", "day": "Tuesday", "type": "meal", "name": "Teriyaki Chicken and Broccoli Bowls", "serves": 3}, {"date": "2026-09-02", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-09-03", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-09-04", "day": "Friday", "type": "meal", "name": "Chicken Sausage Hot Dogs with Slaw", "serves": 3}, {"date": "2026-09-05", "day": "Saturday", "type": "meal", "name": "Beef and Vegetable Noodle Stir-Fry", "serves": 3}, {"date": "2026-09-06", "day": "Sunday", "type": "meal", "name": "Chicken Drumstick Roast with Vegetables", "serves": 3}], "shoppingDate": "2026-08-29"}, {"number": 8, "start": "2026-09-07", "end": "2026-09-13", "days": [{"date": "2026-09-07", "day": "Monday", "type": "fixed", "name": "Sally's Choice", "serves": null}, {"date": "2026-09-08", "day": "Tuesday", "type": "meal", "name": "Easy Beef and Vegetable Lasagne", "serves": 5}, {"date": "2026-09-09", "day": "Wednesday", "type": "fixed", "name": "Kay cooks", "serves": null}, {"date": "2026-09-10", "day": "Thursday", "type": "fixed", "name": "Tavern", "serves": null}, {"date": "2026-09-11", "day": "Friday", "type": "meal", "name": "Grilled Chicken Burger Night", "serves": 5}, {"date": "2026-09-12", "day": "Saturday", "type": "meal", "name": "Chicken and Bean Enchiladas", "serves": 5}, {"date": "2026-09-13", "day": "Sunday", "type": "meal", "name": "Sausage, Potato and Pea Curry", "serves": 5}], "shoppingDate": "2026-09-05"}], "recipes": {"Lean Beef Taco Bowls": {"time": "25 min", "difficulty": "Easy", "ingredients": ["400 g lean beef mince", "1 packet reduced-salt taco seasoning", "1 cup brown or white rice", "1 can corn, drained", "1 can black beans, drained", "1 tomato, diced", "1/2 lettuce, shredded", "1 avocado"], "steps": ["Cook rice following the packet directions.", "Cook mince in a frying pan over medium-high heat, breaking it up until browned.", "Add seasoning and the packet amount of water. Simmer for 3 minutes.", "Stir in corn and beans until hot.", "Divide rice into bowls and top with mince, lettuce, tomato and avocado."]}, "Chicken and Salad Wraps": {"time": "15 min", "difficulty": "Very easy", "ingredients": ["400 g cooked chicken, shredded", "6 wholemeal wraps", "1/2 lettuce, shredded", "1 cucumber, sliced", "2 tomatoes, sliced", "1 carrot, grated", "1/3 cup hummus"], "steps": ["Place the wraps on a clean bench.", "Spread each wrap with hummus.", "Add chicken, lettuce, cucumber, tomato and carrot.", "Fold the bottom up, fold both sides in, then roll tightly."]}, "Salmon, Potato and Green Bean Tray Bake": {"time": "40 min", "difficulty": "Easy", "ingredients": ["3 salmon fillets", "600 g baby potatoes, halved", "300 g green beans", "1 lemon", "1 tbsp olive oil", "1 tsp dried herbs"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Put potatoes on a lined tray, toss with half the oil and bake for 20 minutes.", "Add salmon and green beans to the tray.", "Drizzle with remaining oil, lemon juice and herbs.", "Bake for 12–15 minutes until salmon flakes easily with a fork."]}, "Mild Chicken and Vegetable Curry": {"time": "35 min", "difficulty": "Easy", "ingredients": ["500 g chicken thigh, diced", "1 onion, diced", "1 tbsp mild curry powder", "1 can light coconut milk", "3 cups frozen mixed vegetables", "1 cup rice", "1 tbsp oil"], "steps": ["Cook rice following the packet directions.", "Heat oil in a large frying pan and cook onion for 3 minutes.", "Add chicken and cook for 7 minutes until no pink remains.", "Stir in curry powder for 30 seconds.", "Add coconut milk and vegetables. Simmer for 10 minutes.", "Serve with rice."]}, "Turkey and Vegetable Meatballs with Mash": {"time": "40 min", "difficulty": "Easy", "ingredients": ["750 g turkey mince", "1 egg", "1/2 cup breadcrumbs", "1 zucchini, grated", "1 carrot, grated", "1 kg potatoes", "1/3 cup milk", "40 g butter", "3 cups frozen peas"], "steps": ["Mix turkey, egg, breadcrumbs, zucchini and carrot.", "Roll into 20 meatballs and place on a lined tray.", "Bake at 200°C (180°C fan-forced) for 20 minutes.", "Boil peeled potato chunks for 15 minutes, drain and mash with milk and butter.", "Cook peas and serve with meatballs and mash."]}, "Healthy Homemade Burgers": {"time": "25 min", "difficulty": "Very easy", "ingredients": ["750 g lean beef mince", "5 wholemeal burger buns", "1 lettuce", "2 tomatoes", "1 cucumber", "5 cheese slices", "1 tbsp oil"], "steps": ["Shape mince into 5 flat patties.", "Heat oil in a frying pan over medium-high heat.", "Cook patties for 4–5 minutes per side until cooked through.", "Add cheese for the final minute.", "Fill buns with lettuce, tomato, cucumber and patties."]}, "Chicken Fajita Bowls": {"time": "30 min", "difficulty": "Easy", "ingredients": ["750 g chicken breast, sliced", "2 capsicums, sliced", "1 onion, sliced", "1 packet fajita seasoning", "2 cups rice", "1 can corn", "1 avocado", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil in a large pan. Cook chicken for 6 minutes.", "Add capsicum and onion and cook for 5 minutes.", "Add seasoning and packet water. Stir for 2 minutes.", "Serve over rice with corn and avocado."]}, "Slow-Cooker Beef and Vegetable Stew": {"time": "8 hr low / 4 hr high", "difficulty": "Easy", "ingredients": ["1 kg lean gravy beef", "4 potatoes, chopped", "4 carrots, chopped", "2 celery sticks, sliced", "1 onion, chopped", "1 can diced tomatoes", "2 cups reduced-salt beef stock", "1 cup frozen peas"], "steps": ["Put beef, potatoes, carrots, celery and onion in the slow cooker.", "Add tomatoes and stock.", "Cook on LOW for 8 hours or HIGH for 4 hours.", "Add peas for the final 10 minutes.", "Check beef and vegetables are tender before serving."]}, "Chicken and Vegetable Fried Rice": {"time": "25 min", "difficulty": "Easy", "ingredients": ["400 g chicken breast, diced", "3 cups cooked cold rice", "2 eggs", "3 cups frozen vegetables", "2 tbsp reduced-salt soy sauce", "1 tbsp oil"], "steps": ["Beat eggs with a fork.", "Heat half the oil, scramble the eggs, then place them on a plate.", "Add remaining oil and cook chicken for 7 minutes.", "Add vegetables and cook for 4 minutes.", "Add rice, egg and soy sauce. Stir until steaming hot."]}, "Loaded Sweet Potatoes": {"time": "55 min", "difficulty": "Very easy", "ingredients": ["3 large sweet potatoes", "1 can black beans, drained", "1 can corn, drained", "1 tomato, diced", "1 avocado", "1/2 cup Greek yoghurt", "1/2 cup grated cheese"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Wash sweet potatoes and prick with a fork.", "Bake for 45–55 minutes until soft.", "Heat beans and corn.", "Cut potatoes open and top with beans, corn, tomato, avocado, yoghurt and cheese."]}, "Lean Beef Meatballs with Roast Vegetables": {"time": "45 min", "difficulty": "Easy", "ingredients": ["500 g lean beef mince", "1 egg", "1/2 cup breadcrumbs", "500 g potatoes, chopped", "2 carrots, chopped", "1 zucchini, chopped", "1 capsicum, chopped", "1 tbsp olive oil"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Mix mince, egg and breadcrumbs. Roll into meatballs.", "Put vegetables and meatballs on a lined tray.", "Drizzle vegetables with oil.", "Bake for 30–35 minutes, turning meatballs once."]}, "Chicken Schnitzel with Sweet Potato and Peas": {"time": "35 min", "difficulty": "Easy", "ingredients": ["3 chicken schnitzels", "600 g sweet potato, chopped", "2 cups frozen peas", "1 bag salad mix", "1 tbsp olive oil"], "steps": ["Heat oven according to the schnitzel packet.", "Place sweet potato on a lined tray, toss with oil and bake for 25–30 minutes.", "Cook schnitzels following packet directions.", "Cook peas in the microwave or boiling water.", "Serve with salad."]}, "Healthy Beef Nacho Bowls": {"time": "25 min", "difficulty": "Easy", "ingredients": ["750 g lean beef mince", "1 packet taco seasoning", "2 cups rice", "1 can kidney beans", "1 can corn", "1 lettuce", "2 tomatoes", "1 avocado", "1 cup Greek yoghurt"], "steps": ["Cook rice following packet directions.", "Cook mince until browned, then add seasoning and packet water.", "Stir in beans and corn until hot.", "Put rice in bowls and top with mince, lettuce, tomato and avocado.", "Add a spoonful of Greek yoghurt."]}, "BBQ Chicken Salad Rolls": {"time": "15 min", "difficulty": "Very easy", "ingredients": ["1 cooked roast chicken", "5 wholemeal rolls", "1 bag coleslaw mix", "1/3 cup Greek yoghurt", "2 tbsp BBQ sauce", "1 cucumber"], "steps": ["Remove and shred the chicken meat.", "Mix coleslaw with Greek yoghurt.", "Cut rolls open.", "Fill with chicken, slaw and cucumber.", "Add a small amount of BBQ sauce."]}, "Chicken and Vegetable Stir-Fry": {"time": "25 min", "difficulty": "Easy", "ingredients": ["750 g chicken breast, sliced", "750 g frozen stir-fry vegetables", "2 cups rice", "1/2 cup reduced-salt stir-fry sauce", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil in a wok or large pan.", "Cook chicken for 7–8 minutes.", "Add vegetables and cook for 5 minutes.", "Add sauce and stir for 2 minutes. Serve over rice."]}, "Slow-Cooker Chicken and Vegetable Soup": {"time": "7 hr low / 4 hr high", "difficulty": "Easy", "ingredients": ["800 g chicken thigh", "3 carrots, sliced", "3 celery sticks, sliced", "2 potatoes, chopped", "1 onion, chopped", "1 can corn, drained", "6 cups reduced-salt chicken stock", "1 cup barley"], "steps": ["Put all ingredients into the slow cooker.", "Stir and cover.", "Cook on LOW for 7 hours or HIGH for 4 hours.", "Remove chicken, shred it with forks, then return it to the soup.", "Check vegetables and barley are soft before serving."]}, "Lean Beef Rissoles with Mash and Greens": {"time": "40 min", "difficulty": "Easy", "ingredients": ["500 g lean beef mince", "1 egg", "1/2 cup breadcrumbs", "750 g potatoes", "1/3 cup milk", "40 g butter", "3 cups frozen green vegetables"], "steps": ["Mix mince, egg and breadcrumbs and shape into 6 patties.", "Boil potato chunks for 15 minutes.", "Cook rissoles in a lightly oiled pan for 5 minutes per side.", "Drain potatoes and mash with milk and butter.", "Cook green vegetables and serve."]}, "Fish Finger Salad Tacos": {"time": "20 min", "difficulty": "Very easy", "ingredients": ["12 fish fingers", "6 small wholemeal tortillas", "2 cups coleslaw mix", "1/3 cup Greek yoghurt", "1 tomato, diced", "1 avocado"], "steps": ["Cook fish fingers following packet directions.", "Mix coleslaw and yoghurt.", "Warm tortillas.", "Fill each with slaw, fish fingers, tomato and avocado."]}, "Chicken Pesto Zucchini Pasta": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, diced", "200 g wholemeal pasta", "2 zucchini, cut into thin strips", "1/3 jar basil pesto", "1 cup baby spinach", "1 tbsp oil"], "steps": ["Cook pasta following packet directions.", "Heat oil and cook chicken for 7–8 minutes.", "Add zucchini and cook for 3 minutes.", "Stir in pesto and spinach.", "Add drained pasta and mix well."]}, "Sausage, Bean and Vegetable Hotpot": {"time": "35 min", "difficulty": "Easy", "ingredients": ["6 lean sausages", "1 onion, sliced", "1 capsicum, chopped", "1 zucchini, chopped", "1 can cannellini beans", "1 can diced tomatoes", "1 tsp smoked paprika"], "steps": ["Brown sausages in a large pan for 8 minutes, then slice them.", "Cook onion, capsicum and zucchini for 5 minutes.", "Add beans, tomatoes, paprika and sausage.", "Simmer for 15 minutes."]}, "Chicken Parmigiana with Roast Vegetables": {"time": "40 min", "difficulty": "Easy", "ingredients": ["5 chicken schnitzels", "1 cup pasta sauce", "1 cup grated cheese", "1 kg mixed roasting vegetables", "1 tbsp olive oil", "1 bag salad mix"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Put vegetables on a lined tray, toss with oil and bake for 30 minutes.", "Cook schnitzels following packet directions.", "Add sauce and cheese for the final 5 minutes.", "Serve with vegetables and salad."]}, "Mini Chicken Meatball Subs": {"time": "30 min", "difficulty": "Very easy", "ingredients": ["20 chicken meatballs", "10 small wholemeal rolls", "1 jar tomato pasta sauce", "1 cup grated cheese", "1 bag salad mix"], "steps": ["Cook meatballs following packet directions.", "Warm sauce in a saucepan and add meatballs.", "Cut rolls open.", "Add two meatballs and sauce to each roll.", "Sprinkle lightly with cheese and serve with salad."]}, "Lean Beef Burrito Bowls": {"time": "30 min", "difficulty": "Easy", "ingredients": ["750 g lean beef mince", "1 packet burrito seasoning", "2 cups rice", "1 can black beans", "1 can corn", "1 lettuce", "2 tomatoes", "1 avocado"], "steps": ["Cook rice.", "Cook mince until browned, then add seasoning and packet water.", "Stir in beans and corn.", "Divide rice between bowls.", "Add mince, lettuce, tomato and avocado."]}, "Chicken and Vegetable Pot Pie": {"time": "50 min", "difficulty": "Easy", "ingredients": ["750 g chicken breast, diced", "750 g frozen mixed vegetables", "1 can light evaporated milk", "2 tbsp cornflour", "1 cup chicken stock", "2 sheets puff pastry", "1 egg"], "steps": ["Heat oven to 200°C (180°C fan-forced).", "Cook chicken in a pan for 7 minutes.", "Add vegetables and stock.", "Mix cornflour into evaporated milk, then stir it into the pan until thick.", "Pour into a baking dish, top with pastry and brush with beaten egg.", "Bake for 25 minutes until golden."]}, "Teriyaki Chicken and Broccoli Bowls": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, diced", "1 cup rice", "3 cups broccoli and carrot", "1/3 cup reduced-salt teriyaki sauce", "1 tbsp oil"], "steps": ["Cook rice.", "Heat oil and cook chicken for 7 minutes.", "Add vegetables and cook for 5 minutes.", "Pour in teriyaki sauce and stir for 2 minutes.", "Serve over rice."]}, "Chicken Sausage Hot Dogs with Slaw": {"time": "20 min", "difficulty": "Very easy", "ingredients": ["6 chicken sausages", "6 wholemeal hot dog rolls", "2 cups coleslaw mix", "1/3 cup Greek yoghurt", "1 cucumber"], "steps": ["Cook sausages in a frying pan for 12–15 minutes, turning often.", "Mix coleslaw with yoghurt.", "Warm rolls.", "Fill rolls with sausages, slaw and cucumber."]}, "Beef and Vegetable Noodle Stir-Fry": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g lean beef strips", "250 g noodles", "500 g frozen stir-fry vegetables", "1/3 cup reduced-salt stir-fry sauce", "1 tbsp oil"], "steps": ["Prepare noodles following packet directions.", "Heat oil and cook beef in two batches for 2–3 minutes each.", "Cook vegetables for 5 minutes.", "Return beef, add noodles and sauce.", "Toss for 2 minutes."]}, "Chicken Drumstick Roast with Vegetables": {"time": "60 min", "difficulty": "Easy", "ingredients": ["6 chicken drumsticks", "600 g potatoes", "3 carrots", "1 zucchini", "1 onion", "2 tbsp olive oil", "1 tsp mixed herbs", "2 cups peas"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Put chicken and chopped vegetables on a lined tray.", "Drizzle with oil and herbs.", "Bake for 45–50 minutes, turning chicken once.", "Cook peas and check chicken has no pink near the bone."]}, "Easy Beef and Vegetable Lasagne": {"time": "60 min", "difficulty": "Easy", "ingredients": ["750 g lean beef mince", "1 onion, diced", "2 zucchini, grated", "2 carrots, grated", "2 jars tomato pasta sauce", "1 packet fresh lasagne sheets", "500 g cottage cheese", "1 cup grated cheese"], "steps": ["Heat oven to 190°C (170°C fan-forced).", "Cook mince and onion until browned.", "Add zucchini, carrot and sauce. Simmer for 10 minutes.", "Layer sauce, lasagne sheets and cottage cheese in a baking dish.", "Finish with sauce and grated cheese.", "Cover and bake 30 minutes, uncover and bake 15 minutes. Rest 10 minutes."]}, "Grilled Chicken Burger Night": {"time": "25 min", "difficulty": "Very easy", "ingredients": ["5 chicken breast burger fillets", "5 wholemeal burger buns", "1 lettuce", "2 tomatoes", "1 cucumber", "1 avocado", "1 kg sweet potato chips"], "steps": ["Cook sweet potato chips following packet directions.", "Cook chicken fillets on a grill pan or barbecue until cooked through.", "Cut buns open.", "Fill with lettuce, tomato, cucumber, avocado and chicken.", "Serve with sweet potato chips."]}, "Chicken and Bean Enchiladas": {"time": "40 min", "difficulty": "Easy", "ingredients": ["750 g chicken breast, diced", "10 wholemeal tortillas", "1 jar mild enchilada sauce", "1 can black beans", "1 can corn", "1 cup grated cheese", "1 tbsp oil"], "steps": ["Heat oven to 200°C (180°C fan-forced).", "Cook chicken in oil for 7–8 minutes.", "Add beans, corn and half the sauce.", "Fill and roll tortillas. Place seam-side down in a baking dish.", "Add remaining sauce and cheese.", "Bake for 20 minutes."]}, "Sausage, Potato and Pea Curry": {"time": "40 min", "difficulty": "Easy", "ingredients": ["8 lean sausages", "800 g potatoes, chopped", "1 onion, diced", "1 tbsp mild curry powder", "1 can light coconut milk", "2 cups frozen peas", "1 tbsp oil"], "steps": ["Brown sausages in oil for 8 minutes, then slice.", "Cook onion for 3 minutes. Stir in curry powder.", "Add potatoes, coconut milk and 1 cup water.", "Simmer for 18 minutes until potato is soft.", "Add sausage and peas for 5 minutes."]}, "Greek Chicken Rice Bowls": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, diced", "1 cup rice", "1 cucumber, diced", "2 tomatoes, diced", "1/2 red onion, sliced", "1/2 cup Greek yoghurt", "1 lemon", "1 tbsp olive oil"], "steps": ["Cook the rice following the packet directions.", "Heat oil in a frying pan over medium-high heat.", "Cook the chicken for 7–8 minutes until no pink remains.", "Put rice into bowls.", "Add chicken, cucumber, tomato and onion.", "Mix yoghurt with a squeeze of lemon and spoon it over the bowls."]}, "Beef and Broccoli Rice Bowls": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g lean beef strips", "1 cup rice", "3 cups broccoli florets", "1/3 cup reduced-salt stir-fry sauce", "1 tbsp oil"], "steps": ["Cook the rice following the packet directions.", "Heat oil in a large frying pan or wok.", "Cook beef in two batches for 2–3 minutes each and place on a plate.", "Cook broccoli for 4–5 minutes.", "Return beef to the pan and add sauce.", "Stir for 2 minutes and serve over rice."]}, "Chicken, Corn and Avocado Bowls": {"time": "20 min", "difficulty": "Very easy", "ingredients": ["1 cooked roast chicken", "1 can corn, drained", "1 avocado, diced", "1 tomato, diced", "1 cucumber, diced", "2 cups cooked rice", "1/2 cup Greek yoghurt"], "steps": ["Remove the meat from the roast chicken and shred it.", "Heat the rice if needed.", "Divide rice between bowls.", "Add chicken, corn, avocado, tomato and cucumber.", "Top each bowl with Greek yoghurt."]}, "Turkey Burger Lettuce Cups": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g turkey mince", "1 egg", "1/2 cup breadcrumbs", "1 lettuce", "2 tomatoes, diced", "1 cucumber, diced", "1 avocado", "1 tbsp oil"], "steps": ["Mix turkey mince, egg and breadcrumbs.", "Shape the mixture into 8 small patties.", "Heat oil in a frying pan over medium heat.", "Cook patties for 5 minutes per side until cooked through.", "Separate large lettuce leaves.", "Place patties in lettuce leaves and add tomato, cucumber and avocado."]}, "Garlic Chicken and Roast Vegetables": {"time": "45 min", "difficulty": "Easy", "ingredients": ["600 g chicken thigh", "500 g potatoes, chopped", "2 carrots, chopped", "1 zucchini, chopped", "1 capsicum, chopped", "2 garlic cloves", "2 tbsp olive oil", "1 tsp mixed herbs"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Put chicken and vegetables on a lined tray.", "Mix crushed garlic, oil and herbs.", "Pour the mixture over the tray and toss the vegetables.", "Bake for 35–40 minutes.", "Check the chicken has no pink in the centre before serving."]}, "Mexican Chicken Stuffed Sweet Potatoes": {"time": "55 min", "difficulty": "Easy", "ingredients": ["3 large sweet potatoes", "400 g chicken breast, diced", "1 packet taco seasoning", "1 can black beans, drained", "1 can corn, drained", "1 tomato, diced", "1/2 cup Greek yoghurt"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Prick sweet potatoes with a fork and bake for 45–55 minutes until soft.", "Cook chicken in a frying pan for 7 minutes.", "Add taco seasoning and the packet amount of water.", "Stir in beans and corn until hot.", "Cut potatoes open and add chicken mixture, tomato and yoghurt."]}, "Beef Kofta with Couscous Salad": {"time": "30 min", "difficulty": "Easy", "ingredients": ["500 g lean beef mince", "1 tsp ground cumin", "1 egg", "1 cup couscous", "1 cucumber, diced", "2 tomatoes, diced", "1/2 cup Greek yoghurt", "1 tbsp oil"], "steps": ["Mix mince, cumin and egg in a bowl.", "Shape into 8 short sausage shapes.", "Heat oil in a frying pan and cook koftas for 8–10 minutes, turning often.", "Prepare couscous following packet directions.", "Mix couscous with cucumber and tomato.", "Serve koftas with couscous salad and yoghurt."]}, "Chicken and Corn Soup": {"time": "30 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, diced", "1 can creamed corn", "1 can corn kernels, drained", "5 cups reduced-salt chicken stock", "2 eggs", "2 spring onions, sliced"], "steps": ["Pour stock into a large pot and bring to a gentle boil.", "Add chicken and cook for 8 minutes.", "Add creamed corn and corn kernels.", "Beat eggs with a fork.", "Slowly pour egg into the soup while stirring.", "Cook for 2 minutes and add spring onion."]}, "Healthy Fish and Chips Tray Bake": {"time": "40 min", "difficulty": "Easy", "ingredients": ["3 white fish fillets", "600 g potatoes, cut into wedges", "2 carrots, cut into sticks", "1 cup frozen peas", "1 tbsp olive oil", "1 lemon"], "steps": ["Heat oven to 220°C (200°C fan-forced).", "Put potato wedges and carrots on a lined tray and toss with oil.", "Bake for 20 minutes.", "Add fish to the tray and bake for another 12–15 minutes.", "Cook peas following packet directions.", "Serve with lemon wedges."]}, "Chicken Satay Rice Bowls": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, sliced", "1 cup rice", "3 cups frozen stir-fry vegetables", "1/3 cup mild satay sauce", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil in a frying pan or wok.", "Cook chicken for 7 minutes until no pink remains.", "Add vegetables and cook for 5 minutes.", "Add satay sauce and stir for 2 minutes.", "Serve over rice."]}, "Beef and Bean Chilli": {"time": "35 min", "difficulty": "Easy", "ingredients": ["500 g lean beef mince", "1 onion, diced", "1 capsicum, diced", "1 can kidney beans, drained", "1 can diced tomatoes", "1 tsp mild chilli powder", "1 cup rice", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil in a large pan and cook onion and capsicum for 4 minutes.", "Add mince and cook until browned.", "Add beans, tomatoes and chilli powder.", "Simmer for 15 minutes, stirring occasionally.", "Serve with rice."]}, "Chicken Caesar Salad Bowls": {"time": "20 min", "difficulty": "Very easy", "ingredients": ["1 cooked roast chicken", "1 cos lettuce, chopped", "1 cucumber, sliced", "2 boiled eggs, quartered", "1/2 cup light Caesar dressing", "4 slices wholegrain bread"], "steps": ["Toast the bread and cut it into small squares.", "Remove and shred the chicken meat.", "Put lettuce and cucumber into bowls.", "Add chicken, egg and toast pieces.", "Drizzle lightly with Caesar dressing."]}, "Turkey and Vegetable Rice Bake": {"time": "45 min", "difficulty": "Easy", "ingredients": ["500 g turkey mince", "1 cup rice", "3 cups frozen mixed vegetables", "1 can diced tomatoes", "2 cups reduced-salt chicken stock", "1 cup grated cheese"], "steps": ["Heat oven to 200°C (180°C fan-forced).", "Cook turkey mince in a frying pan until no pink remains.", "Put mince, uncooked rice, vegetables, tomatoes and stock into a baking dish.", "Stir, cover tightly with foil and bake for 30 minutes.", "Remove foil, stir and sprinkle with cheese.", "Bake uncovered for 10 minutes."]}, "Chicken and Lentil Curry": {"time": "35 min", "difficulty": "Easy", "ingredients": ["500 g chicken thigh, diced", "1 onion, diced", "1 tbsp mild curry powder", "1 can lentils, drained", "1 can light coconut milk", "2 cups baby spinach", "1 cup rice", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil and cook onion for 3 minutes.", "Add chicken and cook for 7 minutes.", "Stir in curry powder for 30 seconds.", "Add lentils and coconut milk and simmer for 10 minutes.", "Stir in spinach until wilted and serve with rice."]}, "Beef and Vegetable Kebabs": {"time": "35 min", "difficulty": "Easy", "ingredients": ["500 g lean beef, cubed", "2 capsicums, chopped", "1 zucchini, sliced", "1 red onion, chopped", "600 g baby potatoes", "1 tbsp olive oil", "1 tsp mixed herbs"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Put potatoes on a lined tray, toss with half the oil and bake for 25 minutes.", "Thread beef and vegetables onto skewers.", "Brush with remaining oil and sprinkle with herbs.", "Cook kebabs in a frying pan, barbecue or oven for 10–12 minutes, turning.", "Check beef is cooked to your liking and serve with potatoes."]}, "Chicken Burrito Salad": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, diced", "1 packet taco seasoning", "1 lettuce, chopped", "1 can black beans, drained", "1 can corn, drained", "2 tomatoes, diced", "1 avocado", "1 tbsp oil"], "steps": ["Heat oil in a frying pan.", "Cook chicken for 7 minutes.", "Add taco seasoning and packet water and stir for 2 minutes.", "Divide lettuce between bowls.", "Add beans, corn, tomato and avocado.", "Top with chicken."]}, "Pork and Vegetable Stir-Fry": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g pork stir-fry strips", "500 g frozen stir-fry vegetables", "1 cup rice", "1/3 cup reduced-salt stir-fry sauce", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil in a wok or frying pan.", "Cook pork in two batches for 3 minutes each.", "Cook vegetables for 5 minutes.", "Return pork and add sauce.", "Stir for 2 minutes and serve with rice."]}, "Spinach and Ricotta Stuffed Chicken": {"time": "45 min", "difficulty": "Easy", "ingredients": ["3 large chicken breasts", "200 g ricotta", "2 cups baby spinach, chopped", "600 g baby potatoes", "2 carrots, chopped", "1 tbsp olive oil"], "steps": ["Heat oven to 200°C (180°C fan-forced).", "Cut a pocket into the side of each chicken breast without cutting all the way through.", "Mix ricotta and spinach and spoon it into the pockets.", "Place chicken, potatoes and carrots on a lined tray.", "Drizzle vegetables with oil.", "Bake for 30–35 minutes until chicken is cooked through."]}, "Beef Shepherd's Pie with Sweet Potato": {"time": "55 min", "difficulty": "Easy", "ingredients": ["500 g lean beef mince", "1 onion, diced", "2 carrots, diced", "1 cup frozen peas", "1 tbsp tomato paste", "1 cup reduced-salt beef stock", "800 g sweet potato", "1 tbsp oil"], "steps": ["Peel and chop sweet potato. Boil for 15 minutes until soft, then mash.", "Heat oil and cook onion and carrot for 4 minutes.", "Add mince and cook until browned.", "Add tomato paste, stock and peas. Simmer for 8 minutes.", "Put mince mixture in a baking dish and spread mash on top.", "Bake at 200°C (180°C fan-forced) for 20 minutes."]}, "Chicken and Vegetable Frittata": {"time": "35 min", "difficulty": "Easy", "ingredients": ["300 g cooked chicken, chopped", "8 eggs", "2 cups frozen mixed vegetables", "1 tomato, diced", "1/2 cup grated cheese", "1 bag salad mix"], "steps": ["Heat oven to 190°C (170°C fan-forced).", "Whisk eggs in a large bowl.", "Stir in chicken, vegetables, tomato and cheese.", "Pour into a greased baking dish.", "Bake for 25 minutes until the centre is firm.", "Serve with salad."]}, "Salmon Patties with Garden Salad": {"time": "30 min", "difficulty": "Easy", "ingredients": ["1 large can salmon, drained", "500 g potatoes", "1 egg", "1/2 cup breadcrumbs", "1 bag salad mix", "1 cucumber", "2 tomatoes", "1 tbsp oil"], "steps": ["Boil peeled potato chunks for 15 minutes, drain and mash.", "Mix mash with salmon, egg and breadcrumbs.", "Shape into 6 patties.", "Heat oil and cook patties for 4 minutes per side.", "Mix salad, cucumber and tomato.", "Serve patties with salad."]}, "Chicken Souvlaki Wraps": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, diced", "6 wholemeal wraps", "1 cucumber, diced", "2 tomatoes, diced", "1 lettuce, shredded", "1/2 cup Greek yoghurt", "1 lemon", "1 tbsp oil"], "steps": ["Heat oil in a frying pan and cook chicken for 7–8 minutes.", "Squeeze lemon juice over the chicken.", "Warm wraps following packet directions.", "Add lettuce, cucumber, tomato and chicken.", "Spoon over yoghurt and roll."]}, "Beef and Pumpkin Curry": {"time": "40 min", "difficulty": "Easy", "ingredients": ["500 g lean beef strips", "500 g pumpkin, cubed", "1 onion, diced", "1 tbsp mild curry powder", "1 can light coconut milk", "1 cup rice", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil and cook beef in two batches, then set aside.", "Cook onion for 3 minutes.", "Add curry powder, pumpkin and coconut milk.", "Simmer for 15–20 minutes until pumpkin is soft.", "Return beef for 3 minutes and serve with rice."]}, "Chicken Meatloaf with Roast Vegetables": {"time": "55 min", "difficulty": "Easy", "ingredients": ["750 g chicken mince", "1 egg", "1 cup breadcrumbs", "1 carrot, grated", "1 zucchini, grated", "500 g potatoes, chopped", "2 carrots, chopped", "1 tbsp olive oil"], "steps": ["Heat oven to 200°C (180°C fan-forced).", "Mix chicken mince, egg, breadcrumbs, grated carrot and zucchini.", "Shape into a loaf in a lined baking dish.", "Put potatoes and chopped carrots on a separate tray and toss with oil.", "Bake both for 40–45 minutes.", "Check the meatloaf is cooked through before slicing."]}, "Healthy Beef San Choy Bow": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g lean beef mince", "1 carrot, grated", "1 capsicum, diced", "1 can water chestnuts, drained and chopped", "1/3 cup reduced-salt stir-fry sauce", "1 lettuce", "1 tbsp oil"], "steps": ["Separate and wash large lettuce leaves.", "Heat oil in a frying pan.", "Cook mince until browned.", "Add carrot, capsicum and water chestnuts and cook for 4 minutes.", "Add sauce and stir for 2 minutes.", "Spoon the mixture into lettuce cups."]}, "Chicken and Chickpea Tray Bake": {"time": "45 min", "difficulty": "Easy", "ingredients": ["600 g chicken thigh", "1 can chickpeas, drained", "500 g baby potatoes, halved", "2 carrots, chopped", "1 zucchini, chopped", "1 lemon", "2 tbsp olive oil", "1 tsp mixed herbs"], "steps": ["Heat oven to 210°C (190°C fan-forced).", "Put chicken, chickpeas and vegetables on a lined tray.", "Drizzle with oil and lemon juice and sprinkle with herbs.", "Bake for 35–40 minutes.", "Check chicken is cooked through before serving."]}, "Beef, Corn and Zucchini Fritters": {"time": "30 min", "difficulty": "Easy", "ingredients": ["400 g lean beef mince", "1 zucchini, grated", "1 can corn, drained", "2 eggs", "1/2 cup self-raising flour", "1 bag salad mix", "1 tbsp oil"], "steps": ["Cook mince in a frying pan until browned, then let it cool slightly.", "Mix mince, zucchini, corn, eggs and flour.", "Heat a thin layer of oil in a frying pan.", "Spoon in small amounts and flatten gently.", "Cook for 3–4 minutes per side.", "Serve with salad."]}, "Chicken Noodle Soup": {"time": "35 min", "difficulty": "Easy", "ingredients": ["500 g chicken breast, diced", "2 carrots, sliced", "2 celery sticks, sliced", "1 can corn, drained", "6 cups reduced-salt chicken stock", "200 g noodles"], "steps": ["Put stock, carrots and celery in a large pot.", "Bring to a gentle boil and cook for 8 minutes.", "Add chicken and cook for 8 minutes.", "Add corn and noodles.", "Cook for the time shown on the noodle packet.", "Check chicken is cooked through before serving."]}, "Turkey Taco Lettuce Bowls": {"time": "25 min", "difficulty": "Easy", "ingredients": ["500 g turkey mince", "1 packet taco seasoning", "1 can black beans, drained", "1 can corn, drained", "1 lettuce", "2 tomatoes, diced", "1 avocado", "1 tbsp oil"], "steps": ["Heat oil and cook turkey mince until no pink remains.", "Add seasoning and packet water.", "Stir in beans and corn until hot.", "Put lettuce into bowls.", "Add turkey mixture, tomato and avocado."]}, "White Fish Coconut Curry": {"time": "30 min", "difficulty": "Easy", "ingredients": ["500 g white fish, cut into chunks", "1 onion, diced", "1 capsicum, sliced", "1 tbsp mild curry powder", "1 can light coconut milk", "2 cups baby spinach", "1 cup rice", "1 tbsp oil"], "steps": ["Cook rice following packet directions.", "Heat oil and cook onion and capsicum for 4 minutes.", "Stir in curry powder for 30 seconds.", "Add coconut milk and bring to a gentle simmer.", "Add fish and cook gently for 7–8 minutes.", "Stir in spinach and serve with rice."]}}, "spares": ["Greek Chicken Rice Bowls", "Beef and Broccoli Rice Bowls", "Chicken, Corn and Avocado Bowls", "Turkey Burger Lettuce Cups", "Garlic Chicken and Roast Vegetables", "Mexican Chicken Stuffed Sweet Potatoes", "Beef Kofta with Couscous Salad", "Chicken and Corn Soup", "Healthy Fish and Chips Tray Bake", "Chicken Satay Rice Bowls", "Beef and Bean Chilli", "Chicken Caesar Salad Bowls", "Turkey and Vegetable Rice Bake", "Chicken and Lentil Curry", "Beef and Vegetable Kebabs", "Chicken Burrito Salad", "Pork and Vegetable Stir-Fry", "Spinach and Ricotta Stuffed Chicken", "Beef Shepherd's Pie with Sweet Potato", "Chicken and Vegetable Frittata", "Salmon Patties with Garden Salad", "Chicken Souvlaki Wraps", "Beef and Pumpkin Curry", "Chicken Meatloaf with Roast Vegetables", "Healthy Beef San Choy Bow", "Chicken and Chickpea Tray Bake", "Beef, Corn and Zucchini Fritters", "Chicken Noodle Soup", "Turkey Taco Lettuce Bowls", "White Fish Coconut Curry"]};
+</script>
+  <script>
+const STORAGE_KEY = "easyDinnerPlannerSparesV4";
+let deferredInstallPrompt = null;
+let selectedShoppingWeek = null;
+let replacementTarget = null;
+
+function clone(value){ return JSON.parse(JSON.stringify(value)); }
+function loadState(){
+  try{
+    const saved=localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : clone(window.DEFAULT_APP_DATA);
+  }catch{return clone(window.DEFAULT_APP_DATA);}
+}
+let state=loadState();
+function saveState(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
+function escapeHtml(value=""){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));}
+function formatDate(value,options={day:"numeric",month:"short"}){return new Intl.DateTimeFormat("en-AU",options).format(new Date(value+"T12:00:00"));}
+function todayISO(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function allDays(){return state.weeks.flatMap(w=>w.days.map((d,index)=>({...d,week:w.number,dayIndex:index})));}
+function findCurrentOrNextDay(){const today=todayISO();return allDays().find(d=>d.date>=today)||allDays()[allDays().length-1];}
+function getCurrentWeekNumber(){return findCurrentOrNextDay()?.week||1;}
+function recipeButton(name,text=name){return `<button class="meal-button" data-recipe="${escapeHtml(name)}">${escapeHtml(text)}</button>`;}
+
+function categoryFor(item){
+  const s=item.toLowerCase();
+  const meat=["chicken","beef","turkey","salmon","tuna","sausage","bacon","fish","pork","meatball","schnitzel","egg"];
+  const produce=["potato","pumpkin","carrot","onion","capsicum","zucchini","lettuce","tomato","cucumber","avocado","lemon","celery","spinach","broccoli","salad","coleslaw","green bean","garlic","spring onion"];
+  const dairy=["milk","butter","cheese","yoghurt","ricotta","cottage cheese","evaporated milk"];
+  const grains=["wrap","tortilla","roll","bun","toast","lasagne sheet","puff pastry","breadcrumbs","couscous","rice","pasta","noodle","barley","chips","flour","bread"];
+  if(meat.some(w=>s.includes(w)))return "Meat & protein";
+  if(produce.some(w=>s.includes(w)))return "Fruit & vegetables";
+  if(dairy.some(w=>s.includes(w)))return "Fridge & dairy";
+  if(grains.some(w=>s.includes(w)))return "Bakery & grains";
+  return "Pantry & cans";
+}
+function plannedMealNames(week){return week.days.filter(d=>d.type==="meal").map(d=>d.name);}
+function buildBaseShopping(week){
+  const seen=new Set(), items=[];
+  plannedMealNames(week).forEach(name=>{
+    const recipe=state.recipes[name];
+    if(!recipe)return;
+    recipe.ingredients.forEach(text=>{
+      const key=text.toLowerCase();
+      if(!seen.has(key)){
+        seen.add(key);
+        items.push({id:`base-${week.number}-${key.replace(/[^a-z0-9]+/g,"-")}`,category:categoryFor(text),text,checked:false,isExtra:false});
+      }
+    });
+  });
+  return items;
+}
+function syncShopping(week){
+  const existing=week.customShopping||[];
+  const existingByText=new Map(existing.filter(i=>!i.isExtra).map(i=>[i.text.toLowerCase(),i]));
+  const extras=existing.filter(i=>i.isExtra);
+  const base=buildBaseShopping(week).map(item=>{
+    const old=existingByText.get(item.text.toLowerCase());
+    return old ? {...item,checked:old.checked} : item;
+  });
+  week.customShopping=[...base,...extras];
+}
+state.weeks.forEach(syncShopping);
+saveState();
+
+function renderHome(){
+  const view=document.getElementById("homeView"),target=findCurrentOrNextDay();
+  if(!target){view.innerHTML='<div class="empty-state"><div class="empty-icon">🍽️</div><h2>Nothing scheduled</h2></div>';return;}
+  const recipe=target.type==="meal"?state.recipes[target.name]:null;
+  const week=state.weeks.find(w=>w.number===target.week);
+  view.innerHTML=`
+    <div class="hero-card">
+      <p class="hero-date">${target.date===todayISO()?"Tonight":formatDate(target.date,{weekday:"long",day:"numeric",month:"long"})}</p>
+      <h2>${escapeHtml(target.name)}</h2>
+      <p>${target.serves?`Serves ${target.serves}${recipe?` • ${escapeHtml(recipe.time)}`:""}`:"No recipe needed"}</p>
+    </div>
+    ${target.type==="meal"?`<div class="card">
+      <div class="card-title-row"><div><p class="eyebrow">Beginner friendly</p><h3 style="margin-bottom:0">Ready to cook?</h3></div><span class="pill">${escapeHtml(recipe.difficulty)}</span></div>
+      <div class="button-row"><button class="primary-button" data-recipe="${escapeHtml(target.name)}">Open recipe</button><button class="secondary-button" data-replace-week="${target.week}" data-replace-day="${target.dayIndex}">Replace</button></div>
+    </div>`:""}
+    <div class="quick-actions">
+      <button class="action-card" data-go="calendarView"><span>📅</span><strong>See the full menu</strong></button>
+      <button class="action-card" data-go="shoppingView" data-week="${week.number}"><span>🛒</span><strong>Week ${week.number} shopping list</strong><small style="display:block;margin-top:5px">Prepared ${formatDate(week.shoppingDate)}</small></button>
+    </div>`;
+}
+function renderCalendar(){
+  document.getElementById("calendarView").innerHTML=`
+    <div class="section-heading"><div><p class="eyebrow">Tap Replace to swap with a spare</p><h2>Eight-week menu</h2></div></div>
+    ${state.weeks.map(w=>`<article class="week-card">
+      <div class="week-title"><h3>Week ${w.number}</h3><span class="pill">${formatDate(w.start)}–${formatDate(w.end)}</span></div>
+      ${w.days.map((d,index)=>`<div class="day-row">
+        <div><div class="day-name">${d.day.slice(0,3).toUpperCase()}</div><div class="day-date">${formatDate(d.date)}</div></div>
+        <div>${d.type==="meal"?recipeButton(d.name):`<span class="fixed-meal">${escapeHtml(d.name)}</span>`}</div>
+        <div class="day-actions">${d.serves?`<span class="serves">${d.serves} people</span><button class="replace-mini" data-replace-week="${w.number}" data-replace-day="${index}">Replace</button>`:""}</div>
+      </div>`).join("")}
+    </article>`).join("")}`;
+}
+function renderRecipes(query=""){
+  const view=document.getElementById("recipesView");
+  const planned=[...new Set(state.weeks.flatMap(w=>plannedMealNames(w)))];
+  const spareNames=state.spares||[];
+  const matches=n=>n.toLowerCase().includes(query.toLowerCase());
+  view.innerHTML=`
+    <div class="section-heading"><div><p class="eyebrow">${planned.length} planned • ${spareNames.length} spares</p><h2>Recipes</h2></div></div>
+    <input id="recipeSearch" class="search-box" type="search" placeholder="Search all recipes…" value="${escapeHtml(query)}">
+    <h3 class="recipe-section-title">On the menu</h3>
+    <div class="recipe-list">${planned.filter(matches).map(recipeCard).join("")||'<p class="helper">No planned meals match.</p>'}</div>
+    <h3 class="recipe-section-title">Spare meals</h3>
+    <div class="recipe-list">${spareNames.filter(matches).map(n=>recipeCard(n,true)).join("")||'<p class="helper">No spare meals match.</p>'}</div>`;
+  document.getElementById("recipeSearch").addEventListener("input",e=>renderRecipes(e.target.value));
+}
+function recipeCard(name,isSpare=false){
+  const r=state.recipes[name];
+  return `<article class="recipe-card"><button data-recipe="${escapeHtml(name)}"><h3>${escapeHtml(name)}</h3><p>${escapeHtml(r.time)} • ${escapeHtml(r.difficulty)}${isSpare?" • Spare":""}</p></button></article>`;
+}
+function renderShopping(weekNumber=selectedShoppingWeek||getCurrentWeekNumber()){
+  selectedShoppingWeek=Number(weekNumber);
+  const view=document.getElementById("shoppingView");
+  const week=state.weeks.find(w=>w.number===selectedShoppingWeek)||state.weeks[0];
+  syncShopping(week);saveState();
+  const grouped={};
+  week.customShopping.forEach(item=>(grouped[item.category]||=[]).push(item));
+  const total=week.customShopping.length,done=week.customShopping.filter(i=>i.checked).length,percent=total?Math.round(done/total*100):0;
+  view.innerHTML=`
+    <div class="section-heading"><div><p class="eyebrow">Updates after every meal replacement</p><h2>Shopping lists</h2></div></div>
+    <div class="week-selector">${state.weeks.map(w=>`<button class="week-chip ${w.number===week.number?"active":""}" data-shopping-week="${w.number}">Week ${w.number}</button>`).join("")}</div>
+    <div class="shopping-header"><h2>Week ${week.number}</h2><p>Shop ${formatDate(week.shoppingDate,{weekday:"long",day:"numeric",month:"long"})} • meals ${formatDate(week.start)}–${formatDate(week.end)}</p><div class="progress"><div style="width:${percent}%"></div></div><p style="margin-top:8px;font-size:.82rem">${done} of ${total} items checked</p></div>
+    <div>${Object.entries(grouped).map(([category,items])=>categoryBlock(category,items)).join("")}</div>
+    <div class="category"><h3>＋ Add another category item</h3><div class="add-row"><input id="newCategory" value="Extra" aria-label="Category"><input id="newItem" placeholder="Breakfast, lunch, snacks…" aria-label="New item"><button id="addGeneralItem">Add</button></div></div>`;
+}
+function categoryBlock(category,items){
+  return `<section class="category"><h3>${escapeHtml(category)}</h3>${items.map(i=>`<label class="shop-item ${i.checked?"checked":""}"><input type="checkbox" data-check-item="${escapeHtml(i.id)}" ${i.checked?"checked":""}><input type="text" value="${escapeHtml(i.text)}" data-edit-item="${escapeHtml(i.id)}"><button class="delete-item" data-delete-item="${escapeHtml(i.id)}">✕</button></label>`).join("")}<div class="add-row"><input placeholder="Add item…" data-add-input="${escapeHtml(category)}"><button data-add-category="${escapeHtml(category)}">Add</button></div></section>`;
+}
+function openRecipe(name){
+  const r=state.recipes[name];if(!r)return;
+  document.getElementById("recipeTitle").textContent=name;
+  const day=allDays().find(d=>d.name===name);
+  document.getElementById("recipeMeta").textContent=`${r.time} • ${r.difficulty}${day?.serves?` • serves ${day.serves}`:" • spare meal"}`;
+  document.getElementById("recipeBody").innerHTML=`<h3>Ingredients</h3><ul class="ingredient-list">${r.ingredients.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ul><h3>Step-by-step method</h3><ol class="step-list">${r.steps.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}</ol>`;
+  document.getElementById("recipeDialog").showModal();
+}
+function openReplace(weekNumber,dayIndex){
+  const week=state.weeks.find(w=>w.number===Number(weekNumber)),day=week.days[Number(dayIndex)];
+  if(!day||day.type!=="meal")return;
+  replacementTarget={weekNumber:Number(weekNumber),dayIndex:Number(dayIndex)};
+  document.getElementById("replaceCurrent").textContent=`Replacing: ${day.name}`;
+  const select=document.getElementById("spareSelect");
+  select.innerHTML=(state.spares||[]).map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)} — ${escapeHtml(state.recipes[name].time)}</option>`).join("");
+  document.getElementById("replacePreview").innerHTML=state.spares.length?sparePreview(state.spares[0]):"<p>No spare meals available.</p>";
+  select.onchange=()=>document.getElementById("replacePreview").innerHTML=sparePreview(select.value);
+  document.getElementById("replaceDialog").showModal();
+}
+function sparePreview(name){
+  const r=state.recipes[name];
+  return `<div class="replace-preview"><strong>${escapeHtml(name)}</strong><p>${escapeHtml(r.time)} • ${escapeHtml(r.difficulty)}</p><p>${r.ingredients.length} ingredients</p></div>`;
+}
+function confirmReplacement(){
+  const spare=document.getElementById("spareSelect").value;
+  if(!spare||!replacementTarget)return;
+  const week=state.weeks.find(w=>w.number===replacementTarget.weekNumber);
+  const day=week.days[replacementTarget.dayIndex];
+  const old=day.name;
+  day.name=spare;
+  state.spares=state.spares.filter(n=>n!==spare);
+  if(!state.spares.includes(old))state.spares.push(old);
+  syncShopping(week);saveState();
+  document.getElementById("replaceDialog").close();
+  renderCalendar();renderHome();
+  if(document.getElementById("recipesView").classList.contains("active"))renderRecipes();
+  if(document.getElementById("shoppingView").classList.contains("active"))renderShopping(week.number);
+}
+function switchView(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));
+  document.querySelectorAll(".nav-button").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(id==="homeView")renderHome();
+  if(id==="calendarView")renderCalendar();
+  if(id==="recipesView")renderRecipes();
+  if(id==="shoppingView")renderShopping();
+}
+function addItem(category,text){
+  text=text.trim();category=category.trim()||"Extra";if(!text)return;
+  const week=state.weeks.find(w=>w.number===selectedShoppingWeek);
+  week.customShopping.push({id:`extra-${Date.now()}-${Math.random()}`,category,text,checked:false,isExtra:true});
+  saveState();renderShopping();
+}
+document.addEventListener("click",e=>{
+  const recipe=e.target.closest("[data-recipe]");if(recipe)openRecipe(recipe.dataset.recipe);
+  const nav=e.target.closest("[data-view]");if(nav)switchView(nav.dataset.view);
+  const go=e.target.closest("[data-go]");if(go){if(go.dataset.week)selectedShoppingWeek=Number(go.dataset.week);switchView(go.dataset.go);}
+  const replace=e.target.closest("[data-replace-week]");if(replace)openReplace(replace.dataset.replaceWeek,replace.dataset.replaceDay);
+  const weekButton=e.target.closest("[data-shopping-week]");if(weekButton)renderShopping(weekButton.dataset.shoppingWeek);
+  const check=e.target.closest("[data-check-item]");if(check){const week=state.weeks.find(w=>w.number===selectedShoppingWeek);const item=week.customShopping.find(i=>i.id===check.dataset.checkItem);item.checked=check.checked;saveState();renderShopping();}
+  const del=e.target.closest("[data-delete-item]");if(del){const week=state.weeks.find(w=>w.number===selectedShoppingWeek);week.customShopping=week.customShopping.filter(i=>i.id!==del.dataset.deleteItem);saveState();renderShopping();}
+  const addCat=e.target.closest("[data-add-category]");if(addCat){const input=document.querySelector(`[data-add-input="${CSS.escape(addCat.dataset.addCategory)}"]`);addItem(addCat.dataset.addCategory,input.value);}
+  if(e.target.id==="addGeneralItem")addItem(document.getElementById("newCategory").value||"Extra",document.getElementById("newItem").value);
+  if(e.target.id==="confirmReplace")confirmReplacement();
+  if(e.target.matches("[data-close-dialog]"))e.target.closest("dialog").close();
+});
+document.addEventListener("change",e=>{
+  if(e.target.matches("[data-edit-item]")){const week=state.weeks.find(w=>w.number===selectedShoppingWeek);const item=week.customShopping.find(i=>i.id===e.target.dataset.editItem);item.text=e.target.value;item.isExtra=true;saveState();}
+});
+document.getElementById("menuButton").addEventListener("click",()=>document.getElementById("settingsDialog").showModal());
+document.getElementById("exportButton").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="dinner-planner-backup.json";a.click();URL.revokeObjectURL(url);});
+document.getElementById("importInput").addEventListener("change",e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{state=JSON.parse(reader.result);state.weeks.forEach(syncShopping);saveState();renderHome();alert("Backup imported.");}catch{alert("That backup file could not be read.");}};reader.readAsText(file);});
+document.getElementById("resetButton").addEventListener("click",()=>{if(confirm("Reset every replacement, shopping-list edit and checkbox?")){state=clone(window.DEFAULT_APP_DATA);state.weeks.forEach(syncShopping);saveState();renderHome();alert("The original plan and 30 spares have been restored.");}});
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById("installButton").hidden=false;});
+document.getElementById("installButton").addEventListener("click",async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;});
+if("serviceWorker" in navigator&&location.protocol.startsWith("http"))navigator.serviceWorker.register("service-worker.js");
+renderHome();
+</script>
 </body>
 </html>
