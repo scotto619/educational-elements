@@ -21,6 +21,7 @@ import {
   onChildRemoved, onDisconnect, runTransaction, query, limitToLast,
 } from 'firebase/database';
 import { getAvatarImage, calculateAvatarLevel } from '../../utils/gameHelpers';
+import { containsProfanity } from '../../utils/profanityFilter';
 import { ITEMS, GOLD_ICON, fmtQty } from './Homestead/homesteadConfig';
 import {
   PLOTS, STALL_TIERS, STALL_THEMES, MINIGAMES, MINIGAME_MAP, ringColorFor,
@@ -44,7 +45,7 @@ const cloneTownSquare = (t) => ({
 
 const themeColor = (id) => STALL_THEMES.find((t) => t.id === id)?.color || '#a16207';
 
-const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, classmates = [] }) => {
+const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, classmates = [], onSwitchGame = null }) => {
   const [screen, setScreen] = useState('menu'); // menu | playing
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [remotePlayers, setRemotePlayers] = useState({});
@@ -272,9 +273,14 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     e?.preventDefault();
     const text = chatInput.trim().slice(0, 80);
     if (!text || !roomCodeRef.current) return;
+    if (containsProfanity(text)) {
+      showToast?.("Let's keep the chat friendly! That message wasn't sent.", 'error');
+      setChatInput('');
+      return;
+    }
     push(ref(database, `worldRooms/${roomCodeRef.current}/chat`), { pid: myIdRef.current, name: myName, text, at: Date.now() }).catch(() => {});
     setChatInput('');
-  }, [chatInput, myName]);
+  }, [chatInput, myName, showToast]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView?.({ behavior: 'smooth' }); }, [chatLog, chatOpen]);
 
@@ -485,6 +491,15 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
           >
             {classData?.classCode ? '🚪 Enter Town Square' : 'Missing Class Code'}
           </button>
+
+          {onSwitchGame && (
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-[11px] font-bold">
+              <span className="text-white/50">Linked worlds:</span>
+              <button onClick={() => onSwitchGame('wildwood-homestead')} className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 border border-white/20 rounded-full px-3 py-1 transition">🏕️ Wildwood Homestead</button>
+              <button onClick={() => onSwitchGame('champions-menagerie')} className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 border border-white/20 rounded-full px-3 py-1 transition">🐣 Champion&apos;s Menagerie</button>
+              <button onClick={() => onSwitchGame('sweet-empire')} className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 border border-white/20 rounded-full px-3 py-1 transition">⚔️ Champion&apos;s Forge</button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -510,9 +525,20 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     >
       {/* Header */}
       <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3 bg-black/35 backdrop-blur-sm">
-        <div className="flex items-center gap-2 text-white font-bold bg-black/30 rounded-xl px-3 py-1.5">
-          <img src={GOLD_ICON} alt="" className="w-5 h-5" />
-          {fmtQty(localHomesteadRef.current?.gold || 0)}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-white font-bold bg-black/30 rounded-xl px-3 py-1.5">
+            <img src={GOLD_ICON} alt="" className="w-5 h-5" />
+            {fmtQty(localHomesteadRef.current?.gold || 0)}
+          </div>
+          {onSwitchGame && (
+            <div className="hidden sm:flex items-center gap-1 bg-black/30 rounded-xl px-1.5 py-1">
+              <button onClick={() => onSwitchGame('wildwood-homestead')} title="Wildwood Homestead" className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/25 flex items-center justify-center text-lg">🏕️</button>
+              <button onClick={() => onSwitchGame('champions-menagerie')} title="Champion's Menagerie" className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/25 flex items-center justify-center overflow-hidden">
+                <img src="/shop/Egg/Egg.png" alt="" className="w-5 h-5 object-contain" />
+              </button>
+              <button onClick={() => onSwitchGame('sweet-empire')} title="Champion's Forge" className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/25 flex items-center justify-center text-lg">⚔️</button>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <button onClick={() => setChatOpen((o) => !o)} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-xl text-sm font-semibold">

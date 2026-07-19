@@ -377,6 +377,13 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
               <img src="/game icons/Wildwood/Camping/001-fire.svg" alt="" className="w-4 h-4 object-contain" />
               Wildwood Homestead
             </button>
+            <button onClick={() => onSwitchGame('town-square')}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/30 border border-white/25 rounded-full px-3 py-1 transition"
+              title="Walk over to Town Square — trade with classmates and challenge them to minigames!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/game-logos/Town Square.svg" alt="" className="w-4 h-4 object-contain rounded-full" />
+              Town Square
+            </button>
           </div>
         )}
       </div>

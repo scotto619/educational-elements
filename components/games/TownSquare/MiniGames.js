@@ -271,15 +271,22 @@ function CoinFlip({ classCode, challengeId, myId, myName, opponentId, opponentNa
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIC TAC TOE
+// ─────────────────────────────────────────────────────────────────────────
+// NOTE: board is stored as a plain 9-character STRING ('.' = empty), never a
+// JS array. The Realtime Database silently drops `null` entries and can
+// re-hydrate a sparse array as a plain object on read (e.g. {2:"X"} instead
+// of [null,null,"X",...]), which broke `.every()`/`.map()` calls the first
+// time a square was played. Strings sidestep that class of bug entirely.
 // ═══════════════════════════════════════════════════════════════════════════
 const TTT_LINES = [
   [0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6],
 ];
+const TTT_EMPTY = '.'.repeat(9);
 function tttWinner(board) {
   for (const [a,b,c] of TTT_LINES) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+    if (board[a] !== '.' && board[a] === board[b] && board[a] === board[c]) return board[a];
   }
-  if (board.every(Boolean)) return 'draw';
+  if (!board.includes('.')) return 'draw';
   return null;
 }
 
@@ -290,27 +297,29 @@ function TicTacToe({ classCode, challengeId, myId, myName, opponentId, opponentN
 
   useEffect(() => {
     const r = ref(database, `${pathFor(classCode, challengeId)}/state`);
-    if (isHost) update(r, { board: Array(9).fill(null), turn: 'X' }).catch(() => {});
+    if (isHost) update(r, { board: TTT_EMPTY, turn: 'X' }).catch(() => {});
     return onValue(r, (snap) => setState(snap.val() || {}));
   }, [classCode, challengeId]);
 
-  if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
-  const board = state.board || Array(9).fill(null);
+  const board = typeof state?.board === 'string' ? state.board : TTT_EMPTY;
   const winner = tttWinner(board);
-  const myTurn = state.turn === mySymbol && !winner;
+  const myTurn = state?.turn === mySymbol && !winner;
 
   const play = (i) => {
-    if (!myTurn || board[i]) return;
+    if (!myTurn || board[i] !== '.') return;
     runTransaction(ref(database, `${pathFor(classCode, challengeId)}/state`), (cur) => {
       if (!cur) return cur;
-      const b = [...(cur.board || Array(9).fill(null))];
-      if (b[i] || cur.turn !== mySymbol) return cur; // already taken / not our turn
-      b[i] = mySymbol;
-      return { ...cur, board: b, turn: mySymbol === 'X' ? 'O' : 'X' };
+      const curBoard = typeof cur.board === 'string' ? cur.board : TTT_EMPTY;
+      if (curBoard[i] !== '.' || cur.turn !== mySymbol) return cur; // already taken / not our turn
+      const chars = curBoard.split('');
+      chars[i] = mySymbol;
+      return { ...cur, board: chars.join(''), turn: mySymbol === 'X' ? 'O' : 'X' };
     });
   };
 
-  const restart = () => update(ref(database, `${pathFor(classCode, challengeId)}/state`), { board: Array(9).fill(null), turn: 'X' }).catch(() => {});
+  const restart = () => update(ref(database, `${pathFor(classCode, challengeId)}/state`), { board: TTT_EMPTY, turn: 'X' }).catch(() => {});
+
+  if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
 
   const winnerId = winner === 'draw' ? 'draw' : winner === mySymbol ? myId : winner === oppSymbol ? opponentId : null;
 
@@ -320,14 +329,14 @@ function TicTacToe({ classCode, challengeId, myId, myName, opponentId, opponentN
         You are <span className="font-bold text-white">{mySymbol}</span> {!winner && (myTurn ? '— your turn!' : `— waiting for ${opponentName}…`)}
       </div>
       <div className="grid grid-cols-3 gap-2 mb-4 max-w-[240px] mx-auto">
-        {board.map((cell, i) => (
+        {board.split('').map((cell, i) => (
           <button
             key={i}
             onClick={() => play(i)}
-            disabled={!myTurn || cell}
+            disabled={!myTurn || cell !== '.'}
             className="aspect-square bg-white/5 hover:bg-white/10 rounded-xl text-4xl font-black flex items-center justify-center border border-white/10 disabled:cursor-default"
           >
-            <span className={cell === 'X' ? 'text-cyan-400' : 'text-pink-400'}>{cell}</span>
+            <span className={cell === 'X' ? 'text-cyan-400' : 'text-pink-400'}>{cell !== '.' ? cell : ''}</span>
           </button>
         ))}
       </div>
@@ -342,25 +351,26 @@ function TicTacToe({ classCode, challengeId, myId, myName, opponentId, opponentN
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONNECT FOUR
+// CONNECT FOUR — grid is also stored as a single 42-char STRING (row-major,
+// '.' = empty) for the same reason described above for Tic Tac Toe.
 // ═══════════════════════════════════════════════════════════════════════════
 const C4_COLS = 7, C4_ROWS = 6;
+const C4_EMPTY = '.'.repeat(C4_ROWS * C4_COLS);
 function c4Winner(grid) {
-  const get = (r, c) => (r >= 0 && r < C4_ROWS && c >= 0 && c < C4_COLS ? grid[r][c] : null);
+  const get = (r, c) => (r >= 0 && r < C4_ROWS && c >= 0 && c < C4_COLS ? grid[r * C4_COLS + c] : null);
   for (let r = 0; r < C4_ROWS; r++) {
     for (let c = 0; c < C4_COLS; c++) {
-      const v = grid[r][c];
-      if (!v) continue;
+      const v = get(r, c);
+      if (!v || v === '.') continue;
       const dirs = [[0,1],[1,0],[1,1],[1,-1]];
       for (const [dr,dc] of dirs) {
         if ([1,2,3].every((k) => get(r+dr*k, c+dc*k) === v)) return v;
       }
     }
   }
-  if (grid.every((row) => row.every(Boolean))) return 'draw';
+  if (!grid.includes('.')) return 'draw';
   return null;
 }
-const emptyGrid = () => Array.from({ length: C4_ROWS }, () => Array(C4_COLS).fill(null));
 
 function ConnectFour({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, onForfeit }) {
   const [state, setState] = useState(null);
@@ -368,29 +378,32 @@ function ConnectFour({ classCode, challengeId, myId, myName, opponentId, opponen
 
   useEffect(() => {
     const r = ref(database, `${pathFor(classCode, challengeId)}/state`);
-    if (isHost) update(r, { grid: emptyGrid(), turn: 'R' }).catch(() => {});
+    if (isHost) update(r, { grid: C4_EMPTY, turn: 'R' }).catch(() => {});
     return onValue(r, (snap) => setState(snap.val() || {}));
   }, [classCode, challengeId]);
 
-  if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
-  const grid = state.grid || emptyGrid();
+  const grid = typeof state?.grid === 'string' ? state.grid : C4_EMPTY;
   const winner = c4Winner(grid);
-  const myTurn = state.turn === mySymbol && !winner;
+  const myTurn = state?.turn === mySymbol && !winner;
 
   const drop = (col) => {
     if (!myTurn) return;
     runTransaction(ref(database, `${pathFor(classCode, challengeId)}/state`), (cur) => {
       if (!cur || cur.turn !== mySymbol) return cur;
-      const g = (cur.grid || emptyGrid()).map((row) => [...row]);
+      const curGrid = typeof cur.grid === 'string' ? cur.grid : C4_EMPTY;
       let row = -1;
-      for (let r = C4_ROWS - 1; r >= 0; r--) { if (!g[r][col]) { row = r; break; } }
-      if (row === -1) return cur;
-      g[row][col] = mySymbol;
-      return { ...cur, grid: g, turn: mySymbol === 'R' ? 'Y' : 'R' };
+      for (let r = C4_ROWS - 1; r >= 0; r--) { if (curGrid[r * C4_COLS + col] === '.') { row = r; break; } }
+      if (row === -1) return cur; // column full
+      const chars = curGrid.split('');
+      chars[row * C4_COLS + col] = mySymbol;
+      return { ...cur, grid: chars.join(''), turn: mySymbol === 'R' ? 'Y' : 'R' };
     });
   };
 
-  const restart = () => update(ref(database, `${pathFor(classCode, challengeId)}/state`), { grid: emptyGrid(), turn: 'R' }).catch(() => {});
+  const restart = () => update(ref(database, `${pathFor(classCode, challengeId)}/state`), { grid: C4_EMPTY, turn: 'R' }).catch(() => {});
+
+  if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
+
   const winnerId = winner === 'draw' ? 'draw' : winner === mySymbol ? myId : winner ? opponentId : null;
 
   return (
@@ -401,21 +414,24 @@ function ConnectFour({ classCode, challengeId, myId, myName, opponentId, opponen
       </div>
       <div className="bg-blue-900/40 rounded-2xl p-2 mb-4 mx-auto" style={{ width: 'fit-content' }}>
         <div className="grid grid-cols-7 gap-1">
-          {grid.map((row, r) => row.map((cell, c) => (
-            <button
-              key={`${r}-${c}`}
-              onClick={() => drop(c)}
-              disabled={!myTurn}
-              className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-slate-900/60 flex items-center justify-center disabled:cursor-default"
-            >
-              {cell && (
-                <span
-                  className="w-6 h-6 md:w-7 md:h-7 rounded-full block"
-                  style={{ background: cell === 'R' ? '#ef4444' : '#facc15' }}
-                />
-              )}
-            </button>
-          )))}
+          {Array.from({ length: C4_ROWS }, (_, r) => r).map((r) => Array.from({ length: C4_COLS }, (_, c) => c).map((c) => {
+            const cell = grid[r * C4_COLS + c];
+            return (
+              <button
+                key={`${r}-${c}`}
+                onClick={() => drop(c)}
+                disabled={!myTurn}
+                className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-slate-900/60 flex items-center justify-center disabled:cursor-default"
+              >
+                {cell !== '.' && (
+                  <span
+                    className="w-6 h-6 md:w-7 md:h-7 rounded-full block"
+                    style={{ background: cell === 'R' ? '#ef4444' : '#facc15' }}
+                  />
+                )}
+              </button>
+            );
+          }))}
         </div>
       </div>
       {winner && (
@@ -459,7 +475,7 @@ function QuickDraw({ classCode, challengeId, myId, myName, opponentId, opponentN
   const oppTap = taps[opponentId];
 
   const tap = () => {
-    if (myTap) return;
+    if (myTap !== undefined) return;
     if (!isGo) {
       // false start
       update(ref(database, `${pathFor(classCode, challengeId)}/state/taps`), { [myId]: -1 }).catch(() => {});
@@ -488,7 +504,7 @@ function QuickDraw({ classCode, challengeId, myId, myName, opponentId, opponentN
     <Shell title="Quick Draw" icon="⚡" opponentName={opponentName} onForfeit={onForfeit}>
       <button
         onClick={tap}
-        disabled={!!myTap || !!result}
+        disabled={myTap !== undefined || !!result}
         className={`w-full rounded-2xl py-16 text-3xl font-black mb-4 transition-colors ${
           isGo ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-rose-600'
         } disabled:opacity-70`}
