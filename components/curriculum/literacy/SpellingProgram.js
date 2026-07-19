@@ -41,6 +41,23 @@ import { LEVEL_4_PASSAGES_11 } from './passages/Level4Passages11';
 import { LEVEL_4_PASSAGES_12 } from './passages/Level4Passages12';
 import { LEVEL_4_PASSAGES_13 } from './passages/Level4Passages13';
 
+// Groups only ever need to DISPLAY a student's id and name — but the
+// `students` prop passed in is the FULL student record (avatar, currency,
+// pets, purchase history, quest progress, etc.), which can easily be several
+// KB per student once a class has been used for a while. Storing full
+// records inside toolkitData.spellingGroups[].students duplicates all of
+// that data on top of what's already saved separately in students/{id}, and
+// across several groups over a school year it's exactly what pushed this
+// shared class document past Firestore's hard 1,048,576-byte-per-document
+// limit — which makes EVERY save fail, not just spelling ones. Always store
+// this slim projection instead (mirrors the pattern MathMentals already
+// uses for the same reason).
+const slimStudent = (student) => ({
+  id: student.id,
+  firstName: student.firstName || student.name || 'Student',
+  lastName: student.lastName || ''
+});
+
 // Firestore rejects any write containing a literal `undefined` value
 // anywhere in the payload (including nested inside arrays/objects) — the
 // whole update fails, not just the offending field. Student/group objects
@@ -755,6 +772,10 @@ const SpellingProgram = ({
   const hasHydratedRef = useRef(false);
   const hasUnsavedChangesRef = useRef(false);
   hasUnsavedChangesRef.current = hasUnsavedChanges;
+  // Only show the "cleaned up oversized data" notice once per mount, even if
+  // the hydration effect re-runs (e.g. loadedData identity changes for an
+  // unrelated reason).
+  const bloatCleanupNoticeShownRef = useRef(false);
 
   // Let the parent (ResourcesTab) know whether it's safe to navigate away
   // without losing edits — used to guard the "Back to Resources" button.
@@ -842,8 +863,30 @@ const SpellingProgram = ({
     if (hasUnsavedChangesRef.current) return; // don't clobber in-progress edits
 
     if (loadedData?.spellingGroups && loadedData.spellingGroups.length > 0) {
-      if (JSON.stringify(loadedData.spellingGroups) !== JSON.stringify(groups)) {
-        setGroups(loadedData.spellingGroups);
+      // Auto-heal groups saved before the slim-student fix: older saves may
+      // have embedded the FULL student record (avatar/currency/pets/quest
+      // progress...) instead of just {id, firstName, lastName}. That bloat is
+      // what pushed the shared class document over Firestore's 1MB limit and
+      // made every save fail. Re-slim on load so the very next save actually
+      // shrinks the document back down, instead of perpetuating the bloat.
+      const slimmed = loadedData.spellingGroups.map(group => ({
+        ...group,
+        students: (group.students || [])
+          .filter(s => s && s.id)
+          .map(slimStudent)
+      }));
+
+      const rawSize = JSON.stringify(loadedData.spellingGroups).length;
+      const slimSize = JSON.stringify(slimmed).length;
+      const bloatFound = rawSize - slimSize > 200; // ignore trivial key-order diffs
+
+      if (JSON.stringify(slimmed) !== JSON.stringify(groups)) {
+        setGroups(slimmed);
+      }
+      if (bloatFound && !bloatCleanupNoticeShownRef.current) {
+        bloatCleanupNoticeShownRef.current = true;
+        setHasUnsavedChanges(true);
+        showToast('🧹 Cleaned up oversized student data in your spelling groups — click "Save Groups" once to finish freeing up space.', 'info');
       }
       hasHydratedRef.current = true;
       return;
@@ -854,7 +897,7 @@ const SpellingProgram = ({
         id: group.id,
         name: group.name,
         color: group.color || 'bg-blue-500',
-        students: group.students || [],
+        students: (group.students || []).filter(s => s && s.id).map(slimStudent),
         assignedLists: Array.from(new Set((group.assignedTexts || []).map(textId => textId.split('-')[0]))),
       }));
       setGroups(converted);
@@ -1006,10 +1049,13 @@ const SpellingProgram = ({
     // that into the group's students array would make the ENTIRE next save
     // fail (Firestore rejects any undefined value anywhere in the payload).
     const studentToAdd = students.find(s => s.id === studentId);
+    // Store only id/firstName/lastName — never the full student record (see
+    // slimStudent() above for why: it's what was blowing out the class doc).
+    const slimToAdd = studentToAdd ? slimStudent(studentToAdd) : null;
     const updatedGroups = groups.map(group => ({
       ...group,
       students: group.id === groupId
-        ? [...group.students.filter(s => s.id !== studentId), ...(studentToAdd ? [studentToAdd] : [])]
+        ? [...group.students.filter(s => s.id !== studentId), ...(slimToAdd ? [slimToAdd] : [])]
         : group.students.filter(s => s.id !== studentId)
     }));
     updateGroups(updatedGroups);
