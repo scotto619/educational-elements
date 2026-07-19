@@ -1,0 +1,36 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f6c453"/>
+      <stop offset="55%" stop-color="#e8963c"/>
+      <stop offset="100%" stop-color="#c9682a"/>
+    </linearGradient>
+    <linearGradient id="cart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fca94c"/>
+      <stop offset="100%" stop-color="#c2620f"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="36" fill="url(#skyBg)"/>
+  <circle cx="100" cy="72" r="46" fill="#ffffff" opacity="0.12"/>
+  <!-- distant stalls -->
+  <path d="M28 132 L28 108 L48 100 L68 108 L68 132 Z" fill="#b64d3a"/>
+  <path d="M132 132 L132 108 L152 100 L172 108 L172 132 Z" fill="#3a6b8a"/>
+  <rect x="30" y="132" width="36" height="6" fill="#7a3626"/>
+  <rect x="134" y="132" width="36" height="6" fill="#254a63"/>
+  <!-- central stall -->
+  <path d="M58 150 L58 104 L100 86 L142 104 L142 150 Z" fill="url(#cart)"/>
+  <rect x="58" y="150" width="84" height="10" rx="2" fill="#8a4111"/>
+  <path d="M54 106 L100 88 L146 106 L138 116 L100 100 L62 116 Z" fill="#fde3b8"/>
+  <rect x="88" y="118" width="24" height="32" rx="3" fill="#7a3f14"/>
+  <circle cx="76" cy="126" r="7" fill="#e8544a"/>
+  <circle cx="124" cy="126" r="7" fill="#f2c94c"/>
+  <circle cx="76" cy="140" r="7" fill="#6fcf97"/>
+  <circle cx="124" cy="140" r="7" fill="#e8544a"/>
+  <!-- banner -->
+  <path d="M70 84 L100 70 L130 84 L124 92 L100 82 L76 92 Z" fill="#ffffff" opacity="0.85"/>
+  <!-- little figures -->
+  <circle cx="34" cy="164" r="7" fill="#ffe0b2"/>
+  <rect x="27" y="170" width="14" height="18" rx="6" fill="#3a6b8a"/>
+  <circle cx="168" cy="164" r="7" fill="#ffe0b2"/>
+  <rect x="161" y="170" width="14" height="18" rx="6" fill="#b64d3a"/>
+</svg>

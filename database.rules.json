@@ -81,6 +81,27 @@
         "strokes": { ".indexOn": ["at"] }
       }
     },
+    "worldRooms": {
+      "$roomCode": {
+        ".read": true,
+        ".write": true,
+        "players": {
+          "$playerId": { ".indexOn": ["updatedAt"] }
+        },
+        "stalls": {
+          "$playerId": { ".indexOn": ["plotId", "updatedAt"] }
+        },
+        "chat": { ".indexOn": ["at"] },
+        "challenges": {
+          "$challengeId": { ".indexOn": ["status", "createdAt"] }
+        },
+        "pendingIncome": {
+          "$playerId": {
+            "$saleId": { ".indexOn": ["at"] }
+          }
+        }
+      }
+    },
 
     "quizzes": {
       "$quizId": {

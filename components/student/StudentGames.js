@@ -22,6 +22,7 @@ const SweetEmpireGame = dynamic(() => import('../games/SweetEmpireGame'), { load
 const ChampionsMenagerieGame = dynamic(() => import('../games/ChampionsMenagerieGame'), { loading: GameLoadingSpinner, ssr: false });
 const MathSpaceInvadersGame = dynamic(() => import('../games/MathSpaceInvadersGame'), { loading: GameLoadingSpinner, ssr: false });
 const MultiplayerAgarGame = dynamic(() => import('../games/MultiplayerAgarGame'), { loading: GameLoadingSpinner, ssr: false });
+const TownSquareGame = dynamic(() => import('../games/TownSquareGame'), { loading: GameLoadingSpinner, ssr: false });
 const StudentBingo = dynamic(() => import('../student/StudentBingo'), { loading: GameLoadingSpinner, ssr: false });
 const MazeGame = dynamic(() => import('../games/MazeGame'), { loading: GameLoadingSpinner, ssr: false });
 const DailyWordleChallenge = dynamic(() => import('../games/DailyWordleChallenge'), { loading: GameLoadingSpinner, ssr: false });
@@ -534,6 +535,22 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       category: 'multiplayer',
       inDevelopment: true,
       logo: getGameLogo('cell-arena')
+    },
+    {
+      id: 'town-square',
+      name: 'Town Square',
+      icon: '🏘️',
+      description: 'Walk around live with your classmates, chat, build a market stall using Wildwood resources to trade spare loot, and challenge friends to Rock Paper Scissors, Coin Flip, Tic Tac Toe, Connect Four and Quick Draw!',
+      component: TownSquareGame,
+      color: 'from-amber-600 to-orange-700',
+      difficulty: 'Easy',
+      time: 'Open-ended',
+      multiplayer: true,
+      requiresClassCode: true,
+      new: true,
+      featured: true,
+      category: 'multiplayer',
+      logo: getGameLogo('town-square')
     },
 
     // Educational Utils

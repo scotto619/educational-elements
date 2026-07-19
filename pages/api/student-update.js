@@ -69,6 +69,7 @@ export default async function handler(req, res) {
       'sweetEmpireData',      // Sweet Empire clicker game (replaces Hero Forge)
       'menagerieData',        // Champion's Menagerie creature collector
       'homesteadData',        // Wildwood Homestead survival-crafting game
+      'townSquareData',       // Town Square multiplayer plaza (stalls/market)
       'moneyMastersProgress', // Money Masters financial literacy tool
       'keyboardQuestProgress', // Keyboard Quest typing program
       'mathMentalsProgress' // Math Mentals specific field
