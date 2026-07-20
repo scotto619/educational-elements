@@ -16,10 +16,26 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { database } from '../../../utils/firebase';
-import { ref, onValue, update, runTransaction, remove } from 'firebase/database';
-import { RPS_THROWS, COIN_HEADS_IMG, COIN_TAILS_IMG } from './townSquareConfig';
+import { ref, onValue, update, runTransaction, remove, push, set } from 'firebase/database';
+import { RPS_THROWS, COIN_HEADS_IMG, COIN_TAILS_IMG, MINIGAME_MAP, dayKey } from './townSquareConfig';
 
 const pathFor = (classCode, challengeId) => `worldRooms/${classCode}/challenges/${challengeId}`;
+
+// ── Town-wide victory announcement + daily win tally ────────────────────────
+// Called by the HOST client only (single writer, so no cross-client race);
+// callers guard against double-fire with a local ref that resets on rematch.
+const announceWin = (classCode, { gameId, winnerId, winnerName, loserName }) => {
+  if (!classCode || !winnerId || winnerId === 'draw') return;
+  const gameName = MINIGAME_MAP[gameId]?.name || 'a duel';
+  const day = dayKey();
+  const evt = { type: 'win', text: `🏆 ${winnerName} defeated ${loserName} at ${gameName}!`, at: Date.now(), winnerId };
+  push(ref(database, `worldRooms/${classCode}/events`), evt).catch(() => {});
+  push(ref(database, `worldRooms/${classCode}/eventsArchive/${day}`), evt).catch(() => {});
+  set(ref(database, `worldRooms/${classCode}/archiveDays/${day}`), true).catch(() => {});
+  runTransaction(ref(database, `worldRooms/${classCode}/winTally/${day}/${winnerId}`), (cur) => ({
+    name: winnerName, wins: ((cur && cur.wins) || 0) + 1,
+  })).catch(() => {});
+};
 
 // ── Shared shell every minigame renders inside ──────────────────────────────
 const Shell = ({ title, icon, iconSrc, opponentName, onForfeit, children }) => (
@@ -74,8 +90,9 @@ const ResultBanner = ({ result, myId }) => {
 const THROWS = RPS_THROWS;
 const beats = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
 
-function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, onForfeit }) {
+function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, gameId, onForfeit }) {
   const [state, setState] = useState(null);
+  const annRef = useRef(false);
 
   useEffect(() => {
     const r = ref(database, `${pathFor(classCode, challengeId)}/state`);
@@ -123,6 +140,14 @@ function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, i
     }
   }, [bothIn, isHost, nextRound]);
 
+  useEffect(() => {
+    if (matchOver && isHost && !annRef.current) {
+      annRef.current = true;
+      const iWon = (wins[myId] || 0) > (wins[opponentId] || 0);
+      announceWin(classCode, { gameId, winnerId: iWon ? myId : opponentId, winnerName: iWon ? myName : opponentName, loserName: iWon ? opponentName : myName });
+    }
+  }, [matchOver, isHost, wins, myId, myName, opponentId, opponentName, classCode, gameId]);
+
   if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
 
   return (
@@ -157,7 +182,7 @@ function RPS({ classCode, challengeId, myId, myName, opponentId, opponentName, i
           <div className="text-xl font-bold mb-4">
             {wins[myId] > wins[opponentId] ? '🏆 You won the match!' : '😅 They won the match!'}
           </div>
-          <button onClick={() => isHost && nextRoundReset(classCode, challengeId, myId, opponentId)} className="bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl font-bold w-full">
+          <button onClick={() => { if (isHost) { annRef.current = false; nextRoundReset(classCode, challengeId, myId, opponentId); } }} className="bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl font-bold w-full">
             Rematch
           </button>
         </div>
@@ -189,9 +214,10 @@ function nextRoundReset(classCode, challengeId, myId, opponentId) {
 // ═══════════════════════════════════════════════════════════════════════════
 // COIN FLIP
 // ═══════════════════════════════════════════════════════════════════════════
-function CoinFlip({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, onForfeit }) {
+function CoinFlip({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, gameId, onForfeit }) {
   const [state, setState] = useState(null);
   const [flipping, setFlipping] = useState(false);
+  const annRef = useRef(false);
 
   useEffect(() => {
     const r = ref(database, `${pathFor(classCode, challengeId)}/state`);
@@ -223,6 +249,11 @@ function CoinFlip({ classCode, challengeId, myId, myName, opponentId, opponentNa
   const won = result && state.call === result;
   const winnerId = result ? (won ? callerId : (callerId === myId ? opponentId : myId)) : null;
   const winnerName = winnerId === myId ? myName : opponentName;
+
+  if (result && winnerId && isHost && !annRef.current) {
+    annRef.current = true;
+    announceWin(classCode, { gameId, winnerId, winnerName, loserName: winnerId === myId ? opponentName : myName });
+  }
 
   return (
     <Shell title="Coin Flip" icon="🪙" iconSrc={COIN_HEADS_IMG} opponentName={opponentName} onForfeit={onForfeit}>
@@ -259,7 +290,7 @@ function CoinFlip({ classCode, challengeId, myId, myName, opponentId, opponentNa
             <div className="text-2xl font-black mb-3 capitalize">{result}!</div>
             <ResultBanner result={{ winnerId, winnerName }} myId={myId} />
             {isHost && (
-              <button onClick={() => update(ref(database, `${pathFor(classCode, challengeId)}/state`), { callerId: opponentId === state.callerId ? myId : opponentId, call: null, result: null })} className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl font-bold w-full mt-2">
+              <button onClick={() => { annRef.current = false; update(ref(database, `${pathFor(classCode, challengeId)}/state`), { callerId: opponentId === state.callerId ? myId : opponentId, call: null, result: null }); }} className="bg-white/10 hover:bg-white/20 px-6 py-3 rounded-xl font-bold w-full mt-2">
                 Rematch (swap caller)
               </button>
             )}
@@ -291,8 +322,9 @@ function tttWinner(board) {
   return null;
 }
 
-function TicTacToe({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, onForfeit }) {
+function TicTacToe({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, gameId, onForfeit }) {
   const [state, setState] = useState(null);
+  const annRef = useRef(false);
   const mySymbol = isHost ? 'X' : 'O';
   const oppSymbol = isHost ? 'O' : 'X';
 
@@ -318,11 +350,16 @@ function TicTacToe({ classCode, challengeId, myId, myName, opponentId, opponentN
     });
   };
 
-  const restart = () => update(ref(database, `${pathFor(classCode, challengeId)}/state`), { board: TTT_EMPTY, turn: 'X' }).catch(() => {});
+  const restart = () => { annRef.current = false; update(ref(database, `${pathFor(classCode, challengeId)}/state`), { board: TTT_EMPTY, turn: 'X' }).catch(() => {}); };
 
   if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
 
   const winnerId = winner === 'draw' ? 'draw' : winner === mySymbol ? myId : winner === oppSymbol ? opponentId : null;
+
+  if (winnerId && winnerId !== 'draw' && isHost && !annRef.current) {
+    annRef.current = true;
+    announceWin(classCode, { gameId, winnerId, winnerName: winnerId === myId ? myName : opponentName, loserName: winnerId === myId ? opponentName : myName });
+  }
 
   return (
     <Shell title="Tic Tac Toe" icon="⭕" opponentName={opponentName} onForfeit={onForfeit}>
@@ -373,8 +410,9 @@ function c4Winner(grid) {
   return null;
 }
 
-function ConnectFour({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, onForfeit }) {
+function ConnectFour({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, gameId, onForfeit }) {
   const [state, setState] = useState(null);
+  const annRef = useRef(false);
   const mySymbol = isHost ? 'R' : 'Y';
 
   useEffect(() => {
@@ -401,11 +439,16 @@ function ConnectFour({ classCode, challengeId, myId, myName, opponentId, opponen
     });
   };
 
-  const restart = () => update(ref(database, `${pathFor(classCode, challengeId)}/state`), { grid: C4_EMPTY, turn: 'R' }).catch(() => {});
+  const restart = () => { annRef.current = false; update(ref(database, `${pathFor(classCode, challengeId)}/state`), { grid: C4_EMPTY, turn: 'R' }).catch(() => {}); };
 
   if (!state) return <div className="text-center py-10 text-white/50">Loading…</div>;
 
   const winnerId = winner === 'draw' ? 'draw' : winner === mySymbol ? myId : winner ? opponentId : null;
+
+  if (winnerId && winnerId !== 'draw' && isHost && !annRef.current) {
+    annRef.current = true;
+    announceWin(classCode, { gameId, winnerId, winnerName: winnerId === myId ? myName : opponentName, loserName: winnerId === myId ? opponentName : myName });
+  }
 
   return (
     <Shell title="Connect Four" icon="🔴" opponentName={opponentName} onForfeit={onForfeit}>
@@ -448,9 +491,10 @@ function ConnectFour({ classCode, challengeId, myId, myName, opponentId, opponen
 // ═══════════════════════════════════════════════════════════════════════════
 // QUICK DRAW — reaction duel
 // ═══════════════════════════════════════════════════════════════════════════
-function QuickDraw({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, onForfeit }) {
+function QuickDraw({ classCode, challengeId, myId, myName, opponentId, opponentName, isHost, gameId, onForfeit }) {
   const [state, setState] = useState(null);
   const startedAt = useRef(null);
+  const annRef = useRef(false);
 
   useEffect(() => {
     const r = ref(database, `${pathFor(classCode, challengeId)}/state`);
@@ -497,9 +541,15 @@ function QuickDraw({ classCode, challengeId, myId, myName, opponentId, opponentN
   }
 
   const restart = () => {
+    annRef.current = false;
     const delay = 1500 + Math.random() * 2500;
     update(ref(database, `${pathFor(classCode, challengeId)}/state`), { taps: {}, goAt: Date.now() + delay, phase: 'waiting' }).catch(() => {});
   };
+
+  if (result && result.winnerId !== 'draw' && isHost && !annRef.current) {
+    annRef.current = true;
+    announceWin(classCode, { gameId, winnerId: result.winnerId, winnerName: result.winnerName, loserName: result.winnerId === myId ? opponentName : myName });
+  }
 
   return (
     <Shell title="Quick Draw" icon="⚡" opponentName={opponentName} onForfeit={onForfeit}>
@@ -557,6 +607,7 @@ export default function ChallengeOverlay({ classCode, challengeId, game, myId, m
         opponentId={opponentId}
         opponentName={opponentName}
         isHost={isHost}
+        gameId={game}
         onForfeit={forfeit}
       />
     </AnimatePresence>

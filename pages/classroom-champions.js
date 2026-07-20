@@ -55,7 +55,10 @@ import {
 } from '../services/globalContent';
 
 // Import components (unchanged)
+import dynamic from 'next/dynamic';
 import DashboardTab from '../components/tabs/DashboardTab';
+// Town Watch talks to the Realtime Database — client-side only
+const TownWatchTab = dynamic(() => import('../components/tabs/TownWatchTab'), { ssr: false });
 import StudentsTab from '../components/tabs/StudentsTab';
 import ShopTab from '../components/tabs/ShopTab';
 import QuestsTab from '../components/tabs/QuestsTab';
@@ -120,7 +123,8 @@ const CLASSROOM_CHAMPIONS_TABS = [
   { id: 'quizshow', name: 'Quiz Show', icon: '🎪', shortName: 'Quiz', mobileIcon: '🎪' },
   { id: 'quests', name: 'Quests', icon: '📜', shortName: 'Quests', mobileIcon: '📜' },
   { id: 'shop', name: 'Shop', icon: '🛒', shortName: 'Shop', mobileIcon: '🛒' },
-  { id: 'petrace', name: 'Pet Race', icon: '🏇', shortName: 'Race', mobileIcon: '🏇' }
+  { id: 'petrace', name: 'Pet Race', icon: '🏇', shortName: 'Race', mobileIcon: '🏇' },
+  { id: 'townwatch', name: 'Town Watch', icon: '🏘️', shortName: 'Town', mobileIcon: '🏘️' }
 ];
 
 const EDUCATIONAL_ELEMENTS_TABS = [
@@ -1116,6 +1120,12 @@ const ClassroomChampions = () => {
         return <PetRaceTab
           {...commonProps}
           updateStudent={handleUpdateStudent}
+        />;
+
+      case 'townwatch':
+        return <TownWatchTab
+          currentClassData={currentClassData}
+          showToast={showToast}
         />;
 
       case 'games':

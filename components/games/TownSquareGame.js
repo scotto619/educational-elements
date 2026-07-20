@@ -27,6 +27,8 @@ import {
   PLOTS, STALL_TIERS, STALL_THEMES, MINIGAMES, MINIGAME_MAP, ringColorFor,
   canAfford, deductCost, fmtCost, DECOR, NETWORK_RATE, CHAT_BUBBLE_MS,
   INTERACT_RADIUS, WORLD_W, WORLD_H, MARGIN, MOVE_SPEED, CAMERA_LERP, EMPTY_PLOT_IMG,
+  MERCHANT, MERCHANT_IMG, SHOP_SLOTS, rollShopStock, rollRestockTask, dayKey,
+  EMOTES, EVENT_BANNER_MS,
 } from './TownSquare/townSquareConfig';
 import ChallengeOverlay from './TownSquare/MiniGames';
 
@@ -57,6 +59,13 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   const [chatInput, setChatInput] = useState('');
   const [myBubble, setMyBubble] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
+  const [shopState, setShopState] = useState(null);      // Wandering Merchant (class-shared)
+  const [banner, setBanner] = useState(null);            // current announcement banner
+  const [tally, setTally] = useState({});                // today's win tally
+  const [championsOpen, setChampionsOpen] = useState(false);
+  const [emoteOpen, setEmoteOpen] = useState(false);
+  const [myEmote, setMyEmote] = useState(null);
+  const bannerQueueRef = useRef([]);
   const [, forceTick] = useState(0); // cheap re-render pulse for bubble expiry / gold display
 
   const containerRef = useRef(null);
@@ -117,12 +126,43 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   // ═══════════════════════════════════════════════════════════════════════
   const setupListeners = useCallback((code, myId) => {
     const playersPath = ref(database, `worldRooms/${code}/players`);
-    onChildAdded(playersPath, (snap) => { if (snap.key !== myId) remotePlayersStoreRef.current[snap.key] = snap.val(); });
+    onChildAdded(playersPath, (snap) => {
+      if (snap.key === myId) return;
+      remotePlayersStoreRef.current[snap.key] = snap.val();
+      // Fresh arrivals (after our own join settles) get a friendly notice
+      if (Date.now() - joinedAtRef.current > 2500) {
+        const nm = snap.val()?.name || 'Someone';
+        setChatLog((prev) => [...prev.slice(-49), { id: `j_${snap.key}_${Date.now()}`, sys: true, text: `🚪 ${nm} wandered into town`, at: Date.now() }]);
+      }
+    });
     onChildChanged(playersPath, (snap) => {
       if (snap.key === myId) return;
       remotePlayersStoreRef.current[snap.key] = { ...remotePlayersStoreRef.current[snap.key], ...snap.val() };
     });
-    onChildRemoved(playersPath, (snap) => { delete remotePlayersStoreRef.current[snap.key]; });
+    onChildRemoved(playersPath, (snap) => {
+      const nm = remotePlayersStoreRef.current[snap.key]?.name;
+      delete remotePlayersStoreRef.current[snap.key];
+      if (nm && Date.now() - joinedAtRef.current > 2500) {
+        setChatLog((prev) => [...prev.slice(-49), { id: `l_${snap.key}_${Date.now()}`, sys: true, text: `👋 ${nm} left town`, at: Date.now() }]);
+      }
+    });
+
+    // Town-wide announcements (victories, trades, restocks)
+    const eventsQ = query(ref(database, `worldRooms/${code}/events`), limitToLast(10));
+    onChildAdded(eventsQ, (snap) => {
+      const evt = snap.val();
+      if (!evt) return;
+      setChatLog((prev) => [...prev.slice(-49), { id: `e_${snap.key}`, sys: true, text: evt.text, at: evt.at }]);
+      if ((evt.at || 0) >= joinedAtRef.current) {
+        bannerQueueRef.current = [...bannerQueueRef.current.slice(-4), { id: snap.key, text: evt.text, type: evt.type }];
+      }
+    });
+
+    // The Wandering Merchant (shared shop)
+    onValue(ref(database, `worldRooms/${code}/shop`), (snap) => setShopState(snap.val()));
+
+    // Today's win tally
+    onValue(ref(database, `worldRooms/${code}/winTally/${dayKey()}`), (snap) => setTally(snap.val() || {}));
 
     const stallsPath = ref(database, `worldRooms/${code}/stalls`);
     onValue(stallsPath, (snap) => {
@@ -175,6 +215,103 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     const pendingPath = ref(database, `worldRooms/${code}/pendingIncome/${myId}`);
     onChildAdded(pendingPath, (snap) => claimPendingIncome(code, snap.key, snap.val()));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Rotate the announcement banner queue
+  useEffect(() => {
+    if (screen !== 'playing') return;
+    const t = setInterval(() => {
+      setBanner((cur) => {
+        if (cur && Date.now() - cur.shownAt < EVENT_BANNER_MS) return cur;
+        const next = bannerQueueRef.current.shift();
+        return next ? { ...next, shownAt: Date.now() } : null;
+      });
+    }, 500);
+    return () => clearInterval(t);
+  }, [screen]);
+
+  // Push a town-wide announcement (live feed + teacher archive)
+  const pushEvent = useCallback((text, type = 'info') => {
+    const code = roomCodeRef.current;
+    if (!code) return;
+    const day = dayKey();
+    const evt = { type, text, at: Date.now() };
+    push(ref(database, `worldRooms/${code}/events`), evt).catch(() => {});
+    push(ref(database, `worldRooms/${code}/eventsArchive/${day}`), evt).catch(() => {});
+    set(ref(database, `worldRooms/${code}/archiveDays/${day}`), true).catch(() => {});
+  }, []);
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // WANDERING MERCHANT (class-shared shop with co-op restock challenges)
+  // ═══════════════════════════════════════════════════════════════════════
+  const ensureShop = useCallback((code) => {
+    runTransaction(ref(database, `worldRooms/${code}/shop`), (cur) => {
+      if (cur) return undefined; // already exists — abort
+      return { gen: 1, stock: rollShopStock(), task: rollRestockTask() };
+    }).catch(() => {});
+  }, []);
+
+  const buyShopItem = useCallback(async (slotId) => {
+    const slot = shopState?.stock?.[slotId];
+    if (!slot || slot.qty <= 0) { showToast?.('Sold out! Help restock the caravan.', 'error'); return; }
+    if (!isNear(MERCHANT)) { showToast?.('Walk closer to the caravan first!', 'error'); return; }
+    if ((localHomesteadRef.current.gold || 0) < slot.price) { showToast?.('Not enough gold!', 'error'); return; }
+    try {
+      const res = await runTransaction(ref(database, `worldRooms/${roomCodeRef.current}/shop/stock/${slotId}/qty`), (cur) => {
+        if (typeof cur !== 'number' || cur <= 0) return;
+        return cur - 1;
+      });
+      if (!res.committed) { showToast?.('Sold out!', 'error'); return; }
+      localHomesteadRef.current.gold -= slot.price;
+      localHomesteadRef.current.inv[slot.itemId] = (localHomesteadRef.current.inv[slot.itemId] || 0) + 1;
+      saveHomestead();
+      showToast?.(`Bought ${ITEMS[slot.itemId]?.name} for ${slot.price} gold!`, 'success');
+      if (slot.price >= 60) pushEvent(`💎 ${myName} snagged a ${ITEMS[slot.itemId]?.name} from the Wandering Merchant!`, 'shop');
+      forceTick((n) => n + 1);
+    } catch {
+      showToast?.('Purchase failed — try again.', 'error');
+    }
+  }, [shopState, myName, saveHomestead, showToast, pushEvent]);
+
+  const donateToShop = useCallback(async () => {
+    const task = shopState?.task;
+    if (!task) return;
+    if (!isNear(MERCHANT)) { showToast?.('Walk closer to the caravan first!', 'error'); return; }
+    if ((localHomesteadRef.current.inv[task.itemId] || 0) < 1) {
+      showToast?.(`The merchant needs ${ITEMS[task.itemId]?.name} — gather some in Wildwood!`, 'error');
+      return;
+    }
+    try {
+      const res = await runTransaction(ref(database, `worldRooms/${roomCodeRef.current}/shop/task/have`), (cur) => {
+        if (typeof cur !== 'number') return;
+        if (cur >= task.need) return;
+        return cur + 1;
+      });
+      if (!res.committed) { showToast?.('The task is already complete!', 'info'); return; }
+      localHomesteadRef.current.inv[task.itemId] -= 1;
+      if (localHomesteadRef.current.inv[task.itemId] <= 0) delete localHomesteadRef.current.inv[task.itemId];
+      saveHomestead();
+      showToast?.(`Donated 1 ${ITEMS[task.itemId]?.name} — thank you!`, 'success');
+      forceTick((n) => n + 1);
+      // If that donation completed the task, exactly one client rerolls the shop
+      if (res.snapshot.val() >= task.need) {
+        const restock = await runTransaction(ref(database, `worldRooms/${roomCodeRef.current}/shop`), (cur) => {
+          if (!cur || !cur.task || (cur.task.have || 0) < (cur.task.need || 1)) return;
+          return { gen: (cur.gen || 0) + 1, stock: rollShopStock(), task: rollRestockTask() };
+        });
+        if (restock.committed) pushEvent('🎪 The class restocked the Wandering Merchant — fresh goods have arrived!', 'shop');
+      }
+    } catch {
+      showToast?.('Donation failed — try again.', 'error');
+    }
+  }, [shopState, saveHomestead, showToast, pushEvent]);
+
+  // Quick emotes — visible above your head to everyone nearby
+  const sendEmote = useCallback((e) => {
+    setEmoteOpen(false);
+    const stamp = { e, at: Date.now() };
+    setMyEmote(stamp);
+    if (myPlayerDbRef.current) update(myPlayerDbRef.current, { emote: stamp }).catch(() => {});
+  }, []);
 
   const claimPendingIncome = useCallback((code, saleId, sale) => {
     if (!sale) return;
@@ -248,7 +385,10 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     remotePlayersStoreRef.current = {};
     setRemotePlayers({});
     setChatLog([]);
+    bannerQueueRef.current = [];
+    setBanner(null);
     setupListeners(code, myId);
+    ensureShop(code);
 
     if (localTownSquareRef.current.stall) syncStallToRTDB(localTownSquareRef.current.stall);
 
@@ -277,6 +417,9 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       off(ref(database, `worldRooms/${code}/stalls`));
       off(ref(database, `worldRooms/${code}/challenges`));
       off(ref(database, `worldRooms/${code}/chat`));
+      off(ref(database, `worldRooms/${code}/events`));
+      off(ref(database, `worldRooms/${code}/shop`));
+      off(ref(database, `worldRooms/${code}/winTally/${dayKey()}`));
       off(ref(database, `worldRooms/${code}/pendingIncome/${myIdRef.current}`));
     }
     setScreen('menu');
@@ -357,7 +500,12 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       setChatInput('');
       return;
     }
-    push(ref(database, `worldRooms/${roomCodeRef.current}/chat`), { pid: myIdRef.current, name: myName, text, at: Date.now() }).catch(() => {});
+    const msg = { pid: myIdRef.current, name: myName, text, at: Date.now() };
+    const day = dayKey();
+    push(ref(database, `worldRooms/${roomCodeRef.current}/chat`), msg).catch(() => {});
+    // Archive for the teacher's Town Watch (kept even if the live chat is cleared)
+    push(ref(database, `worldRooms/${roomCodeRef.current}/chatArchive/${day}`), msg).catch(() => {});
+    set(ref(database, `worldRooms/${roomCodeRef.current}/archiveDays/${day}`), true).catch(() => {});
     setChatInput('');
   }, [chatInput, myName, showToast]);
 
@@ -384,9 +532,10 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     saveBoth();
     syncStallToRTDB(localTownSquareRef.current.stall);
     showToast?.(`${tier.name} built! 🎉`, 'success');
+    pushEvent(`🔨 ${myName} opened a market stall in the square!`, 'stall');
     setActiveModal(null);
     forceTick((n) => n + 1);
-  }, [myStall, saveBoth, syncStallToRTDB, showToast]);
+  }, [myStall, saveBoth, syncStallToRTDB, showToast, pushEvent, myName]);
 
   const upgradeStall = useCallback(() => {
     const stall = localTownSquareRef.current.stall;
@@ -479,11 +628,12 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         itemId, price: listing.price, buyerName: myName, at: Date.now(),
       });
       showToast?.(`Bought ${ITEMS[itemId]?.name}! 🛍️`, 'success');
+      pushEvent(`🛍️ ${myName} bought ${ITEMS[itemId]?.name} from ${stall.ownerName}'s stall!`, 'trade');
       forceTick((n) => n + 1);
     } catch {
       showToast?.('Purchase failed — try again.', 'error');
     }
-  }, [stalls, myName, saveHomestead, showToast]);
+  }, [stalls, myName, saveHomestead, showToast, pushEvent]);
 
   const isNear = (target) => target && dist(myPosRef.current, target) <= INTERACT_RADIUS;
 
@@ -523,6 +673,17 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     () => Object.entries(challenges).find(([, c]) => c.status === 'active' && (c.from?.id === myIdRef.current || c.to?.id === myIdRef.current)),
     [challenges]
   );
+
+  // Who's mid-duel right now → { playerId: opponentName } (for ⚔️ badges)
+  const duelists = useMemo(() => {
+    const map = {};
+    Object.values(challenges).forEach((c) => {
+      if (c.status !== 'active') return;
+      if (c.from?.id) map[c.from.id] = c.to?.name || '?';
+      if (c.to?.id) map[c.to.id] = c.from?.name || '?';
+    });
+    return map;
+  }, [challenges]);
 
   useEffect(() => {
     Object.entries(challenges).forEach(([id, c]) => {
@@ -620,6 +781,12 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
           )}
         </div>
         <div className="flex gap-2">
+          <div className="hidden sm:flex items-center gap-1.5 text-white/90 text-sm font-bold bg-black/30 rounded-xl px-3 py-1.5" title="Students in town right now">
+            👥 {Object.keys(remotePlayers).length + 1}
+          </div>
+          <button onClick={() => setChampionsOpen((o) => !o)} className="bg-amber-400/20 text-amber-100 border border-amber-300/30 px-3 py-1.5 rounded-xl text-sm font-semibold hover:bg-amber-400/40" title="Today's duel champions">
+            🏆
+          </button>
           <button onClick={() => setChatOpen((o) => !o)} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-xl text-sm font-semibold">
             💬 Chat
           </button>
@@ -642,11 +809,37 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
           style={{
             width: WORLD_W,
             height: WORLD_H,
-            background: `radial-gradient(circle at 50% 50%, #d6b370 0%, #c2a05e 22%, #a9884d 45%, #7f6b3a 70%, #5d4f2c 100%)`,
+            background: `radial-gradient(circle at 50% 50%, #8fbf6a 0%, #7fae5c 30%, #699549 60%, #4f7636 85%, #3c5c2a 100%)`,
             willChange: 'transform',
             transform: `translate3d(${-cameraRef.current.x}px, ${-cameraRef.current.y}px, 0)`,
           }}
         >
+          <style>{`
+            @keyframes ts-bounce { 0%,100% { transform: translate(-50%,-100%) scale(1); } 50% { transform: translate(-50%,-115%) scale(1.15); } }
+            @keyframes ts-banner { 0% { opacity: 0; transform: translate(-50%,-16px); } 12% { opacity: 1; transform: translate(-50%,0); } 88% { opacity: 1; } 100% { opacity: 0; } }
+            @keyframes ts-duel { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+          `}</style>
+
+          {/* Stone plaza circle + sandy paths (ground detailing) */}
+          <div className="absolute rounded-full pointer-events-none" style={{
+            left: WORLD_W / 2, top: WORLD_H / 2, width: 680, height: 680, transform: 'translate(-50%,-50%)',
+            background: 'radial-gradient(circle, #d8cfb8 0%, #cbc0a4 45%, #b5a888 78%, #9c8f70 100%)',
+            border: '10px solid #8b7c5c', boxShadow: 'inset 0 0 60px rgba(0,0,0,0.18)',
+          }} />
+          <div className="absolute rounded-full pointer-events-none" style={{
+            left: WORLD_W / 2, top: WORLD_H / 2, width: 240, height: 240, transform: 'translate(-50%,-50%)',
+            background: 'radial-gradient(circle, #bfe3f0 0%, #9ecfe2 55%, #8b7c5c 58%, transparent 60%)',
+            opacity: 0.9,
+          }} />
+          <div className="absolute pointer-events-none" style={{
+            left: 0, top: WORLD_H / 2 - 45, width: WORLD_W, height: 90,
+            background: 'linear-gradient(rgba(216,207,184,0), rgba(216,207,184,0.75) 30%, rgba(216,207,184,0.75) 70%, rgba(216,207,184,0))',
+          }} />
+          <div className="absolute pointer-events-none" style={{
+            left: WORLD_W / 2 - 45, top: 0, width: 90, height: WORLD_H,
+            background: 'linear-gradient(90deg, rgba(216,207,184,0), rgba(216,207,184,0.75) 30%, rgba(216,207,184,0.75) 70%, rgba(216,207,184,0))',
+          }} />
+
           {DECOR.map((d, i) => (
             <div
               key={i}
@@ -660,6 +853,21 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
               )}
             </div>
           ))}
+
+          {/* The Wandering Merchant caravan (class-shared shop) */}
+          <button
+            onClick={() => setActiveModal({ type: 'shop' })}
+            className="absolute flex flex-col items-center z-10"
+            style={{ left: MERCHANT.x, top: MERCHANT.y, transform: 'translate(-50%,-50%)' }}
+          >
+            <img src={MERCHANT_IMG} alt="" className="w-28 h-28 object-contain drop-shadow-xl" />
+            <div className="text-[11px] font-bold text-amber-950 bg-amber-300/95 border border-amber-600/50 rounded-full px-2.5 py-0.5 -mt-2 shadow">
+              🎪 Wandering Merchant
+            </div>
+            {shopState?.stock && Object.values(shopState.stock).every((s) => (s?.qty || 0) <= 0) && (
+              <div className="text-[10px] font-bold text-white bg-rose-600/90 rounded-full px-2 py-0.5 mt-0.5 animate-pulse">SOLD OUT — help restock!</div>
+            )}
+          </button>
 
           {/* Plots */}
           {PLOTS.map((plot) => {
@@ -688,29 +896,101 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
           })}
 
           {/* Remote players */}
-          {Object.entries(remotePlayers).map(([id, p]) => (
-            <button
-              key={id}
-              onClick={() => setActiveModal({ type: 'player', id, name: p.name, x: p.x, y: p.y, avatarBase: p.avatarBase, level: p.level })}
-              className="absolute flex flex-col items-center z-20"
-              style={{ left: p.x, top: p.y, transition: 'left 0.15s linear, top 0.15s linear', transform: 'translate(-50%,-50%)' }}
-            >
-              {p.bubble && p.bubble.expiresAt > now && (
-                <div className="bg-white text-slate-800 text-xs rounded-xl px-2 py-1 mb-1 shadow max-w-[110px] truncate">{p.bubble.text}</div>
-              )}
-              <img src={getAvatarImage(p.avatarBase, p.level)} alt="" className="w-10 h-10 rounded-full border-2 shadow-lg bg-white/80" style={{ borderColor: p.ring || '#fff' }} />
-              <div className="text-[10px] font-bold text-white bg-black/55 rounded px-1.5 mt-0.5 max-w-[80px] truncate">{p.name}</div>
-            </button>
-          ))}
+          {Object.entries(remotePlayers).map(([id, p]) => {
+            const dueling = duelists[id];
+            const emoteFresh = p.emote && now - (p.emote.at || 0) < 3000;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveModal({ type: 'player', id, name: p.name, x: p.x, y: p.y, avatarBase: p.avatarBase, level: p.level })}
+                className="absolute flex flex-col items-center z-20"
+                style={{ left: p.x, top: p.y, transition: 'left 0.15s linear, top 0.15s linear', transform: 'translate(-50%,-50%)' }}
+              >
+                {emoteFresh && (
+                  <div className="absolute -top-1 left-1/2 text-2xl pointer-events-none" style={{ animation: 'ts-bounce 0.7s ease-in-out infinite' }}>{p.emote.e}</div>
+                )}
+                {p.bubble && p.bubble.expiresAt > now && !emoteFresh && (
+                  <div className="bg-white text-slate-800 text-xs rounded-xl px-2 py-1 mb-1 shadow max-w-[110px] truncate">{p.bubble.text}</div>
+                )}
+                <div className="relative">
+                  <img
+                    src={getAvatarImage(p.avatarBase, p.level)}
+                    alt=""
+                    className={`w-10 h-10 rounded-full border-2 shadow-lg bg-white/80 ${dueling ? 'ring-2 ring-rose-400 animate-pulse' : ''}`}
+                    style={{ borderColor: p.ring || '#fff' }}
+                  />
+                  {dueling && <span className="absolute -top-2 -right-2 text-sm" style={{ animation: 'ts-duel 0.5s ease-in-out infinite' }}>⚔️</span>}
+                </div>
+                <div className="w-7 h-1.5 bg-black/25 rounded-full blur-[1.5px] -mt-0.5" />
+                <div className="text-[10px] font-bold text-white bg-black/55 rounded px-1.5 mt-0.5 max-w-[90px] truncate">
+                  {p.name}{dueling ? ` ⚔ vs ${dueling}` : ''}
+                </div>
+              </button>
+            );
+          })}
 
           {/* Me */}
           <div ref={avatarDivRef} className="absolute flex flex-col items-center z-20 pointer-events-none" style={{ left: myPosRef.current.x, top: myPosRef.current.y, transform: 'translate(-50%,-50%)' }}>
-            {myBubble && myBubble.expiresAt > now && (
+            {myEmote && now - myEmote.at < 3000 && (
+              <div className="absolute -top-1 left-1/2 text-2xl" style={{ animation: 'ts-bounce 0.7s ease-in-out infinite' }}>{myEmote.e}</div>
+            )}
+            {myBubble && myBubble.expiresAt > now && !(myEmote && now - myEmote.at < 3000) && (
               <div className="bg-yellow-300 text-slate-900 text-xs rounded-xl px-2 py-1 mb-1 shadow max-w-[110px] truncate">{myBubble.text}</div>
             )}
-            <img src={myAvatarSrc} alt="" className="w-11 h-11 rounded-full border-2 border-yellow-300 shadow-xl bg-white/80" />
+            <div className="relative">
+              <img src={myAvatarSrc} alt="" className={`w-11 h-11 rounded-full border-2 border-yellow-300 shadow-xl bg-white/80 ${duelists[myIdRef.current] ? 'ring-2 ring-rose-400 animate-pulse' : ''}`} />
+              {duelists[myIdRef.current] && <span className="absolute -top-2 -right-2 text-sm" style={{ animation: 'ts-duel 0.5s ease-in-out infinite' }}>⚔️</span>}
+            </div>
+            <div className="w-8 h-1.5 bg-black/25 rounded-full blur-[1.5px] -mt-0.5" />
             <div className="text-[10px] font-bold text-white bg-black/65 rounded px-1.5 mt-0.5">{myName}</div>
           </div>
+        </div>
+
+        {/* Soft vignette over the viewport */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 55%, rgba(20,15,5,0.28) 100%)' }} />
+      </div>
+
+      {/* Town announcement banner */}
+      {banner && (
+        <div
+          key={banner.id}
+          className="absolute top-14 left-1/2 z-30 max-w-[85%] pointer-events-none"
+          style={{ animation: `ts-banner ${EVENT_BANNER_MS}ms ease-in-out forwards`, transform: 'translate(-50%,0)' }}
+        >
+          <div className="bg-gradient-to-r from-amber-400 to-yellow-300 text-amber-950 font-bold text-sm rounded-full px-5 py-2 shadow-xl border-2 border-amber-600/40 whitespace-nowrap overflow-hidden text-ellipsis">
+            📣 {banner.text}
+          </div>
+        </div>
+      )}
+
+      {/* Today's champions panel */}
+      {championsOpen && (
+        <div className="absolute top-14 left-3 z-30 w-56 bg-black/60 backdrop-blur-md rounded-2xl border border-amber-300/20 p-3">
+          <div className="text-amber-300 font-bold text-sm mb-2">🏆 Today&apos;s Champions</div>
+          {Object.entries(tally).sort((a, b) => (b[1]?.wins || 0) - (a[1]?.wins || 0)).slice(0, 5).map(([pid, t], i) => (
+            <div key={pid} className="flex items-center gap-2 text-white/90 text-xs py-1">
+              <span className="w-5 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+              <span className="flex-1 truncate font-semibold">{t?.name || '?'}</span>
+              <span className="text-amber-300 font-bold">{t?.wins || 0} wins</span>
+            </div>
+          ))}
+          {Object.keys(tally).length === 0 && <div className="text-white/40 text-xs py-2 text-center">No duels won yet today — be the first!</div>}
+        </div>
+      )}
+
+      {/* Minimap */}
+      <div className="absolute bottom-16 left-3 z-30 rounded-xl border border-white/20 bg-black/45 backdrop-blur-sm p-1 hidden sm:block" style={{ width: 148, height: 98 }}>
+        <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: 'radial-gradient(circle, #5b7c44 0%, #46613558 100%)' }}>
+          <div className="absolute rounded-full bg-white/20" style={{ left: '50%', top: '50%', width: 42, height: 42, transform: 'translate(-50%,-50%)' }} />
+          <img src={MERCHANT_IMG} alt="" className="absolute w-4 h-4 object-contain" style={{ left: `${(MERCHANT.x / WORLD_W) * 100}%`, top: `${(MERCHANT.y / WORLD_H) * 100}%`, transform: 'translate(-50%,-50%)' }} />
+          {PLOTS.map((pl) => {
+            const s = stallsByPlot[pl.id];
+            return <div key={pl.id} className="absolute w-1.5 h-1.5 rounded-sm" style={{ left: `${(pl.x / WORLD_W) * 100}%`, top: `${(pl.y / WORLD_H) * 100}%`, transform: 'translate(-50%,-50%)', background: s ? themeColor(s.theme) : 'rgba(255,255,255,0.35)' }} />;
+          })}
+          {Object.values(remotePlayers).map((p, i) => (
+            <div key={i} className="absolute w-1.5 h-1.5 rounded-full" style={{ left: `${((p.x || 0) / WORLD_W) * 100}%`, top: `${((p.y || 0) / WORLD_H) * 100}%`, transform: 'translate(-50%,-50%)', background: p.ring || '#fff' }} />
+          ))}
+          <div className="absolute w-2 h-2 rounded-full bg-yellow-300 border border-amber-700" style={{ left: `${(myPosRef.current.x / WORLD_W) * 100}%`, top: `${(myPosRef.current.y / WORLD_H) * 100}%`, transform: 'translate(-50%,-50%)' }} />
         </div>
       </div>
 
@@ -720,15 +1000,29 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
           <div className="flex-1 overflow-y-auto space-y-1 mb-1 pr-1">
             {chatLog.length === 0 && <div className="text-white/40 text-xs text-center py-4">No messages yet — say hi!</div>}
             {chatLog.map((m) => (
-              <div key={m.id} className="text-xs text-white/90"><span className="font-bold text-yellow-300">{m.name}:</span> {m.text}</div>
+              m.sys
+                ? <div key={m.id} className="text-[11px] text-amber-300/90 italic">{m.text}</div>
+                : <div key={m.id} className="text-xs text-white/90"><span className="font-bold text-yellow-300">{m.name}:</span> {m.text}</div>
             ))}
             <div ref={chatEndRef} />
           </div>
         </div>
       )}
 
-      {/* Chat input */}
+      {/* Chat input + emote wheel */}
       <form onSubmit={sendChat} className={`absolute bottom-3 left-3 z-30 flex gap-2 ${isTouchDevice ? 'right-[190px]' : 'right-24'}`}>
+        <div className="relative">
+          <button type="button" onClick={() => setEmoteOpen((o) => !o)} className="h-full bg-black/45 border border-white/10 hover:border-yellow-300/60 text-lg rounded-xl px-2.5" title="Send an emote">
+            😀
+          </button>
+          {emoteOpen && (
+            <div className="absolute bottom-12 left-0 flex gap-1 bg-black/70 backdrop-blur-md rounded-2xl border border-white/15 p-1.5">
+              {EMOTES.map((e) => (
+                <button key={e} type="button" onClick={() => sendEmote(e)} className="text-xl hover:scale-125 transition-transform px-1">{e}</button>
+              ))}
+            </div>
+          )}
+        </div>
         <input
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
@@ -794,6 +1088,17 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
           player={activeModal}
           near={isNear(activeModal)}
           onChallenge={(gameId) => sendChallenge(activeModal.id, activeModal.name, gameId)}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+      {activeModal?.type === 'shop' && (
+        <ShopModal
+          shop={shopState}
+          myGold={localHomesteadRef.current.gold || 0}
+          myInv={localHomesteadRef.current.inv || {}}
+          near={isNear(MERCHANT)}
+          onBuy={buyShopItem}
+          onDonate={donateToShop}
           onClose={() => setActiveModal(null)}
         />
       )}
@@ -1008,6 +1313,72 @@ function BrowseStallModal({ stall, myGold, near, onBuy, onClose }) {
         ))}
       </div>
       {!near && <div className="text-amber-300 text-xs text-center mt-3">Walk closer to buy from this stall.</div>}
+    </ModalShell>
+  );
+}
+
+function ShopModal({ shop, myGold, myInv, near, onBuy, onDonate, onClose }) {
+  const stock = shop?.stock || {};
+  const task = shop?.task || null;
+  const slots = Object.entries(stock);
+  const allSoldOut = slots.length > 0 && slots.every(([, s]) => (s?.qty || 0) <= 0);
+  return (
+    <ModalShell title="The Wandering Merchant" iconSrc={MERCHANT_IMG} onClose={onClose}>
+      <div className="flex items-center gap-2 mb-3 text-sm text-white/60">
+        <img src={GOLD_ICON} alt="" className="w-4 h-4" /> You have {fmtQty(myGold)} gold
+      </div>
+
+      {allSoldOut && (
+        <div className="bg-rose-500/15 border border-rose-400/30 text-rose-200 text-xs rounded-xl p-2.5 mb-3 text-center font-semibold">
+          The caravan is picked clean! Complete the restock task below for fresh goods.
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        {slots.map(([slotId, s]) => {
+          const item = ITEMS[s.itemId];
+          const out = (s.qty || 0) <= 0;
+          return (
+            <div key={slotId} className={`rounded-xl border p-2.5 text-center ${out ? 'border-white/5 bg-white/[0.02] opacity-50' : 'border-white/10 bg-white/5'}`}>
+              {item?.img && <img src={item.img} alt="" className="w-9 h-9 mx-auto object-contain" style={item.tint ? { filter: item.tint } : undefined} />}
+              <div className="text-xs font-semibold mt-1 truncate">{item?.name || s.itemId}</div>
+              <div className="text-[10px] text-white/50 mb-1.5">{out ? 'SOLD OUT' : `${s.qty} left · ${s.price} gold`}</div>
+              <button
+                onClick={() => onBuy(slotId)}
+                disabled={!near || out || myGold < s.price}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-white/40 py-1.5 rounded-lg text-xs font-bold"
+              >
+                Buy
+              </button>
+            </div>
+          );
+        })}
+        {slots.length === 0 && <div className="col-span-2 text-white/40 text-sm text-center py-6">The merchant is setting up shop…</div>}
+      </div>
+
+      {task && (
+        <div className="bg-amber-500/10 border border-amber-400/25 rounded-2xl p-3">
+          <div className="text-amber-300 font-bold text-sm mb-1">🎯 Class Restock Task</div>
+          <div className="flex items-center gap-2 text-xs text-white/80 mb-2">
+            {ITEMS[task.itemId]?.img && <img src={ITEMS[task.itemId].img} alt="" className="w-5 h-5" />}
+            Bring the merchant <b>{task.need}× {ITEMS[task.itemId]?.name}</b> — everyone can chip in!
+          </div>
+          <div className="w-full bg-black/40 rounded-full h-3 border border-white/10 mb-2">
+            <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 transition-all" style={{ width: `${Math.min(100, Math.round(((task.have || 0) / task.need) * 100))}%` }} />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-white/50">{task.have || 0}/{task.need} donated · you have {myInv[task.itemId] || 0}</span>
+            <button
+              onClick={onDonate}
+              disabled={!near || (myInv[task.itemId] || 0) < 1}
+              className="bg-amber-500 hover:bg-amber-400 disabled:bg-slate-700 disabled:text-white/40 text-amber-950 px-4 py-1.5 rounded-lg text-xs font-bold"
+            >
+              Donate 1
+            </button>
+          </div>
+        </div>
+      )}
+      {!near && <div className="text-amber-300 text-xs text-center mt-3">Walk closer to the caravan to trade.</div>}
     </ModalShell>
   );
 }

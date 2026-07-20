@@ -104,6 +104,62 @@ export const MINIGAMES = [
 
 export const MINIGAME_MAP = Object.fromEntries(MINIGAMES.map((m) => [m.id, m]));
 
+// ═══════════════════════════════════════════════════════════════════════════
+// EVENTS / ANNOUNCEMENTS — town-wide feed (victories, purchases, restocks)
+// ═══════════════════════════════════════════════════════════════════════════
+export const EVENT_BANNER_MS = 5000;
+
+// Quick emotes (deliberately old, universally-supported emoji codepoints)
+export const EMOTES = ['😀', '❤️', '👍', '🎉', '😮', '😢'];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THE WANDERING MERCHANT — class-shared central shop (worldRooms/{code}/shop)
+// Stock is random, limited, and shared by the whole class. When the class
+// completes the donation task, the caravan restocks with fresh goods.
+// ═══════════════════════════════════════════════════════════════════════════
+export const MERCHANT = { x: CX, y: WORLD_H * 0.30 };
+export const MERCHANT_IMG = `${TS}/010-caravan.svg`;
+export const SHOP_SLOTS = 6;
+
+// What the merchant may sell: [itemId, minQty, maxQty, price(gold each)]
+export const SHOP_POOL = [
+  ['salt', 3, 6, 5], ['rice', 3, 6, 5], ['pasta', 3, 6, 7], ['sugar', 3, 6, 7],
+  ['olive_oil', 2, 5, 9], ['cocoa', 2, 5, 11], ['honey', 2, 4, 12],
+  ['hide', 2, 4, 18], ['bone', 3, 6, 10], ['feather', 3, 6, 9],
+  ['plank', 2, 4, 12], ['iron_bar', 1, 3, 38], ['copper_bar', 2, 4, 20],
+  ['tomato_seed', 2, 4, 6], ['corn_seed', 2, 4, 10], ['strawberry_seed', 2, 3, 13],
+  ['pumpkin_seed', 1, 3, 26], ['sunfruit_seed', 1, 1, 75],
+  ['tree_sap', 1, 2, 40], ['mandrake', 1, 2, 70], ['truffle', 1, 1, 95],
+  ['glimmer_dust', 1, 1, 110], ['emerald', 1, 1, 100], ['moonpetal', 1, 2, 80],
+];
+
+// Donation tasks the class works on together to restock the caravan
+export const RESTOCK_TASKS = [
+  ['fiber', 30], ['beech_wood', 30], ['stone', 30], ['berries', 25],
+  ['minnow', 20], ['acorn', 25], ['basil', 20], ['meat', 15],
+  ['cherry_wood', 20], ['copper_ore', 18], ['mushroom', 18], ['wild_egg', 15],
+];
+
+// Roll a fresh set of shop stock (the single client that wins the restock
+// transaction generates and writes it — no cross-client determinism needed).
+export const rollShopStock = () => {
+  const pool = [...SHOP_POOL];
+  const stock = {};
+  for (let i = 0; i < SHOP_SLOTS && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const [itemId, lo, hi, price] = pool.splice(idx, 1)[0];
+    stock[`s${i}`] = { itemId, qty: lo + Math.floor(Math.random() * (hi - lo + 1)), price };
+  }
+  return stock;
+};
+
+export const rollRestockTask = () => {
+  const [itemId, need] = RESTOCK_TASKS[Math.floor(Math.random() * RESTOCK_TASKS.length)];
+  return { itemId, need, have: 0 };
+};
+
+export const dayKey = (d = new Date()) => d.toISOString().slice(0, 10);
+
 // Rock/Paper/Scissors throw icons (rock reuses the "stone" icon from the
 // Town Square pack — there's no dedicated rock icon, and it's a perfect fit).
 export const RPS_THROWS = [
@@ -158,8 +214,13 @@ export const fmtCost = (cost, ITEMS) =>
 // fountain centerpiece).
 // ═══════════════════════════════════════════════════════════════════════════
 export const DECOR = [
-  // Centerpiece
-  { emoji: '⛲', x: CX, y: CY, size: 90 },
+  // Centerpiece fountain (real icon — no emoji dependence)
+  { img: `${WW}/Water/001-spring.svg`, x: CX, y: CY, size: 100 },
+  // Marketplace props around the merchant caravan
+  { img: `${TS}/004-money-bag.svg`, x: CX - 90, y: WORLD_H * 0.315, size: 40 },
+  { img: `${TS}/011-old-scroll.svg`, x: CX + 92, y: WORLD_H * 0.305, size: 42 },
+  { img: `${TS}/005-banners.svg`, x: CX - 150, y: WORLD_H * 0.26, size: 60 },
+  { img: `${TS}/005-banners.svg`, x: CX + 150, y: WORLD_H * 0.26, size: 60 },
 
   // Landmark + flavor buildings from the Town Square pack
   { img: `${TS}/006-tower.svg`, x: CX, y: WORLD_H * 0.075, size: 140 },
