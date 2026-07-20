@@ -243,17 +243,6 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     onChildAdded(pendingPath, (snap) => claimPendingIncome(code, snap.key, snap.val()));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reveal the buried treasure only when you wander close to it
-  useEffect(() => {
-    if (screen !== 'playing' || !todaysTreasure) return;
-    const t = setInterval(() => {
-      if (treasureFound()) { setTreasureVisible(false); return; }
-      const near = dist(myPosRef.current, todaysTreasure) <= TREASURE_RADIUS;
-      setTreasureVisible((v) => (v === near ? v : near));
-    }, 400);
-    return () => clearInterval(t);
-  }, [screen, todaysTreasure]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Rotate the announcement banner queue
   useEffect(() => {
     if (screen !== 'playing') return;
@@ -413,6 +402,17 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     pushEvent(`🗺️ ${myName} dug up today's buried treasure!`, 'treasure');
     forceTick((n) => n + 1);
   }, [todaysTreasure, saveBoth, showToast, pushEvent, myName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reveal the buried treasure only when you wander close to it
+  useEffect(() => {
+    if (screen !== 'playing' || !todaysTreasure) return;
+    const t = setInterval(() => {
+      if (treasureFound()) { setTreasureVisible(false); return; }
+      const near = dist(myPosRef.current, todaysTreasure) <= TREASURE_RADIUS;
+      setTreasureVisible((v) => (v === near ? v : near));
+    }, 400);
+    return () => clearInterval(t);
+  }, [screen, todaysTreasure]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── The Wishing Fountain ────────────────────────────────────────────────────
   const wishesToday = () => {
