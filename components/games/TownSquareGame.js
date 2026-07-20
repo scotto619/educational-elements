@@ -48,6 +48,7 @@ const themeColor = (id) => STALL_THEMES.find((t) => t.id === id)?.color || '#a16
 const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, classmates = [], onSwitchGame = null }) => {
   const [screen, setScreen] = useState('menu'); // menu | playing
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [remotePlayers, setRemotePlayers] = useState({});
   const [stalls, setStalls] = useState({});
   const [challenges, setChallenges] = useState({});
@@ -124,7 +125,34 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     onChildRemoved(playersPath, (snap) => { delete remotePlayersStoreRef.current[snap.key]; });
 
     const stallsPath = ref(database, `worldRooms/${code}/stalls`);
-    onValue(stallsPath, (snap) => setStalls(snap.val() || {}));
+    onValue(stallsPath, (snap) => {
+      const data = snap.val() || {};
+      setStalls(data);
+
+      // Reconcile MY OWN stall's stock from the live RTDB copy. Buyers only
+      // ever decrement `listings/{itemId}/qty` directly in RTDB (they can't
+      // write to my Firestore doc) — if I never pull that decrement back
+      // into my local authoritative copy, my next stall save (restocking,
+      // taking an item back, changing the theme, upgrading…) would push my
+      // stale, pre-sale quantity back over the top and "un-sell" the item,
+      // letting it be taken back or re-sold. This keeps qty always in sync.
+      const myRtdbStall = data[myId];
+      const myStall = localTownSquareRef.current.stall;
+      if (myRtdbStall?.listings && myStall?.listings) {
+        let changed = false;
+        Object.entries(myRtdbStall.listings).forEach(([itemId, live]) => {
+          const localListing = myStall.listings[itemId];
+          if (localListing && typeof live?.qty === 'number' && live.qty !== localListing.qty) {
+            localListing.qty = Math.max(0, live.qty);
+            changed = true;
+          }
+        });
+        if (changed) {
+          forceTick((n) => n + 1);
+          updateStudentData({ townSquareData: localTownSquareRef.current }).catch(() => {});
+        }
+      }
+    });
 
     const challengesPath = ref(database, `worldRooms/${code}/challenges`);
     onValue(challengesPath, (snap) => {
@@ -290,6 +318,16 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onChange);
     return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  // Detect touch-capable devices (iPads included) so the on-screen d-pad
+  // shows up for them. We deliberately don't gate this on screen width —
+  // iPads report widths well above Tailwind's `md` breakpoint, so a
+  // width-based check was hiding the controls on exactly the devices that
+  // need them (no physical keyboard).
+  useEffect(() => {
+    const touchCapable = (typeof window !== 'undefined' && 'ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+    setIsTouchDevice(!!touchCapable);
   }, []);
 
   // Track the actual rendered viewport size so the camera knows how much of
@@ -690,7 +728,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       )}
 
       {/* Chat input */}
-      <form onSubmit={sendChat} className="absolute bottom-3 left-3 right-24 md:right-32 z-30 flex gap-2">
+      <form onSubmit={sendChat} className={`absolute bottom-3 left-3 z-30 flex gap-2 ${isTouchDevice ? 'right-[190px]' : 'right-24'}`}>
         <input
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
@@ -701,18 +739,22 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         <button type="submit" className="bg-yellow-400 text-amber-950 font-bold px-4 py-2 rounded-xl text-sm">Send</button>
       </form>
 
-      {/* Mobile d-pad */}
-      <div className="absolute bottom-16 right-3 z-30 grid grid-cols-3 grid-rows-3 gap-1 md:hidden w-28">
-        <div />
-        <DpadBtn label="▲" onDown={() => (keysRef.current.up = true)} onUp={() => (keysRef.current.up = false)} />
-        <div />
-        <DpadBtn label="◀" onDown={() => (keysRef.current.left = true)} onUp={() => (keysRef.current.left = false)} />
-        <div />
-        <DpadBtn label="▶" onDown={() => (keysRef.current.right = true)} onUp={() => (keysRef.current.right = false)} />
-        <div />
-        <DpadBtn label="▼" onDown={() => (keysRef.current.down = true)} onUp={() => (keysRef.current.down = false)} />
-        <div />
-      </div>
+      {/* Touch d-pad — shown on any touch-capable device (phones, iPads),
+          not gated by screen width since iPads are plenty wide enough to be
+          missed by a `md:hidden`-style breakpoint check. */}
+      {isTouchDevice && (
+        <div className="absolute bottom-20 right-3 z-30 grid grid-cols-3 grid-rows-3 gap-1.5 bg-black/30 backdrop-blur-sm rounded-2xl p-2">
+          <div />
+          <DpadBtn label="▲" onDown={() => (keysRef.current.up = true)} onUp={() => (keysRef.current.up = false)} />
+          <div />
+          <DpadBtn label="◀" onDown={() => (keysRef.current.left = true)} onUp={() => (keysRef.current.left = false)} />
+          <div />
+          <DpadBtn label="▶" onDown={() => (keysRef.current.right = true)} onUp={() => (keysRef.current.right = false)} />
+          <div />
+          <DpadBtn label="▼" onDown={() => (keysRef.current.down = true)} onUp={() => (keysRef.current.down = false)} />
+          <div />
+        </div>
+      )}
 
       {/* Modals */}
       {activeModal?.type === 'build' && (
@@ -801,7 +843,8 @@ const DpadBtn = ({ label, onDown, onUp }) => (
     onPointerDown={(e) => { e.preventDefault(); onDown(); }}
     onPointerUp={onUp}
     onPointerLeave={onUp}
-    className="bg-black/40 active:bg-white/30 text-white rounded-lg text-lg font-bold flex items-center justify-center h-8 w-8 mx-auto touch-none"
+    onPointerCancel={onUp}
+    className="bg-white/15 active:bg-white/40 border border-white/20 text-white rounded-xl text-2xl font-bold flex items-center justify-center h-12 w-12 mx-auto touch-none select-none"
   >
     {label}
   </button>
