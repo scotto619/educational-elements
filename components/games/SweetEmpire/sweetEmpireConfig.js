@@ -241,10 +241,13 @@ export const ACHIEVEMENT_MAP = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id,
 // ═══════════════════════════════════════════════════════════════════════════
 // PRESTIGE — Heroic Ascension & Glory Stars (internally rebirths/sugarStars)
 // ═══════════════════════════════════════════════════════════════════════════
-// Stars earned on ascension: sqrt(runGold / 1e9) — first star needs 1 BILLION
-// gold earned in a single quest (slow grind by design). Each star = +2% GPS.
-export const STAR_DIVISOR = 1e9;
-export const starsForRun = (runSweets) => Math.floor(Math.sqrt(Math.max(0, runSweets) / STAR_DIVISOR));
+// Stars earned on ascension: hard thresholds, MAX 3 PER ASCENSION.
+// 1st star = 50 BILLION run gold, 2nd = 500 BILLION, 3rd = 5 TRILLION.
+// (Rebalanced: stars are now rare and precious — each is +2% GPS forever.)
+export const STAR_THRESHOLDS = [5e10, 5e11, 5e12];
+export const STAR_DIVISOR = STAR_THRESHOLDS[0]; // kept for back-compat
+export const starsForRun = (runSweets) =>
+  STAR_THRESHOLDS.filter((t) => (Number(runSweets) || 0) >= t).length;
 export const STAR_SPS_BONUS = 0.02;
 
 // Hall of Legends — permanent upgrades bought with Glory Stars (spent is spent;
@@ -458,6 +461,7 @@ export const OFFLINE_BASE_HOURS = 2;
 export const OFFLINE_RATE = 0.5; // offline production runs at 50% of GPS
 
 export const defaultSave = () => ({
+  balancePatch: 2,    // save version — new players never receive old-balance resets
   sweets: 0,          // current gold in hoard
   runSweets: 0,       // gold this quest (drives stars + achievements)
   lifetimeSweets: 0,  // gold across all quests

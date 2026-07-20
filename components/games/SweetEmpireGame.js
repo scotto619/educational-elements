@@ -20,7 +20,7 @@ import {
   BUILDINGS, BUILDING_MAP, buildingCost, bulkBuildingCost,
   UPGRADES, UPGRADE_MAP,
   ACHIEVEMENTS, ACHIEVEMENT_MAP,
-  starsForRun, STAR_SPS_BONUS, STAR_UPGRADES, STAR_UPGRADE_MAP,
+  starsForRun, STAR_SPS_BONUS, STAR_UPGRADES, STAR_UPGRADE_MAP, STAR_THRESHOLDS,
   GOLDEN_MIN_GAP, GOLDEN_MAX_GAP, GOLDEN_LIFETIME, GOLDEN_EFFECTS, LOOT_CHEST_IMAGES,
   EVENT_MIN_GAP, EVENT_MAX_GAP, EVENT_LIFETIME, REALM_EVENTS,
   DRAGON_HP_CLICKS, DRAGON_TIME, DRAGON_REWARD_MINUTES, DRAGON_IMAGES,
@@ -36,6 +36,7 @@ const now = () => Date.now();
 
 // Firestore-safe clean of the save object (no undefined values, ever)
 const cleanSave = (gs) => ({
+  balancePatch: Number(gs.balancePatch) || 0,
   sweets: Number(gs.sweets) || 0,
   runSweets: Number(gs.runSweets) || 0,
   lifetimeSweets: Number(gs.lifetimeSweets) || 0,
@@ -208,6 +209,44 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     const raw = studentData?.sweetEmpireData;
     let save = { ...defaultSave(), ...(raw || {}) };
     save.buildings = { ...(raw?.buildings || {}) };
+
+    // ── THE GREAT REBALANCE (one-time, on next join) ────────────────────────
+    // Caps runaway progress: lifetime/current/run gold capped at 1 TRILLION,
+    // all Glory Stars and star-shop purchases removed, and every unlock or
+    // achievement that no longer meets its requirement is taken back.
+    if (raw && (Number(raw.balancePatch) || 0) < 2) {
+      const CAP = 1e12;
+      save.lifetimeSweets = Math.min(Number(save.lifetimeSweets) || 0, CAP);
+      save.sweets = Math.min(Number(save.sweets) || 0, CAP);
+      save.runSweets = Math.min(Number(save.runSweets) || 0, CAP);
+      save.sugarStars = 0;
+      save.starUpgrades = [];
+      save.achievements = (save.achievements || []).filter((id) => {
+        const a = ACHIEVEMENT_MAP[id];
+        try { return a ? !!a.check(save) : false; } catch { return false; }
+      });
+      save.unlockedThemes = (save.unlockedThemes || []).filter((id) => {
+        const t = SE_THEMES.find((x) => x.id === id);
+        return t ? meetsUnlockReq(t.req, save) : false;
+      });
+      save.unlockedTitles = (save.unlockedTitles || []).filter((id) => {
+        const t = SE_TITLES.find((x) => x.id === id);
+        return t ? meetsUnlockReq(t.req, save) : false;
+      });
+      if (!save.unlockedTitles.includes('kitchenhand')) save.unlockedTitles.unshift('kitchenhand');
+      save.unlockedEffects = (save.unlockedEffects || []).filter((id) => {
+        const e = SE_EFFECTS.find((x) => x.id === id);
+        return e ? meetsUnlockReq(e.req, save) : false;
+      });
+      if (save.activeTheme && !save.unlockedThemes.includes(save.activeTheme)) save.activeTheme = null;
+      if (save.activeTitle && !save.unlockedTitles.includes(save.activeTitle)) save.activeTitle = 'kitchenhand';
+      if (save.activeEffect && !save.unlockedEffects.includes(save.activeEffect)) save.activeEffect = null;
+      save.balancePatch = 2;
+      setTimeout(() => showToast(
+        '⚖️ The Forge has been rebalanced! Lifetime gold is capped at 1T, all Glory Stars were reset, and stars are now much harder to earn (max 3 per Ascension). Forge your legend anew!',
+        'info'
+      ), 800);
+    }
 
     if (raw?.lastSeen) {
       const away = (now() - new Date(raw.lastSeen).getTime()) / 1000;
@@ -1080,10 +1119,13 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
                 )
               ) : (
                 <p className="text-sm bg-white/15 rounded-xl px-4 py-2.5 inline-block">
-                  🔒 Earn <span className="font-bold">{fmtNum(1e9)}</span> gold in one quest to earn your first star.
-                  ({fmtNum(gs.runSweets)} / {fmtNum(1e9)})
+                  🔒 Earn <span className="font-bold">{fmtNum(STAR_THRESHOLDS[0])}</span> gold in one quest for your first star.
+                  ({fmtNum(gs.runSweets)} / {fmtNum(STAR_THRESHOLDS[0])})
                 </p>
               )}
+              <p className="text-[11px] text-indigo-200/80 mt-2">
+                Stars per Ascension (max 3): ⭐ {fmtNum(STAR_THRESHOLDS[0])} · ⭐⭐ {fmtNum(STAR_THRESHOLDS[1])} · ⭐⭐⭐ {fmtNum(STAR_THRESHOLDS[2])} run gold
+              </p>
             </div>
           </div>
 
