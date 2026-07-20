@@ -22,13 +22,19 @@ import {
 } from 'firebase/database';
 import { getAvatarImage, calculateAvatarLevel } from '../../utils/gameHelpers';
 import { containsProfanity } from '../../utils/profanityFilter';
-import { ITEMS, GOLD_ICON, fmtQty } from './Homestead/homesteadConfig';
+import { ITEMS, GOLD_ICON, fmtQty, prosperityOf } from './Homestead/homesteadConfig';
+import { forgeStageFor } from './SweetEmpire/sweetEmpireConfig';
+import { SPECIES_MAP as MENAGERIE_SPECIES } from './Menagerie/menagerieConfig';
 import {
   PLOTS, STALL_TIERS, STALL_THEMES, MINIGAMES, MINIGAME_MAP, ringColorFor,
   canAfford, deductCost, fmtCost, DECOR, NETWORK_RATE, CHAT_BUBBLE_MS,
   INTERACT_RADIUS, WORLD_W, WORLD_H, MARGIN, MOVE_SPEED, CAMERA_LERP, EMPTY_PLOT_IMG,
   MERCHANT, MERCHANT_IMG, SHOP_SLOTS, rollShopStock, rollRestockTask, dayKey,
   EMOTES, EVENT_BANNER_MS,
+  FOUNTAIN, FOUNTAIN_IMG, WISH_COST, WISHES_PER_DAY, rollWish,
+  RACE_START, RACE_CHECKPOINTS, RACE_RADIUS, RACE_FLAG_IMG,
+  NOTICEBOARD, NOTICEBOARD_IMG, questsForDay,
+  TREASURE_CROSS_IMG, TREASURE_MAP_IMG, TREASURE_RADIUS, TREASURE_REWARD, treasureSpot, treasureHint,
 } from './TownSquare/townSquareConfig';
 import ChallengeOverlay from './TownSquare/MiniGames';
 
@@ -65,7 +71,13 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   const [championsOpen, setChampionsOpen] = useState(false);
   const [emoteOpen, setEmoteOpen] = useState(false);
   const [myEmote, setMyEmote] = useState(null);
+  const [raceBoard, setRaceBoard] = useState({});
+  const [wishResult, setWishResult] = useState(null);
+  const [treasureVisible, setTreasureVisible] = useState(false);
   const bannerQueueRef = useRef([]);
+  const companionDivRef = useRef(null);
+  const companionPosRef = useRef({ x: 0, y: 0 });
+  const raceRef = useRef({ stage: -1, startedAt: 0 }); // -1 idle, 0..2 = next checkpoint, 3 = heading home
   const [, forceTick] = useState(0); // cheap re-render pulse for bubble expiry / gold display
 
   const containerRef = useRef(null);
@@ -92,13 +104,25 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   const myName = studentData?.firstName || 'Student';
   const myAvatarSrc = getAvatarImage(studentData?.avatarBase || 'Wizard F', myLevel);
 
-  const getMeInfo = useCallback(() => ({
-    id: myIdRef.current,
-    name: myName,
-    avatarBase: studentData?.avatarBase || 'Wizard F',
-    level: myLevel,
-    ring: ringColorFor(myIdRef.current),
-  }), [myName, studentData?.avatarBase, myLevel]);
+  const getMeInfo = useCallback(() => {
+    // Cross-game flair, published so everyone can see it on my player card:
+    // my Forge weapon, my Wildwood prosperity, and my Menagerie companion.
+    const stage = studentData?.sweetEmpireData ? forgeStageFor(studentData.sweetEmpireData) : null;
+    const md = studentData?.menagerieData;
+    const comp = md?.companionUid ? (md.creatures || []).find((c) => c.uid === md.companionUid) : null;
+    const compSpecies = comp ? MENAGERIE_SPECIES[comp.speciesId] : null;
+    return {
+      id: myIdRef.current,
+      name: myName,
+      avatarBase: studentData?.avatarBase || 'Wizard F',
+      level: myLevel,
+      ring: ringColorFor(myIdRef.current),
+      weaponName: stage && stage.index > 0 ? stage.name : null,
+      weaponImg: stage && stage.index > 0 ? stage.img : null,
+      prosperity: prosperityOf(studentData?.homesteadData) || 0,
+      companion: compSpecies ? { img: compSpecies.img, name: compSpecies.name, shiny: !!comp.shiny } : null,
+    };
+  }, [myName, studentData, myLevel]);
 
   // ── Save helpers (local-authoritative, mirroring WildwoodHomesteadGame) ────
   const saveHomestead = useCallback(() => updateStudentData({ homesteadData: localHomesteadRef.current }).catch(() => {}), [updateStudentData]);
@@ -164,6 +188,9 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     // Today's win tally
     onValue(ref(database, `worldRooms/${code}/winTally/${dayKey()}`), (snap) => setTally(snap.val() || {}));
 
+    // Today's fastest plaza laps
+    onValue(ref(database, `worldRooms/${code}/plazaRace/${dayKey()}`), (snap) => setRaceBoard(snap.val() || {}));
+
     const stallsPath = ref(database, `worldRooms/${code}/stalls`);
     onValue(stallsPath, (snap) => {
       const data = snap.val() || {};
@@ -216,6 +243,17 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     onChildAdded(pendingPath, (snap) => claimPendingIncome(code, snap.key, snap.val()));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reveal the buried treasure only when you wander close to it
+  useEffect(() => {
+    if (screen !== 'playing' || !todaysTreasure) return;
+    const t = setInterval(() => {
+      if (treasureFound()) { setTreasureVisible(false); return; }
+      const near = dist(myPosRef.current, todaysTreasure) <= TREASURE_RADIUS;
+      setTreasureVisible((v) => (v === near ? v : near));
+    }, 400);
+    return () => clearInterval(t);
+  }, [screen, todaysTreasure]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Rotate the announcement banner queue
   useEffect(() => {
     if (screen !== 'playing') return;
@@ -264,6 +302,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       localHomesteadRef.current.gold -= slot.price;
       localHomesteadRef.current.inv[slot.itemId] = (localHomesteadRef.current.inv[slot.itemId] || 0) + 1;
       saveHomestead();
+      bumpDaily('buys');
       showToast?.(`Bought ${ITEMS[slot.itemId]?.name} for ${slot.price} gold!`, 'success');
       if (slot.price >= 60) pushEvent(`💎 ${myName} snagged a ${ITEMS[slot.itemId]?.name} from the Wandering Merchant!`, 'shop');
       forceTick((n) => n + 1);
@@ -290,6 +329,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       localHomesteadRef.current.inv[task.itemId] -= 1;
       if (localHomesteadRef.current.inv[task.itemId] <= 0) delete localHomesteadRef.current.inv[task.itemId];
       saveHomestead();
+      bumpDaily('donates');
       showToast?.(`Donated 1 ${ITEMS[task.itemId]?.name} — thank you!`, 'success');
       forceTick((n) => n + 1);
       // If that donation completed the task, exactly one client rerolls the shop
@@ -305,13 +345,112 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     }
   }, [shopState, saveHomestead, showToast, pushEvent]);
 
+  // ── Plaza race finish (ref-called from the flush interval) ─────────────────
+  const finishRaceRef = useRef(null);
+  finishRaceRef.current = (ms) => {
+    const secs = (ms / 1000).toFixed(1);
+    const code = roomCodeRef.current;
+    const day = dayKey();
+    const myBest = raceBoard[myIdRef.current]?.ms;
+    const overallBest = Object.values(raceBoard).reduce((m, r) => Math.min(m, r?.ms ?? Infinity), Infinity);
+    showToast?.(`🏁 Lap complete: ${secs}s!${myBest && ms >= myBest ? ` (your best: ${(myBest / 1000).toFixed(1)}s)` : ''}`, 'success');
+    bumpDaily('laps');
+    if (!myBest || ms < myBest) {
+      set(ref(database, `worldRooms/${code}/plazaRace/${day}/${myIdRef.current}`), { name: myName, ms, at: Date.now() }).catch(() => {});
+      if (ms < overallBest) pushEvent(`🏁 ${myName} set today's fastest plaza lap: ${secs}s!`, 'race');
+    }
+  };
+
+  // ── Daily activity stats (feed the Quest Board) ─────────────────────────────
+  const dailyStats = () => {
+    const d = localTownSquareRef.current.daily;
+    return d && d.day === dayKey() ? d : { day: dayKey(), laps: 0, buys: 0, donates: 0, emotes: 0, chats: 0 };
+  };
+  const bumpDaily = (stat, n = 1) => {
+    const d = { ...dailyStats() };
+    d[stat] = (d[stat] || 0) + n;
+    localTownSquareRef.current.daily = d;
+    dirtyRef.current = true;
+  };
+  // Progress for a quest stat, from whichever system tracks it
+  const questProgress = (q) => {
+    if (q.stat === 'duelWins') return tally[myIdRef.current]?.wins || 0;
+    if (q.stat === 'wishes') return wishesToday();
+    return dailyStats()[q.stat] || 0;
+  };
+  const questClaims = () => {
+    const c = localTownSquareRef.current.questClaims;
+    return c && c.day === dayKey() ? (c.ids || []) : [];
+  };
+  const claimQuest = useCallback((q) => {
+    if (questClaims().includes(q.id)) return;
+    if (questProgress(q) < q.need) { showToast?.('Not done yet — check the progress bar!', 'error'); return; }
+    localTownSquareRef.current.questClaims = { day: dayKey(), ids: [...questClaims(), q.id] };
+    localHomesteadRef.current.gold = (localHomesteadRef.current.gold || 0) + q.reward;
+    saveBoth();
+    showToast?.(`Quest complete: ${q.name} — +${q.reward} gold!`, 'success');
+    forceTick((n) => n + 1);
+  }, [saveBoth, showToast, tally]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Daily treasure hunt ─────────────────────────────────────────────────────
+  const todaysTreasure = useMemo(
+    () => (roomCodeRef.current || classData?.classCode ? treasureSpot(dayKey(), (classData?.classCode || '').toLowerCase()) : null),
+    [classData?.classCode]
+  );
+  const treasureFound = () => {
+    const t = localTownSquareRef.current.treasure;
+    return !!(t && t.day === dayKey() && t.found);
+  };
+  const claimTreasure = useCallback(() => {
+    if (treasureFound() || !todaysTreasure) return;
+    if (dist(myPosRef.current, todaysTreasure) > TREASURE_RADIUS + 40) return;
+    localTownSquareRef.current.treasure = { day: dayKey(), found: true };
+    localHomesteadRef.current.gold = (localHomesteadRef.current.gold || 0) + TREASURE_REWARD.gold;
+    localHomesteadRef.current.menagerieEssenceEarned = (localHomesteadRef.current.menagerieEssenceEarned || 0) + TREASURE_REWARD.essence;
+    saveBoth();
+    setTreasureVisible(false);
+    showToast?.(`🗺️ TREASURE! +${TREASURE_REWARD.gold} gold and +${TREASURE_REWARD.essence} Wild Essence for your Menagerie!`, 'success');
+    pushEvent(`🗺️ ${myName} dug up today's buried treasure!`, 'treasure');
+    forceTick((n) => n + 1);
+  }, [todaysTreasure, saveBoth, showToast, pushEvent, myName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── The Wishing Fountain ────────────────────────────────────────────────────
+  const wishesToday = () => {
+    const w = localTownSquareRef.current.wishes;
+    return w && w.day === dayKey() ? (w.count || 0) : 0;
+  };
+
+  const tossCoin = useCallback(() => {
+    if (!isNear(FOUNTAIN)) { showToast?.('Walk closer to the fountain first!', 'error'); return; }
+    if (wishesToday() >= WISHES_PER_DAY) { showToast?.('The fountain is done granting wishes today — come back tomorrow!', 'info'); return; }
+    if ((localHomesteadRef.current.gold || 0) < WISH_COST) { showToast?.(`You need ${WISH_COST} gold to toss a coin!`, 'error'); return; }
+    localHomesteadRef.current.gold -= WISH_COST;
+    localTownSquareRef.current.wishes = { day: dayKey(), count: wishesToday() + 1 };
+    const wish = rollWish();
+    if (wish.type === 'jackpot') {
+      localHomesteadRef.current.gold += wish.gold;
+      pushEvent(`⛲ ${myName} hit the FOUNTAIN JACKPOT — ${wish.gold} gold!`, 'wish');
+    } else if (wish.type === 'gold') {
+      localHomesteadRef.current.gold += wish.gold;
+    } else if (wish.type === 'essence') {
+      localHomesteadRef.current.menagerieEssenceEarned = (localHomesteadRef.current.menagerieEssenceEarned || 0) + wish.essence;
+    } else if (wish.type === 'scroll') {
+      localHomesteadRef.current.unreadScrolls = (localHomesteadRef.current.unreadScrolls || 0) + 1;
+      pushEvent(`⛲ ${myName} fished a Recipe Scroll out of the fountain!`, 'wish');
+    }
+    saveBoth();
+    setWishResult(wish);
+    forceTick((n) => n + 1);
+  }, [myName, saveBoth, showToast, pushEvent, raceBoard]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Quick emotes — visible above your head to everyone nearby
   const sendEmote = useCallback((e) => {
     setEmoteOpen(false);
     const stamp = { e, at: Date.now() };
     setMyEmote(stamp);
+    bumpDaily('emotes');
     if (myPlayerDbRef.current) update(myPlayerDbRef.current, { emote: stamp }).catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const claimPendingIncome = useCallback((code, saleId, sale) => {
     if (!sale) return;
@@ -338,6 +477,16 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         avatarDivRef.current.style.left = `${nx}px`;
         avatarDivRef.current.style.top = `${ny}px`;
       }
+    }
+
+    // My Menagerie companion trots along behind me (lagged follow)
+    if (companionDivRef.current) {
+      const target = { x: myPosRef.current.x - 30, y: myPosRef.current.y + 12 };
+      const cp = companionPosRef.current;
+      cp.x += (target.x - cp.x) * 0.08;
+      cp.y += (target.y - cp.y) * 0.08;
+      companionDivRef.current.style.left = `${cp.x}px`;
+      companionDivRef.current.style.top = `${cp.y}px`;
     }
 
     // Camera smoothly follows the local player, clamped so we never scroll
@@ -400,6 +549,26 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     flushIntervalRef.current = setInterval(() => {
       setRemotePlayers({ ...remotePlayersStoreRef.current });
       forceTick((n) => n + 1);
+
+      // ── Plaza race progression (touch the flags in order) ────────────────
+      const race = raceRef.current;
+      const p = myPosRef.current;
+      const touching = (t) => Math.hypot(p.x - t.x, p.y - t.y) <= RACE_RADIUS;
+      if (race.stage === -1) {
+        if (touching(RACE_START)) {
+          raceRef.current = { stage: 0, startedAt: Date.now() };
+          showToast?.('🏁 GO! Round flags 1 → 2 → 3 and back to the start line!', 'success');
+        }
+      } else if (race.stage < RACE_CHECKPOINTS.length) {
+        if (touching(RACE_CHECKPOINTS[race.stage])) {
+          raceRef.current = { ...race, stage: race.stage + 1 };
+          showToast?.(`🚩 Flag ${race.stage + 1}!`, 'info');
+        }
+      } else if (touching(RACE_START)) {
+        const ms = Date.now() - race.startedAt;
+        raceRef.current = { stage: -1, startedAt: 0 };
+        finishRaceRef.current?.(ms);
+      }
     }, 200);
 
     animFrameRef.current = requestAnimationFrame(loop);
@@ -420,6 +589,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       off(ref(database, `worldRooms/${code}/events`));
       off(ref(database, `worldRooms/${code}/shop`));
       off(ref(database, `worldRooms/${code}/winTally/${dayKey()}`));
+      off(ref(database, `worldRooms/${code}/plazaRace/${dayKey()}`));
       off(ref(database, `worldRooms/${code}/pendingIncome/${myIdRef.current}`));
     }
     setScreen('menu');
@@ -506,6 +676,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     // Archive for the teacher's Town Watch (kept even if the live chat is cleared)
     push(ref(database, `worldRooms/${roomCodeRef.current}/chatArchive/${day}`), msg).catch(() => {});
     set(ref(database, `worldRooms/${roomCodeRef.current}/archiveDays/${day}`), true).catch(() => {});
+    bumpDaily('chats');
     setChatInput('');
   }, [chatInput, myName, showToast]);
 
@@ -628,6 +799,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         itemId, price: listing.price, buyerName: myName, at: Date.now(),
       });
       showToast?.(`Bought ${ITEMS[itemId]?.name}! 🛍️`, 'success');
+      bumpDaily('buys');
       pushEvent(`🛍️ ${myName} bought ${ITEMS[itemId]?.name} from ${stall.ownerName}'s stall!`, 'trade');
       forceTick((n) => n + 1);
     } catch {
@@ -854,6 +1026,60 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
             </div>
           ))}
 
+          {/* The Wishing Fountain */}
+          <button
+            onClick={() => { setWishResult(null); setActiveModal({ type: 'fountain' }); }}
+            className="absolute flex flex-col items-center z-10"
+            style={{ left: FOUNTAIN.x, top: FOUNTAIN.y, transform: 'translate(-50%,-50%)' }}
+          >
+            <img src={FOUNTAIN_IMG} alt="" className="w-32 h-32 object-contain drop-shadow-xl" />
+            <div className="text-[11px] font-bold text-sky-950 bg-sky-200/95 border border-sky-500/50 rounded-full px-2.5 py-0.5 -mt-3 shadow">
+              ⛲ Wishing Fountain
+            </div>
+          </button>
+
+          {/* Plaza race circuit — start line + numbered flags */}
+          <div className="absolute flex flex-col items-center z-10 pointer-events-none" style={{ left: RACE_START.x, top: RACE_START.y, transform: 'translate(-50%,-50%)' }}>
+            <img src={RACE_FLAG_IMG} alt="" className="w-14 h-14 object-contain drop-shadow" />
+            <div className="text-[10px] font-bold text-white bg-emerald-700/90 rounded-full px-2 py-0.5 -mt-1 shadow">🏁 START — run the flags!</div>
+          </div>
+          {RACE_CHECKPOINTS.map((c, i) => (
+            <div key={i} className="absolute flex flex-col items-center z-10 pointer-events-none" style={{ left: c.x, top: c.y, transform: 'translate(-50%,-50%)' }}>
+              <img src={RACE_FLAG_IMG} alt="" className="w-12 h-12 object-contain drop-shadow" />
+              <div className="w-6 h-6 rounded-full bg-amber-400 border-2 border-amber-700 text-amber-950 text-xs font-black flex items-center justify-center -mt-2 shadow">{i + 1}</div>
+            </div>
+          ))}
+
+          {/* The Notice Board — daily quests + treasure hint */}
+          <button
+            onClick={() => setActiveModal({ type: 'quests' })}
+            className="absolute flex flex-col items-center z-10"
+            style={{ left: NOTICEBOARD.x, top: NOTICEBOARD.y, transform: 'translate(-50%,-50%)' }}
+          >
+            <img src={NOTICEBOARD_IMG} alt="" className="w-24 h-24 object-contain drop-shadow-xl" />
+            <div className="text-[11px] font-bold text-emerald-950 bg-emerald-200/95 border border-emerald-600/50 rounded-full px-2.5 py-0.5 -mt-2 shadow">
+              📋 Daily Quests
+            </div>
+            {(() => {
+              const claimable = questsForDay(dayKey()).filter((q) => !questClaims().includes(q.id) && questProgress(q) >= q.need).length;
+              return claimable > 0 && (
+                <div className="text-[10px] font-bold text-white bg-emerald-600/95 rounded-full px-2 py-0.5 mt-0.5 animate-pulse">{claimable} ready to claim!</div>
+              );
+            })()}
+          </button>
+
+          {/* Today's buried treasure — appears only when you're right on top of it */}
+          {treasureVisible && !treasureFound() && todaysTreasure && (
+            <button
+              onClick={claimTreasure}
+              className="absolute flex flex-col items-center z-20"
+              style={{ left: todaysTreasure.x, top: todaysTreasure.y, transform: 'translate(-50%,-50%)' }}
+            >
+              <img src={TREASURE_CROSS_IMG} alt="" className="w-14 h-14 object-contain drop-shadow-xl" style={{ animation: 'ts-bounce 0.8s ease-in-out infinite' }} />
+              <div className="text-[10px] font-bold text-amber-950 bg-amber-300/95 rounded-full px-2 py-0.5 animate-pulse shadow">DIG HERE!</div>
+            </button>
+          )}
+
           {/* The Wandering Merchant caravan (class-shared shop) */}
           <button
             onClick={() => setActiveModal({ type: 'shop' })}
@@ -902,7 +1128,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
             return (
               <button
                 key={id}
-                onClick={() => setActiveModal({ type: 'player', id, name: p.name, x: p.x, y: p.y, avatarBase: p.avatarBase, level: p.level })}
+                onClick={() => setActiveModal({ type: 'player', id, ...p })}
                 className="absolute flex flex-col items-center z-20"
                 style={{ left: p.x, top: p.y, transition: 'left 0.15s linear, top 0.15s linear', transform: 'translate(-50%,-50%)' }}
               >
@@ -928,6 +1154,38 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
               </button>
             );
           })}
+
+          {/* Remote players' Menagerie companions pad along beside them */}
+          {Object.entries(remotePlayers).map(([id, p]) => p.companion && (
+            <img
+              key={`comp_${id}`}
+              src={p.companion.img}
+              alt=""
+              title={`${p.name}'s companion ${p.companion.name}`}
+              className="absolute w-7 h-7 rounded-full object-cover border border-white/70 shadow z-10 pointer-events-none"
+              style={{
+                left: (p.x || 0) - 30, top: (p.y || 0) + 12,
+                transform: 'translate(-50%,-50%)',
+                transition: 'left 0.35s linear, top 0.35s linear',
+                filter: p.companion.shiny ? 'hue-rotate(45deg) saturate(1.7) brightness(1.05)' : undefined,
+              }}
+            />
+          ))}
+
+          {/* My companion (smooth lagged follow via the animation loop) */}
+          {getMeInfo().companion && (
+            <img
+              ref={companionDivRef}
+              src={getMeInfo().companion.img}
+              alt=""
+              className="absolute w-8 h-8 rounded-full object-cover border border-yellow-200/80 shadow z-10 pointer-events-none"
+              style={{
+                left: myPosRef.current.x - 30, top: myPosRef.current.y + 12,
+                transform: 'translate(-50%,-50%)',
+                filter: getMeInfo().companion.shiny ? 'hue-rotate(45deg) saturate(1.7) brightness(1.05)' : undefined,
+              }}
+            />
+          )}
 
           {/* Me */}
           <div ref={avatarDivRef} className="absolute flex flex-col items-center z-20 pointer-events-none" style={{ left: myPosRef.current.x, top: myPosRef.current.y, transform: 'translate(-50%,-50%)' }}>
@@ -975,6 +1233,15 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
             </div>
           ))}
           {Object.keys(tally).length === 0 && <div className="text-white/40 text-xs py-2 text-center">No duels won yet today — be the first!</div>}
+          <div className="text-amber-300 font-bold text-sm mt-3 mb-1 border-t border-white/10 pt-2">🏁 Fastest Plaza Laps</div>
+          {Object.entries(raceBoard).sort((a, b) => (a[1]?.ms || Infinity) - (b[1]?.ms || Infinity)).slice(0, 5).map(([pid, r], i) => (
+            <div key={pid} className="flex items-center gap-2 text-white/90 text-xs py-1">
+              <span className="w-5 text-center">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</span>
+              <span className="flex-1 truncate font-semibold">{r?.name || '?'}</span>
+              <span className="text-emerald-300 font-bold">{((r?.ms || 0) / 1000).toFixed(1)}s</span>
+            </div>
+          ))}
+          {Object.keys(raceBoard).length === 0 && <div className="text-white/40 text-xs py-1 text-center">No laps run yet — find the 🏁 start line!</div>}
         </div>
       )}
 
@@ -1086,8 +1353,32 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       {activeModal?.type === 'player' && (
         <PlayerModal
           player={activeModal}
+          wins={tally[activeModal.id]?.wins || 0}
+          bestLap={raceBoard[activeModal.id]?.ms}
           near={isNear(activeModal)}
           onChallenge={(gameId) => sendChallenge(activeModal.id, activeModal.name, gameId)}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+      {activeModal?.type === 'fountain' && (
+        <FountainModal
+          myGold={localHomesteadRef.current.gold || 0}
+          wishesUsed={wishesToday()}
+          near={isNear(FOUNTAIN)}
+          result={wishResult}
+          onToss={tossCoin}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+      {activeModal?.type === 'quests' && (
+        <QuestBoardModal
+          quests={questsForDay(dayKey())}
+          progressOf={questProgress}
+          claimed={questClaims()}
+          near={isNear(NOTICEBOARD)}
+          treasureHintText={todaysTreasure ? treasureHint(todaysTreasure) : null}
+          treasureDone={treasureFound()}
+          onClaim={claimQuest}
           onClose={() => setActiveModal(null)}
         />
       )}
@@ -1383,12 +1674,121 @@ function ShopModal({ shop, myGold, myInv, near, onBuy, onDonate, onClose }) {
   );
 }
 
-function PlayerModal({ player, near, onChallenge, onClose }) {
+function QuestBoardModal({ quests, progressOf, claimed, near, treasureHintText, treasureDone, onClaim, onClose }) {
+  return (
+    <ModalShell title="Daily Quest Board" iconSrc={NOTICEBOARD_IMG} onClose={onClose}>
+      <p className="text-white/50 text-xs text-center mb-3">New quests every day — the whole class gets the same three!</p>
+      <div className="space-y-2 mb-4">
+        {quests.map((q) => {
+          const prog = Math.min(q.need, progressOf(q));
+          const done = prog >= q.need;
+          const isClaimed = claimed.includes(q.id);
+          return (
+            <div key={q.id} className={`rounded-xl border p-2.5 ${isClaimed ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-white/10 bg-white/5'}`}>
+              <div className="flex items-center gap-2.5">
+                <img src={q.img} alt="" className="w-8 h-8 object-contain" />
+                <div className="flex-1">
+                  <div className="text-sm font-semibold">{q.name}</div>
+                  <div className="w-full bg-black/40 rounded-full h-2 mt-1 border border-white/10">
+                    <div className={`h-full rounded-full transition-all ${done ? 'bg-emerald-400' : 'bg-amber-400'}`} style={{ width: `${Math.round((prog / q.need) * 100)}%` }} />
+                  </div>
+                  <div className="text-[10px] text-white/50 mt-0.5">{prog}/{q.need} · reward: {q.reward} gold</div>
+                </div>
+                {isClaimed ? (
+                  <span className="text-emerald-400 text-xs font-bold">✓ Claimed</span>
+                ) : (
+                  <button
+                    onClick={() => onClaim(q)}
+                    disabled={!near || !done}
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-white/40 px-3 py-1.5 rounded-lg text-xs font-bold"
+                  >
+                    Claim
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="bg-amber-500/10 border border-amber-400/25 rounded-2xl p-3 flex items-center gap-3">
+        <img src={TREASURE_MAP_IMG} alt="" className="w-10 h-10 object-contain" />
+        <div className="text-xs text-white/80">
+          <div className="font-bold text-amber-300 mb-0.5">🗺️ Today&apos;s Buried Treasure</div>
+          {treasureDone
+            ? <span className="text-emerald-300 font-semibold">You dug it up today — a fresh one is buried tomorrow!</span>
+            : <span>An X is hidden <b>{treasureHintText}</b>. Walk around out there and it&apos;ll appear when you&apos;re close…</span>}
+        </div>
+      </div>
+      {!near && <div className="text-amber-300 text-xs text-center mt-3">Walk closer to the notice board to claim rewards.</div>}
+    </ModalShell>
+  );
+}
+
+function FountainModal({ myGold, wishesUsed, near, result, onToss, onClose }) {
+  const left = Math.max(0, WISHES_PER_DAY - wishesUsed);
+  return (
+    <ModalShell title="The Wishing Fountain" iconSrc={FOUNTAIN_IMG} onClose={onClose}>
+      <img src={FOUNTAIN_IMG} alt="" className="w-24 h-24 mx-auto object-contain mb-2" />
+      <p className="text-center text-white/60 text-sm mb-3">
+        Toss a coin, make a wish… gold, Wild Essence, even soggy Recipe Scrolls have surfaced here.
+      </p>
+      <div className="flex items-center justify-center gap-4 text-sm text-white/70 mb-3">
+        <span className="flex items-center gap-1.5"><img src={GOLD_ICON} alt="" className="w-4 h-4" /> {fmtQty(myGold)}</span>
+        <span>✨ {left}/{WISHES_PER_DAY} wishes left today</span>
+      </div>
+      {result && (
+        <div className={`text-center rounded-2xl p-3 mb-3 text-sm font-bold ${result.type === 'jackpot' ? 'bg-amber-400/20 text-amber-200 animate-pulse' : result.type === 'nothing' ? 'bg-white/5 text-white/60' : 'bg-emerald-500/15 text-emerald-300'}`}>
+          {result.text}
+        </div>
+      )}
+      <button
+        onClick={onToss}
+        disabled={!near || left <= 0 || myGold < WISH_COST}
+        className="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-slate-700 disabled:text-white/40 py-3 rounded-xl font-bold"
+      >
+        🪙 Toss a Coin ({WISH_COST} gold)
+      </button>
+      {!near && <div className="text-amber-300 text-xs text-center mt-2">Walk closer to the fountain to make a wish.</div>}
+    </ModalShell>
+  );
+}
+
+function PlayerModal({ player, wins = 0, bestLap, near, onChallenge, onClose }) {
   return (
     <ModalShell title={player.name} icon="🙋" onClose={onClose}>
-      <div className="flex flex-col items-center mb-4">
-        <img src={getAvatarImage(player.avatarBase, player.level)} alt="" className="w-16 h-16 rounded-full border-2 border-yellow-300 mb-2" />
+      <div className="flex flex-col items-center mb-3">
+        <div className="relative">
+          <img src={getAvatarImage(player.avatarBase, player.level)} alt="" className="w-16 h-16 rounded-full border-2 border-yellow-300 mb-2" />
+          {player.companion && (
+            <img src={player.companion.img} alt="" title={`Companion: ${player.companion.name}`}
+              className="absolute -bottom-0 -right-2 w-7 h-7 rounded-full object-cover border border-white shadow"
+              style={player.companion.shiny ? { filter: 'hue-rotate(45deg) saturate(1.7) brightness(1.05)' } : undefined} />
+          )}
+        </div>
         <div className="font-bold">{player.name}</div>
+      </div>
+
+      {/* Cross-game stat card */}
+      <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+        <div className="bg-white/5 rounded-xl p-2" title="Champion's Forge weapon">
+          {player.weaponImg ? (
+            <>
+              <img src={player.weaponImg} alt="" className="w-8 h-8 mx-auto object-contain" />
+              <div className="text-[9px] text-white/60 truncate mt-0.5">{player.weaponName}</div>
+            </>
+          ) : (
+            <div className="text-white/30 text-[10px] py-2">No Forge<br />weapon yet</div>
+          )}
+        </div>
+        <div className="bg-white/5 rounded-xl p-2" title="Wildwood Prosperity">
+          <div className="text-lg font-black text-emerald-400">{fmtQty(player.prosperity || 0)}</div>
+          <div className="text-[9px] text-white/60">Prosperity</div>
+        </div>
+        <div className="bg-white/5 rounded-xl p-2" title="Duels won today / best lap">
+          <div className="text-lg font-black text-amber-400">{wins}</div>
+          <div className="text-[9px] text-white/60">wins today{bestLap ? ` · 🏁 ${(bestLap / 1000).toFixed(1)}s` : ''}</div>
+        </div>
       </div>
       {near ? (
         <>

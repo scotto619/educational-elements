@@ -160,6 +160,108 @@ export const rollRestockTask = () => {
 
 export const dayKey = (d = new Date()) => d.toISOString().slice(0, 10);
 
+// ═══════════════════════════════════════════════════════════════════════════
+// THE WISHING FOUNTAIN — toss a coin, get a surprise (few per day)
+// ═══════════════════════════════════════════════════════════════════════════
+export const FOUNTAIN = { x: CX, y: CY };
+export const FOUNTAIN_IMG = `${TS}/fountain.svg`;
+export const WISH_COST = 5;        // gold per coin toss
+export const WISHES_PER_DAY = 3;
+
+export const rollWish = () => {
+  const r = Math.random();
+  if (r < 0.005) return { type: 'jackpot', gold: 200, text: 'JACKPOT! The fountain erupts — 200 gold rains down!' };
+  if (r < 0.05) return { type: 'scroll', text: 'A soggy Recipe Scroll floats to the surface!' };
+  if (r < 0.25) return { type: 'essence', essence: 15, text: 'The water glows — +15 Wild Essence drifts to your Menagerie!' };
+  if (r < 0.35) return { type: 'gold', gold: 20 + Math.floor(Math.random() * 21), text: 'Lucky splash! Coins wash back to you!' };
+  if (r < 0.60) return { type: 'gold', gold: 2 + Math.floor(Math.random() * 9), text: 'A little luck ripples back to you.' };
+  return { type: 'nothing', text: 'The coin sinks with a hopeful *ploink*. The fountain says: soon.' };
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PLAZA RACE — run the flag circuit around the fountain, fastest lap wins.
+// Route: start (S) → 1 (W) → 2 (N) → 3 (E) → back to start.
+// ═══════════════════════════════════════════════════════════════════════════
+export const RACE_START = { x: CX, y: CY + 410 };
+export const RACE_CHECKPOINTS = [
+  { x: CX - 460, y: CY },        // 1 — west
+  { x: CX, y: CY - 400 },        // 2 — north
+  { x: CX + 460, y: CY },        // 3 — east
+];
+export const RACE_RADIUS = 85;   // how close counts as "touching" a flag
+export const RACE_FLAG_IMG = `${TS}/001-flag.svg`; // checkered!
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NOTICE BOARD — three shared daily quests (same for the whole class)
+// ═══════════════════════════════════════════════════════════════════════════
+export const NOTICEBOARD = { x: CX - 320, y: WORLD_H * 0.30 };
+export const NOTICEBOARD_IMG = `${TS}/002-notice-board.svg`;
+
+export const DAILY_QUESTS = [
+  { id: 'duels2',  name: 'Win 2 duels',                     stat: 'duelWins', need: 2, reward: 20, img: `${TS}/013-rock-paper-scissors.svg` },
+  { id: 'lap1',    name: 'Run a plaza lap',                 stat: 'laps',     need: 1, reward: 15, img: `${TS}/001-flag.svg` },
+  { id: 'laps3',   name: 'Run 3 plaza laps',                stat: 'laps',     need: 3, reward: 30, img: `${TS}/001-flag.svg` },
+  { id: 'wish2',   name: 'Make 2 fountain wishes',          stat: 'wishes',   need: 2, reward: 15, img: `${TS}/fountain.svg` },
+  { id: 'buy2',    name: 'Buy 2 items (stalls or caravan)', stat: 'buys',     need: 2, reward: 20, img: `${TS}/004-money-bag.svg` },
+  { id: 'donate3', name: 'Donate 3 items to the merchant',  stat: 'donates',  need: 3, reward: 25, img: `${TS}/010-caravan.svg` },
+  { id: 'emote3',  name: 'Send 3 emotes',                   stat: 'emotes',   need: 3, reward: 10, img: `${TS}/004-ballons.svg` },
+  { id: 'chat3',   name: 'Send 3 friendly chat messages',   stat: 'chats',    need: 3, reward: 10, img: `${TS}/011-old-scroll.svg` },
+];
+
+export const hashStr = (s = '') => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h * 31 + s.charCodeAt(i)) >>> 0);
+  return h;
+};
+
+// Avalanche mixer so nearby seeds land on very different values
+const mix32 = (n) => {
+  n = Math.imul(n ^ (n >>> 16), 0x45d9f3b);
+  n = Math.imul(n ^ (n >>> 16), 0x45d9f3b);
+  return (n ^ (n >>> 16)) >>> 0;
+};
+
+// The same three quests for everyone, rotating daily
+export const questsForDay = (day) => {
+  const picks = [];
+  const pool = [...DAILY_QUESTS];
+  const seed = hashStr(day);
+  for (let i = 0; i < 3 && pool.length > 0; i++) {
+    const h = mix32(seed + Math.imul(i + 1, 0x9e3779b9));
+    picks.push(pool.splice(h % pool.length, 1)[0]);
+  }
+  return picks;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DAILY TREASURE HUNT — an X buried somewhere new each day (same spot for
+// the whole class, revealed only when you walk near it). The notice board
+// gives a rough hint.
+// ═══════════════════════════════════════════════════════════════════════════
+export const TREASURE_CROSS_IMG = `${TS}/005-cross.svg`;
+export const TREASURE_MAP_IMG = `${TS}/006-map.svg`;
+export const TREASURE_RADIUS = 120;   // how close before the X appears
+export const TREASURE_REWARD = { gold: 25, essence: 20 };
+
+export const treasureSpot = (day, code) => {
+  const h1 = hashStr(`tx_${day}_${code}`);
+  const h2 = hashStr(`ty_${code}_${day}`);
+  let x = MARGIN + 120 + (h1 % Math.floor(WORLD_W - 2 * (MARGIN + 120)));
+  let y = MARGIN + 120 + (h2 % Math.floor(WORLD_H - 2 * (MARGIN + 120)));
+  // Nudge it out of the central plaza so it's never sitting in plain sight
+  const dx = x - CX, dy = y - CY;
+  const d = Math.hypot(dx, dy) || 1;
+  if (d < 450) { x = CX + (dx / d) * 460; y = CY + (dy / d) * 460; }
+  return { x: Math.round(x), y: Math.round(y) };
+};
+
+export const treasureHint = (spot) => {
+  const ns = spot.y < WORLD_H * 0.38 ? 'north' : spot.y > WORLD_H * 0.62 ? 'south' : '';
+  const ew = spot.x < WORLD_W * 0.38 ? 'west' : spot.x > WORLD_W * 0.62 ? 'east' : '';
+  const dir = [ns, ew].filter(Boolean).join('-');
+  return dir ? `somewhere in the ${dir} of town` : 'surprisingly close to the middle of town';
+};
+
 // Rock/Paper/Scissors throw icons (rock reuses the "stone" icon from the
 // Town Square pack — there's no dedicated rock icon, and it's a perfect fit).
 export const RPS_THROWS = [
@@ -214,8 +316,7 @@ export const fmtCost = (cost, ITEMS) =>
 // fountain centerpiece).
 // ═══════════════════════════════════════════════════════════════════════════
 export const DECOR = [
-  // Centerpiece fountain (real icon — no emoji dependence)
-  { img: `${WW}/Water/001-spring.svg`, x: CX, y: CY, size: 100 },
+  // (The fountain itself is an interactive object rendered by the game — see FOUNTAIN)
   // Marketplace props around the merchant caravan
   { img: `${TS}/004-money-bag.svg`, x: CX - 90, y: WORLD_H * 0.315, size: 40 },
   { img: `${TS}/011-old-scroll.svg`, x: CX + 92, y: WORLD_H * 0.305, size: 42 },
@@ -265,4 +366,25 @@ export const DECOR = [
   { img: `${WW}/Nature/017-sun.svg`, x: WORLD_W * 0.06, y: WORLD_H * 0.045, size: 64 },
   { img: `${WW}/Nature/015-cloud.svg`, x: WORLD_W * 0.40, y: WORLD_H * 0.04, size: 60 },
   { img: `${WW}/Nature/015-cloud.svg`, x: WORLD_W * 0.88, y: WORLD_H * 0.04, size: 54 },
+
+  // Park benches around the plaza ring — a spot to hang out
+  { img: `${TS}/003-bench.svg`, x: WORLD_W * 0.36, y: WORLD_H * 0.58, size: 56 },
+  { img: `${TS}/003-bench.svg`, x: WORLD_W * 0.64, y: WORLD_H * 0.58, size: 56 },
+  { img: `${TS}/003-bench.svg`, x: WORLD_W * 0.50, y: WORLD_H * 0.68, size: 56 },
+
+  // Party balloons at the notice board + plaza entries
+  { img: `${TS}/004-ballons.svg`, x: WORLD_W * 0.50 - 380, y: WORLD_H * 0.26, size: 56 },
+  { img: `${TS}/004-ballons.svg`, x: WORLD_W * 0.28, y: WORLD_H * 0.86, size: 50 },
+  { img: `${TS}/004-ballons.svg`, x: WORLD_W * 0.72, y: WORLD_H * 0.86, size: 50 },
+
+  // Ambient butterflies drifting near the flowers
+  { img: `${WW}/Bugs/002-butterfly.svg`, x: WORLD_W * 0.26, y: WORLD_H * 0.41, size: 26 },
+  { img: `${WW}/Bugs/025-butterfly.svg`, x: WORLD_W * 0.74, y: WORLD_H * 0.47, size: 24 },
+  { img: `${WW}/Bugs/001-ladybug.svg`, x: WORLD_W * 0.52, y: WORLD_H * 0.62, size: 20 },
+
+  // A cozy campsite in the south-east corner
+  { img: `${WW}/Adventure/045-tent.svg`, x: WORLD_W * 0.90, y: WORLD_H * 0.66, size: 90 },
+  { img: `${WW}/Adventure/037-bonfire.svg`, x: WORLD_W * 0.85, y: WORLD_H * 0.72, size: 56 },
+  { img: `${WW}/More/004-crate.svg`, x: WORLD_W * 0.93, y: WORLD_H * 0.73, size: 34 },
+  { img: `${WW}/Adventure/031-marshmallow.svg`, x: WORLD_W * 0.87, y: WORLD_H * 0.76, size: 30 },
 ];
