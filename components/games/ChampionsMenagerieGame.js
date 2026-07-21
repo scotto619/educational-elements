@@ -27,11 +27,18 @@ import {
   ESSENCE_PER_CLASS_XP, DAILY_GIFT_ESSENCE, DAILY_GIFT_FOOD,
   creatureScore, collectionScore, speciesDiscovered,
   MENAGERIE_TITLES, MENAGERIE_TITLE_MAP,
+  RARITY_ORDER, nextRarity, FUSION_MIN_LEVEL, FUSION_SHINY_BONUS, FUSION_ESSENCE_REWARD,
+  MEALS_PER_CREATURE_PER_DAY, MEAL_XP_MULT,
   defaultSave,
 } from './Menagerie/menagerieConfig';
+import { ITEMS as WW_ITEMS, RECIPE_MAP as WW_RECIPES } from './Homestead/homesteadConfig';
 
 const now = () => Date.now();
 const todayStr = () => new Date().toISOString().slice(0, 10);
+const dishXp = (dishId) => {
+  const r = WW_RECIPES[WW_ITEMS[dishId]?.recipeId];
+  return r ? Math.round(r.xp * MEAL_XP_MULT) : 0;
+};
 const newUid = () => `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 const REGEN_MS = FOOD_REGEN_MINUTES * 60 * 1000;
 
@@ -60,6 +67,8 @@ const cleanSave = (gs) => ({
     hatchedAt: c.hatchedAt || null,
     lastPlayedAt: Number(c.lastPlayedAt) || 0,
     lastTrainedAt: Number(c.lastTrainedAt) || 0,
+    mealsDay: c.mealsDay || null,
+    mealsCount: Number(c.mealsCount) || 0,
   })),
   eggs: (gs.eggs || []).map((e) => ({
     uid: String(e.uid),
@@ -91,12 +100,15 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
   const [gs, setGs] = useState(defaultSave);
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState('menagerie');
-  const [reveal, setReveal] = useState(null);        // hatch reveal modal { species, shiny }
+  const [reveal, setReveal] = useState(null);        // hatch/fusion reveal modal { species, shiny, fusion? }
   const [welcome, setWelcome] = useState(null);      // arrival report { essenceFromXp, gift }
   const [visitId, setVisitId] = useState(null);      // expanded classmate row
+  const [mealPicker, setMealPicker] = useState(null); // { uid } — pick a Wildwood dish to feed
+  const [fuseConfirm, setFuseConfirm] = useState(null); // speciesId pending fusion confirm
   const [, setTick] = useState(0);
 
   const gsRef = useRef(gs); gsRef.current = gs;
+  const homesteadRef = useRef(null); // local copy of homesteadData (for feeding Wildwood dishes)
   const dirtyRef = useRef(false);
   const savingRef = useRef(false);
   const showToastRef = useRef(showToast); showToastRef.current = showToast;
@@ -152,6 +164,7 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
       gift = true;
     }
 
+    homesteadRef.current = { ...(studentData?.homesteadData || {}), inv: { ...(studentData?.homesteadData?.inv || {}) } };
     setGs(save);
     setLoaded(true);
     dirtyRef.current = true;
@@ -297,6 +310,74 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
     if (now() - (c.lastTrainedAt || 0) < TRAIN_COOLDOWN_H * 3600 * 1000) return;
     giveXp(c.uid, TRAIN_XP, TRAIN_ESSENCE, { lastTrainedAt: now() });
     showToast(`🏋️ Training complete! +${TRAIN_XP} XP and +${TRAIN_ESSENCE} essence.`, 'success');
+  };
+
+  // ── Gourmet meals: feed dishes cooked in Wildwood Homestead ────────────────
+  const mealsLeftFor = (c) => (c.mealsDay === todayStr() ? Math.max(0, MEALS_PER_CREATURE_PER_DAY - (c.mealsCount || 0)) : MEALS_PER_CREATURE_PER_DAY);
+
+  const homesteadDishes = () =>
+    Object.entries(homesteadRef.current?.inv || {})
+      .filter(([id, q]) => WW_ITEMS[id]?.kind === 'dish' && q > 0)
+      .sort((a, b) => dishXp(b[0]) - dishXp(a[0]));
+
+  const feedMeal = (uid, dishId) => {
+    const c = gsRef.current.creatures.find((x) => x.uid === uid);
+    if (!c || mealsLeftFor(c) < 1) return;
+    if (levelForXp(c.xp) >= MAX_LEVEL) { showToast('This creature is already Mythic!', 'info'); return; }
+    const inv = homesteadRef.current?.inv || {};
+    if ((inv[dishId] || 0) < 1) return;
+    inv[dishId] -= 1;
+    if (inv[dishId] <= 0) delete inv[dishId];
+    const mealsCount = c.mealsDay === todayStr() ? (c.mealsCount || 0) + 1 : 1;
+    giveXp(uid, dishXp(dishId), 0, { mealsDay: todayStr(), mealsCount });
+    updateStudentData({ homesteadData: homesteadRef.current, menagerieData: cleanSave(gsRef.current) }).catch(() => {});
+    showToast(`${WW_ITEMS[dishId]?.name} devoured! +${dishXp(dishId)} XP (${MEALS_PER_CREATURE_PER_DAY - mealsCount} meals left today)`, 'success');
+    if (mealsCount >= MEALS_PER_CREATURE_PER_DAY) setMealPicker(null);
+  };
+
+  // ── Fusion Altar: 3 same-species Adults → 1 random next-rarity hatchling ──
+  const fusableGroups = useMemo(() => {
+    const bySpecies = {};
+    gs.creatures.forEach((c) => {
+      if (levelForXp(c.xp) >= FUSION_MIN_LEVEL) (bySpecies[c.speciesId] = bySpecies[c.speciesId] || []).push(c);
+    });
+    return Object.entries(bySpecies)
+      .filter(([sid, list]) => list.length >= 3 && nextRarity(SPECIES_MAP[sid]?.rarity))
+      .map(([sid, list]) => ({ speciesId: sid, eligible: list }));
+  }, [gs.creatures]);
+
+  const fuseSpecies = (speciesId) => {
+    const cur = gsRef.current;
+    const sp = SPECIES_MAP[speciesId];
+    const targetRarity = nextRarity(sp?.rarity);
+    if (!targetRarity) return;
+    const eligible = cur.creatures
+      .filter((c) => c.speciesId === speciesId && levelForXp(c.xp) >= FUSION_MIN_LEVEL)
+      .sort((a, b) =>
+        (a.uid === cur.companionUid) - (b.uid === cur.companionUid) ||
+        a.shiny - b.shiny ||
+        a.xp - b.xp
+      );
+    if (eligible.length < 3) return;
+    const consumed = eligible.slice(0, 3);
+    const consumedIds = consumed.map((c) => c.uid);
+    const shinyBoost = consumed.filter((c) => c.shiny).length * FUSION_SHINY_BONUS;
+    const shiny = Math.random() < SHINY_CHANCE + shinyBoost;
+    const pool = SPECIES.filter((s) => s.rarity === targetRarity);
+    const newSp = pool[Math.floor(Math.random() * pool.length)];
+    const newC = { uid: newUid(), speciesId: newSp.id, shiny, xp: 0, hatchedAt: new Date().toISOString(), lastPlayedAt: 0, lastTrainedAt: 0 };
+    setGs((p) => ({
+      ...p,
+      creatures: [...p.creatures.filter((c) => !consumedIds.includes(c.uid)), newC],
+      companionUid: consumedIds.includes(p.companionUid) ? newC.uid : p.companionUid,
+      essence: p.essence + FUSION_ESSENCE_REWARD,
+      totalEssenceEarned: p.totalEssenceEarned + FUSION_ESSENCE_REWARD,
+    }));
+    setFuseConfirm(null);
+    setReveal({ species: newSp, shiny, fusion: true });
+    showToast(`Fusion complete! Three ${sp.name}s became something greater… (+${FUSION_ESSENCE_REWARD} essence)`, 'success');
+    dirtyRef.current = true;
+    setTimeout(persist, 400);
   };
 
   const setCompanion = (uid) => {
@@ -476,6 +557,14 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
                       </button>
                     </div>
                     <button
+                      onClick={() => setMealPicker({ uid: c.uid })}
+                      disabled={maxed || mealsLeftFor(c) < 1}
+                      className="w-full mt-1.5 text-xs font-bold rounded-lg py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-200 disabled:opacity-40 transition"
+                      title="Feed a meal cooked in Wildwood Homestead for bonus XP"
+                    >
+                      🍽️ Wildwood Meal ({mealsLeftFor(c)} left today)
+                    </button>
+                    <button
                       onClick={() => setCompanion(c.uid)}
                       className={`w-full mt-1.5 text-xs font-bold rounded-lg py-1.5 transition ${isCompanion ? 'bg-amber-400 text-amber-900' : 'bg-gray-100 text-gray-500 hover:bg-amber-100 hover:text-amber-700'}`}
                     >
@@ -486,6 +575,49 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
               })}
             </div>
           )}
+
+          {/* Fusion Altar */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+            <h3 className="font-bold text-gray-800 mb-1">⚗️ Fusion Altar</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Merge <b>three Adults (Lv {FUSION_MIN_LEVEL}+) of the same species</b> into one random creature of the
+              <b> next rarity up</b> — it hatches at level 1, ready to raise. Shiny sacrifices boost the shiny chance of the result!
+            </p>
+            {fusableGroups.length === 0 ? (
+              <p className="text-sm text-gray-400 italic">No fusions ready — raise three of the same species to Adult first.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-2">
+                {fusableGroups.map(({ speciesId, eligible }) => {
+                  const sp = SPECIES_MAP[speciesId];
+                  const target = nextRarity(sp.rarity);
+                  const confirming = fuseConfirm === speciesId;
+                  return (
+                    <div key={speciesId} className="rounded-xl border-2 border-purple-200 bg-purple-50/50 p-3 flex items-center gap-3">
+                      <div className="flex -space-x-3">
+                        {[0, 1, 2].map((i) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={i} src={sp.img} alt="" className="w-9 h-9 rounded-full object-cover border-2 border-white shadow"
+                            style={eligible[i]?.shiny ? { filter: shinyFilter } : undefined} />
+                        ))}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-gray-800">3× {sp.name}</p>
+                        <p className="text-[11px] text-gray-500">{eligible.length} eligible → random <span className={`font-bold ${RARITIES[target].color}`}>{RARITIES[target].name}</span></p>
+                      </div>
+                      {confirming ? (
+                        <div className="flex flex-col gap-1">
+                          <button onClick={() => fuseSpecies(speciesId)} className="bg-purple-600 text-white text-xs font-bold rounded-lg px-3 py-1.5 hover:bg-purple-500 transition">Fuse!</button>
+                          <button onClick={() => setFuseConfirm(null)} className="bg-gray-100 text-gray-500 text-xs font-bold rounded-lg px-3 py-1 transition">Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setFuseConfirm(speciesId)} className="bg-purple-100 text-purple-700 text-xs font-bold rounded-lg px-3 py-2 hover:bg-purple-200 transition">Merge</button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Titles */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
@@ -714,11 +846,50 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
         </div>
       )}
 
+      {/* ── Wildwood meal picker ── */}
+      {mealPicker && (() => {
+        const c = gs.creatures.find((x) => x.uid === mealPicker.uid);
+        const dishes = homesteadDishes();
+        return c && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setMealPicker(null)}>
+            <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold text-gray-800 text-center">Feed {SPECIES_MAP[c.speciesId]?.name} a meal</h3>
+              <p className="text-xs text-gray-500 text-center mb-3">
+                Dishes cooked in Wildwood Homestead · {mealsLeftFor(c)} meal{mealsLeftFor(c) !== 1 ? 's' : ''} left today
+              </p>
+              {dishes.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">
+                  Your Wildwood pack has no cooked dishes — head to the Homestead kitchen and cook something tasty!
+                </p>
+              ) : (
+                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                  {dishes.map(([dishId, qty]) => (
+                    <div key={dishId} className="flex items-center gap-2 bg-gray-50 rounded-xl px-2.5 py-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={WW_ITEMS[dishId]?.img} alt="" className="w-7 h-7 object-contain" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-gray-700">{WW_ITEMS[dishId]?.name}</p>
+                        <p className="text-[10px] text-gray-400">×{qty} · +{dishXp(dishId)} XP</p>
+                      </div>
+                      <button onClick={() => feedMeal(c.uid, dishId)}
+                        className="bg-rose-500 text-white text-xs font-bold rounded-lg px-3 py-1.5 hover:bg-rose-400 transition">
+                        Feed
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button onClick={() => setMealPicker(null)} className="w-full mt-4 bg-gray-100 text-gray-600 py-2 rounded-xl font-bold text-sm">Close</button>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Hatch reveal modal ── */}
       {reveal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setReveal(null)}>
           <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">The egg hatches…</p>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{reveal.fusion ? '⚗️ The altar flashes…' : 'The egg hatches…'}</p>
             <div className="my-4 flex justify-center" style={{ animation: 'cm-bounce 1.2s ease-in-out infinite' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img

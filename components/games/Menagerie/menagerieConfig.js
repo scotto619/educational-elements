@@ -90,6 +90,25 @@ export const SPECIES = [
 export const SPECIES_MAP = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FUSION — 3 Adult+ creatures of the same species merge into one random
+// creature of the NEXT rarity tier (hatchling, level 1).
+// ═══════════════════════════════════════════════════════════════════════════
+export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+export const nextRarity = (r) => {
+  const i = RARITY_ORDER.indexOf(r);
+  return i >= 0 && i < RARITY_ORDER.length - 1 ? RARITY_ORDER[i + 1] : null;
+};
+export const FUSION_MIN_LEVEL = 12;        // Adult stage
+export const FUSION_SHINY_BONUS = 0.15;    // extra shiny chance per shiny consumed
+export const FUSION_ESSENCE_REWARD = 25;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GOURMET MEALS — feed dishes cooked in Wildwood Homestead for creature XP
+// ═══════════════════════════════════════════════════════════════════════════
+export const MEALS_PER_CREATURE_PER_DAY = 3;
+export const MEAL_XP_MULT = 2.5;           // creature XP = recipe cooking XP × this
+
+// ═══════════════════════════════════════════════════════════════════════════
 // EGGS — bought with Wild Essence, hatch in real time (continues offline)
 // ═══════════════════════════════════════════════════════════════════════════
 export const INCUBATOR_SLOTS = 2;
@@ -256,6 +275,27 @@ export const getMenagerieProfile = (menagerieData, isDark = false) => {
     score: collectionScore(menagerieData),
     species: speciesDiscovered(menagerieData),
   };
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPANION → CHAMPION'S FORGE production bonus
+// % per creature level, by rarity; shiny companions get ×1.5.
+// Maxed (Lv 30): common +3%, uncommon +6%, rare +10.5%, epic +15%,
+// legendary +24% (shiny legendary +36%).
+// ═══════════════════════════════════════════════════════════════════════════
+export const FORGE_RARITY_RATE = { common: 0.1, uncommon: 0.2, rare: 0.35, epic: 0.5, legendary: 0.8 };
+
+export const companionForgeBonus = (menagerieData) => {
+  const comp = menagerieData?.companionUid
+    ? (menagerieData.creatures || []).find((c) => c.uid === menagerieData.companionUid)
+    : null;
+  const sp = comp ? SPECIES_MAP[comp.speciesId] : null;
+  if (!sp) return { mult: 1, pct: 0 };
+  const level = levelForXp(comp.xp);
+  let pct = (FORGE_RARITY_RATE[sp.rarity] || 0.1) * level;
+  if (comp.shiny) pct *= 1.5;
+  pct = Math.round(pct * 10) / 10;
+  return { mult: 1 + pct / 100, pct, name: sp.name, img: sp.img, shiny: !!comp.shiny, level, rarity: sp.rarity };
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

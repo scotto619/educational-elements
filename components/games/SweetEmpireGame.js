@@ -31,6 +31,7 @@ import {
   OFFLINE_BASE_HOURS, OFFLINE_RATE,
   defaultSave,
 } from './SweetEmpire/sweetEmpireConfig';
+import { companionForgeBonus } from './Menagerie/menagerieConfig';
 
 const now = () => Date.now();
 
@@ -198,7 +199,11 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
   const brokenUntilRef = useRef(0);
   const showToastRef = useRef(showToast); showToastRef.current = showToast;
 
-  const sps = useMemo(() => calcSps(gs, buffs), [gs, buffs]);
+  // Menagerie companion lends its strength to the forges (+% production)
+  const compBonus = useMemo(() => companionForgeBonus(studentData?.menagerieData), [studentData?.menagerieData]);
+  const compBonusRef = useRef(compBonus); compBonusRef.current = compBonus;
+
+  const sps = useMemo(() => calcSps(gs, buffs) * compBonus.mult, [gs, buffs, compBonus]);
   const clickPower = useMemo(() => calcClickPower(gs, buffs, combo), [gs, buffs, combo]);
   const pendingStars = starsForRun(gs.runSweets);
   const forgeStage = useMemo(() => forgeStageFor(gs), [gs]);
@@ -252,7 +257,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
       const away = (now() - new Date(raw.lastSeen).getTime()) / 1000;
       const capped = Math.min(away, offlineHours(save) * 3600);
       if (capped > 120) {
-        const baseSps = calcSps(save, {});
+        const baseSps = calcSps(save, {}) * companionForgeBonus(studentData?.menagerieData).mult;
         const earned = baseSps * capped * OFFLINE_RATE;
         if (earned > 0) {
           save = {
@@ -277,7 +282,7 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
     if (!loaded) return;
     const t = setInterval(() => {
       const cur = gsRef.current;
-      const gain = calcSps(cur, buffsRef.current) / 10;
+      const gain = (calcSps(cur, buffsRef.current) * compBonusRef.current.mult) / 10;
       if (gain > 0) {
         setGs((p) => ({
           ...p,
@@ -768,6 +773,14 @@ const SweetEmpireGame = ({ studentData, updateStudentData, showToast = () => {},
           <span className="bg-white/20 rounded-full px-3 py-1">🔄 {gs.rebirths} Ascension{gs.rebirths !== 1 ? 's' : ''}</span>
           <span className="bg-white/20 rounded-full px-3 py-1">🏅 {gs.achievements.length}/{ACHIEVEMENTS.length}</span>
           {(gs.dragonsSlain || 0) > 0 && <span className="bg-white/20 rounded-full px-3 py-1">🐉 {gs.dragonsSlain} slain</span>}
+          {compBonus.pct > 0 && (
+            <span className="bg-white/20 rounded-full pl-1 pr-3 py-1 flex items-center gap-1.5" title={`Your Menagerie companion ${compBonus.name} (Lv ${compBonus.level} ${compBonus.rarity}) cheers your army on!`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={compBonus.img} alt="" className="w-5 h-5 rounded-full object-cover border border-white/50"
+                style={compBonus.shiny ? { filter: 'hue-rotate(45deg) saturate(1.7) brightness(1.05)' } : undefined} />
+              {compBonus.shiny && '✨'}{compBonus.name}: +{compBonus.pct}% production
+            </span>
+          )}
           {pendingStars > 0 && (
             <button onClick={() => setTab('rebirth')} className="bg-yellow-300 text-amber-900 rounded-full px-3 py-1 animate-pulse">
               ⭐ {pendingStars} star{pendingStars !== 1 ? 's' : ''} ready — Ascend!
