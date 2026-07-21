@@ -698,6 +698,7 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
             <h3 className="font-bold text-gray-800 mb-1">🛒 Egg Dealer</h3>
             <p className="text-xs text-gray-500 mb-3">
               Wild Essence comes from YOUR learning: every classroom XP you earn becomes ✨{ESSENCE_PER_CLASS_XP} essence — plus a daily visit gift, bonus essence for playing with and training your creatures, and essence gathered on your Wildwood Homestead adventures 🏕️.
+              <span className="block mt-1 text-purple-600 font-semibold">💡 Pro tip: hatch DUPLICATES on purpose! Raise three of the same species to Adult (Lv 12) and the ⚗️ Fusion Altar can merge them into a random creature of the next rarity up.</span>
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               {EGG_TIERS.map((tier) => {

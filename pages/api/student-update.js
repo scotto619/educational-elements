@@ -70,6 +70,7 @@ export default async function handler(req, res) {
       'menagerieData',        // Champion's Menagerie creature collector
       'homesteadData',        // Wildwood Homestead survival-crafting game
       'townSquareData',       // Town Square multiplayer plaza (stalls/market)
+      'hangoutData',          // My Hangout personal room (furniture/showcase)
       'moneyMastersProgress', // Money Masters financial literacy tool
       'keyboardQuestProgress', // Keyboard Quest typing program
       'mathMentalsProgress' // Math Mentals specific field

@@ -23,6 +23,7 @@ const ChampionsMenagerieGame = dynamic(() => import('../games/ChampionsMenagerie
 const MathSpaceInvadersGame = dynamic(() => import('../games/MathSpaceInvadersGame'), { loading: GameLoadingSpinner, ssr: false });
 const MultiplayerAgarGame = dynamic(() => import('../games/MultiplayerAgarGame'), { loading: GameLoadingSpinner, ssr: false });
 const TownSquareGame = dynamic(() => import('../games/TownSquareGame'), { loading: GameLoadingSpinner, ssr: false });
+const MyHangoutGame = dynamic(() => import('../games/MyHangoutGame'), { loading: GameLoadingSpinner, ssr: false });
 const StudentBingo = dynamic(() => import('../student/StudentBingo'), { loading: GameLoadingSpinner, ssr: false });
 const MazeGame = dynamic(() => import('../games/MazeGame'), { loading: GameLoadingSpinner, ssr: false });
 const DailyWordleChallenge = dynamic(() => import('../games/DailyWordleChallenge'), { loading: GameLoadingSpinner, ssr: false });
@@ -551,6 +552,19 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       featured: true,
       category: 'multiplayer',
       logo: getGameLogo('town-square')
+    },
+    {
+      id: 'my-hangout',
+      name: 'My Hangout',
+      icon: '🛋️',
+      description: 'Your own room in the Champions world! Buy furniture with Wildwood gold, craft decor from real resources, find ultra-rare treasures on expeditions, showcase your weapon, companion, curios and trophies — then visit your classmates\' rooms!',
+      component: MyHangoutGame,
+      color: 'from-amber-700 to-rose-800',
+      difficulty: 'Easy',
+      time: 'Open-ended',
+      new: true,
+      category: 'fun',
+      logo: getGameLogo('my-hangout')
     },
 
     // Educational Utils

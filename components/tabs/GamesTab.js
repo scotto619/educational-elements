@@ -34,6 +34,7 @@ const ZTypeGame = dynamic(() => import('../games/ZTypeGame'), { loading: GameLoa
 const WhackAMoleGame = dynamic(() => import('../games/WhackAMoleGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const WildwoodHomesteadGame = dynamic(() => import('../games/WildwoodHomesteadGame'), { loading: GameLoadingSpinner, ssr: false });
+const MyHangoutGame = dynamic(() => import('../games/MyHangoutGame'), { loading: GameLoadingSpinner, ssr: false });
 
 const logoErrorHandler = createImageErrorHandler(DEFAULT_GAME_LOGO);
 
@@ -366,6 +367,18 @@ const GamesTab = ({
       time: '5+ minutes',
       category: 'fun',
       logo: getGameLogo('champions-menagerie')
+    },
+    {
+      id: 'my-hangout',
+      name: 'My Hangout Preview',
+      icon: '🛋️',
+      description: "Preview the personal rooms your students decorate — furniture bought with Wildwood gold, crafted from resources, rare expedition treasures, and showcases for their weapons, companions and collections.",
+      component: MyHangoutGame,
+      color: 'from-amber-700 to-rose-800',
+      difficulty: 'Easy',
+      time: 'Open-ended',
+      category: 'fun',
+      logo: getGameLogo('my-hangout')
     },
     {
       id: 'wildwood-homestead',

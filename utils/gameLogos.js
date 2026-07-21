@@ -59,6 +59,7 @@ const GAME_LOGO_MAP = {
   'sweet-empire': [`${GL}/Champions Forge.png`, `${GL}/hero-forge.png`],
   'tic-tac-toe': [`${GL}/tic-tac-toe.png`],
   'town-square': [`${GL}/Town Square.svg`],
+  'my-hangout': ['/game icons/Town Square/003-medieval-house.svg'],
   'tower-stack': [`${GL}/Tower Stack.png`],
   'type-defender': [`${GL}/typedefender.png`],
   'typing-legends': [`${GL}/typing-legends.svg`],

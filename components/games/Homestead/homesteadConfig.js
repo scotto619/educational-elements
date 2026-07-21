@@ -192,6 +192,12 @@ export const ITEMS = {
   lost_map:     { name: 'Faded Treasure Map', img: `${ADV}/018-map-1.svg`, kind: 'curio', sell: 65, rarity: 'rare' },
 
   recipe_scroll: { name: 'Recipe Scroll', img: `${MAGIC}/030-scroll.svg`, kind: 'scroll', sell: 0, rarity: 'rare' },
+
+  // ── Rare FURNITURE finds — move them into your Hangout! ──────────────────
+  retro_radio:  { name: 'Wanderer Radio',     img: `${ADV}/011-radio.svg`, kind: 'furniture', sell: 90, rarity: 'epic' },
+  lucky_wheel:  { name: 'Wheel of Fortune',   img: `${MAGIC}/045-fortune wheel.svg`, kind: 'furniture', sell: 90, rarity: 'epic' },
+  dj_corner:    { name: 'DJ Headphones',      img: `${ADV}/020-headphones.svg`, kind: 'furniture', sell: 90, rarity: 'epic' },
+  crystal_lamp: { name: 'Crystal Chandelier', img: `${MINE}/006-crystals.svg`, tint: T.gold, kind: 'furniture', sell: 130, rarity: 'legendary' },
 };
 
 export const CURIO_IDS = Object.keys(ITEMS).filter((id) => ITEMS[id].kind === 'curio');
@@ -427,6 +433,7 @@ export const EXPEDITIONS = {
       ['honey', 3], ['rosemary', 3], ['avocado', 2], ['recipe_scroll', 1.2],
       ['mandrake', 0.8], ['tree_sap', 0.8], ['CURIO', 0.5], ['glimmer_dust', 0.3],
       ['fossil', 0.25], ['amber', 0.3],
+      ['retro_radio', 0.12], ['lucky_wheel', 0.10], ['dj_corner', 0.10],
     ],
   },
   hunt: {
@@ -451,6 +458,7 @@ export const EXPEDITIONS = {
           ['meat', 24], ['hide', 24], ['bone', 13], ['bacon', 7], ['feather', 8],
           ['golden_feather', 1], ['amber', 0.8], ['glimmer_dust', 0.6],
           ['hunters_crest', 0.35], ['recipe_scroll', 1.2], ['CRITTER', 4], ['CURIO', 0.7],
+          ['retro_radio', 0.15], ['crystal_lamp', 0.08],
         ] },
       // Apex hunts — unlocked by discovering their lairs on the Wild Map
       { minutes: 720, rolls: 42, name: 'Wolf Pack', img: `${SURV}/024-wolf.svg`, needsLandmark: 'wolf_den', needsCraft: 'bow',
@@ -464,6 +472,7 @@ export const EXPEDITIONS = {
           ['bear_claw', 5], ['meat', 28], ['bacon', 10], ['hide', 16], ['honey', 8],
           ['golden_feather', 1.4], ['hunters_crest', 0.5], ['glimmer_dust', 1],
           ['recipe_scroll', 1.6], ['CRITTER', 3], ['CURIO', 1],
+          ['lucky_wheel', 0.15], ['dj_corner', 0.15], ['crystal_lamp', 0.1],
         ] },
     ],
   },
