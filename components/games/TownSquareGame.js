@@ -910,6 +910,10 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
               <button onClick={() => onSwitchGame('wildwood-homestead')} className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 border border-white/20 rounded-full px-3 py-1 transition">🏕️ Wildwood Homestead</button>
               <button onClick={() => onSwitchGame('champions-menagerie')} className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 border border-white/20 rounded-full px-3 py-1 transition">🐣 Champion&apos;s Menagerie</button>
               <button onClick={() => onSwitchGame('sweet-empire')} className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 border border-white/20 rounded-full px-3 py-1 transition">⚔️ Champion&apos;s Forge</button>
+              <button onClick={() => onSwitchGame('my-hangout')} className="flex items-center gap-1.5 bg-black/30 hover:bg-black/50 border border-white/20 rounded-full px-3 py-1 transition">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/game icons/Hangout/Furniture/034-sofa.svg" alt="" className="w-4 h-4 object-contain" /> My Hangout
+              </button>
             </div>
           )}
         </div>
@@ -949,6 +953,10 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
                 <img src="/shop/Egg/Egg.png" alt="" className="w-5 h-5 object-contain" />
               </button>
               <button onClick={() => onSwitchGame('sweet-empire')} title="Champion's Forge" className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/25 flex items-center justify-center text-lg">⚔️</button>
+              <button onClick={() => onSwitchGame('my-hangout')} title="My Hangout" className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/25 flex items-center justify-center overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/game icons/Hangout/Furniture/034-sofa.svg" alt="" className="w-5 h-5 object-contain" />
+              </button>
             </div>
           )}
         </div>

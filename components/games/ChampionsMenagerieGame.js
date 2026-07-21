@@ -465,6 +465,13 @@ const ChampionsMenagerieGame = ({ studentData, updateStudentData, showToast = ()
               <img src="/logos/game-logos/Town Square.svg" alt="" className="w-4 h-4 object-contain rounded-full" />
               Town Square
             </button>
+            <button onClick={() => onSwitchGame('my-hangout')}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/30 border border-white/25 rounded-full px-3 py-1 transition"
+              title="Your companion wanders your hangout for visitors to admire!">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/game icons/Hangout/Furniture/034-sofa.svg" alt="" className="w-4 h-4 object-contain" />
+              My Hangout
+            </button>
           </div>
         )}
       </div>

@@ -1,35 +1,73 @@
 // components/games/Hangout/hangoutConfig.js
 // ─────────────────────────────────────────────────────────────────────────────
-// MY HANGOUT 🛋️ — every student gets their own 2D room to decorate and show
-// off. Furniture is BOUGHT with Wildwood gold, CRAFTED from Wildwood
-// resources, or FOUND as super-rare treasures on Wildwood expeditions.
-// Showcases display real collectables: Forge weapon on the wall, Menagerie
-// companion wandering the floor, curio pedestals, critter frames and a
-// trophy fish. Classmates' rooms are visitable (read-only) from class data.
-//
-// Save lives in studentData.hangoutData. Gold/resources are spent from
-// studentData.homesteadData (same local-clone pattern as Town Square).
+// MY HANGOUT v2 — personal rooms with:
+// • FREE PLACEMENT (x/y percentages in wall/ground bands, no grid)
+// • BUILDABLE AREAS (Games Den, Loft, Backyard, Observatory) — expensive,
+//   rare-material expansions crafted from Wildwood resources
+// • A big furniture catalog from the new /game icons/Hangout packs, with
+//   per-item sizes and INTERACTIVE types (radio → real synced music, fridge →
+//   your Wildwood pantry, stove → real cooking, arcade → game links, wheel →
+//   daily prize spins)
+// • LIVE PRESENCE — classmates appear and walk around in whichever hangout
+//   they're visiting (worldRooms-style RTDB, under hangoutRooms/{class}/{owner})
 // ─────────────────────────────────────────────────────────────────────────────
 
 const WW = '/game icons/Wildwood';
 const TS = '/game icons/Town Square';
-
-// Room grid: wall rows hold wall-mounted items, floor rows hold furniture.
-export const ROOM_COLS = 10;
-export const WALL_ROWS = 2;   // rows 0..1
-export const FLOOR_ROWS = 3;  // rows 2..4
-export const ROOM_ROWS = WALL_ROWS + FLOOR_ROWS;
+const HF = '/game icons/Hangout/Furniture';
+const HH = '/game icons/Hangout/Home';
+const HE = '/game icons/Hangout/Education';
+const HP = '/game icons/Hangout/Plants';
 
 const T = {
-  copper: 'sepia(1) saturate(3) hue-rotate(-25deg)',
   gold: 'sepia(1) saturate(5) hue-rotate(5deg) brightness(1.15)',
   purple: 'hue-rotate(260deg) saturate(1.5)',
   teal: 'hue-rotate(140deg) saturate(1.3)',
-  dark: 'brightness(0.7) saturate(0.9)',
+};
+
+// Placement bands (percent of room height). Wall items hang in the wall band,
+// ground items sit anywhere in the ground band — full horizontal freedom.
+export const WALL_BAND = { top: 6, bottom: 44 };
+export const GROUND_BAND = { top: 56, bottom: 92 };
+export const WALL_SPLIT = 54; // % height where wall meets floor
+
+// Furniture render sizes
+export const SIZES = {
+  sm: 'w-9 h-9 md:w-11 md:h-11',
+  md: 'w-12 h-12 md:w-16 md:h-16',
+  lg: 'w-16 h-16 md:w-24 md:h-24',
+  xl: 'w-24 h-24 md:w-32 md:h-32',
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ROOM THEMES — wallpapers & floors (pure CSS, bought with gold)
+// AREAS — expansions built with serious Wildwood investment
+// ═══════════════════════════════════════════════════════════════════════════
+export const HANGOUT_AREAS = [
+  { id: 'main', name: 'Main Room', icon: `${HH}/008-house.svg`, type: 'indoor', builtIn: true, style: 0,
+    desc: 'Home sweet home.' },
+  { id: 'den', name: 'Games Den', icon: `${HF}/033-smart tv.svg`, type: 'indoor', style: 30,
+    cost: { plank: 45, iron_bar: 12, hide: 12, tree_sap: 2, glimmer_dust: 1 },
+    desc: 'A den for screens, snacks and rematches.' },
+  { id: 'yard', name: 'Backyard', icon: `${HP}/020-sunflower.svg`, type: 'outdoor', style: 35,
+    cost: { stone: 70, beech_wood: 50, fiber: 50, cherry_wood: 25, mandrake: 2, amber: 1 },
+    desc: 'Open sky, real grass, room for a garden.' },
+  { id: 'loft', name: 'Upstairs Loft', icon: `${HF}/035-stairs.svg`, type: 'indoor', style: 45,
+    cost: { plank: 80, ironroot_wood: 25, iron_bar: 20, silver_bar: 8, moonpetal: 2, truffle: 1 },
+    desc: 'A whole second floor. The view is worth every plank.' },
+  { id: 'observatory', name: 'Observatory', icon: `${HE}/029-telescope.svg`, type: 'night', style: 70,
+    cost: { mithril_bar: 5, gold_bar: 8, elder_wood: 15, glimmer_dust: 3, pearl: 1, diamond: 1 },
+    desc: 'The ultimate build — a glass dome under the stars.' },
+];
+export const AREA_MAP = Object.fromEntries(HANGOUT_AREAS.map((a) => [a.id, a]));
+
+// Fixed backdrops for special area types (indoor areas use wallpapers/floors)
+export const OUTDOOR_SKY = 'linear-gradient(180deg, #8fd0f4 0%, #c3e7fb 70%, #dff2e0 100%)';
+export const OUTDOOR_GROUND = 'linear-gradient(180deg, #7fae5c 0%, #699549 100%)';
+export const NIGHT_SKY = 'linear-gradient(180deg, #0b1030 0%, #232a55 60%, #3b3f7a 100%)';
+export const NIGHT_GROUND = 'repeating-linear-gradient(90deg, #3a3550 0 46px, #322d46 46px 50px)';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ROOM THEMES (indoor areas only)
 // ═══════════════════════════════════════════════════════════════════════════
 export const WALLPAPERS = [
   { id: 'cream',   name: 'Cottage Cream',  cost: 0,   css: 'linear-gradient(180deg, #f3e9d2 0%, #e8d9b8 100%)' },
@@ -50,64 +88,127 @@ export const WALLPAPER_MAP = Object.fromEntries(WALLPAPERS.map((w) => [w.id, w])
 export const FLOOR_MAP = Object.fromEntries(FLOORS.map((f) => [f.id, f]));
 
 // ═══════════════════════════════════════════════════════════════════════════
+// MUSIC — real tracks the Wanderer Radio can play (synced for all visitors)
+// ═══════════════════════════════════════════════════════════════════════════
+export const MUSIC_TRACKS = [
+  { id: 'lovely', name: 'Lovely', file: '/Music/lovely.mp3' },
+  { id: 'morning', name: 'Morning Routine', file: '/Music/morning-routine.mp3' },
+  { id: 'opensky', name: 'The Open Sky', file: '/Music/the-open-sky.mp3' },
+  { id: 'ocean', name: 'Heart of the Ocean', file: '/Music/heart-of-the-ocean.mp3' },
+  { id: 'petals', name: 'White Petals', file: '/Music/white-petals.mp3' },
+  { id: 'beloved', name: 'Beloved', file: '/Music/beloved.mp3' },
+  { id: 'embrace', name: 'Embrace', file: '/Music/embrace.mp3' },
+  { id: 'boy', name: 'When I Was a Boy', file: '/Music/when-i-was-a-boy.mp3' },
+  { id: 'transcend', name: 'Transcendence', file: '/Music/transcendence.mp3' },
+];
+export const MUSIC_MAP = Object.fromEntries(MUSIC_TRACKS.map((t) => [t.id, t]));
+
+// ═══════════════════════════════════════════════════════════════════════════
 // FURNITURE CATALOG
-// zone: 'wall' | 'floor' · style: Style Score points
-// src: { gold } bought · { craft } built from Wildwood resources ·
-//      { found } super-rare Wildwood expedition treasure (moved in from inv)
+// zone: 'wall' | 'floor' | 'outdoor' (floor = any ground; outdoor = outdoor areas only)
+// size: sm | md | lg | xl · interactive: radio|fridge|stove|games|wheel
+// src: { gold } | { craft } | { found }
 // ═══════════════════════════════════════════════════════════════════════════
 export const FURNITURE = [
-  // ── Bought with gold ──────────────────────────────────────────────────────
-  { id: 'bench',      name: 'Park Bench',       img: `${TS}/003-bench.svg`,          zone: 'floor', style: 4,  src: { gold: 35 } },
-  { id: 'tulip_pot',  name: 'Tulip Pot',        img: `${WW}/Nature/010-tulip.svg`,   zone: 'floor', style: 3,  src: { gold: 20 } },
-  { id: 'sunflower',  name: 'Sunny Sunflower',  img: `${WW}/Nature/011-sunflower.svg`, zone: 'floor', style: 3, src: { gold: 25 } },
-  { id: 'shroomlamp', name: 'Mushroom Lamp',    img: `${WW}/Nature/006-mushroom.svg`, tint: T.purple, zone: 'floor', style: 5, src: { gold: 45 } },
-  { id: 'fridge',     name: 'Snack Fridge',     img: `${WW}/Cooking/009-refrigerator.svg`, zone: 'floor', style: 6, src: { gold: 80 } },
-  { id: 'toaster',    name: 'Trusty Toaster',   img: `${WW}/Cooking/007-toaster.svg`, zone: 'floor', style: 3, src: { gold: 30 } },
-  { id: 'wok_stand',  name: 'Noodle Cart',      img: `${WW}/Cooking/041-wok.svg`,    zone: 'floor', style: 5,  src: { gold: 55 } },
-  { id: 'balloons',   name: 'Party Balloons',   img: `${TS}/004-ballons.svg`,        zone: 'floor', style: 4,  src: { gold: 30 } },
-  { id: 'lantern',    name: 'Brass Lantern',    img: `${WW}/Camping/002-oil-lamp.svg`, zone: 'wall', style: 3, src: { gold: 25 } },
-  { id: 'banner',     name: 'Festival Banner',  img: `${TS}/005-banners.svg`,        zone: 'wall', style: 4,  src: { gold: 35 } },
-  { id: 'wall_map',   name: 'Adventurer Map',   img: `${TS}/007-old-map.svg`,        zone: 'wall', style: 5,  src: { gold: 50 } },
-  { id: 'star_chartw', name: 'Star Chart',      img: `${WW}/Magic/049-constellation.svg`, zone: 'wall', style: 6, src: { gold: 70 } },
-  { id: 'wall_clock', name: 'Wanderer Watch',   img: `${WW}/Adventure/049-watch.svg`, zone: 'wall', style: 4, src: { gold: 40 } },
-  { id: 'photo_wall', name: 'Memory Camera',    img: `${WW}/Adventure/005-camera.svg`, zone: 'wall', style: 5, src: { gold: 60 } },
+  // ── Comfy living (gold) ───────────────────────────────────────────────────
+  { id: 'couch',      name: 'Comfy Couch',      img: `${HF}/034-sofa.svg`,        zone: 'floor', size: 'lg', style: 8,  src: { gold: 90 } },
+  { id: 'sofa2',      name: 'Snug Sofa',        img: `${HF}/014-couch.svg`,       zone: 'floor', size: 'lg', style: 7,  src: { gold: 75 } },
+  { id: 'armchair',   name: 'Reading Chair',    img: `${HF}/010-chair.svg`,       zone: 'floor', size: 'md', style: 4,  src: { gold: 40 } },
+  { id: 'stool',      name: 'Little Stool',     img: `${HF}/036-stool.svg`,       zone: 'floor', size: 'sm', style: 2,  src: { gold: 15 } },
+  { id: 'round_table', name: 'Round Table',     img: `${HF}/012-circle table.svg`, zone: 'floor', size: 'md', style: 4, src: { gold: 45 } },
+  { id: 'dining_set', name: 'Dining Table',     img: `${HH}/015-Dining table.svg`, zone: 'floor', size: 'lg', style: 7, src: { gold: 85 } },
+  { id: 'side_table', name: 'Side Table',       img: `${HF}/031-side table.svg`,  zone: 'floor', size: 'sm', style: 3,  src: { gold: 25 } },
+  { id: 'double_bed', name: 'Dreamer Bed',      img: `${HH}/011-double bed.svg`,  zone: 'floor', size: 'xl', style: 10, src: { gold: 140 } },
+  { id: 'nightstand', name: 'Night Stand',      img: `${HH}/028-night stand.svg`, zone: 'floor', size: 'sm', style: 3,  src: { gold: 30 } },
+  { id: 'wardrobe',   name: 'Wardrobe',         img: `${HF}/039-wardrobe.svg`,    zone: 'floor', size: 'lg', style: 6,  src: { gold: 70 } },
+  { id: 'floor_lamp', name: 'Floor Lamp',       img: `${HF}/029-floor lamp.svg`,  zone: 'floor', size: 'md', style: 4,  src: { gold: 35 } },
+  { id: 'coffee_maker', name: 'Coffee Machine', img: `${HH}/009-coffee machine.svg`, zone: 'floor', size: 'sm', style: 4, src: { gold: 45 } },
+  { id: 'washing',    name: 'Washing Machine',  img: `${HH}/021-washing machine.svg`, zone: 'floor', size: 'md', style: 5, src: { gold: 65 } },
+  { id: 'bathtub',    name: 'Royal Bathtub',    img: `${HF}/003-bathtub.svg`,     zone: 'floor', size: 'lg', style: 9,  src: { gold: 120 } },
+  { id: 'houseplant', name: 'House Plant',      img: `${HH}/013-plant.svg`,       zone: 'floor', size: 'md', style: 3,  src: { gold: 25 } },
+  { id: 'bonsai',     name: 'Bonsai Tree',      img: `${HP}/021-bonsai.svg`,      zone: 'floor', size: 'sm', style: 5,  src: { gold: 55 } },
+
+  // ── Wall pieces (gold) ────────────────────────────────────────────────────
+  { id: 'window',     name: 'Sunny Window',     img: `${HF}/040-window.svg`,      zone: 'wall', size: 'lg', style: 6,  src: { gold: 60 } },
+  { id: 'curtains',   name: 'Cozy Curtains',    img: `${HH}/012-curtains.svg`,    zone: 'wall', size: 'lg', style: 5,  src: { gold: 50 } },
+  { id: 'frame',      name: 'Art Frame',        img: `${HF}/024-frame.svg`,       zone: 'wall', size: 'sm', style: 3,  src: { gold: 25 } },
+  { id: 'mirror',     name: 'Wall Mirror',      img: `${HF}/030-mirror.svg`,      zone: 'wall', size: 'md', style: 5,  src: { gold: 45 } },
+  { id: 'ceiling_lamp', name: 'Hanging Lamp',   img: `${HF}/009-ceiling lamp.svg`, zone: 'wall', size: 'md', style: 4, src: { gold: 40 } },
+  { id: 'clock',      name: 'Vintage Clock',    img: `${HF}/038-vintage clock.svg`, zone: 'wall', size: 'md', style: 5, src: { gold: 55 } },
+  { id: 'wall_shelf', name: 'Wall Shelf',       img: `${HH}/026-shelf.svg`,       zone: 'wall', size: 'md', style: 4,  src: { gold: 35 } },
+  { id: 'banner',     name: 'Festival Banner',  img: `${TS}/005-banners.svg`,     zone: 'wall', size: 'md', style: 4,  src: { gold: 35 } },
 
   // ── Crafted from Wildwood resources ──────────────────────────────────────
-  { id: 'log_table',  name: 'Log Table',        img: `${WW}/Nature/003-wood.svg`,    zone: 'floor', style: 4,
-    src: { craft: { plank: 4, beech_wood: 6 } } },
-  { id: 'storage_crate', name: 'Storage Crate', img: `${WW}/More/004-crate.svg`,     zone: 'floor', style: 3,
-    src: { craft: { plank: 3, fiber: 8 } } },
-  { id: 'cozy_firepit', name: 'Cozy Firepit',   img: `${WW}/Camping/001-fire.svg`,   zone: 'floor', style: 7,
-    src: { craft: { stone: 12, beech_wood: 10, tree_sap: 1 } } },
-  { id: 'stew_corner', name: 'Stew Corner',     img: `${WW}/Camping/004-cooking-pot.svg`, zone: 'floor', style: 5,
-    src: { craft: { iron_bar: 2, cherry_wood: 6 } } },
-  { id: 'brew_station', name: 'Mini Cauldron',  img: `${WW}/Magic/008-cauldron.svg`, tint: T.teal, zone: 'floor', style: 8,
-    src: { craft: { iron_bar: 4, mandrake: 1 } } },
-  { id: 'shelf',      name: 'Spellbook Shelf',  img: `${WW}/Magic/039-spellbook.svg`, zone: 'wall', style: 6,
-    src: { craft: { plank: 6, hide: 2 } } },
-  { id: 'mirror',     name: 'Enchanted Mirror', img: `${WW}/Magic/041-magic mirror.svg`, zone: 'wall', style: 8,
-    src: { craft: { silver_bar: 3, glimmer_dust: 1 } } },
-  { id: 'candle_row', name: 'Candle Row',       img: `${WW}/Magic/004-candle.svg`,   zone: 'wall', style: 4,
-    src: { craft: { honey: 4, fiber: 6 } } },
-  { id: 'trophy_bar', name: 'Golden Trophy Bar', img: `${WW}/Mining/008-gold-ingots.svg`, zone: 'wall', style: 9,
-    src: { craft: { gold_bar: 3, plank: 4 } } },
+  { id: 'bookshelf',  name: 'Grand Bookshelf',  img: `${HH}/030-bookshelf.svg`,   zone: 'floor', size: 'lg', style: 9,
+    src: { craft: { plank: 10, cherry_wood: 8, hide: 2 } } },
+  { id: 'study_desk', name: 'Study Desk',       img: `${HE}/005-desk.svg`,        zone: 'floor', size: 'lg', style: 7,
+    src: { craft: { plank: 8, iron_bar: 2 } } },
+  { id: 'desk_chair', name: 'Desk Chair',       img: `${HE}/036-desk chair.svg`,  zone: 'floor', size: 'md', style: 4,
+    src: { craft: { plank: 4, hide: 3, fiber: 6 } } },
+  { id: 'desk_lamp',  name: 'Desk Lamp',        img: `${HE}/027-desk lamp.svg`,   zone: 'floor', size: 'sm', style: 3,
+    src: { craft: { copper_bar: 2, fiber: 4 } } },
+  { id: 'easel',      name: 'Artist Easel',     img: `${HE}/038-easel.svg`,       zone: 'floor', size: 'lg', style: 7,
+    src: { craft: { plank: 6, feather: 5 } } },
+  { id: 'blackboard', name: 'Idea Blackboard',  img: `${HE}/009-blackboard.svg`,  zone: 'wall', size: 'lg', style: 6,
+    src: { craft: { plank: 6, stone: 8 } } },
+  { id: 'trophy_shelf', name: 'Trophy Shelf',   img: `${HE}/037-trophy.svg`,      zone: 'wall', size: 'md', style: 8,
+    src: { craft: { gold_bar: 2, plank: 5 } } },
+  { id: 'fireplace',  name: 'Stone Fireplace',  img: `${HF}/023-chimney.svg`,     zone: 'floor', size: 'xl', style: 12,
+    src: { craft: { stone: 40, iron_bar: 4, tree_sap: 2 } } },
+  { id: 'telescope',  name: 'Star Telescope',   img: `${HE}/029-telescope.svg`,   zone: 'floor', size: 'lg', style: 11,
+    src: { craft: { silver_bar: 4, gold_bar: 2, glimmer_dust: 1 } } },
+  { id: 'kitchen_unit', name: 'Kitchen Bench',  img: `${HF}/027-kitchen.svg`,     zone: 'floor', size: 'xl', style: 9,
+    src: { craft: { plank: 12, stone: 15, iron_bar: 3 } } },
+  { id: 'sink',       name: 'Kitchen Sink',     img: `${HH}/018-sink.svg`,        zone: 'floor', size: 'md', style: 4,
+    src: { craft: { iron_bar: 3, copper_bar: 2 } } },
+  { id: 'mailbox',    name: 'Friendly Mailbox', img: `${HH}/022-mail box.svg`,    zone: 'outdoor', size: 'md', style: 5,
+    src: { craft: { plank: 4, copper_bar: 1 } } },
 
-  // ── Super-rare Wildwood expedition finds (kind 'furniture' in the pack) ──
-  { id: 'retro_radio', name: 'Wanderer Radio',  img: `${WW}/Adventure/011-radio.svg`, zone: 'floor', style: 12, src: { found: true } },
-  { id: 'lucky_wheel', name: 'Wheel of Fortune', img: `${WW}/Magic/045-fortune wheel.svg`, zone: 'wall', style: 12, src: { found: true } },
-  { id: 'dj_corner',  name: 'DJ Headphones',    img: `${WW}/Adventure/020-headphones.svg`, zone: 'wall', style: 12, src: { found: true } },
-  { id: 'crystal_lamp', name: 'Crystal Chandelier', img: `${WW}/Mining/006-crystals.svg`, tint: T.gold, zone: 'wall', style: 14, src: { found: true } },
+  // ── Interactive appliances ────────────────────────────────────────────────
+  { id: 'fridge',     name: 'Pantry Fridge',    img: `${HF}/025-fridge.svg`,      zone: 'floor', size: 'lg', style: 8, interactive: 'fridge',
+    src: { gold: 110 }, hint: 'Opens your real Wildwood pantry — visitors can peek, you can snack!' },
+  { id: 'stove',      name: 'Home Stove',       img: `${HH}/017-stove.svg`,       zone: 'floor', size: 'lg', style: 9, interactive: 'stove',
+    src: { craft: { iron_bar: 6, stone: 20, copper_bar: 3 } }, hint: 'Cook real Wildwood recipes without leaving home!' },
+  { id: 'smart_tv',   name: 'Smart TV',         img: `${HF}/033-smart tv.svg`,    zone: 'wall', size: 'lg', style: 9, interactive: 'games',
+    src: { gold: 160 }, hint: 'Opens the arcade — jump straight into any Champions game!' },
+  { id: 'laptop',     name: 'Gamer Laptop',     img: `${HE}/012-laptop.svg`,      zone: 'floor', size: 'md', style: 7, interactive: 'games',
+    src: { craft: { silver_bar: 3, copper_bar: 4, glimmer_dust: 1 } }, hint: 'Portable arcade!' },
+
+  // ── Outdoor garden (Backyard & beyond) ────────────────────────────────────
+  { id: 'sunflower_o', name: 'Giant Sunflower', img: `${HP}/020-sunflower.svg`,   zone: 'outdoor', size: 'lg', style: 5, src: { gold: 40 } },
+  { id: 'flowerbed',  name: 'Flower Patch',     img: `${HP}/040-flower.svg`,      zone: 'outdoor', size: 'md', style: 4, src: { gold: 30 } },
+  { id: 'tulips',     name: 'Tulip Row',        img: `${HP}/038-flower-2.svg`,    zone: 'outdoor', size: 'md', style: 4, src: { gold: 30 } },
+  { id: 'cactus_big', name: 'Grand Cactus',     img: `${HP}/030-cactus.svg`,      zone: 'outdoor', size: 'lg', style: 6, src: { gold: 55 } },
+  { id: 'cactus_pot', name: 'Potted Cactus',    img: `${HP}/026-cactus-4.svg`,    zone: 'outdoor', size: 'sm', style: 3, src: { gold: 20 } },
+  { id: 'wheelbarrow', name: 'Wheelbarrow',     img: `${HP}/002-wheelbarrow.svg`, zone: 'outdoor', size: 'md', style: 4,
+    src: { craft: { plank: 5, iron_bar: 2 } } },
+  { id: 'lawnmower',  name: 'Lawn Mower',       img: `${HP}/001-lawn-mower.svg`,  zone: 'outdoor', size: 'md', style: 6,
+    src: { craft: { iron_bar: 5, copper_bar: 3 } } },
+  { id: 'garden_pot', name: 'Garden Pot',       img: `${HP}/011-pot.svg`,         zone: 'outdoor', size: 'sm', style: 2, src: { gold: 15 } },
+  { id: 'bench_o',    name: 'Garden Bench',     img: `${HF}/005-bench.svg`,       zone: 'outdoor', size: 'lg', style: 6,
+    src: { craft: { plank: 8, stone: 6 } } },
+
+  // ── Super-rare Wildwood expedition finds (interactive showpieces!) ───────
+  { id: 'retro_radio', name: 'Wanderer Radio',  img: `${WW}/Adventure/011-radio.svg`, zone: 'floor', size: 'md', style: 14, interactive: 'radio',
+    src: { found: true }, hint: 'Plays REAL music that everyone in your hangout hears!' },
+  { id: 'lucky_wheel', name: 'Wheel of Fortune', img: `${WW}/Magic/045-fortune wheel.svg`, zone: 'wall', size: 'lg', style: 14, interactive: 'wheel',
+    src: { found: true }, hint: 'One free spin a day — visitors can spin it too!' },
+  { id: 'dj_corner',  name: 'DJ Headphones',    img: `${WW}/Adventure/020-headphones.svg`, zone: 'wall', size: 'md', style: 12, interactive: 'radio',
+    src: { found: true }, hint: 'A second way to control the tunes.' },
+  { id: 'crystal_lamp', name: 'Crystal Chandelier', img: `${WW}/Mining/006-crystals.svg`, tint: T.gold, zone: 'wall', size: 'lg', style: 16,
+    src: { found: true } },
 ];
 export const FURNITURE_MAP = Object.fromEntries(FURNITURE.map((f) => [f.id, f]));
-// Wildwood item ids for the rare finds (added to homestead ITEMS + drop tables)
 export const FOUND_FURNITURE_ITEMS = ['retro_radio', 'lucky_wheel', 'dj_corner', 'crystal_lamp'];
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SHOWCASES — display real collectables from the other games
+// SHOWCASES (main room)
 // ═══════════════════════════════════════════════════════════════════════════
-export const CURIO_PEDESTALS = 3;   // pick curios you've DISCOVERED in Wildwood
-export const CRITTER_FRAMES = 3;    // pick critters from your collection
-export const FISH_TROPHIES = 1;     // one mounted trophy fish
+export const CURIO_PEDESTALS = 3;
+export const CRITTER_FRAMES = 3;
+export const FISH_TROPHIES = 1;
+
+export const WHEEL_PRIZES = [5, 8, 10, 12, 15, 20, 25, 40]; // gold
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STYLE SCORE
@@ -115,23 +216,31 @@ export const FISH_TROPHIES = 1;     // one mounted trophy fish
 export const styleScoreOf = (h) => {
   if (!h) return 0;
   let s = 0;
+  const areas = h.areas || {};
+  Object.values(areas).forEach((a) => (a?.placed || []).forEach((p) => { s += FURNITURE_MAP[p.itemId]?.style || 0; }));
+  // legacy shape (pre-areas)
   (h.placed || []).forEach((p) => { s += FURNITURE_MAP[p.itemId]?.style || 0; });
-  s += (WALLPAPER_MAP[h.wallpaper]?.cost || 0) > 0 ? 5 : 0;
-  s += (FLOOR_MAP[h.floor]?.cost || 0) > 0 ? 5 : 0;
+  (h.built || []).forEach((id) => { s += AREA_MAP[id]?.style || 0; });
+  s += (WALLPAPER_MAP[(areas.main || h).wallpaper]?.cost || 0) > 0 ? 5 : 0;
+  s += (FLOOR_MAP[(areas.main || h).floor]?.cost || 0) > 0 ? 5 : 0;
   s += (h.showcase?.curios || []).filter(Boolean).length * 6;
   s += (h.showcase?.critters || []).filter(Boolean).length * 3;
   s += h.showcase?.fish ? 6 : 0;
   return s;
 };
 
+export const newPlacedId = () => `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
+
 export const defaultSave = () => ({
-  wallpaper: 'cream',
-  floor: 'oak',
+  built: ['main'],
+  areas: {
+    main: { wallpaper: 'cream', floor: 'oak', placed: [] },
+  },
   ownedWallpapers: ['cream'],
   ownedFloors: ['oak'],
-  owned: {},            // { furnitureId: count } (bought/crafted/moved-in)
-  placed: [],           // [{ slot, itemId }] — slot = row * ROOM_COLS + col
+  owned: {},
   showcase: { curios: [], critters: [], fish: null },
+  wheelDay: null,        // last day this student spun ANY Wheel of Fortune
   lastSeen: null,
   lastSaved: null,
 });
