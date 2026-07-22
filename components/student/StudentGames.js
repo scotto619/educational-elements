@@ -870,6 +870,7 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
             classmates={classmates}
             storageKeySuffix={selectedGame.storageKeySuffix}
             onSwitchGame={(id) => { const g = availableGames.find((x) => x.id === id); if (g) setSelectedGame(g); }}
+            arcadeGames={categorizedGames.map((g) => ({ id: g.id, name: g.name, icon: g.icon, logo: g.logo, category: g.displayCategory }))}
           />
         </div>
       </div>

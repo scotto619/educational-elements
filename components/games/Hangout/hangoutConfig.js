@@ -249,6 +249,12 @@ export const FURNITURE = [
   { id: 'waterfall_feature', name: 'Waterfall Feature', img: `${HO}/003-waterfall.svg`, zone: 'outdoor', size: 'xl', style: 16,
     src: { craft: { stone: 60, silver_bar: 4, glimmer_dust: 1, pearl: 1 } } },
 
+  // ── FREE STARTERS — every player gets one automatically ──────────────────
+  { id: 'arcade_cab', name: 'Arcade Cabinet', img: `${HF}/002-arcade.svg`, zone: 'floor', size: 'lg', style: 8, interactive: 'arcade',
+    src: { free: true }, hint: 'Free with every hangout — opens ALL the fun games from the Game Center!' },
+  { id: 'game_bookshelf', name: 'Game Bookshelf', img: `${HF}/001-bookshelf.svg`, zone: 'floor', size: 'lg', style: 8, interactive: 'library',
+    src: { free: true }, hint: 'Free with every hangout — multiplayer games! If a friend is visiting, it drops you straight into a match together.' },
+
   // ── Interactive outdoor & garden growing (new!) ───────────────────────────
   { id: 'bbq',        name: 'Backyard BBQ',     img: `${HK}/002-barbecue.svg`,    zone: 'outdoor', size: 'lg', style: 9, interactive: 'stove',
     src: { craft: { iron_bar: 5, stone: 12, copper_bar: 2 } }, hint: 'Cook real Wildwood recipes under the open sky!' },

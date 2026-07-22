@@ -35,6 +35,11 @@ import {
 } from './Homestead/homesteadConfig';
 import { forgeStageFor } from './SweetEmpire/sweetEmpireConfig';
 import { SPECIES_MAP as MENAGERIE_SPECIES, levelForXp as menLevelForXp } from './Menagerie/menagerieConfig';
+import { MINIGAMES } from './TownSquare/townSquareConfig';
+import ChallengeOverlay from './TownSquare/MiniGames';
+
+// The connected "world" games never appear in the arcade — they have their own doors
+const WORLD_GAME_IDS = ['sweet-empire', 'champions-menagerie', 'wildwood-homestead', 'town-square', 'my-hangout'];
 
 const shinyFilter = 'hue-rotate(45deg) saturate(1.7) brightness(1.05)';
 const dayStr = () => new Date().toISOString().slice(0, 10);
@@ -72,6 +77,9 @@ const migrate = (raw) => {
     });
   }
   save.owned = Object.fromEntries(Object.entries(raw.owned || {}).filter(([id, n]) => FURNITURE_MAP[id] && n > 0));
+  // Free starters — every player automatically owns the Arcade Cabinet + Game Bookshelf
+  save.owned.arcade_cab = Math.max(1, save.owned.arcade_cab || 0);
+  save.owned.game_bookshelf = Math.max(1, save.owned.game_bookshelf || 0);
   save.ownedWallpapers = [...new Set(['cream', ...(raw.ownedWallpapers || [])])].filter((id) => WALLPAPER_MAP[id]);
   save.ownedFloors = [...new Set(['oak', ...(raw.ownedFloors || [])])].filter((id) => FLOOR_MAP[id]);
   save.showcase = { curios: [], critters: [], fish: null, ...(raw.showcase || {}) };
@@ -385,7 +393,7 @@ const DpadBtn = ({ label, onDown, onUp }) => (
   </button>
 );
 
-const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, classData, classmates = [], onSwitchGame = null }) => {
+const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, classData, classmates = [], onSwitchGame = null, arcadeGames = [] }) => {
   const [gs, setGs] = useState(defaultSave);
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState('room');
@@ -403,6 +411,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
   const [myBubble, setMyBubble] = useState(null);
   const [myEmote, setMyEmote] = useState(null);
   const [liveRoom, setLiveRoom] = useState(null);    // live RTDB mirror of the room I'm visiting
+  const [hgChallenge, setHgChallenge] = useState(null); // live bookshelf minigame I'm part of
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [, forceTick] = useState(0);
 
@@ -495,6 +504,41 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
     onValue(r, (snap) => setLiveRoom(snap.val()));
     return () => { off(r); setLiveRoom(null); };
   }, [tab, visitId, classCode]);
+
+  // ── BOOKSHELF MULTIPLAYER — live minigames vs whoever is in the room ───────
+  // Challenges live under worldRooms/{class}/challenges with an `hg_` prefix so
+  // the Town Square engine (and its class-wide win announcements) just work.
+  useEffect(() => {
+    if (!loaded || !classCode) return undefined;
+    const r = ref(database, `worldRooms/${classCode}/challenges`);
+    onValue(r, (snap) => {
+      const all = snap.val() || {};
+      const mine = Object.entries(all).find(([id, c]) => id.startsWith('hg_')
+        && c?.status === 'active'
+        && (c.from?.id === myId || c.to?.id === myId)
+        && Date.now() - (c.createdAt || 0) < 2 * 60 * 60 * 1000);
+      setHgChallenge(mine ? { id: mine[0], ...mine[1] } : null);
+    });
+    return () => { off(r); setHgChallenge(null); };
+  }, [loaded, classCode, myId]);
+
+  const startLibraryGame = (gameId) => {
+    if (hgChallenge) { showToast('Finish your current game first!', 'error'); return; }
+    const visitors = Object.entries(players).filter(([pid]) => pid !== myId);
+    if (visitors.length === 0) { showToast('No one else is here — invite a classmate to visit!', 'info'); return; }
+    const [oppId, opp] = visitors[Math.floor(Math.random() * visitors.length)];
+    const challengeId = `hg_${myId}_${Date.now()}`;
+    set(ref(database, `worldRooms/${classCode}/challenges/${challengeId}`), {
+      game: gameId, from: { id: myId, name: myName }, to: { id: oppId, name: opp?.name || '?' },
+      status: 'active', createdAt: Date.now(), hangout: true,
+    }).catch(() => {});
+    setInteract(null);
+  };
+
+  const closeHgChallenge = () => {
+    if (hgChallenge?.id && classCode) remove(ref(database, `worldRooms/${classCode}/challenges/${hgChallenge.id}`)).catch(() => {});
+    setHgChallenge(null);
+  };
 
   // ── Which hangout am I standing in? ────────────────────────────────────────
   const currentOwnerId = tab === 'visit' && visitId ? visitId : myId;
@@ -1350,6 +1394,88 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
               </>
             )}
 
+            {interact.type === 'arcade' && (() => {
+              const funGames = (arcadeGames || []).filter((g) => g.category === 'fun' && !WORLD_GAME_IDS.includes(g.id));
+              return (
+                <>
+                  <h3 className="text-lg font-bold text-gray-800 text-center mb-1">🕹️ Arcade Cabinet</h3>
+                  <p className="text-xs text-gray-500 text-center mb-3">Every fun game from the Game Center, one tap away:</p>
+                  {funGames.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-6">The arcade only works from the student Game Center.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-1.5 max-h-80 overflow-y-auto pr-1">
+                      {funGames.map((g) => (
+                        <button key={g.id} onClick={() => onSwitchGame?.(g.id)} disabled={!onSwitchGame}
+                          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl px-2.5 py-2 text-left disabled:opacity-40 transition">
+                          {g.logo ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={g.logo} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                          ) : (
+                            <span className="text-xl flex-shrink-0">{g.icon || '🎮'}</span>
+                          )}
+                          <span className="text-xs font-bold truncate">{g.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+
+            {interact.type === 'library' && (() => {
+              const visitors = Object.entries(players).filter(([pid]) => pid !== myId);
+              const lobbyGames = (arcadeGames || []).filter((g) => g.category === 'multiplayer' && !WORLD_GAME_IDS.includes(g.id));
+              return (
+                <>
+                  <h3 className="text-lg font-bold text-gray-800 text-center mb-1">📚 Game Bookshelf</h3>
+                  {visitors.length > 0 ? (
+                    <>
+                      <p className="text-xs text-emerald-600 font-bold text-center mb-2">
+                        🎉 {visitors.map(([, v]) => v?.name || '?').join(', ')} {visitors.length === 1 ? 'is' : 'are'} here — pick a game and you&apos;ll be matched instantly!
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5 mb-3">
+                        {MINIGAMES.map((mg) => (
+                          <button key={mg.id} onClick={() => startLibraryGame(mg.id)}
+                            className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl px-2.5 py-2 text-left transition">
+                            {mg.iconImg ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={mg.iconImg} alt="" className="w-7 h-7 object-contain flex-shrink-0" />
+                            ) : (
+                              <span className="text-xl flex-shrink-0">{mg.icon || '🎲'}</span>
+                            )}
+                            <span className="text-xs font-bold truncate">{mg.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-gray-500 text-center mb-3">
+                      The head-to-head games need a visitor — invite a classmate over and you&apos;ll be dropped into a match together the moment you pick one!
+                    </p>
+                  )}
+                  {lobbyGames.length > 0 && (
+                    <>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1.5">Big multiplayer games (open a lobby)</p>
+                      <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                        {lobbyGames.map((g) => (
+                          <button key={g.id} onClick={() => onSwitchGame?.(g.id)} disabled={!onSwitchGame}
+                            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl px-2.5 py-2 text-left disabled:opacity-40 transition">
+                            {g.logo ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={g.logo} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                            ) : (
+                              <span className="text-xl flex-shrink-0">{g.icon || '🎮'}</span>
+                            )}
+                            <span className="text-xs font-bold truncate">{g.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
+
             {interact.type === 'farm' && (() => {
               const farmState = interact.ownerIsMe
                 ? gs.farms?.[interact.placedId]
@@ -1427,6 +1553,21 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
             <button onClick={() => setInteract(null)} className="w-full mt-4 bg-gray-100 text-gray-600 py-2 rounded-xl font-bold text-sm">Close</button>
           </div>
         </div>
+      )}
+
+      {/* Live bookshelf minigame — auto-opens for BOTH players the moment a game starts */}
+      {hgChallenge && (
+        <ChallengeOverlay
+          classCode={classCode}
+          challengeId={hgChallenge.id}
+          game={hgChallenge.game}
+          myId={myId}
+          myName={myName}
+          opponentId={hgChallenge.from?.id === myId ? hgChallenge.to?.id : hgChallenge.from?.id}
+          opponentName={hgChallenge.from?.id === myId ? hgChallenge.to?.name : hgChallenge.from?.name}
+          isHost={hgChallenge.from?.id === myId}
+          onClose={closeHgChallenge}
+        />
       )}
     </div>
   );

@@ -956,6 +956,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     if (!roomCodeRef.current) return;
     const alreadyActive = Object.values(challengesRef.current || {}).some(
       (c) => c.status === 'active' && (c.from?.id === myIdRef.current || c.to?.id === myIdRef.current)
+        && Date.now() - (c.createdAt || 0) < 2 * 60 * 60 * 1000 // stale/abandoned games don't block
     );
     if (alreadyActive) { showToast?.('Finish your current game first!', 'error'); return; }
     const challengeId = `c_${myIdRef.current}_${Date.now()}`;

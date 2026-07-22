@@ -1,4 +1,4 @@
-// components/tabs/QuizShowTab.js - Full Quiz Show Management for Teachers
+// components/tabs/QuizShowTab.js - Quiz Show Command Centre (teacher side)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { firestore, database } from '../../utils/firebase';
 import {
@@ -12,6 +12,7 @@ import {
   createQuizFromPreset,
   calculateFinalLeaderboard,
   QUESTION_CATEGORIES,
+  GAME_MODES,
   playQuizSound
 } from '../../utils/quizShowHelpers';
 import { PREMADE_QUIZZES, PREMADE_CATEGORIES } from '../../constants/premadeQuizzes';
@@ -24,147 +25,105 @@ import GamePresentation from '../quizshow/teacher/GamePresentation';
 import GameResults from '../quizshow/teacher/GameResults';
 
 // ============================================================
-// AI GENERATOR MODAL
+// GAME MODE SELECT MODAL — shown after picking a quiz to launch
 // ============================================================
-const AIGeneratorModal = ({ onClose, onQuizGenerated }) => {
-  const [topic, setTopic] = useState('');
-  const [gradeLevel, setGradeLevel] = useState('Primary school (Years 3-6)');
-  const [numQuestions, setNumQuestions] = useState(10);
-  const [difficulty, setDifficulty] = useState('medium');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleGenerate = async () => {
-    if (!topic.trim()) { setError('Please enter a topic'); return; }
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/generate-quiz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: topic.trim(), gradeLevel, numQuestions, difficulty })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setError(data.error || 'Failed to generate quiz. Please try again.');
-        return;
-      }
-      onQuizGenerated(data.quiz);
-    } catch (e) {
-      setError('Network error. Please check your connection.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const gradeLevels = [
-    'Foundation - Year 2 (Ages 5-8)',
-    'Primary school (Years 3-6)',
-    'Middle school (Years 7-9)',
-    'High school (Years 10-12)',
-  ];
-
-  const topics = ['Solar System', 'Ancient Egypt', 'Fractions', 'World War II', 'Animals of Australia', 'Grammar', 'Human Body', 'Australian History'];
+const ModeSelectModal = ({ quiz, onClose, onLaunch, starting }) => {
+  const [selectedMode, setSelectedMode] = useState('classic');
+  const [teamCount, setTeamCount] = useState(2);
+  const [powerUpsEnabled, setPowerUpsEnabled] = useState(true);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-violet-600 to-fuchsia-600 p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-3xl">✨</span>
-                <h2 className="text-2xl font-black">AI Quiz Generator</h2>
-              </div>
-              <p className="text-violet-200 text-sm">Powered by AI — free, instant, no setup required</p>
-            </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 text-xl font-bold">×</button>
+        <div className="p-6 border-b border-white/10 flex items-start justify-between sticky top-0 bg-slate-900/95 backdrop-blur rounded-t-3xl z-10">
+          <div>
+            <h2 className="text-2xl font-black text-white">🎛️ Choose a Game Mode</h2>
+            <p className="text-slate-400 text-sm mt-1">
+              Launching <span className="text-fuchsia-300 font-semibold">{quiz?.title}</span> · {quiz?.questions?.length || 0} questions
+            </p>
           </div>
+          <button onClick={onClose}
+            className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 text-xl font-bold shrink-0">×</button>
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Topic Input */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Topic *</label>
-            <input
-              type="text"
-              value={topic}
-              onChange={e => { setTopic(e.target.value); setError(''); }}
-              placeholder="e.g. Solar System, Fractions, World War II..."
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-violet-400 text-gray-800"
-              onKeyDown={e => e.key === 'Enter' && handleGenerate()}
-            />
-            {/* Quick topic chips */}
-            <div className="flex flex-wrap gap-2 mt-2">
-              {topics.map(t => (
-                <button key={t} onClick={() => { setTopic(t); setError(''); }}
-                  className="text-xs bg-violet-50 text-violet-700 border border-violet-200 px-2 py-1 rounded-full hover:bg-violet-100 transition">
-                  {t}
+          {/* Mode cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Object.values(GAME_MODES).map(mode => {
+              const active = selectedMode === mode.id;
+              return (
+                <button key={mode.id} onClick={() => setSelectedMode(mode.id)}
+                  className={`relative text-left rounded-2xl p-5 border-2 transition-all ${
+                    active
+                      ? 'border-white/70 bg-gradient-to-br ' + mode.gradient + ' shadow-xl scale-[1.02]'
+                      : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
+                  }`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">{mode.icon}</span>
+                    <div>
+                      <div className="font-black text-white text-lg leading-tight">{mode.name}</div>
+                      <div className={`text-xs font-semibold ${active ? 'text-white/90' : 'text-slate-400'}`}>{mode.tagline}</div>
+                    </div>
+                    {active && <span className="ml-auto text-2xl">✅</span>}
+                  </div>
+                  <p className={`text-sm leading-snug ${active ? 'text-white/85' : 'text-slate-400'}`}>
+                    {mode.description}
+                  </p>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Grade Level */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Grade Level</label>
-            <select value={gradeLevel} onChange={e => setGradeLevel(e.target.value)}
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-violet-400 text-gray-800">
-              {gradeLevels.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-
-          {/* Difficulty & Questions Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Difficulty</label>
+          {/* Mode-specific options */}
+          {selectedMode === 'team' && (
+            <div className="bg-amber-500/10 border border-amber-400/30 rounded-2xl p-4">
+              <p className="text-amber-200 font-bold mb-3">🛡️ Number of teams</p>
               <div className="flex gap-2">
-                {['easy', 'medium', 'hard'].map(d => (
-                  <button key={d} onClick={() => setDifficulty(d)}
-                    className={`flex-1 py-2 rounded-xl text-sm font-semibold border-2 transition capitalize ${
-                      difficulty === d
-                        ? 'bg-violet-500 text-white border-violet-500'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-violet-300'
+                {[2, 3, 4].map(n => (
+                  <button key={n} onClick={() => setTeamCount(n)}
+                    className={`flex-1 py-2.5 rounded-xl font-black text-lg border-2 transition ${
+                      teamCount === n
+                        ? 'bg-amber-500 text-amber-950 border-amber-400'
+                        : 'bg-white/5 text-amber-200 border-white/10 hover:border-amber-400/50'
                     }`}>
-                    {d}
+                    {n} teams
                   </button>
                 ))}
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">Questions</label>
-              <select value={numQuestions} onChange={e => setNumQuestions(parseInt(e.target.value))}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-violet-400 text-gray-800">
-                {[5, 8, 10, 12, 15, 20].map(n => <option key={n} value={n}>{n} questions</option>)}
-              </select>
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm">
-              {error}
+              <p className="text-amber-200/70 text-xs mt-2">You'll shuffle players into teams from the lobby once everyone has joined.</p>
             </div>
           )}
 
-          <button onClick={handleGenerate} disabled={loading || !topic.trim()}
-            className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white py-4 rounded-xl font-bold text-lg hover:from-violet-600 hover:to-fuchsia-600 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-3">
-            {loading ? (
+          {/* Power-ups toggle */}
+          <label className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl p-4 cursor-pointer hover:bg-white/10 transition">
+            <div>
+              <p className="text-white font-bold">✨ Power-ups</p>
+              <p className="text-slate-400 text-sm">
+                {selectedMode === 'elimination'
+                  ? 'Students get a 50/50 and a Shield that saves them from one wrong answer'
+                  : 'Students get one 50/50 and one Double Points to use when it counts'}
+              </p>
+            </div>
+            <div onClick={(e) => { e.preventDefault(); setPowerUpsEnabled(v => !v); }}
+              className={`w-14 h-8 rounded-full p-1 transition-colors shrink-0 ml-4 ${powerUpsEnabled ? 'bg-fuchsia-500' : 'bg-slate-700'}`}>
+              <div className={`w-6 h-6 bg-white rounded-full shadow transition-transform ${powerUpsEnabled ? 'translate-x-6' : ''}`} />
+            </div>
+          </label>
+
+          <button onClick={() => onLaunch(selectedMode, { teamCount, powerUpsEnabled })} disabled={starting}
+            className={`w-full py-4 rounded-2xl font-black text-lg text-white bg-gradient-to-r ${GAME_MODES[selectedMode].gradient} hover:brightness-110 shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3`}>
+            {starting ? (
               <>
                 <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                Generating Quiz...
+                Creating game room…
               </>
             ) : (
               <>
-                <span>✨</span>
-                Generate Quiz
+                {GAME_MODES[selectedMode].icon} Open the {GAME_MODES[selectedMode].name} Lobby
               </>
             )}
           </button>
-
-          <p className="text-center text-xs text-gray-400">
-            ✅ Completely free — no account or setup needed
-          </p>
         </div>
       </div>
     </div>
@@ -184,40 +143,44 @@ const QuizLibraryModal = ({ onClose, onSelectQuiz, onStartQuiz }) => {
     return matchesCategory && matchesSearch;
   });
 
-  const difficultyColor = { easy: 'bg-green-100 text-green-700', medium: 'bg-yellow-100 text-yellow-700', hard: 'bg-red-100 text-red-700' };
+  const difficultyStyle = {
+    easy: 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30',
+    medium: 'bg-amber-500/20 text-amber-300 border border-amber-400/30',
+    hard: 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-sky-500 to-cyan-500 p-6 text-white flex-shrink-0">
+        <div className="bg-gradient-to-r from-sky-600 to-cyan-600 p-6 text-white flex-shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <span className="text-3xl">📚</span>
                 <h2 className="text-2xl font-black">Quiz Library</h2>
               </div>
-              <p className="text-sky-100 text-sm">{PREMADE_QUIZZES.length} expertly crafted quizzes ready to play</p>
+              <p className="text-sky-100 text-sm">{PREMADE_QUIZZES.length} ready-to-play quizzes</p>
             </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 text-xl font-bold">×</button>
+            <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 text-xl font-bold">×</button>
           </div>
 
           {/* Search */}
           <div className="mt-4">
             <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search quizzes..."
-              className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-2 text-white placeholder-white/60 focus:outline-none focus:bg-white/30" />
+              placeholder="Search quizzes…"
+              className="w-full bg-white/15 border border-white/30 rounded-xl px-4 py-2 text-white placeholder-white/60 focus:outline-none focus:bg-white/25" />
           </div>
         </div>
 
         {/* Category Filter */}
-        <div className="px-6 py-4 border-b bg-gray-50 flex gap-2 overflow-x-auto flex-shrink-0">
+        <div className="px-6 py-4 border-b border-white/10 bg-slate-900 flex gap-2 overflow-x-auto flex-shrink-0">
           {Object.entries(PREMADE_CATEGORIES).map(([key, cat]) => (
             <button key={key} onClick={() => setSelectedCategory(key)}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold whitespace-nowrap transition ${
                 selectedCategory === key
                   ? 'bg-sky-500 text-white shadow'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-sky-300'
+                  : 'bg-white/5 text-slate-300 border border-white/10 hover:border-sky-400/50 hover:text-white'
               }`}>
               <span>{cat.icon}</span>
               <span>{cat.name}</span>
@@ -230,30 +193,30 @@ const QuizLibraryModal = ({ onClose, onSelectQuiz, onStartQuiz }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map(quiz => (
               <div key={quiz.id}
-                className="bg-white rounded-2xl border-2 border-gray-100 hover:border-sky-300 shadow-sm hover:shadow-md transition-all group flex flex-col">
+                className="bg-white/5 rounded-2xl border-2 border-white/10 hover:border-sky-400/50 transition-all group flex flex-col">
                 <div className="p-5 flex-1">
                   <div className="text-4xl mb-3">{quiz.emoji}</div>
-                  <h3 className="font-bold text-gray-800 text-lg mb-1 group-hover:text-sky-600 transition">{quiz.title}</h3>
-                  <p className="text-gray-500 text-sm mb-3 line-clamp-2">{quiz.description}</p>
+                  <h3 className="font-bold text-white text-lg mb-1 group-hover:text-sky-300 transition">{quiz.title}</h3>
+                  <p className="text-slate-400 text-sm mb-3 line-clamp-2">{quiz.description}</p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-full capitalize ${difficultyColor[quiz.difficulty] || difficultyColor.medium}`}>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full capitalize ${difficultyStyle[quiz.difficulty] || difficultyStyle.medium}`}>
                       {quiz.difficulty}
                     </span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    <span className="text-xs text-slate-300 bg-white/10 px-2 py-1 rounded-full">
                       {quiz.questions.length} questions
                     </span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    <span className="text-xs text-slate-300 bg-white/10 px-2 py-1 rounded-full">
                       Yr {quiz.gradeLevel}
                     </span>
                   </div>
                 </div>
                 <div className="px-5 pb-4 flex gap-2">
                   <button onClick={() => onStartQuiz(quiz)}
-                    className="flex-1 bg-green-500 text-white py-2 rounded-xl text-sm font-bold text-center hover:bg-green-600 transition">
-                    ▶ Start Now
+                    className="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-sm font-bold text-center hover:bg-emerald-400 transition">
+                    ▶ Play
                   </button>
                   <button onClick={() => onSelectQuiz(quiz)}
-                    className="flex-1 bg-sky-100 text-sky-700 py-2 rounded-xl text-sm font-bold text-center hover:bg-sky-200 transition">
+                    className="flex-1 bg-white/10 text-sky-300 py-2 rounded-xl text-sm font-bold text-center hover:bg-white/20 transition">
                     ✏ Customise
                   </button>
                 </div>
@@ -262,9 +225,9 @@ const QuizLibraryModal = ({ onClose, onSelectQuiz, onStartQuiz }) => {
           </div>
 
           {filtered.length === 0 && (
-            <div className="text-center py-16 text-gray-500">
+            <div className="text-center py-16 text-slate-400">
               <div className="text-5xl mb-4">🔍</div>
-              <p className="font-semibold">No quizzes found</p>
+              <p className="font-semibold text-white">No quizzes found</p>
               <p className="text-sm">Try a different search or category</p>
             </div>
           )}
@@ -289,7 +252,7 @@ const QuizShowTab = ({
   showToast
 }) => {
   // ---- View state ----
-  const [view, setView] = useState('dashboard'); // dashboard, creating, editing, lobby, playing, results
+  const [view, setView] = useState('dashboard'); // dashboard, creating, lobby, playing, recap
   const [editingQuiz, setEditingQuiz] = useState(null);
 
   // ---- Quiz library state ----
@@ -300,11 +263,12 @@ const QuizShowTab = ({
   const [roomCode, setRoomCode] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [gameResults, setGameResults] = useState(null);
+  const [finalGameData, setFinalGameData] = useState(null);
   const gameListenerRef = useRef(null);
 
   // ---- Modal state ----
-  const [showAIModal, setShowAIModal] = useState(false);
   const [showLibraryModal, setShowLibraryModal] = useState(false);
+  const [pendingQuiz, setPendingQuiz] = useState(null); // quiz waiting for mode selection
 
   // ---- Error/status for start game ----
   const [startError, setStartError] = useState('');
@@ -318,7 +282,6 @@ const QuizShowTab = ({
       const q = query(collection(firestore, 'quizzes'), where('teacherId', '==', user.uid));
       const snapshot = await getDocs(q);
       const list = snapshot.docs.map(d => ({ ...d.data(), firestoreId: d.id }));
-      // Sort newest first
       list.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
       setQuizzes(list);
     } catch (err) {
@@ -379,8 +342,13 @@ const QuizShowTab = ({
     await saveQuiz(copy);
   };
 
-  // ---- Start a game: create Firebase Realtime Database room ----
-  const startGame = async (quiz) => {
+  // ---- Launch flow: pick quiz → choose mode → create room ----
+  const requestStartGame = (quiz) => {
+    setStartError('');
+    setPendingQuiz(quiz);
+  };
+
+  const startGame = async (quiz, mode = 'classic', modeOptions = {}) => {
     setStartError('');
     setStarting(true);
 
@@ -401,6 +369,7 @@ const QuizShowTab = ({
     const code = generateRoomCode();
     const gameRoom = {
       quiz: sanitized,
+      mode,
       status: 'waiting',
       questionPhase: 'waiting',
       currentQuestion: 0,
@@ -414,6 +383,8 @@ const QuizShowTab = ({
         allowLateJoin: false,
         showCorrectAnswers: true,
         timePerQuestion: sanitized.settings?.timePerQuestion || 20,
+        powerUpsEnabled: modeOptions.powerUpsEnabled !== false,
+        teamCount: mode === 'team' ? (modeOptions.teamCount || 2) : null,
       }
     };
 
@@ -421,6 +392,8 @@ const QuizShowTab = ({
       await set(ref(database, `gameRooms/${code}`), gameRoom);
       setRoomCode(code);
       setGameData(gameRoom);
+      setFinalGameData(null);
+      setGameResults(null);
 
       // Attach real-time listener
       if (gameListenerRef.current) off(gameListenerRef.current);
@@ -428,15 +401,12 @@ const QuizShowTab = ({
       gameListenerRef.current = gameRef;
       onValue(gameRef, (snapshot) => {
         if (snapshot.exists()) {
-          const data = snapshot.val();
-          setGameData(data);
-          if (data.status === 'finished' || data.questionPhase === 'finished') {
-            setGameResults(calculateFinalLeaderboard(data));
-          }
+          setGameData(snapshot.val());
         }
       });
 
       setStarting(false);
+      setPendingQuiz(null);
       setView('lobby');
       playQuizSound('gameStart');
     } catch (err) {
@@ -446,21 +416,17 @@ const QuizShowTab = ({
     }
   };
 
-  // ---- End game ----
+  // ---- End game (mark finished — podium shows inside GamePresentation) ----
   const endGame = async () => {
-    if (roomCode) {
-      try {
-        await update(ref(database, `gameRooms/${roomCode}`), {
-          status: 'finished',
-          questionPhase: 'finished',
-          finishedAt: Date.now()
-        });
-        const results = calculateFinalLeaderboard(gameData);
-        setGameResults(results);
-        setView('results');
-      } catch (err) {
-        console.error('Error ending game:', err);
-      }
+    if (!roomCode) return;
+    try {
+      await update(ref(database, `gameRooms/${roomCode}`), {
+        status: 'finished',
+        questionPhase: 'finished',
+        finishedAt: Date.now()
+      });
+    } catch (err) {
+      console.error('Error ending game:', err);
     }
   };
 
@@ -470,16 +436,24 @@ const QuizShowTab = ({
       off(gameListenerRef.current);
       gameListenerRef.current = null;
     }
-    // Clean up finished game room after a delay
     if (roomCode) {
+      const code = roomCode;
       setTimeout(() => {
-        remove(ref(database, `gameRooms/${roomCode}`)).catch(() => {});
+        remove(ref(database, `gameRooms/${code}`)).catch(() => {});
       }, 5000);
     }
     setRoomCode(null);
     setGameData(null);
     setGameResults(null);
+    setFinalGameData(null);
     setView('dashboard');
+  };
+
+  // ---- Recap view (detailed results after the podium) ----
+  const showRecap = () => {
+    setFinalGameData(gameData);
+    setGameResults(calculateFinalLeaderboard(gameData));
+    setView('recap');
   };
 
   // ---- Handle quiz creator save ----
@@ -493,29 +467,9 @@ const QuizShowTab = ({
     }
   };
 
-  // ---- Handle AI-generated quiz ----
-  const handleAIQuizGenerated = (generatedQuiz) => {
-    setShowAIModal(false);
-    // Open the quiz creator pre-filled with AI questions
-    setEditingQuiz({
-      ...generatedQuiz,
-      id: `ai_${Date.now()}`,
-      questions: generatedQuiz.questions,
-      settings: {
-        showCorrectAnswers: true,
-        allowRetakes: false,
-        shuffleQuestions: false,
-        shuffleAnswers: true,
-        timePerQuestion: 20
-      }
-    });
-    setView('creating');
-  };
-
-  // ---- Handle premade quiz selection ----
+  // ---- Handle premade quiz selection (customise) ----
   const handlePremadeSelect = (quiz) => {
     setShowLibraryModal(false);
-    // Option A: start directly or open in editor - we'll open in editor first
     setEditingQuiz({
       ...quiz,
       id: `premade_copy_${Date.now()}`,
@@ -534,7 +488,7 @@ const QuizShowTab = ({
   const handleCreatePreset = (category, questionCount) => {
     try {
       const preset = createQuizFromPreset(category, questionCount);
-      startGame(preset);
+      requestStartGame(preset);
     } catch (err) {
       setStartError(err.message || 'Could not create preset quiz');
     }
@@ -548,15 +502,6 @@ const QuizShowTab = ({
       }
     };
   }, []);
-
-  // ---- When game data changes to finished, navigate to results ----
-  useEffect(() => {
-    if (gameData?.status === 'finished' && view === 'playing') {
-      const results = calculateFinalLeaderboard(gameData);
-      setGameResults(results);
-      setView('results');
-    }
-  }, [gameData?.status, view]);
 
   // ============================================================
   // RENDER VIEWS
@@ -573,44 +518,7 @@ const QuizShowTab = ({
             <button onClick={() => setStartError('')} className="text-red-400 hover:text-red-600 text-lg font-bold ml-4">×</button>
           </div>
         )}
-        {/* Starting overlay */}
-        {starting && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center gap-3">
-            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
-            <span className="text-blue-700 text-sm font-medium">Creating game room...</span>
-          </div>
-        )}
-        {/* Action bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Library */}
-          <button onClick={() => !starting && setShowLibraryModal(true)}
-            disabled={starting}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-400 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-60">
-            <div className="text-4xl mb-2">📚</div>
-            <div className="font-bold text-lg">Premade Library</div>
-            <div className="text-sky-100 text-sm mt-1">{PREMADE_QUIZZES.length} ready-to-use quizzes</div>
-          </button>
 
-          {/* AI Generator */}
-          <button onClick={() => !starting && setShowAIModal(true)}
-            disabled={starting}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-60">
-            <div className="text-4xl mb-2">✨</div>
-            <div className="font-bold text-lg">AI Generator</div>
-            <div className="text-violet-100 text-sm mt-1">Free AI — any topic, no setup</div>
-          </button>
-
-          {/* Custom Quiz */}
-          <button onClick={() => !starting && (setEditingQuiz(null), setView('creating'))}
-            disabled={starting}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-500 p-5 text-left text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 disabled:opacity-60">
-            <div className="text-4xl mb-2">🎨</div>
-            <div className="font-bold text-lg">Build Custom Quiz</div>
-            <div className="text-purple-100 text-sm mt-1">Design your own questions from scratch</div>
-          </button>
-        </div>
-
-        {/* Quiz dashboard component */}
         <QuizDashboard
           quizzes={quizzes}
           onCreateQuiz={() => { setEditingQuiz(null); setView('creating'); }}
@@ -622,24 +530,27 @@ const QuizShowTab = ({
             }
           }}
           onDuplicateQuiz={duplicateQuiz}
-          onStartGame={startGame}
+          onStartGame={requestStartGame}
           onOpenLibrary={() => setShowLibraryModal(true)}
+          onCreatePreset={handleCreatePreset}
           loading={loadingQuizzes}
           QUESTION_CATEGORIES={QUESTION_CATEGORIES}
         />
 
         {/* Modals */}
-        {showAIModal && (
-          <AIGeneratorModal
-            onClose={() => setShowAIModal(false)}
-            onQuizGenerated={handleAIQuizGenerated}
-          />
-        )}
         {showLibraryModal && (
           <QuizLibraryModal
             onClose={() => setShowLibraryModal(false)}
             onSelectQuiz={handlePremadeSelect}
-            onStartQuiz={(quiz) => { setShowLibraryModal(false); setStartError(''); startGame(quiz); }}
+            onStartQuiz={(quiz) => { setShowLibraryModal(false); requestStartGame(quiz); }}
+          />
+        )}
+        {pendingQuiz && (
+          <ModeSelectModal
+            quiz={pendingQuiz}
+            starting={starting}
+            onClose={() => { if (!starting) setPendingQuiz(null); }}
+            onLaunch={(mode, options) => startGame(pendingQuiz, mode, options)}
           />
         )}
       </div>
@@ -666,45 +577,42 @@ const QuizShowTab = ({
   // --- Game Lobby ---
   if (view === 'lobby') {
     return (
-      <div>
-        <button onClick={() => {
-          if (window.confirm('End the game and return to dashboard?')) {
-            endGame();
+      <GameLobby
+        roomCode={roomCode}
+        gameData={gameData}
+        onStartGame={async () => {
+          try {
+            const mode = gameData?.mode || 'classic';
+            await update(ref(database, `gameRooms/${roomCode}`), {
+              status: 'playing',
+              questionPhase: mode === 'race' ? 'race' : 'showing',
+              currentQuestion: 0,
+              startedAt: Date.now()
+            });
+            setView('playing');
+          } catch (err) {
+            console.error('Failed to start game:', err);
+          }
+        }}
+        onCancelGame={() => {
+          if (window.confirm('Cancel this game and return to the dashboard?')) {
             backToDashboard();
           }
-        }} className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold transition">
-          ← End Game & Return
-        </button>
-        <GameLobby
-          roomCode={roomCode}
-          gameData={gameData}
-          onStartGame={async () => {
-            try {
-              await update(ref(database, `gameRooms/${roomCode}`), {
-                status: 'playing',
-                questionPhase: 'showing',
-                currentQuestion: 0,
-                startedAt: Date.now()
-              });
-              setView('playing');
-            } catch (err) {
-              console.error('Failed to start game:', err);
-            }
-          }}
-          onEndGame={backToDashboard}
-          loading={false}
-        />
-      </div>
+        }}
+        loading={false}
+      />
     );
   }
 
-  // --- Game Presentation (Active Game) ---
+  // --- Game Presentation (active game + podium) ---
   if (view === 'playing') {
     return (
       <GamePresentation
         roomCode={roomCode}
         gameData={gameData}
         onEndGame={endGame}
+        onExit={backToDashboard}
+        onShowRecap={showRecap}
         onAwardXP={onAwardXP}
         onAwardCoins={onAwardCoins}
         showToast={showToast}
@@ -712,22 +620,15 @@ const QuizShowTab = ({
     );
   }
 
-  // --- Game Results ---
-  if (view === 'results') {
+  // --- Detailed recap ---
+  if (view === 'recap') {
     return (
-      <div>
-        <GameResults
-          results={gameResults || []}
-          onNewGame={backToDashboard}
-          getAvatarImage={getAvatarImage}
-        />
-        <div className="mt-4 text-center">
-          <button onClick={backToDashboard}
-            className="bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 transition">
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
+      <GameResults
+        results={gameResults || []}
+        gameData={finalGameData}
+        onDone={backToDashboard}
+        getAvatarImage={getAvatarImage}
+      />
     );
   }
 

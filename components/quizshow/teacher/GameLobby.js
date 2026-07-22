@@ -1,15 +1,21 @@
-// components/quizshow/teacher/GameLobby.js - FIXED PLAYER DISPLAY
-import React, { useState, useEffect } from 'react';
-import { playQuizSound } from '../../../utils/quizShowHelpers';
+// components/quizshow/teacher/GameLobby.js — ARENA LOBBY
+// Big-screen friendly: huge room code, animated player wall, team assignment
+// for Team Battle, and live emoji reactions floating up the screen.
+import React, { useState, useEffect, useRef } from 'react';
+import { ref, update } from 'firebase/database';
+import { database } from '../../../utils/firebase';
+import { playQuizSound, GAME_MODES, buildTeamAssignment, getTeamForPlayer } from '../../../utils/quizShowHelpers';
+import { ReactionOverlay } from '../shared/Reactions';
 
-const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
+const GameLobby = ({ roomCode, gameData, onStartGame, onCancelGame, loading }) => {
   const [players, setPlayers] = useState([]);
-  const [gameSettings, setGameSettings] = useState({
-    showLeaderboard: true,
-    allowLateJoin: false,
-    timePerQuestion: 20,
-    showCorrectAnswers: true
-  });
+  const prevCountRef = useRef(0);
+  const [shuffling, setShuffling] = useState(false);
+
+  const mode = GAME_MODES[gameData?.mode] || GAME_MODES.classic;
+  const isTeamMode = gameData?.mode === 'team';
+  const teams = gameData?.teams || null;
+  const teamCount = gameData?.settings?.teamCount || 2;
 
   useEffect(() => {
     if (gameData?.players) {
@@ -17,255 +23,221 @@ const GameLobby = ({ roomCode, gameData, onStartGame, onEndGame, loading }) => {
         id,
         ...player
       }));
-      
-      // Play sound when new player joins
-      if (playerList.length > players.length) {
+      if (playerList.length > prevCountRef.current) {
         playQuizSound('join');
       }
-      
+      prevCountRef.current = playerList.length;
       setPlayers(playerList);
+    } else {
+      setPlayers([]);
+      prevCountRef.current = 0;
     }
+  }, [gameData?.players]);
 
-    if (gameData?.settings) {
-      setGameSettings(gameData.settings);
+  const shuffleTeams = async () => {
+    if (!players.length || shuffling) return;
+    setShuffling(true);
+    try {
+      const assignment = buildTeamAssignment(players.map(p => p.id), teamCount);
+      await update(ref(database, `gameRooms/${roomCode}`), { teams: assignment });
+      playQuizSound('questionReveal');
+    } catch (e) {
+      console.error('Team shuffle failed:', e);
     }
-  }, [gameData]);
+    setShuffling(false);
+  };
 
-  const canStartGame = players.length > 0 && gameData?.quiz?.questions?.length > 0;
+  const teamsAssigned = isTeamMode && teams && players.length > 0 &&
+    players.every(p => getTeamForPlayer(teams, p.id));
 
-  const PlayerCard = ({ player }) => (
-    <div className="bg-white rounded-xl p-4 shadow-lg border-2 border-purple-200 hover:border-purple-400 transition-all duration-200">
-      <div className="flex items-center space-x-3">
-        <div className="relative">
-          <img 
-            src={player.avatar?.image || '/avatars/Wizard F/Level 1.png'} 
+  const canStartGame = players.length > 0 &&
+    gameData?.quiz?.questions?.length > 0 &&
+    (!isTeamMode || teamsAssigned);
+
+  const PlayerChip = ({ player }) => {
+    const team = isTeamMode ? getTeamForPlayer(teams, player.id) : null;
+    return (
+      <div
+        className="flex items-center gap-3 rounded-2xl bg-white/5 border p-3 transition-all hover:bg-white/10 animate-[qsPop_0.4s_ease-out]"
+        style={{ borderColor: team ? `${team.color}88` : 'rgba(255,255,255,0.12)' }}
+      >
+        <div className="relative shrink-0">
+          <img
+            src={player.avatar?.image || '/avatars/Wizard F/Level 1.png'}
             alt={`${player.name}'s avatar`}
-            className="w-12 h-12 rounded-full border-2 border-purple-300"
+            className="w-11 h-11 rounded-full border-2 border-white/30"
           />
-          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs font-bold">{player.avatar?.level || 1}</span>
+          <div className="absolute -top-1 -right-1 w-5 h-5 bg-fuchsia-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-[10px] font-black">{player.avatar?.level || 1}</span>
           </div>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-800 truncate">{player.name}</h3>
-          <p className="text-sm text-gray-600">
-            Level {player.avatar?.level || 1} Champion
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-          <span className="text-sm text-green-600 font-semibold">Ready</span>
+          <p className="font-bold text-white truncate leading-tight">{player.name}</p>
+          {team ? (
+            <p className="text-xs font-semibold" style={{ color: team.color }}>{team.emoji} {team.name}</p>
+          ) : (
+            <p className="text-xs text-emerald-300 font-semibold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse inline-block" /> Ready
+            </p>
+          )}
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl p-8 mb-8 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">🎪 Game Lobby</h1>
-              <h2 className="text-2xl text-purple-100 mb-4">{gameData?.quiz?.title}</h2>
-              <div className="flex items-center space-x-6 text-purple-100">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">📝</span>
-                  <span>{gameData?.quiz?.questions?.length || 0} Questions</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">⏱️</span>
-                  <span>{gameSettings.timePerQuestion}s per question</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">🏆</span>
-                  <span className="capitalize">{gameData?.quiz?.category || 'General'}</span>
-                </div>
-              </div>
+    <div className="rounded-3xl bg-slate-950 border border-white/10 overflow-hidden relative">
+      <style>{`@keyframes qsPop { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }`}</style>
+      <ReactionOverlay reactions={gameData?.reactions} />
+
+      {/* Header */}
+      <div className={`relative bg-gradient-to-br ${mode.gradient} px-6 md:px-10 py-8 overflow-hidden`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_60%)]" />
+        <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full bg-black/25 px-4 py-1.5 text-sm font-bold text-white mb-3">
+              {mode.icon} {mode.name} Mode
             </div>
-            <div className="text-center">
-              <div className="bg-yellow-400 text-purple-900 px-6 py-4 rounded-xl shadow-lg">
-                <p className="text-sm font-semibold mb-1">ROOM CODE</p>
-                <p className="text-4xl font-bold tracking-wider">{roomCode}</p>
-              </div>
-              <p className="text-purple-100 text-sm mt-2">
-                Students join from the <strong>Quiz Show</strong> tab inside
-                their student portal.
-              </p>
+            <h1 className="text-3xl md:text-4xl font-black text-white drop-shadow mb-1">{gameData?.quiz?.title}</h1>
+            <div className="flex flex-wrap justify-center lg:justify-start items-center gap-3 text-white/85 text-sm font-semibold mt-2">
+              <span>📝 {gameData?.quiz?.questions?.length || 0} questions</span>
+              <span>⏱️ ~{gameData?.settings?.timePerQuestion || 20}s each</span>
+              {gameData?.settings?.powerUpsEnabled !== false && <span>✨ Power-ups ON</span>}
             </div>
           </div>
+
+          {/* Giant room code */}
+          <div className="text-center shrink-0">
+            <div className="bg-black/35 backdrop-blur rounded-2xl px-8 py-5 border border-white/25 shadow-2xl">
+              <p className="text-white/70 text-xs font-black tracking-[0.3em] uppercase mb-1">Room Code</p>
+              <p className="text-5xl md:text-6xl font-black text-white tracking-[0.15em] tabular-nums">{roomCode}</p>
+            </div>
+            <p className="text-white/80 text-xs mt-2 font-semibold">
+              Student portal → Quiz Show tab → enter code
+            </p>
+          </div>
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Players Section */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Players ({players.length})
-                </h2>
-                <div className="flex items-center space-x-2 text-green-600">
-                  <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                  <span className="font-semibold">Waiting for players...</span>
-                </div>
+      <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Player wall */}
+        <div className="lg:col-span-2">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 min-h-[300px]">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-black text-white">
+                👥 Players <span className="text-fuchsia-300">({players.length})</span>
+              </h2>
+              <div className="flex items-center gap-2 text-emerald-300 text-sm font-semibold">
+                <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse" />
+                Waiting for players…
               </div>
+            </div>
 
-              {players.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                  {players.map((player) => (
-                    <PlayerCard key={player.id} player={player} />
-                  ))}
+            {players.length > 0 ? (
+              isTeamMode && teams ? (
+                // Grouped by team
+                <div className="space-y-4">
+                  {Object.entries(teams).map(([teamId, team]) => {
+                    const members = players.filter(p => team.members?.[p.id]);
+                    return (
+                      <div key={teamId} className="rounded-2xl border p-4" style={{ borderColor: `${team.color}55`, background: `${team.color}11` }}>
+                        <p className="font-black mb-3 flex items-center gap-2" style={{ color: team.color }}>
+                          <span className="text-xl">{team.emoji}</span> {team.name}
+                          <span className="text-xs text-slate-400 font-semibold">({members.length})</span>
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {members.map(p => <PlayerChip key={p.id} player={p} />)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">👥</div>
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                    Waiting for players to join...
-                  </h3>
-                  <p className="text-gray-500 mb-4">
-                    Share the room code <strong>{roomCode}</strong> with your students
-                  </p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md mx-auto">
-                    <h4 className="font-bold text-blue-800 mb-2">📱 How students join:</h4>
-                    <ol className="text-blue-700 text-sm space-y-1 text-left">
-                      <li>1. Open the <strong>student portal</strong> on a phone, tablet, or laptop</li>
-                      <li>2. Sign in with the class code and their student profile</li>
-                      <li>3. Open the <strong>Quiz Show</strong> tab</li>
-                      <li>4. Enter room code: <strong>{roomCode}</strong> and tap Join</li>
-                    </ol>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto pr-1">
+                  {players.map((player) => <PlayerChip key={player.id} player={player} />)}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Control Panel */}
-          <div className="space-y-6">
-            {/* Game Controls */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">🎮 Game Controls</h3>
-              
-              <div className="space-y-4">
-                <button
-                  onClick={onStartGame}
-                  disabled={!canStartGame || loading}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 px-6 rounded-xl font-bold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Starting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>🚀</span>
-                      <span>Start Game</span>
-                    </>
-                  )}
-                </button>
-
-                {!canStartGame && (
-                  <p className="text-sm text-gray-500 text-center">
-                    {players.length === 0 
-                      ? "Need at least 1 player to start" 
-                      : "Loading quiz data..."
-                    }
-                  </p>
-                )}
-
-                <button
-                  onClick={onEndGame}
-                  className="w-full bg-red-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-600 transition-colors flex items-center justify-center space-x-2"
-                >
-                  <span>🛑</span>
-                  <span>End Game</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quiz Info */}
-            <div className="bg-white rounded-2xl shadow-xl p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Quiz Preview</h3>
-              
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Questions:</span>
-                  <span className="font-semibold">{gameData?.quiz?.questions?.length || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Category:</span>
-                  <span className="font-semibold capitalize">{gameData?.quiz?.category || 'General'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Estimated Time:</span>
-                  <span className="font-semibold">
-                    {Math.ceil(((gameData?.quiz?.questions?.length || 0) * gameSettings.timePerQuestion) / 60)} min
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Max Points:</span>
-                  <span className="font-semibold">
-                    {((gameData?.quiz?.questions || []).reduce((sum, q) => sum + (q.points || 1000), 0)).toLocaleString()}
-                  </span>
+              )
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4 animate-bounce">📡</div>
+                <h3 className="text-xl font-bold text-white mb-2">Waiting for players to join…</h3>
+                <p className="text-slate-400 mb-5 text-sm">
+                  Share the room code <strong className="text-fuchsia-300 text-base tracking-widest">{roomCode}</strong> with your class
+                </p>
+                <div className="bg-sky-500/10 border border-sky-400/30 rounded-2xl p-5 max-w-md mx-auto text-left">
+                  <h4 className="font-bold text-sky-300 mb-2">📱 How students join</h4>
+                  <ol className="text-sky-200/80 text-sm space-y-1">
+                    <li>1. Open the <strong>student portal</strong> on any device</li>
+                    <li>2. Sign in and open the <strong>Quiz Show</strong> tab</li>
+                    <li>3. Enter room code <strong className="tracking-widest">{roomCode}</strong> and join!</li>
+                  </ol>
                 </div>
               </div>
-
-              {gameData?.quiz?.description && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <p className="text-gray-600 text-sm">{gameData.quiz.description}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Share Info */}
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-2xl p-6">
-              <h3 className="text-lg font-bold mb-3">🔗 Share with Students</h3>
-              <div className="space-y-3">
-                <div className="bg-white bg-opacity-20 rounded-lg p-3">
-                  <p className="text-sm opacity-90 mb-1">Where to join:</p>
-                  <p className="font-bold">Student portal → Quiz Show tab</p>
-                </div>
-                <div className="bg-white bg-opacity-20 rounded-lg p-3">
-                  <p className="text-sm opacity-90 mb-1">Room Code:</p>
-                  <p className="text-2xl font-bold tracking-wider">{roomCode}</p>
-                </div>
-              </div>
-              <p className="text-xs text-white/80 mt-3">
-                Students must be signed into the student portal with the class
-                code to join — there's no separate join page anymore.
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Instructions */}
-        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-start space-x-4">
-            <div className="text-3xl">ℹ️</div>
-            <div>
-              <h3 className="font-bold text-blue-800 mb-2">Quick Start Guide:</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-blue-700 text-sm">
-                <div>
-                  <h4 className="font-semibold mb-2">For Students:</h4>
-                  <ol className="space-y-1">
-                    <li>1. Sign into the <strong>student portal</strong> with the class code</li>
-                    <li>2. Open the <strong>Quiz Show</strong> tab</li>
-                    <li>3. Enter room code: <strong>{roomCode}</strong></li>
-                    <li>4. Tap Join and wait for the game to start!</li>
-                  </ol>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">For Teachers:</h4>
-                  <ol className="space-y-1">
-                    <li>1. Share room code with students</li>
-                    <li>2. Wait for students to join</li>
-                    <li>3. Click "Start Game" when ready</li>
-                    <li>4. Control the game from this screen!</li>
-                  </ol>
-                </div>
-              </div>
+        {/* Control panel */}
+        <div className="space-y-4">
+          {/* Team assignment (team mode) */}
+          {isTeamMode && (
+            <div className="bg-amber-500/10 border border-amber-400/30 rounded-2xl p-5">
+              <h3 className="font-black text-amber-200 mb-2">🛡️ Teams</h3>
+              {teamsAssigned ? (
+                <p className="text-amber-100/80 text-sm mb-3">Teams are set! Shuffle again if you want a new mix.</p>
+              ) : (
+                <p className="text-amber-100/80 text-sm mb-3">
+                  Once everyone's in, shuffle players into <strong>{teamCount} balanced teams</strong>.
+                </p>
+              )}
+              <button
+                onClick={shuffleTeams}
+                disabled={players.length === 0 || shuffling}
+                className="w-full bg-amber-500 text-amber-950 py-3 rounded-xl font-black hover:bg-amber-400 transition disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {shuffling ? 'Shuffling…' : teamsAssigned ? '🔀 Reshuffle Teams' : '🔀 Shuffle into Teams'}
+              </button>
             </div>
+          )}
+
+          {/* Start */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+            <h3 className="font-black text-white mb-4">🎮 Game Controls</h3>
+            <button
+              onClick={onStartGame}
+              disabled={!canStartGame || loading}
+              className={`w-full bg-gradient-to-r ${mode.gradient} text-white py-4 px-6 rounded-xl font-black text-lg shadow-lg hover:brightness-110 hover:-translate-y-0.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:translate-y-0 flex items-center justify-center gap-2`}
+            >
+              🚀 Start the Show
+            </button>
+            {!canStartGame && (
+              <p className="text-sm text-slate-400 text-center mt-3">
+                {players.length === 0
+                  ? 'Need at least 1 player to start'
+                  : isTeamMode && !teamsAssigned
+                    ? 'Shuffle players into teams first'
+                    : 'Loading quiz data…'}
+              </p>
+            )}
+            <button
+              onClick={onCancelGame}
+              className="mt-3 w-full bg-white/10 text-slate-300 py-2.5 px-4 rounded-xl font-semibold hover:bg-rose-500/20 hover:text-rose-300 transition-colors"
+            >
+              ✖ Cancel Game
+            </button>
+          </div>
+
+          {/* Mode reminder */}
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+            <h3 className="font-black text-white mb-2">{mode.icon} {mode.name}</h3>
+            <p className="text-slate-400 text-sm leading-relaxed">{mode.description}</p>
+          </div>
+
+          {/* Reactions hint */}
+          <div className="bg-fuchsia-500/10 border border-fuchsia-400/30 rounded-2xl p-4 text-center">
+            <p className="text-fuchsia-200 text-sm font-semibold">
+              💜 Students can fire emoji reactions from their devices — watch them float up this screen!
+            </p>
           </div>
         </div>
       </div>

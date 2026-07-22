@@ -1,311 +1,187 @@
-// components/quizshow/student/StudentResults.js - STUDENT RESULTS SCREEN
+// components/quizshow/student/StudentResults.js — STUDENT FINAL RESULTS
+// Personal result card with rank, accuracy and streak, team outcome for
+// Team Battle, plus the top of the leaderboard.
 import React, { useState, useEffect } from 'react';
-import { formatScore, triggerConfetti, playQuizSound } from '../../../utils/quizShowHelpers';
+import { triggerConfetti, playQuizSound } from '../../../utils/quizShowHelpers';
 
-const StudentResults = ({ 
-  results, 
-  playerInfo, 
-  onPlayAgain, 
+const StudentResults = ({
+  results,
+  playerInfo,
+  onPlayAgain,
   onLeaveGame,
-  getAvatarImage 
+  getAvatarImage
 }) => {
-  const [showCelebration, setShowCelebration] = useState(false);
   const [personalStats, setPersonalStats] = useState(null);
   const [rank, setRank] = useState(0);
-  const [animateScore, setAnimateScore] = useState(false);
 
   useEffect(() => {
     if (!results || !playerInfo) return;
-
-    // Find player's results and rank
     const playerResult = results.find(r => r.playerId === playerInfo.playerId);
     const playerRank = results.findIndex(r => r.playerId === playerInfo.playerId) + 1;
-    
     setPersonalStats(playerResult);
     setRank(playerRank);
 
-    // Trigger celebration for top performers
-    if (playerRank <= 3) {
+    if (playerRank > 0 && playerRank <= 3) {
       setTimeout(() => {
         triggerConfetti();
         playQuizSound('gameEnd');
-        setShowCelebration(true);
       }, 500);
     }
-
-    // Animate score
-    setTimeout(() => {
-      setAnimateScore(true);
-    }, 1000);
   }, [results, playerInfo]);
 
   if (!personalStats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 flex items-center justify-center p-6">
         <div className="text-center text-white">
           <div className="text-6xl mb-4">🤔</div>
-          <h1 className="text-3xl font-bold mb-4">Results Not Found</h1>
-          <p className="text-xl text-purple-200 mb-8">
-            Unable to load your game results.
-          </p>
-          <button
-            onClick={onLeaveGame}
-            className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold"
-          >
-            Return to Dashboard
+          <h1 className="text-3xl font-black mb-3">Results Not Found</h1>
+          <p className="text-slate-400 mb-8">We couldn't load your game results.</p>
+          <button onClick={onLeaveGame}
+            className="bg-white/10 border border-white/20 text-white px-6 py-3 rounded-xl font-bold hover:bg-white/20 transition">
+            Return to Portal
           </button>
         </div>
       </div>
     );
   }
 
-  const getRankDisplay = () => {
-    if (rank === 1) return { emoji: '🥇', text: 'Champion!', color: 'from-yellow-400 to-orange-500' };
-    if (rank === 2) return { emoji: '🥈', text: '2nd Place!', color: 'from-gray-300 to-gray-400' };
-    if (rank === 3) return { emoji: '🥉', text: '3rd Place!', color: 'from-amber-600 to-amber-700' };
-    if (rank <= 10) return { emoji: '🏆', text: `${rank}th Place`, color: 'from-purple-500 to-indigo-500' };
-    return { emoji: '🎯', text: `${rank}th Place`, color: 'from-blue-500 to-blue-600' };
-  };
+  const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+  const headline = rank === 1 ? 'CHAMPION!' : rank === 2 ? 'So Close!' : rank === 3 ? 'On the Podium!' : `You placed ${rank}th`;
+  const heroGradient = rank === 1
+    ? 'from-amber-500 via-orange-600 to-rose-600'
+    : rank <= 3
+      ? 'from-fuchsia-600 via-purple-700 to-indigo-800'
+      : 'from-slate-800 via-indigo-900 to-slate-900';
 
-  const getEncouragement = () => {
-    const percentage = (personalStats.correctAnswers / personalStats.totalQuestions) * 100;
-    
-    if (percentage === 100) return "Perfect score! You're a quiz master! 🎯";
-    if (percentage >= 80) return "Excellent work! You really know your stuff! 🌟";
-    if (percentage >= 60) return "Great job! Keep up the good work! 👏";
-    if (percentage >= 40) return "Good effort! Practice makes perfect! 💪";
-    return "Nice try! Every question is a learning opportunity! 📚";
-  };
+  // Team outcome (calculateFinalLeaderboard attaches team fields per player)
+  const isTeamGame = Boolean(personalStats.teamId);
+  let teamSummary = null;
+  if (isTeamGame) {
+    const byTeam = {};
+    results.forEach(r => {
+      if (!r.teamId) return;
+      if (!byTeam[r.teamId]) byTeam[r.teamId] = { teamId: r.teamId, name: r.teamName, emoji: r.teamEmoji, color: r.teamColor, total: 0, count: 0 };
+      byTeam[r.teamId].total += r.totalScore;
+      byTeam[r.teamId].count += 1;
+    });
+    const teams = Object.values(byTeam).map(t => ({ ...t, avg: t.count ? Math.round(t.total / t.count) : 0 }))
+      .sort((a, b) => b.avg - a.avg);
+    const myTeamRank = teams.findIndex(t => t.teamId === personalStats.teamId) + 1;
+    teamSummary = { teams, myTeamRank };
+  }
 
-  const rankDisplay = getRankDisplay();
-  const accuracyPercentage = Math.round((personalStats.correctAnswers / personalStats.totalQuestions) * 100);
+  const top5 = results.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Hero Section */}
-      <div className={`bg-gradient-to-r ${rankDisplay.color} text-white py-16 relative overflow-hidden`}>
-        {showCelebration && rank <= 3 && (
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-10 left-10 text-4xl animate-bounce">🎉</div>
-            <div className="absolute top-20 right-20 text-4xl animate-bounce delay-300">🎊</div>
-            <div className="absolute bottom-20 left-20 text-4xl animate-bounce delay-500">✨</div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 p-4">
+      <div className="max-w-xl mx-auto space-y-5 pb-10 pt-4">
+
+        {/* Hero card */}
+        <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${heroGradient} p-8 text-center shadow-2xl`}>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.25),transparent_65%)]" />
+          <div className="relative">
+            <div className="text-7xl mb-2">{medal || '🎮'}</div>
+            <h1 className="text-4xl font-black text-white mb-1">{headline}</h1>
+            {personalStats.eliminated && (
+              <p className="text-white/80 font-semibold">💀 Eliminated at Q{(personalStats.eliminatedAtQuestion ?? 0) + 1} — great run!</p>
+            )}
+
+            <div className="mt-5 flex items-center justify-center gap-4">
+              <img src={personalStats.avatar?.image || '/avatars/Wizard F/Level 1.png'} alt="avatar"
+                className="w-16 h-16 rounded-full border-4 border-white/50 shadow-xl" />
+              <div className="text-left">
+                <p className="text-white font-black text-xl leading-tight">{personalStats.name}</p>
+                {isTeamGame && (
+                  <p className="text-white/85 font-bold">{personalStats.teamEmoji} {personalStats.teamName}</p>
+                )}
+              </div>
+            </div>
+
+            <p className="text-6xl font-black text-white mt-5 drop-shadow">{personalStats.totalScore.toLocaleString()}</p>
+            <p className="text-white/75 font-semibold">points · rank {rank} of {results.length}</p>
+          </div>
+        </div>
+
+        {/* Team outcome */}
+        {teamSummary && (
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
+            <h3 className="font-black text-white mb-3 text-center">
+              {teamSummary.myTeamRank === 1 ? '👑 Your team WON!' : `🛡️ Your team came ${teamSummary.myTeamRank}${teamSummary.myTeamRank === 2 ? 'nd' : teamSummary.myTeamRank === 3 ? 'rd' : 'th'}`}
+            </h3>
+            <div className="space-y-2">
+              {teamSummary.teams.map((t, i) => (
+                <div key={t.teamId}
+                  className="flex items-center gap-3 rounded-xl px-4 py-2.5 border"
+                  style={{ borderColor: `${t.color}66`, background: t.teamId === personalStats.teamId ? `${t.color}20` : 'rgba(255,255,255,0.03)' }}>
+                  <span className="font-black text-slate-400 w-5">{i + 1}</span>
+                  <span className="font-black" style={{ color: t.color }}>{t.emoji} {t.name}</span>
+                  <span className="ml-auto font-black text-white">{t.avg.toLocaleString()}</span>
+                  <span className="text-xs text-slate-500">avg</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto text-center px-6 relative z-10">
-          <div className="text-8xl mb-6">{rankDisplay.emoji}</div>
-          <h1 className="text-5xl font-bold mb-4">{rankDisplay.text}</h1>
-          <p className="text-2xl mb-8 opacity-90">
-            {getEncouragement()}
-          </p>
-          
-          {/* Player Avatar and Info */}
-          <div className="flex items-center justify-center space-x-6 mb-8">
-            <div className="relative">
-              <img 
-                src={playerInfo?.avatar?.image || getAvatarImage?.('Wizard F', 1) || '/avatars/Wizard F/Level 1.png'} 
-                alt="Your avatar"
-                className="w-24 h-24 rounded-full border-4 border-white shadow-2xl"
-              />
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white text-gray-800 rounded-full flex items-center justify-center text-sm font-bold">
-                {playerInfo?.avatar?.level || 1}
-              </div>
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold">{playerInfo?.name}</h2>
-              <p className="text-xl opacity-90">Level {playerInfo?.avatar?.level || 1} Champion</p>
-            </div>
+        {/* Stat tiles */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+            <p className="text-2xl font-black text-emerald-300">{personalStats.correctAnswers}<span className="text-slate-500 text-base">/{personalStats.totalQuestions}</span></p>
+            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Correct</p>
           </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* Score Display */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6">Your Final Score</h3>
-            <div className={`text-6xl font-bold text-purple-600 mb-4 transition-all duration-1000 ${
-              animateScore ? 'scale-100 opacity-100' : 'scale-50 opacity-0'
-            }`}>
-              {formatScore(personalStats.totalScore)}
-            </div>
-            <p className="text-xl text-gray-600">Points Earned</p>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+            <p className="text-2xl font-black text-sky-300">{personalStats.accuracy}%</p>
+            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Accuracy</p>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-center">
+            <p className="text-2xl font-black text-orange-300">🔥 {personalStats.bestStreak || 0}</p>
+            <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mt-1">Best Streak</p>
           </div>
         </div>
 
-        {/* Performance Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div className="text-3xl mb-2">🎯</div>
-            <div className="text-3xl font-bold text-green-600 mb-2">{personalStats.correctAnswers}</div>
-            <div className="text-gray-600">Correct Answers</div>
-            <div className="text-sm text-gray-500 mt-1">
-              out of {personalStats.totalQuestions}
-            </div>
+        {personalStats.bonusPoints > 0 && (
+          <div className="bg-amber-500/10 border border-amber-400/30 rounded-2xl p-3 text-center">
+            <p className="text-amber-300 font-bold text-sm">⚡ +{personalStats.bonusPoints.toLocaleString()} bonus points{personalStats.raceBonus > 0 ? ' (incl. race finish bonus!)' : ' from minigames!'}</p>
           </div>
+        )}
 
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div className="text-3xl mb-2">📊</div>
-            <div className="text-3xl font-bold text-blue-600 mb-2">{accuracyPercentage}%</div>
-            <div className="text-gray-600">Accuracy</div>
-            <div className="text-sm text-gray-500 mt-1">
-              {accuracyPercentage >= 80 ? 'Excellent!' : accuracyPercentage >= 60 ? 'Good!' : 'Keep practicing!'}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div className="text-3xl mb-2">🏅</div>
-            <div className="text-3xl font-bold text-purple-600 mb-2">#{rank}</div>
-            <div className="text-gray-600">Ranking</div>
-            <div className="text-sm text-gray-500 mt-1">
-              out of {results.length} players
-            </div>
-          </div>
-        </div>
-
-        {/* Achievement Badges */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">🏆 Achievements</h3>
-          <div className="flex flex-wrap gap-3">
-            {personalStats.correctAnswers === personalStats.totalQuestions && (
-              <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-semibold flex items-center space-x-2">
-                <span>🎯</span>
-                <span>Perfect Score!</span>
-              </div>
-            )}
-            
-            {rank === 1 && (
-              <div className="bg-gold-100 text-yellow-800 px-4 py-2 rounded-full font-semibold flex items-center space-x-2">
-                <span>👑</span>
-                <span>Quiz Champion</span>
-              </div>
-            )}
-            
-            {rank <= 3 && (
-              <div className="bg-purple-100 text-purple-800 px-4 py-2 rounded-full font-semibold flex items-center space-x-2">
-                <span>🏆</span>
-                <span>Top 3 Finisher</span>
-              </div>
-            )}
-            
-            {accuracyPercentage >= 80 && (
-              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full font-semibold flex items-center space-x-2">
-                <span>🌟</span>
-                <span>High Achiever</span>
-              </div>
-            )}
-            
-            {personalStats.totalScore > 0 && (
-              <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full font-semibold flex items-center space-x-2">
-                <span>🎓</span>
-                <span>Knowledge Seeker</span>
-              </div>
-            )}
-            
-            <div className="bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full font-semibold flex items-center space-x-2">
-              <span>⚡</span>
-              <span>Quiz Participant</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Leaderboard Preview */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">🏅 Final Leaderboard</h3>
-          <div className="space-y-3">
-            {results.slice(0, 5).map((player, index) => {
-              const isMe = player.playerId === playerInfo.playerId;
+        {/* Top 5 */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-5">
+          <h3 className="font-black text-white mb-3">🏆 Top of the Class</h3>
+          <div className="space-y-2">
+            {top5.map((player, i) => {
+              const isMe = player.playerId === playerInfo?.playerId;
               return (
-                <div 
-                  key={player.playerId}
-                  className={`flex items-center space-x-4 p-3 rounded-lg transition-all ${
-                    isMe 
-                      ? 'bg-purple-100 border-2 border-purple-300 transform scale-105' 
-                      : 'bg-gray-50'
-                  }`}
-                >
-                  <div className="text-xl font-bold w-8 text-center">
-                    {index + 1 === 1 ? '🥇' : index + 1 === 2 ? '🥈' : index + 1 === 3 ? '🥉' : `#${index + 1}`}
-                  </div>
-                  <img 
-                    src={player.avatar?.image || '/avatars/Wizard F/Level 1.png'} 
-                    alt={`${player.name}'s avatar`}
-                    className="w-10 h-10 rounded-full border-2 border-gray-300"
-                  />
-                  <div className="flex-1">
-                    <div className={`font-semibold ${isMe ? 'text-purple-800' : 'text-gray-800'}`}>
-                      {player.name} {isMe && '(You)'}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {player.correctAnswers}/{player.totalQuestions} correct
-                    </div>
-                  </div>
-                  <div className={`font-bold ${isMe ? 'text-purple-600' : 'text-gray-700'}`}>
-                    {formatScore(player.totalScore)}
-                  </div>
+                <div key={player.playerId}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 border ${isMe ? 'bg-amber-500/15 border-amber-400/50' : 'bg-white/5 border-white/10'}`}>
+                  <span className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0 ${
+                    i === 0 ? 'bg-amber-400 text-amber-950' : i === 1 ? 'bg-slate-300 text-slate-800' : i === 2 ? 'bg-orange-400 text-orange-950' : 'bg-white/10 text-slate-300'
+                  }`}>{i + 1}</span>
+                  <img src={player.avatar?.image || '/avatars/Wizard F/Level 1.png'} alt={player.name}
+                    className="w-9 h-9 rounded-full border-2 border-white/20 shrink-0" />
+                  <p className={`flex-1 font-bold truncate ${isMe ? 'text-amber-300' : 'text-white'}`}>
+                    {isMe ? `${player.name} (you!)` : player.name}
+                  </p>
+                  <p className="font-black text-fuchsia-300 shrink-0">{player.totalScore.toLocaleString()}</p>
                 </div>
               );
             })}
-            
-            {results.length > 5 && (
-              <div className="text-center text-gray-500 text-sm pt-2">
-                ... and {results.length - 5} more players
-              </div>
-            )}
           </div>
+          {rank > 5 && (
+            <p className="text-center text-slate-400 text-sm mt-3">…and you at <strong className="text-white">#{rank}</strong></p>
+          )}
         </div>
 
-        {/* Rewards Information */}
-        <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl p-6">
-          <h3 className="text-xl font-bold mb-4">🎁 Rewards Earned</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white bg-opacity-20 rounded-lg p-4">
-              <div className="text-2xl font-bold">+{10 + (personalStats.correctAnswers * 5) + (rank <= 3 ? [25, 15, 10][rank - 1] : 0)} XP</div>
-              <div className="text-sm opacity-90">Experience Points</div>
-              <div className="text-xs opacity-75 mt-1">
-                Participation + Correct Answers + Ranking Bonus
-              </div>
-            </div>
-            <div className="bg-white bg-opacity-20 rounded-lg p-4">
-              <div className="text-2xl font-bold">+{Math.floor(personalStats.totalScore / 100)} Coins</div>
-              <div className="text-sm opacity-90">Game Currency</div>
-              <div className="text-xs opacity-75 mt-1">
-                Based on your total score
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={onPlayAgain}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2"
-          >
-            <span>🎮</span>
-            <span>Play Another Game</span>
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button onClick={onPlayAgain}
+            className="flex-1 bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white py-3.5 rounded-2xl font-black hover:brightness-110 transition-all shadow-lg">
+            🔁 Play Again
           </button>
-          
-          <button
-            onClick={onLeaveGame}
-            className="bg-white text-gray-700 border-2 border-gray-300 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2"
-          >
-            <span>🏠</span>
-            <span>Return to Dashboard</span>
+          <button onClick={onLeaveGame}
+            className="flex-1 bg-white/10 border border-white/15 text-slate-200 py-3.5 rounded-2xl font-bold hover:bg-white/20 transition-colors">
+            🏠 Back to Portal
           </button>
-        </div>
-
-        {/* Motivational Quote */}
-        <div className="text-center py-8">
-          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6 max-w-2xl mx-auto">
-            <div className="text-3xl mb-3">💡</div>
-            <p className="text-indigo-800 font-semibold text-lg mb-2">
-              "Every expert was once a beginner!"
-            </p>
-            <p className="text-indigo-600 text-sm">
-              Keep playing and learning to improve your skills and climb the leaderboard!
-            </p>
-          </div>
         </div>
       </div>
     </div>

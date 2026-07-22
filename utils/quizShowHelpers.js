@@ -1,4 +1,5 @@
-// utils/quizShowHelpers.js - UPDATED WITH SIMPLE SCORING SYSTEM
+// utils/quizShowHelpers.js — QUIZ SHOW ENGINE
+// Game modes, power-ups, teams, estimation scoring, minigames + original helpers.
 import { database } from './firebase';
 import { ref, get } from 'firebase/database';
 
@@ -15,6 +16,119 @@ export const validateRoomCode = (code) => {
 };
 
 // ===============================================
+// GAME MODES
+// ===============================================
+export const GAME_MODES = {
+  classic: {
+    id: 'classic',
+    name: 'Classic',
+    icon: '⚡',
+    tagline: 'Speed scoring, streaks & power-ups',
+    description: 'Everyone answers together. Faster correct answers earn more points, streaks build bonuses, and each player gets one-shot power-ups.',
+    gradient: 'from-violet-600 to-fuchsia-600',
+    color: '#a855f7',
+  },
+  team: {
+    id: 'team',
+    name: 'Team Battle',
+    icon: '🛡️',
+    tagline: 'Squads combine scores for team glory',
+    description: 'Players are split into teams. Every point a player scores counts toward their team. Highest team average wins!',
+    gradient: 'from-amber-500 to-orange-600',
+    color: '#f59e0b',
+  },
+  elimination: {
+    id: 'elimination',
+    name: 'Sudden Death',
+    icon: '💀',
+    tagline: 'One wrong answer and you\'re out!',
+    description: 'A wrong (or missed) answer eliminates you — unless your Shield saves you. Eliminated players keep watching as spectators. Last champions standing win.',
+    gradient: 'from-rose-600 to-red-700',
+    color: '#f43f5e',
+  },
+  race: {
+    id: 'race',
+    name: 'Quiz Race',
+    icon: '🏁',
+    tagline: 'Answer at your own pace — first to finish wins',
+    description: 'No waiting between questions! Everyone races through the quiz at their own speed. Finish fast AND accurately — the first three across the line earn big bonuses.',
+    gradient: 'from-cyan-500 to-blue-600',
+    color: '#06b6d4',
+  },
+};
+
+export const RACE_FINISH_BONUS = [1000, 600, 300];
+
+// ===============================================
+// TEAMS
+// ===============================================
+export const TEAM_PRESETS = [
+  { id: 'comets',   name: 'Crimson Comets',  emoji: '☄️', color: '#ef4444', bg: 'bg-red-500',     soft: 'bg-red-500/15',     border: 'border-red-400' },
+  { id: 'sharks',   name: 'Azure Sharks',    emoji: '🦈', color: '#3b82f6', bg: 'bg-blue-500',    soft: 'bg-blue-500/15',    border: 'border-blue-400' },
+  { id: 'griffins', name: 'Golden Griffins', emoji: '🦅', color: '#f59e0b', bg: 'bg-amber-500',   soft: 'bg-amber-500/15',   border: 'border-amber-400' },
+  { id: 'dragons',  name: 'Emerald Dragons', emoji: '🐉', color: '#10b981', bg: 'bg-emerald-500', soft: 'bg-emerald-500/15', border: 'border-emerald-400' },
+];
+
+// Evenly (and randomly) assign a list of playerIds to N teams.
+export const buildTeamAssignment = (playerIds, teamCount = 2) => {
+  const count = Math.min(Math.max(2, teamCount), TEAM_PRESETS.length);
+  const shuffled = shuffleArray(playerIds);
+  const teams = {};
+  for (let i = 0; i < count; i++) {
+    const preset = TEAM_PRESETS[i];
+    teams[preset.id] = { ...preset, members: {} };
+  }
+  const teamIds = Object.keys(teams);
+  shuffled.forEach((pid, i) => {
+    teams[teamIds[i % teamIds.length]].members[pid] = true;
+  });
+  return teams;
+};
+
+export const getTeamForPlayer = (teams, playerId) => {
+  if (!teams || !playerId) return null;
+  for (const [teamId, team] of Object.entries(teams)) {
+    if (team?.members?.[playerId]) return { teamId, ...team };
+  }
+  return null;
+};
+
+// ===============================================
+// POWER-UPS
+// ===============================================
+export const POWER_UPS = {
+  fifty: {
+    id: 'fifty',
+    name: '50 / 50',
+    icon: '✂️',
+    description: 'Removes two wrong answers',
+    modes: ['classic', 'team', 'elimination', 'race'],
+  },
+  double: {
+    id: 'double',
+    name: 'Double Points',
+    icon: '💎',
+    description: 'Doubles your points this question',
+    modes: ['classic', 'team', 'race'],
+  },
+  shield: {
+    id: 'shield',
+    name: 'Shield',
+    icon: '🛡️',
+    description: 'Auto-saves you from one wrong answer',
+    modes: ['elimination'],
+  },
+};
+
+export const getPowerUpsForMode = (mode) =>
+  Object.values(POWER_UPS).filter(p => p.modes.includes(mode));
+
+// ===============================================
+// EMOJI REACTIONS
+// ===============================================
+export const REACTION_EMOJIS = ['🔥', '😂', '🤯', '👏', '😱', '💜', '🎉', '🫠'];
+
+// ===============================================
 // SPEED-BASED SCORE CALCULATION SYSTEM
 // ===============================================
 export const calculateQuizScore = (timeSpent, timeLimit, basePoints = 1000, isCorrect = true) => {
@@ -28,9 +142,24 @@ export const calculateQuizScore = (timeSpent, timeLimit, basePoints = 1000, isCo
 };
 
 export const calculateStreakBonus = (streak) => {
-  // Streak bonus: 50 points per question in streak, max 200
+  // Streak bonus: 50 points per question in streak, max 250
   if (streak <= 1) return 0;
-  return Math.min(50 * (streak - 1), 200);
+  return Math.min(50 * (streak - 1), 250);
+};
+
+// Estimation questions: closer guess = more points.
+// Full points for exact, 0 points at 50%+ relative error. "Correct" within 25%.
+export const calculateEstimationScore = (guess, answer, basePoints = 1000) => {
+  const g = Number(guess);
+  const a = Number(answer);
+  if (!Number.isFinite(g) || !Number.isFinite(a)) {
+    return { points: 0, isCorrect: false, error: 1 };
+  }
+  const denom = Math.max(1, Math.abs(a));
+  const error = Math.abs(g - a) / denom;
+  const isCorrect = error <= 0.25;
+  const points = Math.round(basePoints * Math.max(0, 1 - Math.min(1, error * 2)));
+  return { points, isCorrect, error };
 };
 
 // ===============================================
@@ -46,10 +175,11 @@ export const playQuizSound = (soundType, volume = 0.5) => {
       'correct': '/sounds/quizshow/success.mp3',
       'incorrect': '/sounds/quizshow/buzzer.mp3',
       'timeWarning': '/sounds/quizshow/tick.mp3',
+      'tick': '/sounds/quizshow/tick.mp3',
       'leaderboard': '/sounds/quizshow/dramatic.mp3',
       'gameEnd': '/sounds/quizshow/finale.mp3'
     };
-    
+
     const audio = new Audio(soundMap[soundType]);
     audio.volume = volume;
     audio.play().catch(e => {
@@ -61,35 +191,52 @@ export const playQuizSound = (soundType, volume = 0.5) => {
 };
 
 // ===============================================
+// QUESTION TYPES
+// ===============================================
+export const QUESTION_TYPES = {
+  multiple_choice: { id: 'multiple_choice', name: 'Multiple Choice', icon: '🔤', description: 'Pick the right answer from up to 6 options' },
+  true_false:      { id: 'true_false',      name: 'True / False',    icon: '⚖️', description: 'A quick two-option showdown' },
+  image:           { id: 'image',           name: 'Picture Question', icon: '🖼️', description: 'Show an image with the question' },
+  estimation:      { id: 'estimation',      name: 'Closest Wins',    icon: '🎯', description: 'Guess a number — closest to the answer scores most' },
+};
+
+// ===============================================
 // QUESTION VALIDATION
 // ===============================================
 export const validateQuestion = (question) => {
   const errors = [];
-  
+  const type = question.type || 'multiple_choice';
+
   if (!question.question?.trim()) {
     errors.push('Question text is required');
   }
-  
-  if (question.type === 'multiple_choice') {
-    if (!question.options || question.options.length < 2) {
+
+  if (type === 'estimation') {
+    if (question.answerValue === undefined || question.answerValue === null || question.answerValue === '' || !Number.isFinite(Number(question.answerValue))) {
+      errors.push('A numeric answer is required for Closest Wins questions');
+    }
+  } else {
+    const options = question.options || [];
+    if (options.length < 2) {
       errors.push('At least 2 answer options are required');
     }
-    
-    if (question.correctAnswer === undefined || question.correctAnswer < 0 || question.correctAnswer >= question.options.length) {
+    if (question.correctAnswer === undefined || question.correctAnswer < 0 || question.correctAnswer >= options.length) {
       errors.push('Valid correct answer must be selected');
     }
-    
-    // Check for empty options
-    const emptyOptions = question.options.some(option => !option?.trim());
+    const emptyOptions = options.some(option => !option?.trim());
     if (emptyOptions) {
       errors.push('All answer options must have text');
     }
   }
-  
+
+  if (type === 'image' && !question.media?.url?.trim()) {
+    errors.push('Picture questions need an image URL');
+  }
+
   if (!question.timeLimit || question.timeLimit < 5 || question.timeLimit > 120) {
     errors.push('Time limit must be between 5 and 120 seconds');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -98,16 +245,15 @@ export const validateQuestion = (question) => {
 
 export const validateQuiz = (quiz) => {
   const errors = [];
-  
+
   if (!quiz.title?.trim()) {
     errors.push('Quiz title is required');
   }
-  
+
   if (!quiz.questions || quiz.questions.length === 0) {
     errors.push('Quiz must have at least one question');
   }
-  
-  // Validate each question
+
   if (quiz.questions) {
     quiz.questions.forEach((question, index) => {
       const questionValidation = validateQuestion(question);
@@ -116,7 +262,7 @@ export const validateQuiz = (quiz) => {
       }
     });
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors
@@ -178,7 +324,7 @@ export const QUESTION_CATEGORIES = {
 };
 
 // ===============================================
-// PRESET QUESTIONS DATABASE
+// PRESET QUESTIONS DATABASE (unchanged)
 // ===============================================
 export const PRESET_QUESTIONS = {
   mathematics: [
@@ -324,13 +470,12 @@ export const createQuizFromPreset = (category, questionCount = 10) => {
   if (categoryQuestions.length === 0) {
     throw new Error(`No preset questions available for category: ${category}`);
   }
-  
-  // Shuffle and select questions
+
   const shuffled = [...categoryQuestions].sort(() => Math.random() - 0.5);
   const selectedQuestions = shuffled.slice(0, Math.min(questionCount, shuffled.length));
-  
+
   const categoryInfo = QUESTION_CATEGORIES[category];
-  
+
   return {
     id: `preset_${category}_${Date.now()}`,
     title: `${categoryInfo?.name || 'Quiz'} - ${selectedQuestions.length} Questions`,
@@ -359,36 +504,58 @@ export const sanitizeQuizForGame = (quiz) => {
   const safeQuestions = (quiz.questions || [])
     .filter((question) => question && typeof question === 'object')
     .map((question, index) => {
+      const type = QUESTION_TYPES[question.type] ? question.type : 'multiple_choice';
       const rawQuestion = typeof question.question === 'string' ? question.question.trim() : '';
-      const options = Array.isArray(question.options)
-        ? question.options.map((option) => (typeof option === 'string' ? option : '')).filter(Boolean)
-        : [];
-
-      if (!rawQuestion || options.length < 2) {
-        return null;
-      }
-
-      const numericAnswer = Number.parseInt(question.correctAnswer, 10);
-      const safeCorrectAnswer = Number.isInteger(numericAnswer) && numericAnswer >= 0 && numericAnswer < options.length
-        ? numericAnswer
-        : 0;
+      if (!rawQuestion) return null;
 
       const rawTimeLimit = Number.parseInt(question.timeLimit, 10);
       const fallbackTime = Number.parseInt(quiz.settings?.timePerQuestion ?? quiz.defaultTimeLimit ?? 20, 10) || 20;
       const timeLimit = Math.min(Math.max(Number.isFinite(rawTimeLimit) ? rawTimeLimit : fallbackTime, 5), 300);
 
       const rawPoints = Number.parseInt(question.points, 10);
-      const points = Number.isFinite(rawPoints) ? rawPoints : 10;
+      const points = Number.isFinite(rawPoints) ? rawPoints : 1000;
+
+      const media = question.media?.url
+        ? { type: question.media.type || 'image', url: String(question.media.url) }
+        : null;
+
+      // Estimation ("Closest Wins") questions carry a numeric answer instead of options
+      if (type === 'estimation') {
+        const answerValue = Number(question.answerValue);
+        if (!Number.isFinite(answerValue)) return null;
+        return {
+          id: question.id || `q_${index}`,
+          question: rawQuestion,
+          type,
+          options: [],
+          answerValue,
+          unit: typeof question.unit === 'string' ? question.unit : '',
+          correctAnswer: 0,
+          timeLimit,
+          points,
+          media,
+        };
+      }
+
+      const options = Array.isArray(question.options)
+        ? question.options.map((option) => (typeof option === 'string' ? option : '')).filter(Boolean)
+        : [];
+      if (options.length < 2) return null;
+
+      const numericAnswer = Number.parseInt(question.correctAnswer, 10);
+      const safeCorrectAnswer = Number.isInteger(numericAnswer) && numericAnswer >= 0 && numericAnswer < options.length
+        ? numericAnswer
+        : 0;
 
       return {
         id: question.id || `q_${index}`,
         question: rawQuestion,
-        type: question.type || 'multiple_choice',
+        type,
         options,
         correctAnswer: safeCorrectAnswer,
         timeLimit,
         points,
-        media: question.media || null,
+        media,
       };
     })
     .filter(Boolean);
@@ -470,87 +637,163 @@ export const getGameRoomData = async (roomCode) => {
 };
 
 // ===============================================
-// LEADERBOARD CALCULATION - USES SIMPLE SCORING
+// LEADERBOARD CALCULATION
+// Handles bonus points (minigames), race finish bonuses,
+// team info, eliminations and streaks.
 // ===============================================
 export const calculateFinalLeaderboard = (gameData) => {
-  if (!gameData?.players || !gameData?.responses) return [];
-  
+  if (!gameData?.players) return [];
+
+  const responses = gameData.responses || {};
+  const bonusPoints = gameData.bonusPoints || {};
+  const mode = gameData.mode || 'classic';
+
+  // Race finishing bonuses — deterministic from raceProgress, no extra writes needed
+  const raceBonusByPlayer = {};
+  if (mode === 'race' && gameData.raceProgress) {
+    Object.entries(gameData.raceProgress)
+      .filter(([, p]) => p?.finished && p?.finishedAt)
+      .sort((a, b) => a[1].finishedAt - b[1].finishedAt)
+      .forEach(([pid], i) => {
+        raceBonusByPlayer[pid] = RACE_FINISH_BONUS[i] || 0;
+      });
+  }
+
   const results = Object.entries(gameData.players).map(([playerId, player]) => {
     let totalScore = 0;
     let correctAnswers = 0;
     let incorrectAnswers = 0;
     let totalAnswered = 0;
-    
-    // Calculate score from actual Firebase responses
-    Object.entries(gameData.responses).forEach(([questionIndex, responses]) => {
-      const response = responses[playerId];
+    let bestStreak = 0;
+
+    Object.values(responses).forEach((questionResponses) => {
+      const response = questionResponses?.[playerId];
       if (response && response.points !== undefined) {
-        totalScore += response.points; // Use the exact points stored in Firebase
+        totalScore += response.points;
         totalAnswered++;
         if (response.isCorrect) {
           correctAnswers++;
         } else {
           incorrectAnswers++;
         }
+        if ((response.streak || 0) > bestStreak) bestStreak = response.streak || 0;
       }
     });
-    
+
+    const bonus = (bonusPoints[playerId] || 0) + (raceBonusByPlayer[playerId] || 0);
+    totalScore += bonus;
+
     const totalQuestions = gameData.quiz?.questions?.length || 0;
     const accuracy = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
-    
+
+    const team = getTeamForPlayer(gameData.teams, playerId);
+    const eliminatedInfo = gameData.eliminated?.[playerId] || null;
+
     return {
       playerId,
       name: player.name,
       avatar: player.avatar,
       studentId: player.studentId,
       totalScore,
+      bonusPoints: bonus,
+      raceBonus: raceBonusByPlayer[playerId] || 0,
       correctAnswers,
       incorrectAnswers,
       totalAnswered,
       totalQuestions,
-      accuracy
+      accuracy,
+      bestStreak,
+      teamId: team?.teamId || null,
+      teamName: team?.name || null,
+      teamEmoji: team?.emoji || null,
+      teamColor: team?.color || null,
+      eliminated: Boolean(eliminatedInfo),
+      eliminatedAtQuestion: eliminatedInfo?.questionIndex ?? null,
+      finishedRaceAt: gameData.raceProgress?.[playerId]?.finishedAt || null,
     };
-  }).sort((a, b) => {
-    // Sort by score first, then by accuracy, then by correct answers
-    if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-    if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
-    return b.correctAnswers - a.correctAnswers;
   });
-  
+
+  if (mode === 'elimination') {
+    // Survivors first (by score); among eliminated, surviving longer ranks higher
+    results.sort((a, b) => {
+      if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+      if (a.eliminated && b.eliminated) {
+        const aq = a.eliminatedAtQuestion ?? -1;
+        const bq = b.eliminatedAtQuestion ?? -1;
+        if (bq !== aq) return bq - aq;
+      }
+      return b.totalScore - a.totalScore;
+    });
+  } else {
+    results.sort((a, b) => {
+      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+      if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+      return b.correctAnswers - a.correctAnswers;
+    });
+  }
+
   return results;
+};
+
+// Aggregate player results into a team leaderboard (uses average score so
+// uneven team sizes stay fair). Returns a sorted array of team entries.
+export const calculateTeamLeaderboard = (gameData) => {
+  if (!gameData?.teams) return [];
+  const playerResults = calculateFinalLeaderboard(gameData);
+
+  const teams = Object.entries(gameData.teams).map(([teamId, team]) => {
+    const members = playerResults.filter(p => p.teamId === teamId);
+    const totalScore = members.reduce((s, m) => s + m.totalScore, 0);
+    const avgScore = members.length ? Math.round(totalScore / members.length) : 0;
+    const correct = members.reduce((s, m) => s + m.correctAnswers, 0);
+    return {
+      teamId,
+      name: team.name,
+      emoji: team.emoji,
+      color: team.color,
+      bg: team.bg,
+      memberCount: members.length,
+      members,
+      totalScore,
+      avgScore,
+      correctAnswers: correct,
+    };
+  });
+
+  teams.sort((a, b) => b.avgScore - a.avgScore || b.totalScore - a.totalScore);
+  return teams;
 };
 
 // ===============================================
 // ANIMATION & EFFECTS HELPERS
 // ===============================================
 export const triggerConfetti = () => {
-  // Create confetti effect
   try {
-    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'];
-    
-    for (let i = 0; i < 50; i++) {
+    const pieces = ['🎉', '✨', '🎊', '⭐', '💜'];
+
+    for (let i = 0; i < 60; i++) {
       setTimeout(() => {
         const confetti = document.createElement('div');
-        confetti.innerHTML = '🎉';
+        confetti.innerHTML = pieces[Math.floor(Math.random() * pieces.length)];
         confetti.style.position = 'fixed';
         confetti.style.left = Math.random() * 100 + 'vw';
         confetti.style.top = '-10px';
-        confetti.style.fontSize = '20px';
+        confetti.style.fontSize = 14 + Math.random() * 14 + 'px';
         confetti.style.zIndex = '9999';
         confetti.style.pointerEvents = 'none';
         confetti.style.transition = 'all 3s ease-out';
-        
+
         document.body.appendChild(confetti);
-        
+
         setTimeout(() => {
           confetti.style.transform = `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`;
           confetti.style.opacity = '0';
         }, 10);
-        
+
         setTimeout(() => {
-          document.body.removeChild(confetti);
-        }, 3000);
-      }, i * 50);
+          if (confetti.parentNode) document.body.removeChild(confetti);
+        }, 3100);
+      }, i * 40);
     }
   } catch (error) {
     console.warn('Confetti animation error:', error);
@@ -559,28 +802,27 @@ export const triggerConfetti = () => {
 
 export const animateScoreIncrease = (element, newScore, duration = 1000) => {
   if (!element) return;
-  
+
   const startScore = parseInt(element.textContent) || 0;
   const scoreDiff = newScore - startScore;
   const startTime = Date.now();
-  
+
   const animate = () => {
     const elapsed = Date.now() - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    
-    // Ease-out animation
+
     const easeOut = 1 - Math.pow(1 - progress, 3);
     const currentScore = Math.floor(startScore + (scoreDiff * easeOut));
-    
+
     element.textContent = formatScore(currentScore);
-    
+
     if (progress < 1) {
       requestAnimationFrame(animate);
     } else {
       element.textContent = formatScore(newScore);
     }
   };
-  
+
   requestAnimationFrame(animate);
 };
 
@@ -590,8 +832,18 @@ export const animateScoreIncrease = (element, newScore, duration = 1000) => {
 export default {
   generateRoomCode,
   validateRoomCode,
+  GAME_MODES,
+  TEAM_PRESETS,
+  POWER_UPS,
+  QUESTION_TYPES,
+  REACTION_EMOJIS,
+  RACE_FINISH_BONUS,
+  buildTeamAssignment,
+  getTeamForPlayer,
+  getPowerUpsForMode,
   calculateQuizScore,
   calculateStreakBonus,
+  calculateEstimationScore,
   playQuizSound,
   validateQuestion,
   validateQuiz,
@@ -605,6 +857,7 @@ export default {
   checkGameRoomExists,
   getGameRoomData,
   calculateFinalLeaderboard,
+  calculateTeamLeaderboard,
   triggerConfetti,
   animateScoreIncrease
 };

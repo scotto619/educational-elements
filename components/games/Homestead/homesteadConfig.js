@@ -30,6 +30,7 @@ const MORE = `${IC}/More`;
 const ADV = `${IC}/Adventure`;
 const SURV = `${IC}/Survival`;
 const ANIM = `${IC}/Animals`;
+const EXTRA = `${IC}/Extra`;
 
 export const GOLD_ICON = `${MINE}/016-coin.svg`;
 
@@ -188,16 +189,16 @@ export const ITEMS = {
   ginger:       { name: 'Wild Ginger',   img: `${FV}/030-ginger.svg`, kind: 'herb', sell: 5, rarity: 'uncommon' },
 
   // ── LANDMARK RESOURCES — gathered at spots unlocked by Wild Map discoveries ─
-  glowcap:      { name: 'Glowcap',       img: `${FV}/049-mushroom.svg`, tint: 'hue-rotate(160deg) saturate(1.8) brightness(1.35)', kind: 'forage', sell: 14, rarity: 'rare' },
-  hermit_greens: { name: "Hermit's Greens", img: `${COOK}/025-bok choy.svg`, kind: 'forage', sell: 10, rarity: 'uncommon' },
-  royal_honey:  { name: 'Royal Honey',   img: `${SWEET}/048-honey.svg`, tint: T.gold, kind: 'forage', sell: 25, rarity: 'epic' },
-  obsidian:     { name: 'Obsidian Shard', img: `${MINE}/002-stone.svg`, tint: 'brightness(0.5) saturate(1.4) hue-rotate(260deg)', kind: 'stone', sell: 12, rarity: 'rare' },
+  glowcap:      { name: 'Glowcap',       img: `${EXTRA}/004-mushroom.svg`, kind: 'forage', sell: 14, rarity: 'rare' },
+  hermit_greens: { name: "Hermit's Greens", img: `${EXTRA}/008-healthy.svg`, kind: 'forage', sell: 10, rarity: 'uncommon' },
+  royal_honey:  { name: 'Royal Honey',   img: `${EXTRA}/007-honey.svg`, kind: 'forage', sell: 25, rarity: 'epic' },
+  obsidian:     { name: 'Obsidian Shard', img: `${EXTRA}/005-crystals.svg`, tint: 'brightness(0.6) saturate(1.3) hue-rotate(260deg)', kind: 'stone', sell: 12, rarity: 'rare' },
   frost_wood:   { name: 'Frostbark Log', img: `${NAT}/003-wood.svg`, tint: 'hue-rotate(160deg) saturate(0.9) brightness(1.25)', kind: 'wood', burn: 8, sell: 20, rarity: 'rare' },
-  everice:      { name: 'Everice Crystal', img: `${WATER}/014-iceberg.svg`, kind: 'rareIng', sell: 65, rarity: 'epic' },
-  rapid_darter: { name: 'Rapid Darter',  img: `${FISH}/017-flying-fish.svg`, tint: T.red, kind: 'fish', sell: 26, rarity: 'rare' },
-  fogfish:      { name: 'Fogfish',       img: `${FISH}/014-angel-fish.svg`, tint: T.teal, kind: 'fish', sell: 34, rarity: 'rare' },
-  stormfin:     { name: 'Stormfin',      img: `${FISH}/005-blue-mao-mao.svg`, tint: T.purple, kind: 'fish', sell: 48, rarity: 'epic', rare: true },
-  voidfin:      { name: 'Voidfin',       img: `${FISH}/018-anglerfish.svg`, tint: 'hue-rotate(260deg) saturate(1.6) brightness(0.8)', kind: 'fish', sell: 220, rarity: 'legendary', rare: true },
+  everice:      { name: 'Everice Crystal', img: `${EXTRA}/006-freeze.svg`, kind: 'rareIng', sell: 65, rarity: 'epic' },
+  rapid_darter: { name: 'Rapid Darter',  img: `${EXTRA}/009-fish.svg`, kind: 'fish', sell: 26, rarity: 'rare' },
+  fogfish:      { name: 'Fogfish',       img: `${EXTRA}/010-tadpole.svg`, kind: 'fish', sell: 34, rarity: 'rare' },
+  stormfin:     { name: 'Stormfin',      img: `${EXTRA}/011-fish-1.svg`, kind: 'fish', sell: 48, rarity: 'epic', rare: true },
+  voidfin:      { name: 'Voidfin',       img: `${EXTRA}/012-sea-bass.svg`, tint: 'hue-rotate(260deg) saturate(1.4) brightness(0.85)', kind: 'fish', sell: 220, rarity: 'legendary', rare: true },
 
   // ── Curios (Curio Shelf — unique finds, +5 Prosperity each) ──────────────
   seers_orb:    { name: "Seer's Orb",    img: `${MAGIC}/001-crystal ball.svg`, kind: 'curio', sell: 80, rarity: 'epic' },
@@ -338,7 +339,7 @@ export const NODES = {
       rares: [{ id: 'tree_sap', chance: 0.035 }, { id: 'ancient_rune', chance: 0.005 }] },
     { id: 'elder',   name: 'Elderwood Olive',  img: `${TREE}/006-olive-tree.svg`,   yieldId: 'elder_wood',   hardness: 70, stock: 3, respawnSec: 720, xp: 55, level: 22,
       rares: [{ id: 'glimmer_dust', chance: 0.012 }, { id: 'bottled_fairy', chance: 0.003 }, { id: 'recipe_scroll', chance: 0.018 }] },
-    { id: 'frostbark', name: 'Frostbark Pine', img: `${TREE}/001-beech.svg`, tint: 'hue-rotate(160deg) saturate(0.9) brightness(1.25)', yieldId: 'frost_wood', hardness: 60, stock: 4, respawnSec: 540, xp: 45, level: 18, needsLandmark: 'wolf_den',
+    { id: 'frostbark', name: 'Frostbark Pine', img: `${EXTRA}/003-pine.svg`, yieldId: 'frost_wood', hardness: 60, stock: 4, respawnSec: 540, xp: 45, level: 18, needsLandmark: 'wolf_den',
       rares: [{ id: 'everice', chance: 0.008 }, { id: 'glimmer_dust', chance: 0.015 }, { id: 'recipe_scroll', chance: 0.015 }] },
   ],
   caves: [
@@ -354,9 +355,9 @@ export const NODES = {
       rares: [{ id: 'ruby', chance: 0.009 }, { id: 'diamond', chance: 0.003 }, { id: 'puzzle_box', chance: 0.006 }, { id: 'glimmer_dust', chance: 0.008 }] },
     { id: 'mithril', name: 'Mithril Heart',  img: `${MINE}/006-crystals.svg`,   yieldId: 'mithril_ore', hardness: 85, stock: 3, respawnSec: 900, xp: 65, level: 22,
       rares: [{ id: 'diamond', chance: 0.009 }, { id: 'glimmer_dust', chance: 0.02 }, { id: 'dragon_idol', chance: 0.003 }, { id: 'seers_orb', chance: 0.005 }] },
-    { id: 'obsidianflow', name: 'Obsidian Flow', img: `${MINE}/002-stone.svg`, tint: 'brightness(0.5) saturate(1.4) hue-rotate(260deg)', yieldId: 'obsidian', hardness: 55, stock: 5, respawnSec: 480, xp: 40, level: 17, needsLandmark: 'ancient_quarry',
+    { id: 'obsidianflow', name: 'Obsidian Flow', img: `${EXTRA}/005-crystals.svg`, tint: 'brightness(0.6) saturate(1.3) hue-rotate(260deg)', yieldId: 'obsidian', hardness: 55, stock: 5, respawnSec: 480, xp: 40, level: 17, needsLandmark: 'ancient_quarry',
       rares: [{ id: 'ruby', chance: 0.008 }, { id: 'fossil', chance: 0.006 }, { id: 'recipe_scroll', chance: 0.01 }] },
-    { id: 'evericevein', name: 'Everice Vein', img: `${WATER}/014-iceberg.svg`, yieldId: 'everice', hardness: 95, stock: 2, respawnSec: 1200, xp: 75, level: 24, needsLandmark: 'frozen_peak',
+    { id: 'evericevein', name: 'Everice Vein', img: `${EXTRA}/006-freeze.svg`, yieldId: 'everice', hardness: 95, stock: 2, respawnSec: 1200, xp: 75, level: 24, needsLandmark: 'frozen_peak',
       rares: [{ id: 'diamond', chance: 0.012 }, { id: 'glacier_shard', chance: 0.008 }] },
   ],
   meadow: [
@@ -376,11 +377,11 @@ export const NODES = {
       rares: [{ id: 'moonpetal', chance: 0.010 }] },
     { id: 'moonglade', name: 'Moonlit Glade', img: `${NAT}/010-tulip.svg`, tint: T.purple, yieldId: 'moonpetal', hardness: 30, stock: 2, respawnSec: 600, xp: 32, level: 20,
       rares: [{ id: 'glimmer_dust', chance: 0.02 }, { id: 'unicorn_figurine', chance: 0.003 }, { id: 'bottled_fairy', chance: 0.002 }] },
-    { id: 'hermitgarden', name: "Hermit's Garden", img: `${COOK}/025-bok choy.svg`, yieldId: 'hermit_greens', hardness: 12, stock: 4, respawnSec: 180, xp: 15, level: 8, needsLandmark: 'hermits_hut',
+    { id: 'hermitgarden', name: "Hermit's Garden", img: `${EXTRA}/008-healthy.svg`, yieldId: 'hermit_greens', hardness: 12, stock: 4, respawnSec: 180, xp: 15, level: 8, needsLandmark: 'hermits_hut',
       rares: [{ id: 'mint', chance: 0.2 }, { id: 'recipe_scroll', chance: 0.02 }] },
-    { id: 'glowring', name: 'Glowcap Ring', img: `${FV}/049-mushroom.svg`, tint: 'hue-rotate(160deg) saturate(1.8) brightness(1.35)', yieldId: 'glowcap', hardness: 18, stock: 3, respawnSec: 260, xp: 22, level: 12, needsLandmark: 'glow_clearing',
+    { id: 'glowring', name: 'Glowcap Ring', img: `${EXTRA}/004-mushroom.svg`, yieldId: 'glowcap', hardness: 18, stock: 3, respawnSec: 260, xp: 22, level: 12, needsLandmark: 'glow_clearing',
       rares: [{ id: 'truffle', chance: 0.02 }, { id: 'glimmer_dust', chance: 0.015 }] },
-    { id: 'honeyfall', name: 'Honeyfall Grove', img: `${SWEET}/048-honey.svg`, tint: T.gold, yieldId: 'royal_honey', hardness: 30, stock: 2, respawnSec: 600, xp: 30, level: 16, needsLandmark: 'bear_cave',
+    { id: 'honeyfall', name: 'Honeyfall Grove', img: `${EXTRA}/007-honey.svg`, yieldId: 'royal_honey', hardness: 30, stock: 2, respawnSec: 600, xp: 30, level: 16, needsLandmark: 'bear_cave',
       rares: [{ id: 'honey_comb', chance: 0.02 }, { id: 'golden_feather', chance: 0.006 }] },
   ],
 };
