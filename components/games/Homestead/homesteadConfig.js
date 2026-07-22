@@ -187,6 +187,18 @@ export const ITEMS = {
   vanilla:      { name: 'Vanilla Pod',   img: `${SWEET}/004-vanilla.svg`, kind: 'trade', sell: 7, cost: 14, rarity: 'uncommon' },
   ginger:       { name: 'Wild Ginger',   img: `${FV}/030-ginger.svg`, kind: 'herb', sell: 5, rarity: 'uncommon' },
 
+  // ── LANDMARK RESOURCES — gathered at spots unlocked by Wild Map discoveries ─
+  glowcap:      { name: 'Glowcap',       img: `${FV}/049-mushroom.svg`, tint: 'hue-rotate(160deg) saturate(1.8) brightness(1.35)', kind: 'forage', sell: 14, rarity: 'rare' },
+  hermit_greens: { name: "Hermit's Greens", img: `${COOK}/025-bok choy.svg`, kind: 'forage', sell: 10, rarity: 'uncommon' },
+  royal_honey:  { name: 'Royal Honey',   img: `${SWEET}/048-honey.svg`, tint: T.gold, kind: 'forage', sell: 25, rarity: 'epic' },
+  obsidian:     { name: 'Obsidian Shard', img: `${MINE}/002-stone.svg`, tint: 'brightness(0.5) saturate(1.4) hue-rotate(260deg)', kind: 'stone', sell: 12, rarity: 'rare' },
+  frost_wood:   { name: 'Frostbark Log', img: `${NAT}/003-wood.svg`, tint: 'hue-rotate(160deg) saturate(0.9) brightness(1.25)', kind: 'wood', burn: 8, sell: 20, rarity: 'rare' },
+  everice:      { name: 'Everice Crystal', img: `${WATER}/014-iceberg.svg`, kind: 'rareIng', sell: 65, rarity: 'epic' },
+  rapid_darter: { name: 'Rapid Darter',  img: `${FISH}/017-flying-fish.svg`, tint: T.red, kind: 'fish', sell: 26, rarity: 'rare' },
+  fogfish:      { name: 'Fogfish',       img: `${FISH}/014-angel-fish.svg`, tint: T.teal, kind: 'fish', sell: 34, rarity: 'rare' },
+  stormfin:     { name: 'Stormfin',      img: `${FISH}/005-blue-mao-mao.svg`, tint: T.purple, kind: 'fish', sell: 48, rarity: 'epic', rare: true },
+  voidfin:      { name: 'Voidfin',       img: `${FISH}/018-anglerfish.svg`, tint: 'hue-rotate(260deg) saturate(1.6) brightness(0.8)', kind: 'fish', sell: 220, rarity: 'legendary', rare: true },
+
   // ── Curios (Curio Shelf — unique finds, +5 Prosperity each) ──────────────
   seers_orb:    { name: "Seer's Orb",    img: `${MAGIC}/001-crystal ball.svg`, kind: 'curio', sell: 80, rarity: 'epic' },
   ancient_rune: { name: 'Ancient Rune',  img: `${MAGIC}/021-rune.svg`, kind: 'curio', sell: 60, rarity: 'rare' },
@@ -326,6 +338,8 @@ export const NODES = {
       rares: [{ id: 'tree_sap', chance: 0.035 }, { id: 'ancient_rune', chance: 0.005 }] },
     { id: 'elder',   name: 'Elderwood Olive',  img: `${TREE}/006-olive-tree.svg`,   yieldId: 'elder_wood',   hardness: 70, stock: 3, respawnSec: 720, xp: 55, level: 22,
       rares: [{ id: 'glimmer_dust', chance: 0.012 }, { id: 'bottled_fairy', chance: 0.003 }, { id: 'recipe_scroll', chance: 0.018 }] },
+    { id: 'frostbark', name: 'Frostbark Pine', img: `${TREE}/001-beech.svg`, tint: 'hue-rotate(160deg) saturate(0.9) brightness(1.25)', yieldId: 'frost_wood', hardness: 60, stock: 4, respawnSec: 540, xp: 45, level: 18, needsLandmark: 'wolf_den',
+      rares: [{ id: 'everice', chance: 0.008 }, { id: 'glimmer_dust', chance: 0.015 }, { id: 'recipe_scroll', chance: 0.015 }] },
   ],
   caves: [
     { id: 'stone',   name: 'Stone Outcrop',  img: `${MINE}/002-stone.svg`,      yieldId: 'stone',       hardness: 7,  stock: 6, respawnSec: 40,  xp: 4,  level: 1,
@@ -340,6 +354,10 @@ export const NODES = {
       rares: [{ id: 'ruby', chance: 0.009 }, { id: 'diamond', chance: 0.003 }, { id: 'puzzle_box', chance: 0.006 }, { id: 'glimmer_dust', chance: 0.008 }] },
     { id: 'mithril', name: 'Mithril Heart',  img: `${MINE}/006-crystals.svg`,   yieldId: 'mithril_ore', hardness: 85, stock: 3, respawnSec: 900, xp: 65, level: 22,
       rares: [{ id: 'diamond', chance: 0.009 }, { id: 'glimmer_dust', chance: 0.02 }, { id: 'dragon_idol', chance: 0.003 }, { id: 'seers_orb', chance: 0.005 }] },
+    { id: 'obsidianflow', name: 'Obsidian Flow', img: `${MINE}/002-stone.svg`, tint: 'brightness(0.5) saturate(1.4) hue-rotate(260deg)', yieldId: 'obsidian', hardness: 55, stock: 5, respawnSec: 480, xp: 40, level: 17, needsLandmark: 'ancient_quarry',
+      rares: [{ id: 'ruby', chance: 0.008 }, { id: 'fossil', chance: 0.006 }, { id: 'recipe_scroll', chance: 0.01 }] },
+    { id: 'evericevein', name: 'Everice Vein', img: `${WATER}/014-iceberg.svg`, yieldId: 'everice', hardness: 95, stock: 2, respawnSec: 1200, xp: 75, level: 24, needsLandmark: 'frozen_peak',
+      rares: [{ id: 'diamond', chance: 0.012 }, { id: 'glacier_shard', chance: 0.008 }] },
   ],
   meadow: [
     { id: 'berry',   name: 'Berry Bush',    img: `${SNACK}/049-berries.svg`,  yieldId: 'berries',  hardness: 5,  stock: 5, respawnSec: 50,  xp: 4,  level: 1,
@@ -358,6 +376,12 @@ export const NODES = {
       rares: [{ id: 'moonpetal', chance: 0.010 }] },
     { id: 'moonglade', name: 'Moonlit Glade', img: `${NAT}/010-tulip.svg`, tint: T.purple, yieldId: 'moonpetal', hardness: 30, stock: 2, respawnSec: 600, xp: 32, level: 20,
       rares: [{ id: 'glimmer_dust', chance: 0.02 }, { id: 'unicorn_figurine', chance: 0.003 }, { id: 'bottled_fairy', chance: 0.002 }] },
+    { id: 'hermitgarden', name: "Hermit's Garden", img: `${COOK}/025-bok choy.svg`, yieldId: 'hermit_greens', hardness: 12, stock: 4, respawnSec: 180, xp: 15, level: 8, needsLandmark: 'hermits_hut',
+      rares: [{ id: 'mint', chance: 0.2 }, { id: 'recipe_scroll', chance: 0.02 }] },
+    { id: 'glowring', name: 'Glowcap Ring', img: `${FV}/049-mushroom.svg`, tint: 'hue-rotate(160deg) saturate(1.8) brightness(1.35)', yieldId: 'glowcap', hardness: 18, stock: 3, respawnSec: 260, xp: 22, level: 12, needsLandmark: 'glow_clearing',
+      rares: [{ id: 'truffle', chance: 0.02 }, { id: 'glimmer_dust', chance: 0.015 }] },
+    { id: 'honeyfall', name: 'Honeyfall Grove', img: `${SWEET}/048-honey.svg`, tint: T.gold, yieldId: 'royal_honey', hardness: 30, stock: 2, respawnSec: 600, xp: 30, level: 16, needsLandmark: 'bear_cave',
+      rares: [{ id: 'honey_comb', chance: 0.02 }, { id: 'golden_feather', chance: 0.006 }] },
   ],
 };
 
@@ -377,12 +401,19 @@ export const FISHING_SPOTS = [
     table: [['salmon', 15], ['tang', 13], ['pike', 12], ['puffer', 9], ['sturgeon', 8], ['lionfish', 1.6], ['golden_koi', 1], ['ghostfin', 1.5], ['enchanted_mirror', 0.3]] },
   { id: 'deep',   name: 'The Deepshine',  img: `${WATER}/048-ocean.svg`, rod: 5, level: 22,
     table: [['pike', 15], ['sturgeon', 13], ['tang', 10], ['lionfish', 2.5], ['golden_koi', 2], ['ghostfin', 2], ['leviathan', 0.5], ['glacier_shard', 0.7], ['pearl', 2]] },
+  // ── Landmark waters — found on the Wild Map, fished nowhere else ──────────
+  { id: 'rapids', name: 'Roaring Rapids', img: `${ADV}/034-kayak.svg`, rod: 2, level: 10, needsLandmark: 'kayak_rapids',
+    table: [['rapid_darter', 22], ['trout', 18], ['flyingfish', 14], ['salmon', 12], ['bass', 12], ['eel', 8], ['pearl', 1.2], ['recipe_scroll', 0.8]] },
+  { id: 'mistshallows', name: 'Misty Shallows', img: `${SURV}/017-island.svg`, rod: 3, level: 14, needsLandmark: 'misty_island',
+    table: [['fogfish', 20], ['eel', 14], ['puffer', 12], ['tang', 12], ['catfish', 12], ['stormfin', 2.2], ['ghostfin', 1.6], ['pearl', 2], ['enchanted_mirror', 0.3]] },
+  { id: 'edgepool', name: 'Edge Tidepool', img: `${ADV}/025-globe.svg`, rod: 5, level: 24, needsLandmark: 'worlds_edge',
+    table: [['stormfin', 12], ['pike', 14], ['sturgeon', 12], ['tang', 10], ['golden_koi', 2.2], ['voidfin', 1.2], ['leviathan', 0.8], ['glacier_shard', 0.8], ['pearl', 2.2]] },
 ];
 export const JUNK_IDS = ['kelp', 'driftwood', 'old_boot'];
 export const FISH_WAIT_MIN_S = 5;
 export const FISH_WAIT_MAX_S = 20;
 export const FISH_BITE_WINDOW_MS = 2400;
-export const FISH_XP = { minnow: 4, shrimp: 5, perch: 6, trout: 10, codfish: 11, bass: 14, prawn: 15, catfish: 18, flyingfish: 20, eel: 22, puffer: 26, salmon: 28, tang: 31, pike: 36, sturgeon: 46, lionfish: 55, ghostfin: 60, golden_koi: 90, leviathan: 220, pearl: 35, glacier_shard: 40, enchanted_mirror: 40, old_junk: 1 };
+export const FISH_XP = { minnow: 4, shrimp: 5, perch: 6, trout: 10, codfish: 11, bass: 14, prawn: 15, catfish: 18, flyingfish: 20, eel: 22, puffer: 26, salmon: 28, tang: 31, pike: 36, sturgeon: 46, lionfish: 55, ghostfin: 60, golden_koi: 90, leviathan: 220, pearl: 35, glacier_shard: 40, enchanted_mirror: 40, old_junk: 1, rapid_darter: 32, fogfish: 40, stormfin: 52, voidfin: 150, recipe_scroll: 10 };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TOOLS (slower growth — upgrades matter)
@@ -639,6 +670,14 @@ export const RECIPES = [
   R('cinnamon_roll', 'Cinnamon Roll', `${SWEET}/009-cinnamon roll.svg`, 2, { cookLevel: 21 }, { cinnamon: 1, sugar: 2, egg: 1, milk: 1 }, 7, 36, { type: 'xpBoost', value: 32, minutes: 30 }, 'A spiral of pure motivation.'),
   R('pineapple_ham', 'Pineapple Glazed Ham', `${COOK}/001-pre prepared meals.svg`, 2, { cookLevel: 23 }, { pineapple: 1, bacon: 2, honey: 1 }, 8, 40, { type: 'expLuck', value: 30, minutes: 30 }, 'Controversial. Delicious.'),
 
+  // ── Landmark larder — cooked from Wild Map discoveries ───────────────────
+  R('hermit_salad', "Hermit's Salad", `${SNACK}/004-edamame.svg`, 0, { cookLevel: 10 }, { hermit_greens: 2, cucumber: 1, olive_oil: 1 }, 2, 20, { type: 'xpBoost', value: 20, minutes: 22 }, 'Wisdom, lightly dressed.'),
+  R('glowcap_stew', 'Glowcap Stew', `${COOK}/035-cooking pot.svg`, 1, { cookLevel: 14 }, { glowcap: 2, potato: 1, garlic: 1 }, 5, 26, { type: 'rareLuck', value: 22, minutes: 25 }, 'It glows going down.'),
+  R('honey_glaze', 'Royal Honey Glaze', `${SWEET}/005-syrup.svg`, 2, { cookLevel: 22 }, { royal_honey: 1, meat: 2, ginger: 1 }, 8, 42, { type: 'gatherSpeed', value: 36, minutes: 30 }, 'The bears were right about this.'),
+  R('frost_smoked', 'Frost-Smoked Salmon', `${COOK}/002-pre prepared meals.svg`, 1, { scroll: true }, { salmon: 1, frost_wood: 1, salt: 1 }, 6, 38, { type: 'fishLuck', value: 34, minutes: 28 }, 'Cold smoke, colder nerve.'),
+  R('everice_slush', 'Everice Slushie', `${SWEET}/012-popsicle.svg`, 2, { scroll: true }, { everice: 1, blueberry: 2, honey: 1 }, 4, 50, { type: 'fishFast', value: 40, minutes: 32 }, 'Brain freeze with benefits.'),
+  R('voidfin_feast', 'Voidfin Feast', `${SNACK}/048-sashimi.svg`, 2, { scroll: true }, { voidfin: 1, glowcap: 2, salt: 2 }, 12, 130, { type: 'doubleDrop', value: 45, minutes: 45 }, 'Tastes like the edge of the map.'),
+
   // ── Scroll recipes (found in the wilds — stronger) ────────────────────────
   R('frost_salad', 'Frostcrisp Salad', `${SNACK}/015-kale.svg`, 1, { scroll: true }, { frost_lettuce: 1, cucumber: 1, olive_oil: 1 }, 2, 34, { type: 'fishFast', value: 32, minutes: 28 }, 'Crunches like first frost.'),
   R('ember_chili', 'Emberfire Chili', `${COOK}/038-paprika.svg`, 2, { scroll: true }, { ember_pepper: 1, meat: 2, tomato: 2 }, 8, 48, { type: 'gatherSpeed', value: 40, minutes: 30 }, 'Approach with bread and courage.'),
@@ -762,6 +801,17 @@ export const CRAFTS = [
   { id: 'gamelocker', cat: 'gear', name: 'Game Locker', img: `${HUNT}/001-hide.svg`, tint: T.dark, prosperity: 16, needs: ['knife1'],
     items: { plank: 10, hide: 8, bone: 10, salt: 3 }, kindStore: { kinds: ['meat', 'material'], slots: 8 },
     desc: '8 extra slots for MEAT and hunted MATERIALS.' },
+
+  // Gear — forged from LANDMARK resources (Wild Map endgame)
+  { id: 'obsidianedge', cat: 'gear', name: 'Obsidian-Edged Tools', img: `${CAMP}/003-knife.svg`, tint: T.purple, prosperity: 30, needs: ['toolshed'],
+    items: { obsidian: 12, frost_wood: 6, silver_bar: 4 }, effect: { gatherSpeed: 8 },
+    desc: 'Volcanic glass edges on every tool: +8% gathering power.' },
+  { id: 'glowlantern', cat: 'gear', name: 'Glowcap Lantern', img: `${CAMP}/002-oil-lamp.svg`, tint: T.green, prosperity: 24, needs: ['torch'],
+    items: { glowcap: 8, glimmer_dust: 1, copper_bar: 3 }, scavBonus: 15, effect: { rareLuck: 4 },
+    desc: 'Lights the shadows where rares hide: +15% scavenge loot, +4% rare luck.' },
+  { id: 'icebox', cat: 'gear', name: 'Everice Icebox', img: `${MORE}/004-crate.svg`, tint: T.silver, prosperity: 28, needs: ['fishcooler'],
+    items: { everice: 2, frost_wood: 10, iron_bar: 4 }, kindStore: { kinds: ['fish'], slots: 6 }, effect: { fishLuck: 5 },
+    desc: 'Never-melting ice: 6 more fish-only slots and +5% fishing luck.' },
 
   // Gear — expedition upgrades
   { id: 'knife1', cat: 'gear', name: 'Hunting Knife', img: `${CAMP}/003-knife.svg`, prosperity: 8, needs: ['workbench'],

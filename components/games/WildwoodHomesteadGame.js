@@ -564,11 +564,14 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     setTimeout(() => setFloaties((f) => f.filter((x) => x.id !== id)), 900);
   };
 
+  const landmarkFound = (id) => !id || (gsRef.current.discoveredLandmarks || []).includes(id);
+
   const strikeNode = (zoneDef, node) => {
     if (!registerStrike()) return;
     const skill = zoneDef.skill;
     const lvl = skillLevel(gsRef.current.skills?.[skill] || 0);
     if (lvl < node.level) return;
+    if (!landmarkFound(node.needsLandmark)) return;
     const key = `${zoneDef.id}_${node.id}`;
     const st = nodeStateRef.current[key] || { stock: node.stock, hitsLeft: clicksNeeded(node, zoneDef.tool), respawnAt: 0 };
     if (st.respawnAt > now()) return;
@@ -1201,15 +1204,16 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                   <div className="rounded-2xl border-2 border-blue-900/60 overflow-hidden">
                     <div className="p-3 bg-slate-900 flex flex-wrap gap-1.5 border-b border-blue-900/40">
                       {FISHING_SPOTS.map((s) => {
-                        const locked = (gs.tools?.rod || 0) < s.rod || lvl < s.level;
+                        const lmMissing = s.needsLandmark && !(gs.discoveredLandmarks || []).includes(s.needsLandmark);
+                        const locked = (gs.tools?.rod || 0) < s.rod || lvl < s.level || lmMissing;
                         return (
                           <button key={s.id} onClick={() => !locked && setSpot(s.id)} disabled={locked}
                             className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ${
                               spot === s.id ? 'bg-sky-600 text-white' : locked ? 'bg-slate-800 text-slate-600' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                            }`}
-                            title={locked ? `Needs ${TOOL_TIERS[s.rod].name} Rod + Fishing Lv ${s.level}` : s.name}>
+                            } ${s.needsLandmark && !lmMissing ? 'ring-1 ring-purple-500/50' : ''}`}
+                            title={lmMissing ? `Discover ${LANDMARK_MAP[s.needsLandmark]?.name} on the Wild Map to fish here!` : locked ? `Needs ${TOOL_TIERS[s.rod].name} Rod + Fishing Lv ${s.level}` : s.name}>
                             <Ico src={s.img} size="w-4 h-4" className={locked ? 'grayscale opacity-40' : ''} />
-                            {locked ? `Lv ${s.level}` : s.name}
+                            {lmMissing ? '🗺️ ???' : locked ? `Lv ${s.level}` : s.name}
                           </button>
                         );
                       })}
@@ -1264,7 +1268,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                       {NODES[z.id].map((node) => {
                         const key = `${z.id}_${node.id}`;
                         const st = nodeState[key] || { stock: node.stock, hitsLeft: clicksNeeded(node, z.tool), respawnAt: 0 };
-                        const locked = lvl < node.level;
+                        const lmMissing = node.needsLandmark && !(gs.discoveredLandmarks || []).includes(node.needsLandmark);
+                        const locked = lvl < node.level || lmMissing;
                         const respawning = st.respawnAt > now();
                         const need = clicksNeeded(node, z.tool);
                         const yieldItem = ITEMS[node.yieldId];
@@ -1280,14 +1285,16 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                           >
                             <div className="flex justify-center">
                               <Ico
-                                src={z.id === 'forest' && respawning ? STUMP_ICON : node.img}
-                                tint={respawning ? 'grayscale(1) opacity(0.5)' : node.tint}
+                                src={lmMissing ? FALLBACK_ICON : z.id === 'forest' && respawning ? STUMP_ICON : node.img}
+                                tint={lmMissing ? 'grayscale(1) opacity(0.6)' : respawning ? 'grayscale(1) opacity(0.5)' : node.tint}
                                 size="w-16 h-16 md:w-20 md:h-20"
                                 style={{ animation: !locked && !respawning ? 'wh-bob 2.6s ease-in-out infinite' : undefined }}
                               />
                             </div>
-                            <p className="font-bold text-white text-sm mt-1 drop-shadow">{node.name}</p>
-                            {locked ? (
+                            <p className="font-bold text-white text-sm mt-1 drop-shadow">{lmMissing ? '???' : node.name}</p>
+                            {lmMissing ? (
+                              <p className="text-xs text-purple-300 font-bold mt-1">🗺️ Discover {LANDMARK_MAP[node.needsLandmark]?.name} on the Wild Map!</p>
+                            ) : locked ? (
                               <p className="text-xs text-slate-400 font-bold mt-1">{SKILLS[z.skill].name} Lv {node.level} required</p>
                             ) : respawning ? (
                               <p className="text-xs text-amber-400 font-bold mt-1">Regrowing… {fmtCountdown(st.respawnAt - now())}</p>

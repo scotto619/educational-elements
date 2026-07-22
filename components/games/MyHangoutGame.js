@@ -122,9 +122,96 @@ const roomProfileOf = (hangoutData, sweetEmpireData, menagerieData) => {
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
+// COMPANION SPRITE — greets you at the door, shakes with joy, then potters
+// around the room sniffing at the furniture.
+// Phases: greet (runs to your avatar) → shake (happy wiggle + hearts) →
+// explore (walks to a random decoration or spot) → pause (looks around) → …
+// ═════════════════════════════════════════════════════════════════════════════
+function CompanionSprite({ companion, area, myPosRef }) {
+  const divRef = useRef(null);
+  const faceRef = useRef(null);
+  const posRef = useRef({ x: 4, y: 86 });
+  const targetRef = useRef(null);
+  const pauseUntilRef = useRef(0);
+  const [phase, setPhase] = useState('greet');
+  const phaseRef = useRef('greet'); phaseRef.current = phase;
+
+  // A fresh room (or different companion) restarts the greeting from the door
+  useEffect(() => {
+    posRef.current = { x: 4, y: 86 };
+    targetRef.current = null;
+    setPhase('greet');
+  }, [companion?.name, area]);
+
+  useEffect(() => {
+    let raf;
+    const step = () => {
+      const p = posRef.current;
+      const ph = phaseRef.current;
+      let target = null;
+      if (ph === 'greet') {
+        const me = myPosRef?.current || { x: 50, y: 80 };
+        target = { x: clamp(me.x - 7, 3, 97), y: clamp(me.y + 2, 56, 93) };
+      } else if (ph === 'explore') {
+        target = targetRef.current;
+      }
+      if (target) {
+        const dx = target.x - p.x, dy = target.y - p.y;
+        const d = Math.hypot(dx, dy);
+        const speed = ph === 'greet' ? 0.6 : 0.22; // sprints to say hi, ambles after
+        if (d < 1.4) {
+          if (ph === 'greet') { pauseUntilRef.current = Date.now() + 2000; setPhase('shake'); }
+          else { pauseUntilRef.current = Date.now() + 1200 + Math.random() * 2400; setPhase('pause'); }
+        } else {
+          p.x += (dx / d) * speed;
+          p.y += (dy / d) * speed;
+          if (faceRef.current) faceRef.current.style.transform = `scaleX(${dx >= 0 ? 1 : -1})`;
+        }
+      } else if ((ph === 'shake' || ph === 'pause') && Date.now() >= pauseUntilRef.current) {
+        // Next stop: usually a piece of furniture to investigate, sometimes a random sniff-spot
+        const decorations = (area?.placed || []).filter((q) => (q.y || 0) > 50);
+        const pick = decorations.length > 0 && Math.random() < 0.65
+          ? decorations[Math.floor(Math.random() * decorations.length)]
+          : null;
+        targetRef.current = pick
+          ? { x: clamp(pick.x + (Math.random() * 12 - 6), 3, 97), y: clamp(pick.y + 4, 56, 93) }
+          : { x: 5 + Math.random() * 90, y: 56 + Math.random() * 36 };
+        setPhase('explore');
+      }
+      if (divRef.current) {
+        divRef.current.style.left = `${p.x}%`;
+        divRef.current.style.top = `${p.y}%`;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [area, myPosRef]);
+
+  return (
+    <div ref={divRef} className="absolute pointer-events-none" style={{ left: '4%', top: '86%', transform: 'translate(-50%,-50%)', zIndex: 60 }}
+      title={`${companion.name} (Lv ${companion.level})`}>
+      {phase === 'shake' && (
+        <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-base" style={{ animation: 'hg-note 1.1s linear infinite' }}>❤️</span>
+      )}
+      <span ref={faceRef} className="block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={companion.img} alt="" className="w-10 h-10 md:w-14 md:h-14 rounded-full object-cover border-2 border-white/80 shadow-lg"
+          style={{
+            ...(companion.shiny ? { filter: shinyFilter } : {}),
+            animation: phase === 'shake' ? 'hg-shake 0.35s ease-in-out infinite'
+              : phase === 'pause' ? 'hg-look 2.6s ease-in-out infinite'
+              : 'hg-trot 0.5s ease-in-out infinite',
+          }} />
+      </span>
+    </div>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // ROOM VIEW — one area, free-placed furniture, live players
 // ═════════════════════════════════════════════════════════════════════════════
-function RoomView({ profile, areaId, ownerName, editMode, placingZone, players = {}, myId, myPosDivRef, myInfo, onRoomClick, onItemClick, musicPlaying }) {
+function RoomView({ profile, areaId, ownerName, editMode, placingZone, players = {}, myId, myPosDivRef, myPosRef, myInfo, onRoomClick, onItemClick, musicPlaying }) {
   const { hangout, weapon, companion } = profile;
   const area = hangout.areas[areaId] || hangout.areas.main;
   const areaDef = AREA_MAP[areaId] || AREA_MAP.main;
@@ -147,7 +234,9 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
       className={`relative w-full rounded-2xl overflow-hidden border-4 border-amber-900/50 shadow-2xl select-none ${placingZone ? 'cursor-crosshair' : ''}`}
       style={{ aspectRatio: '2 / 1.05', minHeight: 320 }}>
       <style>{`
-        @keyframes hg-walk { 0% { left: 12%; transform: scaleX(1); } 48% { left: 80%; transform: scaleX(1); } 52% { left: 80%; transform: scaleX(-1); } 98% { left: 12%; transform: scaleX(-1); } 100% { left: 12%; transform: scaleX(1); } }
+        @keyframes hg-shake { 0%,100% { transform: rotate(-9deg) translateY(0); } 25% { transform: rotate(9deg) translateY(-3px); } 50% { transform: rotate(-9deg) translateY(0); } 75% { transform: rotate(9deg) translateY(-3px); } }
+        @keyframes hg-trot { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        @keyframes hg-look { 0%,55%,100% { transform: rotate(0deg); } 15% { transform: rotate(-7deg); } 35% { transform: rotate(7deg); } 75% { transform: translateY(-2px); } }
         @keyframes hg-hover { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         @keyframes hg-glow { 0%,100% { filter: drop-shadow(0 0 3px rgba(251,191,36,0.7)); } 50% { filter: drop-shadow(0 0 10px rgba(251,191,36,1)); } }
         @keyframes hg-note { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-26px); } }
@@ -244,14 +333,8 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
         );
       })}
 
-      {/* Companion wanders */}
-      {companion && (
-        <div className="absolute pointer-events-none" style={{ top: '80%', animation: 'hg-walk 16s linear infinite', zIndex: 60 }} title={`${companion.name} (Lv ${companion.level})`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={companion.img} alt="" className="w-10 h-10 md:w-14 md:h-14 rounded-full object-cover border-2 border-white/80 shadow-lg"
-            style={companion.shiny ? { filter: shinyFilter } : undefined} />
-        </div>
-      )}
+      {/* Companion: greets you, shakes happily, then explores the decorations */}
+      {companion && <CompanionSprite companion={companion} area={area} myPosRef={myPosRef} />}
 
       {/* Live visitors */}
       {Object.entries(players).map(([pid, p]) => pid !== myId && (
@@ -902,6 +985,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
             players={players}
             myId={myId}
             myPosDivRef={myPosDivRef}
+            myPosRef={myPosRef}
             myInfo={myInfo}
             onRoomClick={roomClicked}
             onItemClick={itemClicked}
@@ -1133,6 +1217,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
                 players={players}
                 myId={myId}
                 myPosDivRef={myPosDivRef}
+                myPosRef={myPosRef}
                 myInfo={myInfo}
                 onItemClick={itemClicked}
                 musicPlaying={musicPlayingHere}

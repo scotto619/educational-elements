@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="0.5" stop-color="#1e1b4b"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f87171"/>
+      <stop offset="1" stop-color="#b91c1c"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="cream" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffbeb"/>
+      <stop offset="1" stop-color="#fde68a"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f87171"/>
+      <stop offset="0.5" stop-color="#c084fc"/>
+      <stop offset="1" stop-color="#60a5fa"/>
+    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <circle cx="90" cy="90" r="130" fill="#dc2626" opacity="0.14" filter="url(#soft)"/>
+  <circle cx="430" cy="430" r="140" fill="#2563eb" opacity="0.16" filter="url(#soft)"/>
+
+  <!-- Card grid -->
+  <g transform="translate(76,88) rotate(-4 180 120)">
+    <!-- row 1 -->
+    <rect x="0"   y="0" width="82" height="56" rx="10" fill="url(#red)"   stroke="#fecaca" stroke-width="2"/>
+    <rect x="92"  y="0" width="82" height="56" rx="10" fill="url(#cream)" stroke="#d6b268" stroke-width="2"/>
+    <rect x="184" y="0" width="82" height="56" rx="10" fill="url(#blue)"  stroke="#bfdbfe" stroke-width="2"/>
+    <rect x="276" y="0" width="82" height="56" rx="10" fill="url(#cream)" stroke="#d6b268" stroke-width="2"/>
+    <!-- row 2 -->
+    <rect x="0"   y="66" width="82" height="56" rx="10" fill="url(#cream)" stroke="#d6b268" stroke-width="2"/>
+    <rect x="92"  y="66" width="82" height="56" rx="10" fill="url(#blue)"  stroke="#bfdbfe" stroke-width="2"/>
+    <rect x="184" y="66" width="82" height="56" rx="10" fill="#18181b"     stroke="#52525b" stroke-width="2"/>
+    <rect x="276" y="66" width="82" height="56" rx="10" fill="url(#red)"   stroke="#fecaca" stroke-width="2"/>
+    <!-- row 3 -->
+    <rect x="0"   y="132" width="82" height="56" rx="10" fill="url(#blue)"  stroke="#bfdbfe" stroke-width="2"/>
+    <rect x="92"  y="132" width="82" height="56" rx="10" fill="url(#red)"   stroke="#fecaca" stroke-width="2"/>
+    <rect x="184" y="132" width="82" height="56" rx="10" fill="url(#cream)" stroke="#d6b268" stroke-width="2"/>
+    <rect x="276" y="132" width="82" height="56" rx="10" fill="url(#blue)"  stroke="#bfdbfe" stroke-width="2"/>
+
+    <!-- card marks: vector stars + skull -->
+    <path transform="translate(41,28) scale(1.15)" fill="#ffffff" d="M0,-12 L3.5,-3.7 L12,-3.7 L5,1.8 L7.4,10 L0,5 L-7.4,10 L-5,1.8 L-12,-3.7 L-3.5,-3.7 Z"/>
+    <path transform="translate(225,28) scale(1.15)" fill="#ffffff" d="M0,-12 L3.5,-3.7 L12,-3.7 L5,1.8 L7.4,10 L0,5 L-7.4,10 L-5,1.8 L-12,-3.7 L-3.5,-3.7 Z"/>
+    <g transform="translate(225,92)">
+      <circle cx="0" cy="-2" r="11" fill="#f87171"/>
+      <rect x="-7" y="5" width="14" height="7" rx="2.5" fill="#f87171"/>
+      <circle cx="-4.2" cy="-3" r="2.8" fill="#18181b"/>
+      <circle cx="4.2" cy="-3" r="2.8" fill="#18181b"/>
+      <rect x="-1.2" y="1.5" width="2.4" height="4" rx="1" fill="#18181b"/>
+    </g>
+    <rect x="14" y="86" width="54" height="8" rx="4" fill="#b45309" opacity="0.45"/>
+    <rect x="106" y="20" width="54" height="8" rx="4" fill="#b45309" opacity="0.45"/>
+    <rect x="290" y="20" width="54" height="8" rx="4" fill="#b45309" opacity="0.45"/>
+    <rect x="198" y="152" width="54" height="8" rx="4" fill="#b45309" opacity="0.45"/>
+  </g>
+
+  <!-- Magnifying glass -->
+  <g transform="translate(318,180) rotate(18)">
+    <circle cx="0" cy="0" r="58" fill="none" stroke="#e2e8f0" stroke-width="14"/>
+    <circle cx="0" cy="0" r="50" fill="#93c5fd" opacity="0.18"/>
+    <rect x="-11" y="52" width="24" height="80" rx="12" fill="#e2e8f0"/>
+  </g>
+
+  <!-- Title -->
+  <text x="256" y="388" font-family="Arial Black, Arial, sans-serif" font-size="64" text-anchor="middle" fill="#ffffff" font-weight="900" letter-spacing="4">WORD</text>
+  <text x="256" y="456" font-family="Arial Black, Arial, sans-serif" font-size="64" text-anchor="middle" fill="url(#titleGrad)" font-weight="900" letter-spacing="2">AGENTS</text>
+</svg>

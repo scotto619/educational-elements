@@ -32,6 +32,7 @@ const InteractiveAngles    = lazy(() => import('../curriculum/mathematics/Intera
 const AreaPerimeterTool    = lazy(() => import('../curriculum/mathematics/AreaPerimeterTool'));
 const InteractiveClock     = lazy(() => import('../curriculum/mathematics/InteractiveClock'));
 const WorksheetGenerator   = lazy(() => import('../curriculum/mathematics/WorksheetGenerator'));
+const ColumnStrategy       = lazy(() => import('../curriculum/mathematics/ColumnStrategy'));
 
 // Science tools (moved here from the Resource Hub)
 const SolarSystemExplorer  = lazy(() => import('../curriculum/science/SolarSystemExplorer'));
@@ -110,6 +111,9 @@ const RESOURCE_TOOLS = [
   { id: 'math-warmup', group: 'Mathematics', name: 'Math Warmup', emoji: '🔥', component: MathWarmup,
     description: 'Daily warm-up number activities.',
     borderColor: 'border-orange-300', bgColor: 'bg-orange-50', hoverColor: 'hover:bg-orange-100' },
+  { id: 'column-strategy', group: 'Mathematics', name: 'Column Strategy Lab', emoji: '🧱', component: ColumnStrategy,
+    description: 'Interactive column addition & subtraction — guided carrying and borrowing, worked examples, and step-checked practice.',
+    badge: 'NEW', badgeColor: 'bg-emerald-100 text-emerald-700', borderColor: 'border-indigo-300', bgColor: 'bg-indigo-50', hoverColor: 'hover:bg-indigo-100' },
   { id: 'fraction-visualiser', group: 'Mathematics', name: 'Fraction Visualiser', emoji: '½', component: FractionVisualiser,
     description: 'Bar, circle, grid & number line models.',
     badge: 'NEW', badgeColor: 'bg-emerald-100 text-emerald-700', borderColor: 'border-teal-300', bgColor: 'bg-teal-50', hoverColor: 'hover:bg-teal-100' },

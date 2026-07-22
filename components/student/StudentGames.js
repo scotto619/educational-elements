@@ -37,6 +37,7 @@ const UNOGame = dynamic(() => import('../games/UNOGame'), { loading: GameLoading
 const ChessGame = dynamic(() => import('../games/ChessGame'), { loading: GameLoadingSpinner, ssr: false });
 const WerewolfGame = dynamic(() => import('../games/WerewolfGame'), { loading: GameLoadingSpinner, ssr: false });
 const WordImposterGame = dynamic(() => import('../games/WordImposterGame'), { loading: GameLoadingSpinner, ssr: false });
+const WordAgentsGame = dynamic(() => import('../games/WordAgentsGame'), { loading: GameLoadingSpinner, ssr: false });
 const Game2048 = dynamic(() => import('../games/Game2048'), { loading: GameLoadingSpinner, ssr: false });
 const WildwoodHomesteadGame = dynamic(() => import('../games/WildwoodHomesteadGame'), { loading: GameLoadingSpinner, ssr: false });
 const NeonTetrisGame = dynamic(() => import('../games/NeonTetrisGame'), { loading: GameLoadingSpinner, ssr: false });
@@ -508,6 +509,21 @@ const StudentGames = ({ studentData, showToast, updateStudentData, classData }) 
       new: true,
       category: 'multiplayer',
       logo: getGameLogo('word-imposter')
+    },
+    {
+      id: 'word-agents',
+      name: 'Word Agents',
+      icon: '🕵️‍♂️',
+      description: 'Red team vs Blue team! Spymasters give one-word clues to guide their agents to the right words on a 5x5 grid — but avoid the enemy words, and whatever you do, DON\'T tap the assassin. 4+ players.',
+      component: WordAgentsGame,
+      color: 'from-red-600 to-blue-700',
+      difficulty: 'Medium',
+      time: '10-20 minutes',
+      multiplayer: true,
+      featured: true,
+      new: true,
+      category: 'multiplayer',
+      logo: getGameLogo('word-agents')
     },
     {
       id: 'tic-tac-toe',

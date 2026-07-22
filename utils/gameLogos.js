@@ -66,6 +66,7 @@ const GAME_LOGO_MAP = {
   uno: [`${GL}/Uno.png`, '/Logo/Game Logos/uno.svg'],
   werewolf: [`${GL}/One Night Werewolf.png`, `${GL}/werewolf.svg`],
   'whack-a-mole': [`${GL}/Whack a mole.png`],
+  'word-agents': [`${GL}/Codenames.png`, `${GL}/Word Agents.svg`],
   'word-hunt': [`${GL}/Word Hunt.png`],
   'word-imposter': [`${GL}/Word Imposter.png`],
   'word-scramble': [`${GL}/Word Scramble.png`],

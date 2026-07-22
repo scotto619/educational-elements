@@ -5,6 +5,7 @@ import StudentMoneyMasters from './StudentMoneyMasters';
 import InteractiveAngles from '../curriculum/mathematics/InteractiveAngles';
 import StudentMathChallenge from './StudentMathChallenge';
 import NumbersBoard from '../curriculum/mathematics/NumbersBoard';
+import ColumnStrategy from '../curriculum/mathematics/ColumnStrategy';
 import TimesTablesDojo from './TimesTablesDojo';
 import { DAILY_MATH_CHALLENGES } from '../curriculum/mathematics/data/dailyChallenges';
 
@@ -346,6 +347,14 @@ const StudentMaths = ({
       description: 'Learn real money skills! Pass lessons, beat boss challenges, earn badges and grow your own virtual bank',
       color: 'from-yellow-500 to-amber-600',
       component: StudentMoneyMasters
+    },
+    {
+      id: 'column-strategy',
+      name: 'Column Strategy Lab',
+      icon: '🧱',
+      description: 'Master column addition & subtraction! Learn carrying and borrowing step by step, then practise with a guide that checks every move',
+      color: 'from-indigo-500 to-purple-600',
+      component: ColumnStrategy
     },
     {
       id: 'interactive-angles',
