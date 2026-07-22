@@ -108,6 +108,18 @@ export const ITEMS = {
   glimmer_dust: { name: 'Glimmer Dust',  img: `${MAGIC}/032-magic dust.svg`, kind: 'rareIng', sell: 60, rarity: 'epic' },
 
   // ── Crops + seeds ─────────────────────────────────────────────────────────
+  radish:       { name: 'Radish',        img: `${FV}/007-radish.svg`, kind: 'crop', sell: 2, rarity: 'common' },
+  cucumber:     { name: 'Cucumber',      img: `${FV}/008-cucumber.svg`, kind: 'crop', sell: 3, rarity: 'common' },
+  peas:         { name: 'Sweet Peas',    img: `${FV}/006-peas.svg`, kind: 'crop', sell: 3, rarity: 'common' },
+  broccoli:     { name: 'Broccoli',      img: `${FV}/005-broccoli.svg`, kind: 'crop', sell: 4, rarity: 'common' },
+  eggplant:     { name: 'Eggplant',      img: `${FV}/009-eggplant.svg`, kind: 'crop', sell: 5, rarity: 'uncommon' },
+  sweet_potato: { name: 'Sweet Potato',  img: `${FV}/032-sweet potato.svg`, kind: 'crop', sell: 6, rarity: 'uncommon' },
+  blueberry:    { name: 'Blueberries',   img: `${FV}/011-blueberry.svg`, kind: 'crop', sell: 8, rarity: 'uncommon' },
+  pineapple:    { name: 'Pineapple',     img: `${FV}/037-pineapple.svg`, kind: 'crop', sell: 12, rarity: 'rare' },
+  frost_lettuce: { name: 'Frostcrisp Lettuce', img: `${FV}/017-lettuce.svg`, tint: T.teal, kind: 'crop', sell: 16, rarity: 'rare' },
+  ember_pepper: { name: 'Ember Pepper',  img: `${FV}/028-pepper.svg`, tint: T.red, kind: 'crop', sell: 20, rarity: 'epic' },
+  moon_melon:   { name: 'Moon Melon',    img: `${FV}/004-melon.svg`, tint: T.purple, kind: 'crop', sell: 30, rarity: 'epic' },
+  royal_grapes: { name: 'Royal Grapes',  img: `${FV}/044-grapes.svg`, tint: T.gold, kind: 'crop', sell: 38, rarity: 'legendary' },
   carrot:       { name: 'Carrot',        img: `${FV}/035-carrot.svg`, kind: 'crop', sell: 3, rarity: 'common' },
   potato:       { name: 'Potato',        img: `${FV}/025-potato.svg`, kind: 'crop', sell: 3, rarity: 'common' },
   cabbage:      { name: 'Cabbage',       img: `${FV}/003-cabbage.svg`, kind: 'crop', sell: 4, rarity: 'common' },
@@ -169,6 +181,11 @@ export const ITEMS = {
   olive_oil:    { name: 'Olive Oil',     img: `${COOK}/029-olive oil.svg`, kind: 'trade', sell: 5, cost: 10, rarity: 'common' },
   sugar:        { name: 'Sugar',         img: `${SWEET}/025-sugar.svg`, kind: 'trade', sell: 4, cost: 8, rarity: 'common' },
   cocoa:        { name: 'Cocoa',         img: `${SWEET}/011-cocoa.svg`, kind: 'trade', sell: 6, cost: 12, rarity: 'uncommon' },
+  bread:        { name: 'Crusty Bread',  img: `${COOK}/028-bread.svg`, kind: 'trade', sell: 4, cost: 7, rarity: 'common' },
+  almonds:      { name: 'Almonds',       img: `${COOK}/031-almonds.svg`, kind: 'trade', sell: 5, cost: 9, rarity: 'common' },
+  cinnamon:     { name: 'Cinnamon',      img: `${SWEET}/050-cinnamon.svg`, kind: 'trade', sell: 5, cost: 10, rarity: 'uncommon' },
+  vanilla:      { name: 'Vanilla Pod',   img: `${SWEET}/004-vanilla.svg`, kind: 'trade', sell: 7, cost: 14, rarity: 'uncommon' },
+  ginger:       { name: 'Wild Ginger',   img: `${FV}/030-ginger.svg`, kind: 'herb', sell: 5, rarity: 'uncommon' },
 
   // ── Curios (Curio Shelf — unique finds, +5 Prosperity each) ──────────────
   seers_orb:    { name: "Seer's Orb",    img: `${MAGIC}/001-crystal ball.svg`, kind: 'curio', sell: 80, rarity: 'epic' },
@@ -198,6 +215,7 @@ export const ITEMS = {
   lucky_wheel:  { name: 'Wheel of Fortune',   img: `${MAGIC}/045-fortune wheel.svg`, kind: 'furniture', sell: 90, rarity: 'epic' },
   dj_corner:    { name: 'DJ Headphones',      img: `${ADV}/020-headphones.svg`, kind: 'furniture', sell: 90, rarity: 'epic' },
   crystal_lamp: { name: 'Crystal Chandelier', img: `${MINE}/006-crystals.svg`, tint: T.gold, kind: 'furniture', sell: 130, rarity: 'legendary' },
+  garden_gnome: { name: 'Grinning Garden Gnome', img: '/game icons/Hangout/Outdoor/051-gnome.svg', kind: 'furniture', sell: 100, rarity: 'epic' },
 };
 
 export const CURIO_IDS = Object.keys(ITEMS).filter((id) => ITEMS[id].kind === 'curio');
@@ -423,17 +441,17 @@ export const EXPEDITIONS = {
     name: 'Scavenge', img: `${CAMP}/009-binoculars.svg`,
     desc: 'Comb the wilds for materials, seeds and critters.',
     durations: [
-      { minutes: 15,  rolls: 4,  name: 'Quick Look' },
-      { minutes: 60,  rolls: 9,  name: 'Long Ramble' },
-      { minutes: 240, rolls: 22, name: 'Deep Expedition' },
+      { minutes: 5,  rolls: 2,  name: 'Quick Look' },
+      { minutes: 20, rolls: 6,  name: 'Long Ramble' },
+      { minutes: 60, rolls: 14, name: 'Deep Expedition' },
     ],
     table: [
       ['fiber', 20], ['berries', 15], ['acorn', 12], ['basil', 10], ['mushroom', 9],
       ['stone', 8], ['beech_wood', 8], ['wild_egg', 6], ['CRITTER', 6], ['SEED', 5],
-      ['honey', 3], ['rosemary', 3], ['avocado', 2], ['recipe_scroll', 1.2],
-      ['mandrake', 0.8], ['tree_sap', 0.8], ['CURIO', 0.5], ['glimmer_dust', 0.3],
+      ['honey', 3], ['rosemary', 3], ['ginger', 2.5], ['avocado', 2], ['recipe_scroll', 1.2],
+      ['RARESEED', 0.9], ['mandrake', 0.8], ['tree_sap', 0.8], ['CURIO', 0.5], ['glimmer_dust', 0.3],
       ['fossil', 0.25], ['amber', 0.3],
-      ['retro_radio', 0.12], ['lucky_wheel', 0.10], ['dj_corner', 0.10],
+      ['retro_radio', 0.12], ['lucky_wheel', 0.10], ['dj_corner', 0.10], ['garden_gnome', 0.10],
     ],
   },
   hunt: {
@@ -441,38 +459,38 @@ export const EXPEDITIONS = {
     desc: 'Choose your quarry — each beast yields different spoils.',
     needs: 'knife1', // hunting gear craft required
     durations: [
-      { minutes: 30,  rolls: 6,  name: 'Rabbit Run', img: `${HUNT}/007-rabbit.svg`,
+      { minutes: 5,   rolls: 2,  name: 'Rabbit Run', img: `${HUNT}/007-rabbit.svg`,
         table: [
           ['meat', 30], ['hide', 12], ['bone', 12], ['feather', 14], ['fiber', 10],
           ['wild_egg', 8], ['carrot', 6], ['CRITTER', 5], ['recipe_scroll', 0.8],
           ['CURIO', 0.3],
         ] },
-      { minutes: 120, rolls: 13, name: 'Boar Trail', img: `${HUNT}/008-boar.svg`,
+      { minutes: 15,  rolls: 5,  name: 'Boar Trail', img: `${HUNT}/008-boar.svg`,
         table: [
           ['meat', 30], ['hide', 15], ['bone', 15], ['bacon', 9], ['mushroom', 7],
           ['acorn', 7], ['truffle', 2.2], ['CRITTER', 4], ['recipe_scroll', 1],
           ['CURIO', 0.5],
         ] },
-      { minutes: 360, rolls: 26, name: 'Great Deer Hunt', img: `${HUNT}/006-deer.svg`,
+      { minutes: 30,  rolls: 9,  name: 'Great Deer Hunt', img: `${HUNT}/006-deer.svg`,
         table: [
           ['meat', 24], ['hide', 24], ['bone', 13], ['bacon', 7], ['feather', 8],
-          ['golden_feather', 1], ['amber', 0.8], ['glimmer_dust', 0.6],
+          ['golden_feather', 1], ['amber', 0.8], ['glimmer_dust', 0.6], ['RARESEED', 0.8],
           ['hunters_crest', 0.35], ['recipe_scroll', 1.2], ['CRITTER', 4], ['CURIO', 0.7],
           ['retro_radio', 0.15], ['crystal_lamp', 0.08],
         ] },
       // Apex hunts — unlocked by discovering their lairs on the Wild Map
-      { minutes: 720, rolls: 42, name: 'Wolf Pack', img: `${SURV}/024-wolf.svg`, needsLandmark: 'wolf_den', needsCraft: 'bow',
+      { minutes: 45,  rolls: 14, name: 'Wolf Pack', img: `${SURV}/024-wolf.svg`, needsLandmark: 'wolf_den', needsCraft: 'bow',
         table: [
           ['wolf_pelt', 6], ['meat', 26], ['hide', 20], ['bone', 13], ['feather', 4],
           ['golden_feather', 1.2], ['glimmer_dust', 0.8], ['recipe_scroll', 1.4],
-          ['CRITTER', 3], ['CURIO', 0.8],
+          ['RARESEED', 1], ['CRITTER', 3], ['CURIO', 0.8],
         ] },
-      { minutes: 1440, rolls: 64, name: 'The Great Bear', img: `${SURV}/023-bear.svg`, needsLandmark: 'bear_cave', needsCraft: 'bow',
+      { minutes: 60,  rolls: 20, name: 'The Great Bear', img: `${SURV}/023-bear.svg`, needsLandmark: 'bear_cave', needsCraft: 'bow',
         table: [
           ['bear_claw', 5], ['meat', 28], ['bacon', 10], ['hide', 16], ['honey', 8],
           ['golden_feather', 1.4], ['hunters_crest', 0.5], ['glimmer_dust', 1],
-          ['recipe_scroll', 1.6], ['CRITTER', 3], ['CURIO', 1],
-          ['lucky_wheel', 0.15], ['dj_corner', 0.15], ['crystal_lamp', 0.1],
+          ['recipe_scroll', 1.6], ['RARESEED', 1.2], ['CRITTER', 3], ['CURIO', 1],
+          ['lucky_wheel', 0.15], ['dj_corner', 0.15], ['crystal_lamp', 0.1], ['garden_gnome', 0.15],
         ] },
     ],
   },
@@ -500,13 +518,32 @@ export const CROPS = [
   { seedId: 'pumpkin_seed',  cropId: 'pumpkin',    growMin: 45,  yield: 2, seedCost: 32 },
   { seedId: 'watermelon_seed', cropId: 'watermelon', growMin: 52, yield: 2, seedCost: 40 },
   { seedId: 'sunfruit_seed', cropId: 'sunfruit',   growMin: 60,  yield: 1, seedCost: 90 },
+  // New varieties
+  { seedId: 'radish_seed',   cropId: 'radish',     growMin: 0.75, yield: 2, seedCost: 3 },
+  { seedId: 'cucumber_seed', cropId: 'cucumber',   growMin: 4,   yield: 3, seedCost: 7 },
+  { seedId: 'peas_seed',     cropId: 'peas',       growMin: 6,   yield: 4, seedCost: 9 },
+  { seedId: 'broccoli_seed', cropId: 'broccoli',   growMin: 10,  yield: 3, seedCost: 12 },
+  { seedId: 'eggplant_seed', cropId: 'eggplant',   growMin: 15,  yield: 3, seedCost: 15 },
+  { seedId: 'sweet_potato_seed', cropId: 'sweet_potato', growMin: 22, yield: 4, seedCost: 19 },
+  { seedId: 'blueberry_seed', cropId: 'blueberry', growMin: 28,  yield: 4, seedCost: 24 },
+  { seedId: 'pineapple_seed', cropId: 'pineapple', growMin: 40,  yield: 2, seedCost: 34 },
+  // FIND-ONLY seeds — never sold; hunt them down on expeditions!
+  { seedId: 'frost_lettuce_seed', cropId: 'frost_lettuce', growMin: 20, yield: 3, seedCost: 30, findOnly: true },
+  { seedId: 'ember_pepper_seed',  cropId: 'ember_pepper',  growMin: 35, yield: 2, seedCost: 40, findOnly: true },
+  { seedId: 'moon_melon_seed',    cropId: 'moon_melon',    growMin: 50, yield: 2, seedCost: 55, findOnly: true },
+  { seedId: 'royal_grapes_seed',  cropId: 'royal_grapes',  growMin: 60, yield: 2, seedCost: 70, findOnly: true },
 ];
 export const CROP_BY_SEED = Object.fromEntries(CROPS.map((c) => [c.seedId, c]));
 export const GOLDEN_CROP_CHANCE = 0.04;
-// Seeds share one sprout icon
+// Seeds share one sprout icon (find-only seeds get a mythic shimmer)
 CROPS.forEach((c) => {
-  ITEMS[c.seedId] = { name: `${ITEMS[c.cropId].name} Seed`, img: `${FARM}/003-sprout.svg`, kind: 'seed', sell: Math.max(1, Math.floor(c.seedCost / 3)), rarity: ITEMS[c.cropId].rarity };
+  ITEMS[c.seedId] = {
+    name: `${ITEMS[c.cropId].name} Seed`, img: `${FARM}/003-sprout.svg`,
+    ...(c.findOnly ? { tint: T.mythic } : {}),
+    kind: 'seed', sell: Math.max(1, Math.floor(c.seedCost / 3)), rarity: ITEMS[c.cropId].rarity,
+  };
 });
+export const RARE_SEED_DROPS = CROPS.filter((c) => c.findOnly).map((c) => c.seedId);
 
 // Animal pens: craft once, produce over real time, collect at the pen
 export const PENS = [
@@ -590,7 +627,25 @@ export const RECIPES = [
   R('big_roast', 'Wildwood Roast', `${COOK}/015-meat.svg`, 2, { cookLevel: 22 }, { meat: 3, garlic: 2, rosemary: 2 }, 10, 42, { type: 'gatherSpeed', value: 35, minutes: 35 }, 'A feast for one very hungry hero.'),
   R('gelato', 'Glacier Gelato', `${SNACK}/030-gelato.svg`, 2, { cookLevel: 24 }, { milk: 2, sugar: 2, strawberry: 2 }, 6, 44, { type: 'fishFast', value: 40, minutes: 30 }, 'Chilled with mountain patience.'),
 
+  // ── New garden & pantry cooking ───────────────────────────────────────────
+  R('garden_soup', 'Garden Soup', `${COOK}/036-saucepan.svg`, 0, { cookLevel: 4 }, { radish: 2, peas: 1 }, 2, 10, { type: 'cropFast', value: 12, minutes: 15 }, 'Tastes like tidy rows.'),
+  R('almond_granola', 'Almond Granola', `${SNACK}/014-granola bar.svg`, 0, { cookLevel: 8 }, { almonds: 2, oats: 2, honey: 1 }, 2, 16, { type: 'expLuck', value: 18, minutes: 20 }, 'Crunch you can march on.'),
+  R('fruit_bowl', 'Orchard Fruit Bowl', `${SNACK}/007-fruit bowl.svg`, 0, { cookLevel: 9 }, { blueberry: 1, strawberry: 1, honey: 1 }, 1, 18, { type: 'cropFast', value: 18, minutes: 22 }, 'The prettiest thing on the table.'),
+  R('stirfry', 'Wildwood Stir-fry', `${COOK}/041-wok.svg`, 1, { cookLevel: 10 }, { broccoli: 2, carrot: 1, ginger: 1 }, 4, 20, { type: 'gatherSpeed', value: 22, minutes: 20 }, 'Fast pan, faster hands.'),
+  R('blueberry_muffin', 'Blueberry Muffin', `${SWEET}/017-cupcake.svg`, 1, { cookLevel: 12 }, { blueberry: 2, oats: 2, egg: 1 }, 5, 22, { type: 'xpBoost', value: 22, minutes: 22 }, 'Bursting in all the right places.'),
+  R('sweet_fries', 'Sweet Potato Fries', `${SNACK}/016-plantain.svg`, 1, { cookLevel: 13 }, { sweet_potato: 2, olive_oil: 1, salt: 1 }, 4, 22, { type: 'doubleDrop', value: 18, minutes: 20 }, 'Orange. Crispy. Gone.'),
+  R('vanilla_pudding', 'Vanilla Pudding', `${SNACK}/025-pudding.svg`, 1, { cookLevel: 15 }, { vanilla: 1, milk: 2, sugar: 1 }, 4, 26, { type: 'penBoost', value: 32, minutes: 28 }, 'Wobbles with confidence.'),
+  R('eggplant_bake', 'Eggplant Bake', `${COOK}/033-tomato sauce.svg`, 1, { cookLevel: 16 }, { eggplant: 2, tomato: 2, cheese: 1 }, 5, 28, { type: 'smeltFast', value: 26, minutes: 25 }, 'Layered like good plans.'),
+  R('cinnamon_roll', 'Cinnamon Roll', `${SWEET}/009-cinnamon roll.svg`, 2, { cookLevel: 21 }, { cinnamon: 1, sugar: 2, egg: 1, milk: 1 }, 7, 36, { type: 'xpBoost', value: 32, minutes: 30 }, 'A spiral of pure motivation.'),
+  R('pineapple_ham', 'Pineapple Glazed Ham', `${COOK}/001-pre prepared meals.svg`, 2, { cookLevel: 23 }, { pineapple: 1, bacon: 2, honey: 1 }, 8, 40, { type: 'expLuck', value: 30, minutes: 30 }, 'Controversial. Delicious.'),
+
   // ── Scroll recipes (found in the wilds — stronger) ────────────────────────
+  R('frost_salad', 'Frostcrisp Salad', `${SNACK}/015-kale.svg`, 1, { scroll: true }, { frost_lettuce: 1, cucumber: 1, olive_oil: 1 }, 2, 34, { type: 'fishFast', value: 32, minutes: 28 }, 'Crunches like first frost.'),
+  R('ember_chili', 'Emberfire Chili', `${COOK}/038-paprika.svg`, 2, { scroll: true }, { ember_pepper: 1, meat: 2, tomato: 2 }, 8, 48, { type: 'gatherSpeed', value: 40, minutes: 30 }, 'Approach with bread and courage.'),
+  R('moon_sorbet', 'Moonmelon Sorbet', `${SNACK}/029-sorbet.svg`, 2, { scroll: true }, { moon_melon: 1, mint: 2, sugar: 2 }, 5, 52, { type: 'rareLuck', value: 38, minutes: 32 }, 'Cold as moonlight, twice as sweet.'),
+  R('royal_tart', 'Royal Grape Tart', `${SWEET}/003-cake.svg`, 2, { scroll: true }, { royal_grapes: 1, oats: 2, sugar: 2, egg: 1 }, 8, 58, { type: 'expLuck', value: 46, minutes: 35 }, 'Fit for a very muddy monarch.'),
+
+  // ── Scroll recipes (found in the wilds — stronger) [original set] ─────────
   R('trail_mix', "Wanderer's Trail Mix", `${SNACK}/013-protein bar.svg`, 0, { scroll: true }, { acorn: 2, berries: 2, honey: 1 }, 1, 16, { type: 'expLuck', value: 30, minutes: 30 }, 'Scrawled on a trail marker.'),
   R('smoked_eel', 'Smoked Marsh Eel', `${SNACK}/028-agedashi.svg`, 1, { scroll: true }, { eel: 1, banyan_wood: 1, salt: 1 }, 6, 30, { type: 'fishFast', value: 35, minutes: 25 }, 'An old fisher’s secret.'),
   R('golden_omelette', 'Golden Omelette', `${COOK}/047-scrambled eggs.svg`, 1, { scroll: true }, { egg: 2, golden_feather: 1, cheese: 1 }, 6, 40, { type: 'rareLuck', value: 25, minutes: 25 }, 'Glimmers as it cooks.'),
@@ -681,6 +736,32 @@ export const CRAFTS = [
     items: { elder_wood: 10, mithril_bar: 2, glimmer_dust: 1 }, chestSlots: 15, desc: '+15 chest slots.' },
   { id: 'chest4', cat: 'gear', name: 'Treasure Vault', img: `${MINE}/015-treasure-chest.svg`, prosperity: 45, needs: ['chest3'],
     items: { mithril_bar: 4, gold_bar: 6, diamond: 1, hide: 20 }, chestSlots: 20, desc: '+20 chest slots. Fit for a dragon.' },
+
+  // Gear — SPECIALIST STORAGE (extra pack slots that only hold one family of goods)
+  { id: 'lumberyard', cat: 'gear', name: 'Lumber Yard', img: `${MORE}/002-wood-plank.svg`, prosperity: 18, needs: ['sawmill'],
+    items: { plank: 20, stone: 12, iron_bar: 4 }, kindStore: { kinds: ['wood'], slots: 8 },
+    desc: 'Neat racks behind camp: 8 extra slots that only hold LOGS.' },
+  { id: 'lumberyard2', cat: 'gear', name: 'Grand Timber Depot', img: `${MORE}/002-wood-plank.svg`, tint: T.copper, prosperity: 28, needs: ['lumberyard'],
+    items: { plank: 40, ironroot_wood: 15, silver_bar: 4 }, kindStore: { kinds: ['wood'], slots: 8 },
+    desc: '8 more log-only slots. The stacks have stacks.' },
+  { id: 'rockshed', cat: 'gear', name: 'Stone Depot', img: `${MINE}/002-stone.svg`, tint: T.dark, prosperity: 18, needs: ['smelter'],
+    items: { stone: 50, plank: 10, iron_bar: 3 }, kindStore: { kinds: ['stone', 'ore', 'bar'], slots: 8 },
+    desc: '8 extra slots for STONE, ORE and BARS only.' },
+  { id: 'fishcooler', cat: 'gear', name: 'Fish Cooler', img: `${FISH}/002-fishing-net.svg`, tint: T.teal, prosperity: 16, needs: ['workbench'],
+    items: { plank: 12, iron_bar: 3, kelp: 5, salt: 4 }, kindStore: { kinds: ['fish'], slots: 8 },
+    desc: 'Salted, chilled, tidy: 8 extra slots that only hold FISH.' },
+  { id: 'fishcooler2', cat: 'gear', name: 'Glacier Ice-House', img: `${FISH}/002-fishing-net.svg`, tint: T.silver, prosperity: 26, needs: ['fishcooler'],
+    items: { plank: 25, silver_bar: 5, tree_sap: 2 }, kindStore: { kinds: ['fish'], slots: 10 },
+    desc: '10 more fish-only slots, cold as the Deepshine.' },
+  { id: 'foodcrate', cat: 'gear', name: 'Harvest Crate', img: `${MORE}/004-crate.svg`, tint: T.green, prosperity: 16, needs: ['plot1'],
+    items: { plank: 10, fiber: 25, cherry_wood: 10 }, kindStore: { kinds: ['crop', 'seed'], slots: 8 },
+    desc: '8 extra slots that only hold GROWN FOOD and SEEDS.' },
+  { id: 'pantryshelf', cat: 'gear', name: 'Pantry Shelf', img: `${MORE}/004-crate.svg`, tint: T.gold, prosperity: 16, needs: ['stove'],
+    items: { plank: 12, stone: 8, copper_bar: 3 }, kindStore: { kinds: ['forage', 'herb', 'trade', 'dish'], slots: 8 },
+    desc: '8 extra slots for PANTRY goods: foraged food, herbs, trade goods and cooked dishes.' },
+  { id: 'gamelocker', cat: 'gear', name: 'Game Locker', img: `${HUNT}/001-hide.svg`, tint: T.dark, prosperity: 16, needs: ['knife1'],
+    items: { plank: 10, hide: 8, bone: 10, salt: 3 }, kindStore: { kinds: ['meat', 'material'], slots: 8 },
+    desc: '8 extra slots for MEAT and hunted MATERIALS.' },
 
   // Gear — expedition upgrades
   { id: 'knife1', cat: 'gear', name: 'Hunting Knife', img: `${CAMP}/003-knife.svg`, prosperity: 8, needs: ['workbench'],

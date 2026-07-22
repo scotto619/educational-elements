@@ -18,6 +18,8 @@ const HF = '/game icons/Hangout/Furniture';
 const HH = '/game icons/Hangout/Home';
 const HE = '/game icons/Hangout/Education';
 const HP = '/game icons/Hangout/Plants';
+const HK = '/game icons/Hangout/Kitchen';
+const HO = '/game icons/Hangout/Outdoor';
 
 const T = {
   gold: 'sepia(1) saturate(5) hue-rotate(5deg) brightness(1.15)',
@@ -45,6 +47,8 @@ export const SIZES = {
 export const HANGOUT_AREAS = [
   { id: 'main', name: 'Main Room', icon: `${HH}/008-house.svg`, type: 'indoor', builtIn: true, style: 0,
     desc: 'Home sweet home.' },
+  { id: 'trophy', name: 'Trophy Room', icon: `${HE}/037-trophy.svg`, type: 'indoor', builtIn: true, style: 10,
+    desc: 'A dedicated hall for your weapon, curios, critters and trophy fish.' },
   { id: 'den', name: 'Games Den', icon: `${HF}/033-smart tv.svg`, type: 'indoor', style: 30,
     cost: { plank: 45, iron_bar: 12, hide: 12, tree_sap: 2, glimmer_dust: 1 },
     desc: 'A den for screens, snacks and rematches.' },
@@ -188,6 +192,69 @@ export const FURNITURE = [
   { id: 'bench_o',    name: 'Garden Bench',     img: `${HF}/005-bench.svg`,       zone: 'outdoor', size: 'lg', style: 6,
     src: { craft: { plank: 8, stone: 6 } } },
 
+  // ── Cupboard collection (new!) ────────────────────────────────────────────
+  { id: 'cupboard',   name: 'Country Cupboard', img: `${HF}/001-cupboard.svg`,    zone: 'floor', size: 'lg', style: 7,  src: { gold: 80 } },
+  { id: 'display_cupboard', name: 'Display Cupboard', img: `${HF}/002-cupboard-1.svg`, zone: 'floor', size: 'lg', style: 10,
+    src: { craft: { plank: 10, cherry_wood: 6, silver_bar: 2 } } },
+
+  // ── Kitchen pack (new!) ───────────────────────────────────────────────────
+  { id: 'kettle',     name: 'Whistling Kettle', img: `${HK}/025-kettle.svg`,      zone: 'floor', size: 'sm', style: 3,  src: { gold: 20 } },
+  { id: 'teapot',     name: 'Granny Teapot',    img: `${HK}/045-teapot.svg`,      zone: 'floor', size: 'sm', style: 3,  src: { gold: 22 } },
+  { id: 'toaster',    name: 'Pop-up Toaster',   img: `${HK}/047-toaster.svg`,     zone: 'floor', size: 'sm', style: 3,  src: { gold: 28 } },
+  { id: 'microwave',  name: 'Microwave',        img: `${HK}/028-microwave.svg`,   zone: 'floor', size: 'md', style: 5,  src: { gold: 55 } },
+  { id: 'coffee_pro', name: 'Barista Machine',  img: `${HK}/012-coffee machine.svg`, zone: 'floor', size: 'md', style: 6, src: { gold: 70 } },
+  { id: 'blender',    name: 'Smoothie Blender', img: `${HK}/004-food blender.svg`, zone: 'floor', size: 'sm', style: 4, src: { gold: 35 } },
+  { id: 'mixer',      name: 'Cake Mixer',       img: `${HK}/029-mixer.svg`,       zone: 'floor', size: 'sm', style: 5,  src: { gold: 45 } },
+  { id: 'kitchen_sink2', name: 'Double Sink',   img: `${HK}/040-kitchen sink.svg`, zone: 'floor', size: 'md', style: 4,
+    src: { craft: { iron_bar: 4, copper_bar: 2 } } },
+  { id: 'pot_rack',   name: 'Copper Pot Set',   img: `${HK}/032-pans.svg`,        zone: 'wall', size: 'md', style: 5,
+    src: { craft: { copper_bar: 4, iron_bar: 1 } } },
+  { id: 'knife_block', name: 'Chef Knife Wall', img: `${HK}/026-knives.svg`,      zone: 'wall', size: 'md', style: 5,
+    src: { craft: { iron_bar: 3, plank: 3 } } },
+  { id: 'cutlery_set', name: 'Fancy Cutlery',   img: `${HK}/020-cutlery.svg`,     zone: 'wall', size: 'sm', style: 3,  src: { gold: 25 } },
+  { id: 'dish_shelf', name: 'Dish Shelf',       img: `${HK}/017-dishes.svg`,      zone: 'wall', size: 'md', style: 4,  src: { gold: 40 } },
+  { id: 'chef_hat',   name: 'Chef Hat Trophy',  img: `${HK}/008-chef hat.svg`,    zone: 'wall', size: 'sm', style: 5,  src: { gold: 45 } },
+  { id: 'pasta_maker', name: 'Pasta Machine',   img: `${HK}/033-pasta machine.svg`, zone: 'floor', size: 'md', style: 7,
+    src: { craft: { iron_bar: 4, copper_bar: 3, plank: 4 } } },
+  { id: 'deep_fryer', name: 'Deep Fryer',       img: `${HK}/016-deep fryer.svg`,  zone: 'floor', size: 'md', style: 6,
+    src: { craft: { iron_bar: 5, stone: 8 } } },
+  { id: 'veggie_box', name: 'Veggie Crate',     img: `${HK}/049-vegetable box.svg`, zone: 'floor', size: 'sm', style: 3, src: { gold: 25 } },
+  { id: 'kitchen_scale', name: 'Baker Scale',   img: `${HK}/014-scale.svg`,       zone: 'floor', size: 'sm', style: 3,  src: { gold: 20 } },
+  { id: 'kitchen_timer', name: 'Egg Timer',     img: `${HK}/046-kitchen timer.svg`, zone: 'wall', size: 'sm', style: 3, src: { gold: 18 } },
+
+  // ── Outdoor pack (new!) — garden glory for the Backyard ──────────────────
+  { id: 'garden_fountain', name: 'Garden Fountain', img: `${HO}/002-fountain.svg`, zone: 'outdoor', size: 'xl', style: 14,
+    src: { craft: { stone: 40, copper_bar: 4, pearl: 1 } } },
+  { id: 'shade_tree', name: 'Shade Tree',       img: `${HO}/009-tree.svg`,        zone: 'outdoor', size: 'xl', style: 8,
+    src: { craft: { beech_wood: 20, fiber: 15 } } },
+  { id: 'hedge',      name: 'Trimmed Hedge',    img: `${HO}/010-shrub.svg`,       zone: 'outdoor', size: 'md', style: 4, src: { gold: 30 } },
+  { id: 'garden_fence', name: 'Picket Fence',   img: `${HO}/033-fence.svg`,       zone: 'outdoor', size: 'md', style: 4,
+    src: { craft: { plank: 5, fiber: 5 } } },
+  { id: 'garden_shed', name: 'Garden Shed',     img: `${HO}/048-shed.svg`,        zone: 'outdoor', size: 'xl', style: 11,
+    src: { craft: { plank: 18, stone: 12, iron_bar: 3 } } },
+  { id: 'garden_lamp', name: 'Garden Lantern',  img: `${HO}/049-lamp.svg`,        zone: 'outdoor', size: 'md', style: 5, src: { gold: 45 } },
+  { id: 'park_bench', name: 'Park Bench',       img: `${HO}/050-bench.svg`,       zone: 'outdoor', size: 'lg', style: 6,
+    src: { craft: { plank: 8, iron_bar: 2 } } },
+  { id: 'sprinkler_o', name: 'Lawn Sprinkler',  img: `${HO}/029-sprinkler.svg`,   zone: 'outdoor', size: 'sm', style: 4, src: { gold: 35 } },
+  { id: 'garden_hose', name: 'Garden Hose',     img: `${HO}/030-hose.svg`,        zone: 'outdoor', size: 'sm', style: 2, src: { gold: 15 } },
+  { id: 'big_mushroom', name: 'Giant Toadstool', img: `${HO}/017-mushroom.svg`,   zone: 'outdoor', size: 'md', style: 5, src: { gold: 40 } },
+  { id: 'stone_pile', name: 'Zen Stones',       img: `${HO}/005-stones.svg`,      zone: 'outdoor', size: 'sm', style: 3, src: { gold: 20 } },
+  { id: 'tree_stump', name: 'Old Tree Stump',   img: `${HO}/004-tree stump.svg`,  zone: 'outdoor', size: 'md', style: 3, src: { gold: 18 } },
+  { id: 'hanging_pot', name: 'Hanging Basket',  img: `${HO}/008-hanging pot.svg`, zone: 'wall', size: 'sm', style: 4,  src: { gold: 30 } },
+  { id: 'pink_flamingo', name: 'Pink Flamingo', img: `${HO}/047-flamingo.svg`,    zone: 'outdoor', size: 'md', style: 7, src: { gold: 75 } },
+  { id: 'bird_friend', name: 'Humming Bird',    img: `${HO}/037-humming bird.svg`, zone: 'outdoor', size: 'sm', style: 5, src: { gold: 50 } },
+  { id: 'garden_turtle', name: 'Garden Turtle', img: `${HO}/039-turtle.svg`,      zone: 'outdoor', size: 'sm', style: 5, src: { gold: 50 } },
+  { id: 'wheelbarrow2', name: 'Work Wheelbarrow', img: `${HO}/031-wheelbarrow.svg`, zone: 'outdoor', size: 'md', style: 4,
+    src: { craft: { plank: 5, iron_bar: 2 } } },
+  { id: 'waterfall_feature', name: 'Waterfall Feature', img: `${HO}/003-waterfall.svg`, zone: 'outdoor', size: 'xl', style: 16,
+    src: { craft: { stone: 60, silver_bar: 4, glimmer_dust: 1, pearl: 1 } } },
+
+  // ── Interactive outdoor & garden growing (new!) ───────────────────────────
+  { id: 'bbq',        name: 'Backyard BBQ',     img: `${HK}/002-barbecue.svg`,    zone: 'outdoor', size: 'lg', style: 9, interactive: 'stove',
+    src: { craft: { iron_bar: 5, stone: 12, copper_bar: 2 } }, hint: 'Cook real Wildwood recipes under the open sky!' },
+  { id: 'farm_plot',  name: 'Garden Bed',       img: `${HO}/014-vegetable garden.svg`, zone: 'outdoor', size: 'lg', style: 6, interactive: 'farm',
+    src: { craft: { plank: 6, stone: 8, fiber: 12 } }, hint: 'Plant real Wildwood seeds and harvest the crops right here!' },
+
   // ── Super-rare Wildwood expedition finds (interactive showpieces!) ───────
   { id: 'retro_radio', name: 'Wanderer Radio',  img: `${WW}/Adventure/011-radio.svg`, zone: 'floor', size: 'md', style: 14, interactive: 'radio',
     src: { found: true }, hint: 'Plays REAL music that everyone in your hangout hears!' },
@@ -197,9 +264,11 @@ export const FURNITURE = [
     src: { found: true }, hint: 'A second way to control the tunes.' },
   { id: 'crystal_lamp', name: 'Crystal Chandelier', img: `${WW}/Mining/006-crystals.svg`, tint: T.gold, zone: 'wall', size: 'lg', style: 16,
     src: { found: true } },
+  { id: 'garden_gnome', name: 'Grinning Garden Gnome', img: `${HO}/051-gnome.svg`, zone: 'outdoor', size: 'md', style: 14,
+    src: { found: true }, hint: 'A legendary wanderer. He chose YOUR garden.' },
 ];
 export const FURNITURE_MAP = Object.fromEntries(FURNITURE.map((f) => [f.id, f]));
-export const FOUND_FURNITURE_ITEMS = ['retro_radio', 'lucky_wheel', 'dj_corner', 'crystal_lamp'];
+export const FOUND_FURNITURE_ITEMS = ['retro_radio', 'lucky_wheel', 'dj_corner', 'crystal_lamp', 'garden_gnome'];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SHOWCASES (main room)
@@ -232,14 +301,17 @@ export const styleScoreOf = (h) => {
 export const newPlacedId = () => `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
 
 export const defaultSave = () => ({
-  built: ['main'],
+  built: ['main', 'trophy'],
   areas: {
     main: { wallpaper: 'cream', floor: 'oak', placed: [] },
+    trophy: { wallpaper: 'cream', floor: 'stone', placed: [] },
   },
   ownedWallpapers: ['cream'],
   ownedFloors: ['oak'],
   owned: {},
   showcase: { curios: [], critters: [], fish: null },
+  showcaseRoom: 'main',  // 'main' | 'trophy' — where collections are displayed
+  farms: {},             // { placedId: { seedId, readyAt } } — backyard Garden Beds
   wheelDay: null,        // last day this student spun ANY Wheel of Fortune
   lastSeen: null,
   lastSaved: null,

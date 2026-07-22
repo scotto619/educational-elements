@@ -31,6 +31,7 @@ import {
   ITEMS as WW_ITEMS, CRITTER_MAP, GOLD_ICON, fmtQty,
   RECIPES as WW_RECIPES_LIST, RECIPE_MAP as WW_RECIPE_MAP, dishIdOf,
   KITCHEN_TIERS, BUFF_LABELS, MAX_ACTIVE_BUFFS, skillLevel as wwSkillLevel,
+  CROP_BY_SEED, GOLDEN_CROP_CHANCE,
 } from './Homestead/homesteadConfig';
 import { forgeStageFor } from './SweetEmpire/sweetEmpireConfig';
 import { SPECIES_MAP as MENAGERIE_SPECIES, levelForXp as menLevelForXp } from './Menagerie/menagerieConfig';
@@ -74,11 +75,14 @@ const migrate = (raw) => {
   save.ownedWallpapers = [...new Set(['cream', ...(raw.ownedWallpapers || [])])].filter((id) => WALLPAPER_MAP[id]);
   save.ownedFloors = [...new Set(['oak', ...(raw.ownedFloors || [])])].filter((id) => FLOOR_MAP[id]);
   save.showcase = { curios: [], critters: [], fish: null, ...(raw.showcase || {}) };
+  save.showcaseRoom = raw.showcaseRoom === 'trophy' ? 'trophy' : 'main';
+  save.farms = Object.fromEntries(Object.entries(raw.farms || {}).filter(([, f]) => f && CROP_BY_SEED[f.seedId])
+    .map(([pid, f]) => [pid, { seedId: f.seedId, readyAt: Number(f.readyAt) || 0 }]));
   return save;
 };
 
 const cleanSave = (h) => ({
-  built: h.built,
+  built: [...new Set(['main', 'trophy', ...(h.built || [])])].filter((id) => AREA_MAP[id]),
   areas: Object.fromEntries(Object.entries(h.areas || {}).map(([id, a]) => [id, {
     wallpaper: a.wallpaper, floor: a.floor,
     placed: (a.placed || []).map((p) => ({ id: p.id, itemId: p.itemId, x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 })),
@@ -91,6 +95,14 @@ const cleanSave = (h) => ({
     critters: (h.showcase?.critters || []).filter(Boolean).slice(0, CRITTER_FRAMES),
     fish: h.showcase?.fish || null,
   },
+  showcaseRoom: h.showcaseRoom === 'trophy' ? 'trophy' : 'main',
+  farms: (() => {
+    const placedIds = new Set();
+    Object.values(h.areas || {}).forEach((a) => (a.placed || []).forEach((p) => placedIds.add(p.id)));
+    return Object.fromEntries(Object.entries(h.farms || {})
+      .filter(([pid, f]) => placedIds.has(pid) && f && CROP_BY_SEED[f.seedId])
+      .map(([pid, f]) => [pid, { seedId: f.seedId, readyAt: Number(f.readyAt) || 0 }]));
+  })(),
   wheelDay: h.wheelDay || null,
   lastSeen: new Date().toISOString(),
   lastSaved: new Date().toISOString(),
@@ -116,7 +128,7 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
   const { hangout, weapon, companion } = profile;
   const area = hangout.areas[areaId] || hangout.areas.main;
   const areaDef = AREA_MAP[areaId] || AREA_MAP.main;
-  const isMain = areaId === 'main';
+  const isMain = areaId === (hangout.showcaseRoom === 'trophy' ? 'trophy' : 'main'); // showcase room (kept name for the blocks below)
   const wallCss = areaDef.type === 'outdoor' ? OUTDOOR_SKY : areaDef.type === 'night' ? NIGHT_SKY : (WALLPAPER_MAP[area.wallpaper] || WALLPAPER_MAP.cream).css;
   const floorCss = areaDef.type === 'outdoor' ? OUTDOOR_GROUND : areaDef.type === 'night' ? NIGHT_GROUND : (FLOOR_MAP[area.floor] || FLOOR_MAP.oak).css;
   const rootRef = useRef(null);
@@ -200,6 +212,9 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
         const item = FURNITURE_MAP[p.itemId];
         if (!item) return null;
         const glow = item.interactive && !editMode;
+        const farm = item.interactive === 'farm' ? hangout.farms?.[p.id] : null;
+        const farmCrop = farm ? CROP_BY_SEED[farm.seedId] : null;
+        const farmReady = farm && nowTs >= farm.readyAt;
         return (
           <button
             key={p.id}
@@ -213,6 +228,17 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
               style={{ ...(item.tint ? { filter: item.tint } : {}), ...(glow ? { animation: 'hg-glow 2s ease-in-out infinite' } : {}) }} />
             {glow && item.interactive === 'radio' && musicPlaying && (
               <span className="absolute -top-2 left-1/2 text-base pointer-events-none" style={{ animation: 'hg-note 1.4s linear infinite' }}>🎵</span>
+            )}
+            {/* Growing crop overlay on Garden Beds */}
+            {farmCrop && (
+              <span className="absolute -top-3 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={farmReady ? WW_ITEMS[farmCrop.cropId]?.img : '/game icons/Wildwood/Farm/003-sprout.svg'}
+                  alt="" className="w-6 h-6 md:w-8 md:h-8 object-contain drop-shadow"
+                  style={{ animation: farmReady ? 'hg-glow 1.6s ease-in-out infinite' : 'hg-hover 2.4s ease-in-out infinite', ...(farmReady && WW_ITEMS[farmCrop.cropId]?.tint ? { filter: WW_ITEMS[farmCrop.cropId].tint } : {}) }} />
+                {farmReady && <span className="text-[8px] font-bold text-white bg-emerald-700/90 rounded-full px-1.5 shadow">READY!</span>}
+              </span>
             )}
           </button>
         );
@@ -263,6 +289,19 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// On-screen d-pad button (touch devices) — pointer events so it also works with a stylus
+const DpadBtn = ({ label, onDown, onUp }) => (
+  <button
+    onPointerDown={(e) => { e.preventDefault(); onDown(); }}
+    onPointerUp={onUp}
+    onPointerLeave={onUp}
+    onPointerCancel={onUp}
+    className="bg-black/30 active:bg-black/60 border border-white/30 text-white rounded-xl text-2xl font-bold flex items-center justify-center h-12 w-12 mx-auto touch-none select-none"
+  >
+    {label}
+  </button>
+);
+
 const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, classData, classmates = [], onSwitchGame = null }) => {
   const [gs, setGs] = useState(defaultSave);
   const [loaded, setLoaded] = useState(false);
@@ -271,6 +310,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
   const [editMode, setEditMode] = useState(false);
   const [placingId, setPlacingId] = useState(null);
   const [picker, setPicker] = useState(null);        // showcase picker kind
+  const [shopFilter, setShopFilter] = useState('all'); // furniture catalog zone filter
   const [visitId, setVisitId] = useState(null);
   const [interact, setInteract] = useState(null);    // { type, ownerIsMe, ownerData }
   const [players, setPlayers] = useState({});
@@ -279,12 +319,16 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
   const [chatInput, setChatInput] = useState('');
   const [myBubble, setMyBubble] = useState(null);
   const [myEmote, setMyEmote] = useState(null);
+  const [liveRoom, setLiveRoom] = useState(null);    // live RTDB mirror of the room I'm visiting
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [, forceTick] = useState(0);
 
   const gsRef = useRef(gs); gsRef.current = gs;
   const homesteadRef = useRef(null);
   const dirtyRef = useRef(false);
   const savingRef = useRef(false);
+  const homesteadDirtyRef = useRef(false); // an unsaved Wildwood deduction exists
+  const queuedSaveRef = useRef(false);     // a persist arrived while another was in flight
   const myPosRef = useRef({ x: 50, y: 80 });
   const myPosDivRef = useRef(null);
   const keysRef = useRef({});
@@ -305,6 +349,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
     homesteadRef.current = {
       ...(studentData?.homesteadData || {}),
       inv: { ...(studentData?.homesteadData?.inv || {}) },
+      chest: { ...(studentData?.homesteadData?.chest || {}) },
       activeBuffs: [...(studentData?.homesteadData?.activeBuffs || [])],
     };
     setLoaded(true);
@@ -312,14 +357,23 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
   }, [studentData, loaded]);
 
   // ── Save ────────────────────────────────────────────────────────────────────
+  // Never drop a save: if one is in flight, queue another pass. homesteadDirtyRef
+  // guarantees a spent cost can't be skipped by a later hangout-only save.
   const persist = useCallback(async (withHomestead = false) => {
-    if (savingRef.current || !updateStudentData) return;
+    if (withHomestead) homesteadDirtyRef.current = true;
+    if (!updateStudentData) return;
+    if (savingRef.current) { queuedSaveRef.current = true; return; }
     savingRef.current = true;
     try {
-      const payload = { hangoutData: cleanSave(gsRef.current) };
-      if (withHomestead) payload.homesteadData = homesteadRef.current;
-      await updateStudentData(payload);
-      dirtyRef.current = false;
+      do {
+        queuedSaveRef.current = false;
+        const inclHome = homesteadDirtyRef.current;
+        const payload = { hangoutData: cleanSave(gsRef.current) };
+        if (inclHome) payload.homesteadData = homesteadRef.current;
+        await updateStudentData(payload);
+        dirtyRef.current = false;
+        if (inclHome) homesteadDirtyRef.current = false;
+      } while (queuedSaveRef.current);
     } catch (err) { console.error('MyHangout: save failed', err); }
     finally { savingRef.current = false; }
   }, [updateStudentData]);
@@ -329,6 +383,35 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
     const t = setInterval(() => { if (dirtyRef.current) persist(); }, 20000);
     return () => { clearInterval(t); persist(); };
   }, [loaded, persist]);
+
+  // Touch-capable device? (iPads included — don't gate on screen width)
+  useEffect(() => {
+    const touchCapable = (typeof window !== 'undefined' && 'ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+    setIsTouchDevice(!!touchCapable);
+  }, []);
+
+  // ── LIVE ROOM MIRROR ────────────────────────────────────────────────────────
+  // Publish my room layout to RTDB whenever it changes (debounced), so visitors
+  // see redecorating within a second — no page reload on either side. Firestore
+  // stays the authoritative save; this is just a fast read-only mirror.
+  useEffect(() => {
+    if (!loaded || !classCode || !myId || myId === 'anon') return;
+    const t = setTimeout(() => {
+      set(ref(database, `hangoutRooms/${classCode}/${myId}/room`), {
+        data: cleanSave(gsRef.current), updatedAt: Date.now(),
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(t);
+  }, [gs, loaded, classCode, myId]);
+
+  // While visiting, subscribe to the owner's live mirror (falls back to the
+  // page-load snapshot for owners who haven't opened their hangout recently).
+  useEffect(() => {
+    if (!(tab === 'visit' && visitId && classCode)) { setLiveRoom(null); return undefined; }
+    const r = ref(database, `hangoutRooms/${classCode}/${visitId}/room`);
+    onValue(r, (snap) => setLiveRoom(snap.val()));
+    return () => { off(r); setLiveRoom(null); };
+  }, [tab, visitId, classCode]);
 
   // ── Which hangout am I standing in? ────────────────────────────────────────
   const currentOwnerId = tab === 'visit' && visitId ? visitId : myId;
@@ -438,28 +521,44 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
     if (myPlayerRef.current) update(myPlayerRef.current, { emote }).catch(() => {});
   }, []);
 
-  // ── Wildwood wallet ─────────────────────────────────────────────────────────
+  // ── Wildwood wallet (pack + camp chest — stored items count everywhere) ────
   const gold = () => Math.floor(Number(homesteadRef.current?.gold) || 0);
-  const invCount = (id) => Math.floor(homesteadRef.current?.inv?.[id] || 0);
+  const invCount = (id) => Math.floor(homesteadRef.current?.inv?.[id] || 0) + Math.floor(homesteadRef.current?.chest?.[id] || 0);
   const hasItems = (req) => Object.entries(req || {}).every(([id, q]) => invCount(id) >= q);
-  const spendGold = (n) => { homesteadRef.current.gold = gold() - n; };
-  const spendItems = (req) => Object.entries(req).forEach(([id, q]) => {
-    homesteadRef.current.inv[id] = (homesteadRef.current.inv[id] || 0) - q;
-    if (homesteadRef.current.inv[id] <= 0) delete homesteadRef.current.inv[id];
-  });
-  const fuelUnits = () => Object.entries(homesteadRef.current?.inv || {}).reduce((s, [id, q]) => s + (WW_ITEMS[id]?.burn || 0) * q, 0);
+  const spendGold = (n) => { homesteadRef.current.gold = gold() - n; homesteadDirtyRef.current = true; };
+  const spendItems = (req) => {
+    const h = homesteadRef.current;
+    if (!h.chest) h.chest = {};
+    Object.entries(req).forEach(([id, q]) => {
+      let need = q;
+      const fromInv = Math.min(need, h.inv[id] || 0);
+      if (fromInv > 0) {
+        h.inv[id] -= fromInv;
+        if (h.inv[id] <= 0) delete h.inv[id];
+        need -= fromInv;
+      }
+      if (need > 0 && (h.chest[id] || 0) > 0) {
+        h.chest[id] = Math.max(0, (h.chest[id] || 0) - need);
+        if (h.chest[id] <= 0) delete h.chest[id];
+      }
+    });
+    homesteadDirtyRef.current = true;
+  };
+  const fuelUnits = () => Object.entries(homesteadRef.current?.inv || {}).reduce((s, [id, q]) => s + (WW_ITEMS[id]?.burn || 0) * q, 0)
+    + Object.entries(homesteadRef.current?.chest || {}).reduce((s, [id, q]) => s + (WW_ITEMS[id]?.burn || 0) * q, 0);
   const consumeFuel = (units) => {
-    const inv = homesteadRef.current.inv;
-    const woods = Object.keys(inv).filter((id) => WW_ITEMS[id]?.burn).sort((a, b) => WW_ITEMS[a].burn - WW_ITEMS[b].burn);
+    const woods = Object.keys(WW_ITEMS).filter((id) => WW_ITEMS[id]?.burn && invCount(id) > 0).sort((a, b) => WW_ITEMS[a].burn - WW_ITEMS[b].burn);
     let need = units;
+    const spend = {};
     for (const id of woods) {
       if (need <= 0) break;
-      const take = Math.min(inv[id], Math.ceil(need / WW_ITEMS[id].burn));
-      inv[id] -= take;
-      if (inv[id] <= 0) delete inv[id];
+      const take = Math.min(invCount(id), Math.ceil(need / WW_ITEMS[id].burn));
+      spend[id] = take;
       need -= take * WW_ITEMS[id].burn;
     }
-    return need <= 0;
+    if (need > 0) return false;
+    spendItems(spend);
+    return true;
   };
 
   // ── Shop / build / place ────────────────────────────────────────────────────
@@ -534,17 +633,22 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
 
   const itemClicked = (p, item) => {
     if (tab === 'room' && editMode) {
-      setGs((prev) => ({
-        ...prev,
-        areas: { ...prev.areas, [areaId]: { ...prev.areas[areaId], placed: prev.areas[areaId].placed.filter((x) => x.id !== p.id) } },
-      }));
+      setGs((prev) => {
+        const nextFarms = { ...prev.farms };
+        delete nextFarms[p.id]; // putting away a Garden Bed clears its crop
+        return {
+          ...prev,
+          farms: nextFarms,
+          areas: { ...prev.areas, [areaId]: { ...prev.areas[areaId], placed: prev.areas[areaId].placed.filter((x) => x.id !== p.id) } },
+        };
+      });
       dirtyRef.current = true;
       return;
     }
     if (item.interactive) {
       const ownerIsMe = currentOwnerId === myId;
       const ownerData = ownerIsMe ? null : (classmates || []).find((s) => s.id === currentOwnerId);
-      setInteract({ type: item.interactive, ownerIsMe, ownerData });
+      setInteract({ type: item.interactive, placedId: p.id, ownerIsMe, ownerData });
     }
   };
 
@@ -598,6 +702,34 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
     dirtyRef.current = true;
   };
 
+  // ── Backyard Garden Beds — real Wildwood farming at home ───────────────────
+  const plantFarm = (placedId, seedId) => {
+    const crop = CROP_BY_SEED[seedId];
+    if (!crop || invCount(seedId) < 1) return;
+    if (gsRef.current.farms?.[placedId]) return; // already growing
+    spendItems({ [seedId]: 1 });
+    setGs((p) => ({ ...p, farms: { ...p.farms, [placedId]: { seedId, readyAt: Date.now() + crop.growMin * 60 * 1000 } } }));
+    dirtyRef.current = true;
+    setTimeout(() => persist(true), 400);
+    showToast(`${WW_ITEMS[crop.cropId]?.name} planted! Ready in ${crop.growMin >= 60 ? `${Math.round(crop.growMin / 60)}h` : crop.growMin >= 1 ? `${crop.growMin} min` : `${Math.round(crop.growMin * 60)}s`}.`, 'success');
+  };
+
+  const harvestFarm = (placedId) => {
+    const farm = gsRef.current.farms?.[placedId];
+    const crop = farm && CROP_BY_SEED[farm.seedId];
+    if (!crop || Date.now() < farm.readyAt) return;
+    const golden = Math.random() < GOLDEN_CROP_CHANCE;
+    const qty = crop.yield * (golden ? 2 : 1);
+    const h = homesteadRef.current;
+    h.inv[crop.cropId] = (h.inv[crop.cropId] || 0) + qty;
+    homesteadDirtyRef.current = true;
+    setGs((p) => { const nf = { ...p.farms }; delete nf[placedId]; return { ...p, farms: nf }; });
+    dirtyRef.current = true;
+    setTimeout(() => persist(true), 400);
+    showToast(`${golden ? '✨ GOLDEN harvest! ' : ''}Harvested ${qty}× ${WW_ITEMS[crop.cropId]?.name} — sent to your Wildwood pack!`, 'success');
+    forceTick((n) => n + 1);
+  };
+
   // ── Derived ─────────────────────────────────────────────────────────────────
   const myProfile = useMemo(
     () => ({ ...roomProfileOf(null, studentData?.sweetEmpireData, studentData?.menagerieData), hangout: gs }),
@@ -614,8 +746,10 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
   const visitProfile = useMemo(() => {
     if (!visitId) return null;
     const v = (classmates || []).find((s) => s.id === visitId);
-    return v ? { profile: roomProfileOf(v.hangoutData, v.sweetEmpireData, v.menagerieData), name: v.firstName || '?', data: v } : null;
-  }, [visitId, classmates]);
+    if (!v) return null;
+    const roomData = liveRoom?.data || v.hangoutData; // live mirror wins over the page-load snapshot
+    return { profile: roomProfileOf(roomData, v.sweetEmpireData, v.menagerieData), name: v.firstName || '?', data: v };
+  }, [visitId, classmates, liveRoom]);
   const [visitAreaId, setVisitAreaId] = useState('main');
   useEffect(() => { setVisitAreaId('main'); }, [visitId]);
 
@@ -645,7 +779,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
       {['😀', '❤️', '👍', '🎉', '😮'].map((e) => (
         <button key={e} onClick={() => sendEmote(e)} className="text-xl hover:scale-125 transition-transform">{e}</button>
       ))}
-      <span className="text-xs text-gray-400 font-semibold hidden md:inline">WASD / arrows to walk · {Object.keys(players).length || 1} here</span>
+      <span className="text-xs text-gray-400 font-semibold hidden md:inline">{isTouchDevice ? 'Use the arrow pad to walk' : 'WASD / arrows to walk'} · {Object.keys(players).length || 1} here</span>
       {musicBlocked && (
         <button onClick={() => audioRef.current?.play().then(() => setMusicBlocked(false)).catch(() => {})}
           className="bg-purple-600 text-white text-xs font-bold rounded-xl px-3 py-2 animate-pulse">
@@ -654,6 +788,21 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
       )}
       {musicPlayingHere && !musicBlocked && (
         <span className="text-xs font-bold text-purple-600">🎵 {MUSIC_MAP[roomMusic.trackId]?.name}</span>
+      )}
+
+      {/* Touch d-pad — floats over the room on any touch-capable device */}
+      {isTouchDevice && (
+        <div className="fixed bottom-24 right-4 z-40 grid grid-cols-3 grid-rows-3 gap-1.5 bg-white/40 backdrop-blur-sm rounded-2xl p-2 shadow-lg">
+          <div />
+          <DpadBtn label="▲" onDown={() => (keysRef.current.up = true)} onUp={() => (keysRef.current.up = false)} />
+          <div />
+          <DpadBtn label="◀" onDown={() => (keysRef.current.left = true)} onUp={() => (keysRef.current.left = false)} />
+          <div />
+          <DpadBtn label="▶" onDown={() => (keysRef.current.right = true)} onUp={() => (keysRef.current.right = false)} />
+          <div />
+          <DpadBtn label="▼" onDown={() => (keysRef.current.down = true)} onUp={() => (keysRef.current.down = false)} />
+          <div />
+        </div>
       )}
     </div>
   );
@@ -858,12 +1007,25 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
             </div>
           ) : null}
 
+          {/* Catalog filter */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-bold text-gray-400 uppercase mr-1">Show:</span>
+            {[['all', 'Everything'], ['floor', '🛋️ Indoor'], ['wall', '🖼️ Wall'], ['outdoor', '🌳 Outdoor'], ['interactive', '⚡ Interactive']].map(([fid, flabel]) => (
+              <button key={fid} onClick={() => setShopFilter(fid)}
+                className={`text-xs font-bold rounded-full px-3 py-1.5 border-2 transition ${shopFilter === fid ? 'border-amber-500 bg-amber-50 text-amber-800' : 'border-gray-200 text-gray-500 hover:border-amber-300'}`}>
+                {flabel}
+              </button>
+            ))}
+          </div>
+
           {/* Catalog */}
           {[['gold', '🛒 Buy with Wildwood Gold'], ['craft', '🔨 Craft from Wildwood Resources'], ['found', '🗺️ Rare Expedition Treasures']].map(([srcKind, label]) => (
             <div key={srcKind} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
               <h3 className="font-bold text-gray-800 mb-2">{label}</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                {FURNITURE.filter((f) => (srcKind === 'gold' ? !!f.src.gold : srcKind === 'craft' ? !!f.src.craft : !!f.src.found)).map((f) => {
+                {FURNITURE.filter((f) => (srcKind === 'gold' ? !!f.src.gold : srcKind === 'craft' ? !!f.src.craft : !!f.src.found))
+                  .filter((f) => shopFilter === 'all' || (shopFilter === 'interactive' ? !!f.interactive : f.zone === shopFilter))
+                  .map((f) => {
                   const affordable = f.src.gold ? gold() >= f.src.gold : f.src.craft ? hasItems(f.src.craft) : invCount(f.id) > 0;
                   return (
                     <div key={f.id} className={`rounded-xl border p-2.5 text-center ${f.src.found ? 'border-purple-200 bg-purple-50/40' : 'border-gray-200'}`}>
@@ -899,8 +1061,18 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
       {tab === 'showcase' && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-4">
           <div>
-            <h3 className="font-bold text-gray-800">🏆 Showcase your collections (Main Room)</h3>
+            <h3 className="font-bold text-gray-800">🏆 Showcase your collections</h3>
             <p className="text-xs text-gray-500">Your Forge weapon and Menagerie companion appear automatically. Pick the rest:</p>
+            <div className="flex items-center gap-1.5 mt-2">
+              <span className="text-xs font-bold text-gray-400 uppercase">Display in:</span>
+              {[['main', '🛋️ Main Room'], ['trophy', '🏆 Trophy Room']].map(([rid, rlabel]) => (
+                <button key={rid}
+                  onClick={() => { setGs((p) => ({ ...p, showcaseRoom: rid })); dirtyRef.current = true; }}
+                  className={`text-xs font-bold rounded-full px-3 py-1.5 border-2 transition ${(gs.showcaseRoom || 'main') === rid ? 'border-amber-500 bg-amber-50 text-amber-800' : 'border-gray-200 text-gray-500 hover:border-amber-300'}`}>
+                  {rlabel}
+                </button>
+              ))}
+            </div>
           </div>
           {[
             { kind: 'curios', label: `Curio pedestals (up to ${CURIO_PEDESTALS})`, pool: (studentData?.homesteadData?.discoveredRares || []), lookup: (id) => WW_ITEMS[id], picked: gs.showcase.curios, multi: CURIO_PEDESTALS },
@@ -1092,6 +1264,67 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
                 </div>
               </>
             )}
+
+            {interact.type === 'farm' && (() => {
+              const farmState = interact.ownerIsMe
+                ? gs.farms?.[interact.placedId]
+                : (visitProfile?.profile?.hangout?.farms || {})[interact.placedId];
+              const crop = farmState && CROP_BY_SEED[farmState.seedId];
+              const ready = farmState && Date.now() >= farmState.readyAt;
+              const mySeeds = interact.ownerIsMe
+                ? Object.keys({ ...(homesteadRef.current?.inv || {}), ...(homesteadRef.current?.chest || {}) })
+                    .filter((id) => WW_ITEMS[id]?.kind === 'seed' && CROP_BY_SEED[id] && invCount(id) > 0)
+                : [];
+              return (
+                <>
+                  <h3 className="text-lg font-bold text-gray-800 text-center mb-1">🌱 Garden Bed</h3>
+                  {crop ? (
+                    <div className="text-center py-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={ready ? WW_ITEMS[crop.cropId]?.img : '/game icons/Wildwood/Farm/003-sprout.svg'} alt=""
+                        className="w-16 h-16 mx-auto object-contain mb-1"
+                        style={ready && WW_ITEMS[crop.cropId]?.tint ? { filter: WW_ITEMS[crop.cropId].tint } : undefined} />
+                      <p className="text-sm font-bold text-gray-700">{WW_ITEMS[crop.cropId]?.name}</p>
+                      <p className={`text-xs font-bold ${ready ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {ready ? 'Ready to harvest!' : `Ready in ${Math.max(1, Math.ceil((farmState.readyAt - Date.now()) / 60000))} min`}
+                      </p>
+                      {interact.ownerIsMe && ready && (
+                        <button onClick={() => { harvestFarm(interact.placedId); setInteract(null); }}
+                          className="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-bold transition">
+                          🧺 Harvest (goes to your Wildwood pack)
+                        </button>
+                      )}
+                      {!interact.ownerIsMe && <p className="text-[11px] text-gray-400 mt-2">Only the gardener can harvest this bed.</p>}
+                    </div>
+                  ) : !interact.ownerIsMe ? (
+                    <p className="text-sm text-gray-500 text-center py-6">Freshly turned soil, waiting for seeds…</p>
+                  ) : mySeeds.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-6">No seeds in your pack or chest — buy or find some in Wildwood!</p>
+                  ) : (
+                    <>
+                      <p className="text-xs text-gray-500 text-center mb-3">Pick a seed from your Wildwood stores:</p>
+                      <div className="grid grid-cols-2 gap-1.5 max-h-72 overflow-y-auto pr-1">
+                        {mySeeds.map((sid) => {
+                          const c = CROP_BY_SEED[sid];
+                          return (
+                            <button key={sid} onClick={() => { plantFarm(interact.placedId, sid); setInteract(null); }}
+                              className="flex items-center gap-2 bg-gray-50 hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 rounded-xl px-2.5 py-2 text-left transition">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={WW_ITEMS[c.cropId]?.img} alt="" className="w-7 h-7 object-contain"
+                                style={WW_ITEMS[c.cropId]?.tint ? { filter: WW_ITEMS[c.cropId].tint } : undefined} />
+                              <span className="min-w-0">
+                                <span className="block text-xs font-semibold text-gray-700 truncate">{WW_ITEMS[sid]?.name}</span>
+                                <span className="block text-[9px] text-gray-400">×{invCount(sid)} · {c.growMin >= 60 ? `${Math.round(c.growMin / 60)}h` : c.growMin >= 1 ? `${c.growMin}min` : `${Math.round(c.growMin * 60)}s`} · yields {c.yield}</span>
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </>
+              );
+            })()}
 
             {interact.type === 'wheel' && (
               <>

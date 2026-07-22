@@ -262,6 +262,139 @@ export const treasureHint = (spot) => {
   return dir ? `somewhere in the ${dir} of town` : 'surprisingly close to the middle of town';
 };
 
+// ═══════════════════════════════════════════════════════════════════════════
+// THE MYSTERY TRADER — a travelling peddler who only SOMETIMES rolls into
+// town. Visit windows are computed deterministically from classCode + date,
+// so every client agrees on when she's here without any server coordination.
+// Her cart carries a different (sometimes very rare) haul each visit,
+// including Hangout furniture and sealed MYSTERY boxes — you don't know
+// what's inside until you pay. Shared limited stock lives at
+// worldRooms/{code}/trader (created once per visit via transaction).
+// ═══════════════════════════════════════════════════════════════════════════
+export const TRADER = { x: WORLD_W * 0.74, y: WORLD_H * 0.66 };
+export const TRADER_IMG = `${TS}/009-cart.svg`;
+export const MYSTERY_IMG = '/game icons/Wildwood/Magic/037-magic box.svg';
+export const TRADER_SLOTS = 5;
+
+// 1–3 visits per day, 15–35 minutes each, between 07:30 and 18:30 local time
+export const traderWindowsForDay = (day, code = '') => {
+  const seed = hashStr(`trader_${day}_${code}`);
+  const count = 1 + (mix32(seed) % 3);
+  const windows = [];
+  for (let i = 0; i < count; i++) {
+    const startMin = 450 + (mix32(seed + Math.imul(i + 1, 0x9e3779b9)) % 660); // 07:30–18:30
+    const durMin = 15 + (mix32(seed ^ Math.imul(i + 7, 0x85ebca6b)) % 21);     // 15–35 min
+    windows.push({ slot: i, startMin, endMin: startMin + durMin });
+  }
+  return windows;
+};
+
+// The window that is open RIGHT NOW (or null) → { key, endsAt }
+export const activeTraderWindow = (code) => {
+  const nowD = new Date();
+  const day = dayKey();
+  const mins = nowD.getHours() * 60 + nowD.getMinutes() + nowD.getSeconds() / 60;
+  const w = traderWindowsForDay(day, code).find((x) => mins >= x.startMin && mins < x.endMin);
+  if (!w) return null;
+  const endsAt = new Date(nowD.getFullYear(), nowD.getMonth(), nowD.getDate(), 0, w.endMin, 0, 0).getTime();
+  return { key: `${day}_${w.slot}`, endsAt };
+};
+
+// What the cart may carry: [weight, { itemId | mystery, lo, hi, price }]
+export const TRADER_POOL = [
+  // Everyday goods (cheap filler so rares stay special)
+  [9, { itemId: 'salt', lo: 4, hi: 8, price: 4 }],
+  [9, { itemId: 'sugar', lo: 4, hi: 8, price: 6 }],
+  [8, { itemId: 'bread', lo: 3, hi: 6, price: 6 }],
+  [8, { itemId: 'almonds', lo: 3, hi: 6, price: 8 }],
+  [7, { itemId: 'cinnamon', lo: 2, hi: 4, price: 8 }],
+  [7, { itemId: 'vanilla', lo: 2, hi: 4, price: 11 }],
+  [7, { itemId: 'plank', lo: 3, hi: 6, price: 10 }],
+  [6, { itemId: 'hide', lo: 2, hi: 5, price: 16 }],
+  [6, { itemId: 'silver_bar', lo: 1, hi: 3, price: 55 }],
+  // Rare ingredients & gems
+  [5, { itemId: 'tree_sap', lo: 1, hi: 2, price: 40 }],
+  [5, { itemId: 'mandrake', lo: 1, hi: 2, price: 70 }],
+  [4, { itemId: 'truffle', lo: 1, hi: 2, price: 95 }],
+  [4, { itemId: 'moonpetal', lo: 1, hi: 2, price: 80 }],
+  [4, { itemId: 'emerald', lo: 1, hi: 1, price: 95 }],
+  [3, { itemId: 'glimmer_dust', lo: 1, hi: 1, price: 110 }],
+  [3, { itemId: 'ruby', lo: 1, hi: 1, price: 150 }],
+  [2.5, { itemId: 'golden_feather', lo: 1, hi: 1, price: 130 }],
+  [2, { itemId: 'diamond', lo: 1, hi: 1, price: 260 }],
+  // Find-only seeds occasionally fall off the back of the cart
+  [3, { itemId: 'frost_lettuce_seed', lo: 1, hi: 2, price: 45 }],
+  [2.5, { itemId: 'ember_pepper_seed', lo: 1, hi: 1, price: 65 }],
+  [2, { itemId: 'moon_melon_seed', lo: 1, hi: 1, price: 90 }],
+  [1.5, { itemId: 'royal_grapes_seed', lo: 1, hi: 1, price: 120 }],
+  // FURNITURE for the Hangout — jackpot finds
+  [2, { itemId: 'retro_radio', lo: 1, hi: 1, price: 240 }],
+  [2, { itemId: 'dj_corner', lo: 1, hi: 1, price: 220 }],
+  [1.5, { itemId: 'lucky_wheel', lo: 1, hi: 1, price: 260 }],
+  [1.5, { itemId: 'garden_gnome', lo: 1, hi: 1, price: 250 }],
+  [1, { itemId: 'crystal_lamp', lo: 1, hi: 1, price: 320 }],
+  // Sealed mystery boxes — contents revealed only after you pay!
+  [8, { mystery: 'common', lo: 2, hi: 4, price: 15 }],
+  [5, { mystery: 'rare', lo: 1, hi: 2, price: 45 }],
+  [3, { mystery: 'epic', lo: 1, hi: 1, price: 120 }],
+];
+
+export const MYSTERY_TIERS = {
+  common: { name: 'Mystery Pouch', tint: '', desc: 'Rattles promisingly.' },
+  rare: { name: 'Sealed Mystery Box', tint: 'hue-rotate(140deg) saturate(1.3)', desc: 'Heavier than it looks…' },
+  epic: { name: 'Arcane Mystery Chest', tint: 'hue-rotate(260deg) saturate(1.5)', desc: 'It hums. It definitely hums.' },
+};
+
+// Weighted contents per tier: [itemId, qty, weight]
+export const MYSTERY_TABLES = {
+  common: [
+    ['berries', 5, 8], ['salt', 3, 8], ['plank', 2, 6], ['wild_egg', 3, 6],
+    ['honey', 2, 5], ['copper_bar', 2, 5], ['carrot_seed', 3, 5], ['stone', 8, 4],
+    ['bacon', 2, 4], ['cheese', 2, 3], ['old_boot', 1, 3], ['recipe_scroll', 1, 1.5],
+    ['emerald', 1, 0.7],
+  ],
+  rare: [
+    ['iron_bar', 3, 6], ['silver_bar', 2, 6], ['tree_sap', 1, 5], ['truffle', 1, 4],
+    ['moonpetal', 1, 4], ['mandrake', 1, 4], ['recipe_scroll', 1, 3], ['emerald', 1, 2.5],
+    ['frost_lettuce_seed', 1, 2], ['ruby', 1, 1.5], ['glimmer_dust', 1, 1.5],
+    ['pearl', 1, 1], ['golden_feather', 1, 1],
+  ],
+  epic: [
+    ['glimmer_dust', 2, 5], ['ruby', 1, 4], ['recipe_scroll', 2, 4], ['diamond', 1, 2.5],
+    ['moon_melon_seed', 1, 2.5], ['royal_grapes_seed', 1, 2], ['golden_feather', 1, 2],
+    ['pearl', 1, 2], ['retro_radio', 1, 1], ['dj_corner', 1, 1], ['bottled_fairy', 1, 0.7],
+    ['lucky_wheel', 1, 0.8], ['garden_gnome', 1, 0.8], ['dragon_idol', 1, 0.5],
+    ['crystal_lamp', 1, 0.5],
+  ],
+};
+
+const weightedPick = (rows) => {
+  const total = rows.reduce((s, r) => s + r[r.length - 1], 0);
+  let roll = Math.random() * total;
+  for (const r of rows) { roll -= r[r.length - 1]; if (roll <= 0) return r; }
+  return rows[0];
+};
+
+// One client (the transaction winner) rolls the visit's stock
+export const rollTraderStock = () => {
+  const pool = [...TRADER_POOL];
+  const stock = {};
+  for (let i = 0; i < TRADER_SLOTS && pool.length > 0; i++) {
+    const picked = weightedPick(pool);
+    pool.splice(pool.indexOf(picked), 1);
+    const e = picked[1];
+    const qty = e.lo + Math.floor(Math.random() * (e.hi - e.lo + 1));
+    stock[`t${i}`] = { ...(e.itemId ? { itemId: e.itemId } : { mystery: e.mystery }), qty, price: e.price };
+  }
+  return stock;
+};
+
+// Rolled at PURCHASE time — nobody knows what's inside until they pay
+export const rollMysteryReward = (tier) => {
+  const [itemId, qty] = weightedPick(MYSTERY_TABLES[tier] || MYSTERY_TABLES.common);
+  return { itemId, qty };
+};
+
 // Rock/Paper/Scissors throw icons (rock reuses the "stone" icon from the
 // Town Square pack — there's no dedicated rock icon, and it's a perfect fit).
 export const RPS_THROWS = [

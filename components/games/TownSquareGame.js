@@ -27,9 +27,10 @@ import { forgeStageFor } from './SweetEmpire/sweetEmpireConfig';
 import { SPECIES_MAP as MENAGERIE_SPECIES } from './Menagerie/menagerieConfig';
 import {
   PLOTS, STALL_TIERS, STALL_THEMES, MINIGAMES, MINIGAME_MAP, ringColorFor,
-  canAfford, deductCost, fmtCost, DECOR, NETWORK_RATE, CHAT_BUBBLE_MS,
+  canAfford, fmtCost, DECOR, NETWORK_RATE, CHAT_BUBBLE_MS,
   INTERACT_RADIUS, WORLD_W, WORLD_H, MARGIN, MOVE_SPEED, CAMERA_LERP, EMPTY_PLOT_IMG,
   MERCHANT, MERCHANT_IMG, SHOP_SLOTS, rollShopStock, rollRestockTask, dayKey,
+  TRADER, TRADER_IMG, MYSTERY_IMG, MYSTERY_TIERS, activeTraderWindow, rollTraderStock, rollMysteryReward,
   EMOTES, EVENT_BANNER_MS,
   FOUNTAIN, FOUNTAIN_IMG, WISH_COST, WISHES_PER_DAY, rollWish,
   RACE_START, RACE_CHECKPOINTS, RACE_RADIUS, RACE_FLAG_IMG,
@@ -66,6 +67,8 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   const [myBubble, setMyBubble] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [shopState, setShopState] = useState(null);      // Wandering Merchant (class-shared)
+  const [traderState, setTraderState] = useState(null);  // Mystery Trader stock (class-shared)
+  const [traderWin, setTraderWin] = useState(null);       // current deterministic visit window
   const [banner, setBanner] = useState(null);            // current announcement banner
   const [tally, setTally] = useState({});                // today's win tally
   const [championsOpen, setChampionsOpen] = useState(false);
@@ -94,6 +97,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
   const localTownSquareRef = useRef(cloneTownSquare(studentData?.townSquareData));
   const myIdRef = useRef(studentData?.id || `anon_${Date.now()}`);
   const roomCodeRef = useRef(null);
+  const claimedSalesRef = useRef(new Set()); // sale ids already processed — prevents double-crediting
   const myPlayerDbRef = useRef(null);
   const animFrameRef = useRef(null);
   const networkIntervalRef = useRef(null);
@@ -130,6 +134,26 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     homesteadData: localHomesteadRef.current,
     townSquareData: localTownSquareRef.current,
   }).catch(() => {}), [updateStudentData]);
+
+  // ── Pack + camp chest combined (spend pack-first, then chest) ──────────────
+  const totalOwned = (id) => Math.floor(localHomesteadRef.current.inv?.[id] || 0) + Math.floor(localHomesteadRef.current.chest?.[id] || 0);
+  const canAffordStores = (req) => Object.entries(req || {}).every(([id, q]) => totalOwned(id) >= q);
+  const spendFromStores = (req) => {
+    const h = localHomesteadRef.current;
+    h.inv = { ...(h.inv || {}) };
+    h.chest = { ...(h.chest || {}) };
+    Object.entries(req || {}).forEach(([id, q]) => {
+      let need = q;
+      const fromInv = Math.min(need, h.inv[id] || 0);
+      if (fromInv > 0) { h.inv[id] -= fromInv; if (h.inv[id] <= 0) delete h.inv[id]; need -= fromInv; }
+      if (need > 0 && (h.chest[id] || 0) > 0) { h.chest[id] = Math.max(0, h.chest[id] - need); if (h.chest[id] <= 0) delete h.chest[id]; }
+    });
+  };
+  const combinedStores = () => {
+    const out = { ...(localHomesteadRef.current.inv || {}) };
+    Object.entries(localHomesteadRef.current.chest || {}).forEach(([id, q]) => { out[id] = (out[id] || 0) + q; });
+    return out;
+  };
 
   const syncStallToRTDB = useCallback((stallObj) => {
     if (!roomCodeRef.current) return;
@@ -184,6 +208,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
 
     // The Wandering Merchant (shared shop)
     onValue(ref(database, `worldRooms/${code}/shop`), (snap) => setShopState(snap.val()));
+    onValue(ref(database, `worldRooms/${code}/trader`), (snap) => setTraderState(snap.val()));
 
     // Today's win tally
     onValue(ref(database, `worldRooms/${code}/winTally/${dayKey()}`), (snap) => setTally(snap.val() || {}));
@@ -277,6 +302,30 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     }).catch(() => {});
   }, []);
 
+  // Self-healing restock: if the class challenge is complete (task.have >= need)
+  // the whole shop rerolls — no matter which client notices, and regardless of
+  // whether any stock is left. The transaction guarantees only one reroll wins.
+  const rerollShopIfComplete = useCallback(async () => {
+    const code = roomCodeRef.current;
+    if (!code) return;
+    try {
+      const restock = await runTransaction(ref(database, `worldRooms/${code}/shop`), (cur) => {
+        if (!cur || !cur.task || (cur.task.have || 0) < (cur.task.need || 1)) return undefined; // not complete — abort
+        return { gen: (cur.gen || 0) + 1, stock: rollShopStock(), task: rollRestockTask() };
+      });
+      if (restock.committed) pushEvent('🎪 The class restocked the Wandering Merchant — fresh goods have arrived!', 'shop');
+    } catch { /* another client won the race — fine */ }
+  }, [pushEvent]);
+
+  // Watchdog: any client that SEES a completed task heals a stuck shop
+  // (covers the case where the completing donor closed the tab before rerolling).
+  useEffect(() => {
+    const task = shopState?.task;
+    if (!task || (task.have || 0) < (task.need || 1)) return;
+    const t = setTimeout(() => rerollShopIfComplete(), 1500 + Math.random() * 2000); // jitter so one client usually wins cleanly
+    return () => clearTimeout(t);
+  }, [shopState, rerollShopIfComplete]);
+
   const buyShopItem = useCallback(async (slotId) => {
     const slot = shopState?.stock?.[slotId];
     if (!slot || slot.qty <= 0) { showToast?.('Sold out! Help restock the caravan.', 'error'); return; }
@@ -300,11 +349,93 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     }
   }, [shopState, myName, saveHomestead, showToast, pushEvent]);
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // THE MYSTERY TRADER — sometimes in town, always different
+  // ═══════════════════════════════════════════════════════════════════════
+  // Track the deterministic visit window (checked every 10s)
+  useEffect(() => {
+    if (screen !== 'playing') return undefined;
+    const check = () => {
+      const w = activeTraderWindow(roomCodeRef.current || '');
+      setTraderWin((prev) => (prev?.key === w?.key ? prev : w));
+    };
+    check();
+    const t = setInterval(check, 10000);
+    return () => clearInterval(t);
+  }, [screen]);
+
+  // First client to see a fresh window rolls the stock (transaction = one winner)
+  useEffect(() => {
+    if (screen !== 'playing' || !traderWin || !roomCodeRef.current) return;
+    if (traderState?.key === traderWin.key) return;
+    runTransaction(ref(database, `worldRooms/${roomCodeRef.current}/trader`), (cur) => {
+      if (cur && cur.key === traderWin.key) return undefined; // this visit already stocked
+      return { key: traderWin.key, endsAt: traderWin.endsAt, stock: rollTraderStock(), arrivedAt: Date.now() };
+    }).then((res) => {
+      if (res.committed) pushEvent('🔮 The MYSTERY TRADER has rolled into town — strange and rare goods, for a short time only!', 'shop');
+    }).catch(() => {});
+  }, [screen, traderWin, traderState, pushEvent]);
+
+  const traderActive = !!(traderWin && traderState?.key === traderWin.key);
+
+  const buyTraderItem = useCallback(async (slotId) => {
+    const slot = traderState?.stock?.[slotId];
+    if (!slot || slot.qty <= 0) { showToast?.('Snapped up already — she travels light!', 'error'); return; }
+    if (!isNear(TRADER)) { showToast?.('Walk closer to the trader’s cart first!', 'error'); return; }
+    if ((localHomesteadRef.current.gold || 0) < slot.price) { showToast?.('Not enough gold!', 'error'); return; }
+    try {
+      const res = await runTransaction(ref(database, `worldRooms/${roomCodeRef.current}/trader/stock/${slotId}/qty`), (cur) => {
+        if (typeof cur !== 'number' || cur <= 0) return undefined;
+        return cur - 1;
+      });
+      if (!res.committed) { showToast?.('Snapped up already!', 'error'); return; }
+      localHomesteadRef.current.gold -= slot.price;
+      let gained;
+      if (slot.mystery) {
+        gained = rollMysteryReward(slot.mystery); // nobody knows until they pay!
+      } else {
+        gained = { itemId: slot.itemId, qty: 1 };
+      }
+      localHomesteadRef.current.inv = { ...(localHomesteadRef.current.inv || {}) };
+      localHomesteadRef.current.inv[gained.itemId] = (localHomesteadRef.current.inv[gained.itemId] || 0) + gained.qty;
+      saveHomestead();
+      bumpDaily('buys');
+      const it = ITEMS[gained.itemId];
+      if (slot.mystery) {
+        showToast?.(`📦 The ${MYSTERY_TIERS[slot.mystery]?.name} contained… ${gained.qty}× ${it?.name}!`, (it?.rarity === 'epic' || it?.rarity === 'legendary') ? 'success' : 'info');
+        if (it?.rarity === 'epic' || it?.rarity === 'legendary') pushEvent(`📦 ${myName} opened a ${MYSTERY_TIERS[slot.mystery]?.name} and found a ${it?.name}!`, 'shop');
+      } else {
+        showToast?.(`Bought ${it?.name} from the Mystery Trader!`, 'success');
+        if (it?.kind === 'furniture' || slot.price >= 120) pushEvent(`🔮 ${myName} bought a ${it?.name} from the Mystery Trader!`, 'shop');
+      }
+      forceTick((n) => n + 1);
+    } catch {
+      showToast?.('Purchase failed — try again.', 'error');
+    }
+  }, [traderState, myName, saveHomestead, showToast, pushEvent]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sell goods TO the merchant (the old Wildwood Trading Post now lives here).
+  // Sells from your pack AND camp chest at each item's sell price.
+  const sellToMerchant = useCallback((itemId, qty) => {
+    if (!isNear(MERCHANT)) { showToast?.('Walk closer to the caravan first!', 'error'); return; }
+    const item = ITEMS[itemId];
+    if (!item || !item.sell) return;
+    const n = Math.min(qty, totalOwned(itemId));
+    if (n <= 0) return;
+    spendFromStores({ [itemId]: n });
+    const earned = item.sell * n;
+    localHomesteadRef.current.gold = (localHomesteadRef.current.gold || 0) + earned;
+    saveHomestead();
+    showToast?.(`Sold ${n}× ${item.name} for ${fmtQty(earned)} gold!`, 'success');
+    if (earned >= 150) pushEvent(`💰 ${myName} sold a haul of ${item.name} to the Wandering Merchant!`, 'shop');
+    forceTick((k) => k + 1);
+  }, [saveHomestead, showToast, pushEvent, myName]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const donateToShop = useCallback(async () => {
     const task = shopState?.task;
     if (!task) return;
     if (!isNear(MERCHANT)) { showToast?.('Walk closer to the caravan first!', 'error'); return; }
-    if ((localHomesteadRef.current.inv[task.itemId] || 0) < 1) {
+    if (totalOwned(task.itemId) < 1) {
       showToast?.(`The merchant needs ${ITEMS[task.itemId]?.name} — gather some in Wildwood!`, 'error');
       return;
     }
@@ -314,25 +445,19 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         if (cur >= task.need) return;
         return cur + 1;
       });
-      if (!res.committed) { showToast?.('The task is already complete!', 'info'); return; }
-      localHomesteadRef.current.inv[task.itemId] -= 1;
-      if (localHomesteadRef.current.inv[task.itemId] <= 0) delete localHomesteadRef.current.inv[task.itemId];
+      if (!res.committed) { showToast?.('The task is already complete!', 'info'); rerollShopIfComplete(); return; }
+      spendFromStores({ [task.itemId]: 1 });
       saveHomestead();
       bumpDaily('donates');
       showToast?.(`Donated 1 ${ITEMS[task.itemId]?.name} — thank you!`, 'success');
       forceTick((n) => n + 1);
-      // If that donation completed the task, exactly one client rerolls the shop
-      if (res.snapshot.val() >= task.need) {
-        const restock = await runTransaction(ref(database, `worldRooms/${roomCodeRef.current}/shop`), (cur) => {
-          if (!cur || !cur.task || (cur.task.have || 0) < (cur.task.need || 1)) return;
-          return { gen: (cur.gen || 0) + 1, stock: rollShopStock(), task: rollRestockTask() };
-        });
-        if (restock.committed) pushEvent('🎪 The class restocked the Wandering Merchant — fresh goods have arrived!', 'shop');
-      }
+      // If that donation completed the task, reroll immediately (the watchdog
+      // effect is the backup if this client disappears before it lands)
+      if (res.snapshot.val() >= task.need) await rerollShopIfComplete();
     } catch {
       showToast?.('Donation failed — try again.', 'error');
     }
-  }, [shopState, saveHomestead, showToast, pushEvent]);
+  }, [shopState, saveHomestead, showToast, rerollShopIfComplete]);
 
   // ── Plaza race finish (ref-called from the flush interval) ─────────────────
   const finishRaceRef = useRef(null);
@@ -454,11 +579,26 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
 
   const claimPendingIncome = useCallback((code, saleId, sale) => {
     if (!sale) return;
+    // Guard against double-processing the same sale (listener refires, etc.)
+    if (claimedSalesRef.current.has(saleId)) return;
+    claimedSalesRef.current.add(saleId);
     localHomesteadRef.current.gold = (localHomesteadRef.current.gold || 0) + (sale.price || 0);
-    saveHomestead();
+    // The buyer already decremented the RTDB copy — now remove the sold unit from
+    // OUR authoritative stall copy too, so unstocking can't duplicate the item.
+    const stall = localTownSquareRef.current.stall;
+    const listing = stall?.listings?.[sale.itemId];
+    if (listing) {
+      listing.qty = (listing.qty || 0) - 1;
+      if (listing.qty <= 0) delete stall.listings[sale.itemId];
+      saveBoth();
+      syncStallToRTDB(stall); // keep RTDB aligned with the corrected local copy
+    } else {
+      saveHomestead();
+    }
     showToast?.(`Sold ${ITEMS[sale.itemId]?.name || sale.itemId} to ${sale.buyerName || 'a classmate'} for ${sale.price} gold! 💰`, 'success');
     remove(ref(database, `worldRooms/${code}/pendingIncome/${myIdRef.current}/${saleId}`)).catch(() => {});
-  }, [saveHomestead, showToast]);
+    forceTick((n) => n + 1);
+  }, [saveHomestead, saveBoth, syncStallToRTDB, showToast]);
 
   const loop = useCallback(() => {
     const k = keysRef.current;
@@ -588,6 +728,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       off(ref(database, `worldRooms/${code}/chat`));
       off(ref(database, `worldRooms/${code}/events`));
       off(ref(database, `worldRooms/${code}/shop`));
+      off(ref(database, `worldRooms/${code}/trader`));
       off(ref(database, `worldRooms/${code}/winTally/${dayKey()}`));
       off(ref(database, `worldRooms/${code}/plazaRace/${dayKey()}`));
       off(ref(database, `worldRooms/${code}/pendingIncome/${myIdRef.current}`));
@@ -697,8 +838,8 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     if (myStall) { showToast?.('You already own a stall — abandon it first to relocate.', 'error'); return; }
     if (!isNear({ x: PLOTS.find((p) => p.id === plotId)?.x, y: PLOTS.find((p) => p.id === plotId)?.y })) { showToast?.('Walk closer to the plot first!', 'error'); return; }
     const tier = STALL_TIERS[0];
-    if (!canAfford(localHomesteadRef.current.inv, tier.cost)) { showToast?.(`You need ${fmtCost(tier.cost, ITEMS)} to build this!`, 'error'); return; }
-    localHomesteadRef.current.inv = deductCost(localHomesteadRef.current.inv, tier.cost);
+    if (!canAffordStores(tier.cost)) { showToast?.(`You need ${fmtCost(tier.cost, ITEMS)} to build this!`, 'error'); return; }
+    spendFromStores(tier.cost);
     localTownSquareRef.current.stall = { plotId, tier: 1, theme: 'gold', listings: {}, builtAt: Date.now() };
     saveBoth();
     syncStallToRTDB(localTownSquareRef.current.stall);
@@ -715,8 +856,8 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     if (!isNear(plot)) { showToast?.('Walk closer to your stall first!', 'error'); return; }
     const nextTier = STALL_TIERS[stall.tier]; // tiers array is 0-indexed, stall.tier is 1-indexed current
     if (!nextTier) { showToast?.('Your stall is already fully upgraded!', 'info'); return; }
-    if (!canAfford(localHomesteadRef.current.inv, nextTier.cost)) { showToast?.(`You need ${fmtCost(nextTier.cost, ITEMS)} to upgrade!`, 'error'); return; }
-    localHomesteadRef.current.inv = deductCost(localHomesteadRef.current.inv, nextTier.cost);
+    if (!canAffordStores(nextTier.cost)) { showToast?.(`You need ${fmtCost(nextTier.cost, ITEMS)} to upgrade!`, 'error'); return; }
+    spendFromStores(nextTier.cost);
     stall.tier = nextTier.tier;
     saveBoth();
     syncStallToRTDB(stall);
@@ -739,10 +880,9 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
     const tierCfg = STALL_TIERS[stall.tier - 1];
     const slotsUsed = Object.keys(stall.listings).length;
     if (!stall.listings[itemId] && slotsUsed >= tierCfg.slots) { showToast?.('Stall is full — upgrade for more space!', 'error'); return; }
-    const have = localHomesteadRef.current.inv[itemId] || 0;
+    const have = totalOwned(itemId);
     if (have < qty) { showToast?.("You don't have that many to stock!", 'error'); return; }
-    localHomesteadRef.current.inv[itemId] = have - qty;
-    if (localHomesteadRef.current.inv[itemId] <= 0) delete localHomesteadRef.current.inv[itemId];
+    spendFromStores({ [itemId]: qty });
     const existing = stall.listings[itemId];
     stall.listings[itemId] = { qty: (existing?.qty || 0) + qty, price: Math.max(0, Math.floor(price)) };
     saveBoth();
@@ -1103,6 +1243,23 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
             )}
           </button>
 
+          {/* The Mystery Trader — only here during her random visit windows */}
+          {traderActive && (
+            <button
+              onClick={() => setActiveModal({ type: 'trader' })}
+              className="absolute flex flex-col items-center z-10"
+              style={{ left: TRADER.x, top: TRADER.y, transform: 'translate(-50%,-50%)' }}
+            >
+              <span className="text-[10px] font-bold text-white bg-purple-700/90 border border-purple-300/60 rounded-full px-2 py-0.5 mb-0.5 shadow animate-pulse">
+                ⏳ leaving {traderState?.endsAt ? `in ${Math.max(1, Math.ceil((traderState.endsAt - Date.now()) / 60000))}m` : 'soon'}
+              </span>
+              <img src={TRADER_IMG} alt="" className="w-24 h-24 object-contain drop-shadow-xl" style={{ filter: 'hue-rotate(250deg) saturate(1.2)' }} />
+              <div className="text-[11px] font-bold text-white bg-purple-800/95 border border-purple-400/50 rounded-full px-2.5 py-0.5 -mt-2 shadow">
+                🔮 Mystery Trader
+              </div>
+            </button>
+          )}
+
           {/* Plots */}
           {PLOTS.map((plot) => {
             const stall = stallsByPlot[plot.id];
@@ -1258,6 +1415,9 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         <div className="relative w-full h-full overflow-hidden rounded-lg" style={{ background: 'radial-gradient(circle, #5b7c44 0%, #46613558 100%)' }}>
           <div className="absolute rounded-full bg-white/20" style={{ left: '50%', top: '50%', width: 42, height: 42, transform: 'translate(-50%,-50%)' }} />
           <img src={MERCHANT_IMG} alt="" className="absolute w-4 h-4 object-contain" style={{ left: `${(MERCHANT.x / WORLD_W) * 100}%`, top: `${(MERCHANT.y / WORLD_H) * 100}%`, transform: 'translate(-50%,-50%)' }} />
+          {traderActive && (
+            <img src={TRADER_IMG} alt="" className="absolute w-4 h-4 object-contain animate-pulse" style={{ left: `${(TRADER.x / WORLD_W) * 100}%`, top: `${(TRADER.y / WORLD_H) * 100}%`, transform: 'translate(-50%,-50%)', filter: 'hue-rotate(250deg) saturate(1.4)' }} />
+          )}
           {PLOTS.map((pl) => {
             const s = stallsByPlot[pl.id];
             return <div key={pl.id} className="absolute w-1.5 h-1.5 rounded-sm" style={{ left: `${(pl.x / WORLD_W) * 100}%`, top: `${(pl.y / WORLD_H) * 100}%`, transform: 'translate(-50%,-50%)', background: s ? themeColor(s.theme) : 'rgba(255,255,255,0.35)' }} />;
@@ -1331,7 +1491,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
           plotId={activeModal.plotId}
           myStall={myStall}
           near={isNear(PLOTS.find((p) => p.id === activeModal.plotId))}
-          inv={localHomesteadRef.current.inv}
+          inv={combinedStores()}
           onBuild={buildStall}
           onClose={() => setActiveModal(null)}
         />
@@ -1339,7 +1499,7 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
       {activeModal?.type === 'manage' && myStall && (
         <ManageStallModal
           stall={myStall}
-          inv={localHomesteadRef.current.inv}
+          inv={combinedStores()}
           near={isNear(PLOTS.find((p) => p.id === myStall.plotId))}
           onStock={stockItem}
           onUnstock={unstockItem}
@@ -1394,10 +1554,20 @@ const TownSquareGame = ({ studentData, updateStudentData, showToast, classData, 
         <ShopModal
           shop={shopState}
           myGold={localHomesteadRef.current.gold || 0}
-          myInv={localHomesteadRef.current.inv || {}}
+          myInv={combinedStores()}
           near={isNear(MERCHANT)}
           onBuy={buyShopItem}
           onDonate={donateToShop}
+          onSell={sellToMerchant}
+          onClose={() => setActiveModal(null)}
+        />
+      )}
+      {activeModal?.type === 'trader' && traderActive && (
+        <TraderModal
+          trader={traderState}
+          myGold={localHomesteadRef.current.gold || 0}
+          near={isNear(TRADER)}
+          onBuy={buyTraderItem}
           onClose={() => setActiveModal(null)}
         />
       )}
@@ -1616,24 +1786,58 @@ function BrowseStallModal({ stall, myGold, near, onBuy, onClose }) {
   );
 }
 
-function ShopModal({ shop, myGold, myInv, near, onBuy, onDonate, onClose }) {
+function ShopModal({ shop, myGold, myInv, near, onBuy, onDonate, onSell, onClose }) {
+  const [shopTab, setShopTab] = useState('buy');
   const stock = shop?.stock || {};
   const task = shop?.task || null;
   const slots = Object.entries(stock);
   const allSoldOut = slots.length > 0 && slots.every(([, s]) => (s?.qty || 0) <= 0);
+  const sellable = Object.entries(myInv || {})
+    .filter(([id, q]) => q > 0 && ITEMS[id]?.sell > 0)
+    .sort((a, b) => (ITEMS[b[0]].sell - ITEMS[a[0]].sell));
   return (
     <ModalShell title="The Wandering Merchant" iconSrc={MERCHANT_IMG} onClose={onClose}>
-      <div className="flex items-center gap-2 mb-3 text-sm text-white/60">
-        <img src={GOLD_ICON} alt="" className="w-4 h-4" /> You have {fmtQty(myGold)} gold
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 text-sm text-white/60">
+          <img src={GOLD_ICON} alt="" className="w-4 h-4" /> You have {fmtQty(myGold)} gold
+        </div>
+        <div className="flex gap-1">
+          {[['buy', '🛒 Buy'], ['sell', '💰 Sell']].map(([tid, tlabel]) => (
+            <button key={tid} onClick={() => setShopTab(tid)}
+              className={`text-xs font-bold rounded-full px-3 py-1.5 border transition ${shopTab === tid ? 'border-amber-400/70 bg-amber-400/15 text-amber-300' : 'border-white/15 text-white/50 hover:border-white/30'}`}>
+              {tlabel}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {allSoldOut && (
+      {shopTab === 'sell' && (
+        <div className="mb-4">
+          <p className="text-xs text-white/50 mb-2">The merchant buys anything — straight from your pack <b>and</b> camp chest.</p>
+          <div className="max-h-72 overflow-y-auto divide-y divide-white/5 pr-1">
+            {sellable.map(([id, q]) => (
+              <div key={id} className="flex items-center gap-2 py-1.5">
+                {ITEMS[id]?.img && <img src={ITEMS[id].img} alt="" className="w-7 h-7 object-contain" style={ITEMS[id].tint ? { filter: ITEMS[id].tint } : undefined} />}
+                <p className="flex-1 text-sm font-semibold truncate">{ITEMS[id].name} <span className="text-[10px] text-white/40 font-normal">× {fmtQty(q)}</span></p>
+                <span className="text-[10px] text-white/40">{ITEMS[id].sell}g ea</span>
+                <button onClick={() => onSell(id, 1)} disabled={!near}
+                  className="text-xs font-bold bg-white/10 hover:bg-amber-500/30 disabled:opacity-40 rounded-lg px-2 py-1 transition">Sell 1</button>
+                <button onClick={() => onSell(id, 999999)} disabled={!near}
+                  className="text-xs font-bold bg-white/10 hover:bg-amber-500/30 disabled:opacity-40 rounded-lg px-2 py-1 transition">All</button>
+              </div>
+            ))}
+            {sellable.length === 0 && <p className="text-white/40 text-sm text-center py-6">Nothing to sell — go gather some goods!</p>}
+          </div>
+        </div>
+      )}
+
+      {shopTab === 'buy' && allSoldOut && (
         <div className="bg-rose-500/15 border border-rose-400/30 text-rose-200 text-xs rounded-xl p-2.5 mb-3 text-center font-semibold">
           The caravan is picked clean! Complete the restock task below for fresh goods.
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2 mb-4">
+      <div className={`grid grid-cols-2 gap-2 mb-4 ${shopTab !== 'buy' ? 'hidden' : ''}`}>
         {slots.map(([slotId, s]) => {
           const item = ITEMS[s.itemId];
           const out = (s.qty || 0) <= 0;
@@ -1678,6 +1882,52 @@ function ShopModal({ shop, myGold, myInv, near, onBuy, onDonate, onClose }) {
         </div>
       )}
       {!near && <div className="text-amber-300 text-xs text-center mt-3">Walk closer to the caravan to trade.</div>}
+    </ModalShell>
+  );
+}
+
+function TraderModal({ trader, myGold, near, onBuy, onClose }) {
+  const stock = trader?.stock || {};
+  const slots = Object.entries(stock);
+  const minsLeft = trader?.endsAt ? Math.max(1, Math.ceil((trader.endsAt - Date.now()) / 60000)) : null;
+  return (
+    <ModalShell title="The Mystery Trader" iconSrc={TRADER_IMG} onClose={onClose}>
+      <div className="flex items-center justify-between gap-2 mb-1 text-sm text-white/60">
+        <span className="flex items-center gap-2"><img src={GOLD_ICON} alt="" className="w-4 h-4" /> You have {fmtQty(myGold)} gold</span>
+        {minsLeft !== null && <span className="text-purple-300 font-bold text-xs animate-pulse">⏳ leaving in ~{minsLeft} min</span>}
+      </div>
+      <p className="text-white/40 text-xs mb-3">She appears when she pleases, carries what she likes, and never restocks. Mystery boxes stay sealed until you pay…</p>
+
+      <div className="grid grid-cols-2 gap-2">
+        {slots.map(([slotId, s]) => {
+          const isMystery = !!s.mystery;
+          const item = isMystery ? null : ITEMS[s.itemId];
+          const tier = isMystery ? MYSTERY_TIERS[s.mystery] : null;
+          const out = (s.qty || 0) <= 0;
+          const isFurniture = item?.kind === 'furniture';
+          return (
+            <div key={slotId} className={`rounded-xl border p-2.5 text-center ${out ? 'border-white/5 bg-white/[0.02] opacity-50' : isMystery ? 'border-purple-400/40 bg-purple-500/10' : isFurniture ? 'border-amber-400/40 bg-amber-500/10' : 'border-white/10 bg-white/5'}`}>
+              {isMystery ? (
+                <img src={MYSTERY_IMG} alt="" className="w-9 h-9 mx-auto object-contain" style={tier?.tint ? { filter: tier.tint } : undefined} />
+              ) : (
+                item?.img && <img src={item.img} alt="" className="w-9 h-9 mx-auto object-contain" style={item.tint ? { filter: item.tint } : undefined} />
+              )}
+              <div className="text-xs font-semibold mt-1 truncate">{isMystery ? tier?.name : item?.name || s.itemId}</div>
+              <div className="text-[9px] text-white/40 truncate">{isMystery ? tier?.desc : isFurniture ? 'Hangout furniture!' : ''}</div>
+              <div className="text-[10px] text-white/50 mb-1.5">{out ? 'SNAPPED UP' : `${s.qty} left · ${s.price} gold`}</div>
+              <button
+                onClick={() => onBuy(slotId)}
+                disabled={!near || out || myGold < s.price}
+                className={`w-full py-1.5 rounded-lg text-xs font-bold disabled:bg-slate-700 disabled:text-white/40 ${isMystery ? 'bg-purple-600 hover:bg-purple-500' : 'bg-emerald-600 hover:bg-emerald-500'}`}
+              >
+                {isMystery ? 'Risk it!' : 'Buy'}
+              </button>
+            </div>
+          );
+        })}
+        {slots.length === 0 && <div className="col-span-2 text-white/40 text-sm text-center py-6">She&apos;s unhitching the cart…</div>}
+      </div>
+      {!near && <div className="text-purple-300 text-xs text-center mt-3">Walk closer to the cart to trade.</div>}
     </ModalShell>
   );
 }

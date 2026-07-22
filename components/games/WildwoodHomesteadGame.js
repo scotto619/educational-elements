@@ -25,8 +25,8 @@ import {
   ZONES, NODES, STUMP_ICON,
   FISHING_SPOTS, JUNK_IDS, FISH_WAIT_MIN_S, FISH_WAIT_MAX_S, FISH_BITE_WINDOW_MS, FISH_XP,
   TOOL_TIERS, TOOL_DEFS, TOOL_COSTS, TOOL_LEVEL_REQ,
-  SKILLS, skillLevel, skillProgress,
-  EXPEDITIONS, HUNT_XP_PER_ROLL, SCAV_XP_PER_ROLL, SEED_DROPS,
+  SKILLS, skillLevel, skillProgress, SKILL_MAX,
+  EXPEDITIONS, HUNT_XP_PER_ROLL, SCAV_XP_PER_ROLL, SEED_DROPS, RARE_SEED_DROPS,
   FARM_BASE_PLOTS, CROPS, CROP_BY_SEED, GOLDEN_CROP_CHANCE, PENS, PEN_MAP, CHEESE_RECIPE,
   SMELT_SLOTS, SMELT_RECIPES, SAW_SLOTS, SAW_RECIPES,
   LANDMARKS, LANDMARK_MAP, FRIENDS, FRIEND_MAP, RANDOM_CURIO_IDS,
@@ -56,6 +56,37 @@ const ICN = '/game icons/Wildwood';
 // Items can span MULTIPLE stacks — each stack takes one slot.
 const slotsUsedOf = (inv, stackSize) =>
   Object.values(inv || {}).reduce((s, q) => s + Math.ceil((Number(q) || 0) / stackSize), 0);
+
+// Effective slots used, after specialist storage (Lumber Yard, Fish Cooler…)
+// absorbs stacks of its own kind: used = all stacks − absorbed stacks.
+const effSlotsUsed = (inv, stackSize, kindSlots = {}) => {
+  const stacksByKind = {};
+  let total = 0;
+  Object.entries(inv || {}).forEach(([id, q]) => {
+    const st = Math.ceil((Number(q) || 0) / stackSize);
+    total += st;
+    const k = ITEMS[id]?.kind;
+    if (k) stacksByKind[k] = (stacksByKind[k] || 0) + st;
+  });
+  let absorbed = 0;
+  Object.entries(kindSlots).forEach(([k, n]) => { absorbed += Math.min(n, stacksByKind[k] || 0); });
+  return total - absorbed;
+};
+
+// Largest amount of `id` that fits given slots/stack/kind storage (binary search)
+const maxFitOf = (inv, id, want, caps) => {
+  const fits = (extra) => {
+    const test = { ...inv, [id]: (inv[id] || 0) + extra };
+    return effSlotsUsed(test, caps.stack, caps.kindSlots) <= caps.slots;
+  };
+  if (fits(want)) return want;
+  let lo = 0, hi = want;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (fits(mid)) lo = mid; else hi = mid - 1;
+  }
+  return lo;
+};
 
 // Companion family → homestead bonus (read-only peek at the Menagerie save)
 const COMPANION_BONUSES = {
@@ -211,6 +242,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   // ── Derived capacities ──────────────────────────────────────────────────────
   const capsOf = (cur) => {
     let slots = INV_BASE_SLOTS, stack = STACK_BASE, chestSlots = 0, scavBonus = 0, huntBonus = 0, expSpeed = 0, cropYield = 0, smeltSlots = SMELT_SLOTS;
+    const kindSlots = {};
     (cur.crafted || []).forEach((id) => {
       const c = CRAFT_MAP[id];
       if (!c) return;
@@ -222,24 +254,26 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       expSpeed += c.expSpeed || 0;
       cropYield += c.effect?.cropYield || 0;
       smeltSlots += c.smeltSlots || 0;
+      if (c.kindStore) c.kindStore.kinds.forEach((k) => { kindSlots[k] = (kindSlots[k] || 0) + c.kindStore.slots; });
     });
     // Landmark perks + wild friends also feed expedition stats
     const P = passivesOf(cur);
     scavBonus += P.scavBonus || 0;
     huntBonus += P.huntBonus || 0;
     expSpeed += P.expSpeed || 0;
-    return { slots, stack, chestSlots, scavBonus, huntBonus, expSpeed, cropYield, smeltSlots };
+    return { slots, stack, chestSlots, scavBonus, huntBonus, expSpeed, cropYield, smeltSlots, kindSlots };
   };
   const caps = useMemo(() => capsOf(gs), [gs]);
   const prosperity = useMemo(() => prosperityOf(gs), [gs]);
   const kitchenTier = gs.crafted.includes('kitchen') ? 2 : gs.crafted.includes('stove') ? 1 : 0;
   const farmPlots = FARM_BASE_PLOTS + (gs.crafted || []).reduce((n, id) => n + (CRAFT_MAP[id]?.plots || 0), 0);
   const fuelUnits = useMemo(
-    () => Object.entries(gs.inv || {}).reduce((s, [id, q]) => s + (ITEMS[id]?.burn || 0) * q, 0),
-    [gs.inv]
+    () => Object.entries(gs.inv || {}).reduce((s, [id, q]) => s + (ITEMS[id]?.burn || 0) * q, 0)
+      + Object.entries(gs.chest || {}).reduce((s, [id, q]) => s + (ITEMS[id]?.burn || 0) * q, 0),
+    [gs.inv, gs.chest]
   );
   const maxExpeditions = gs.crafted.includes('camp2') ? 2 : 1;
-  const usedSlots = slotsUsedOf(gs.inv, caps.stack);
+  const usedSlots = effSlotsUsed(gs.inv, caps.stack, caps.kindSlots);
   const chestUsedSlots = slotsUsedOf(gs.chest, caps.stack * 2);
 
   // ── Load (migrates v1 saves — unknown ids are dropped by cleanSave rules) ──
@@ -323,29 +357,46 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   useEffect(() => () => clearTimeout(fishTimerRef.current), []);
 
   // ── Inventory core (slot + stack aware; overflow auto-sold) ────────────────
-  const countOf = (id) => Math.floor((invRef.current || gsRef.current.inv)?.[id] || 0);
+  // countOf = TOTAL owned (pack + camp chest). Spending pulls from the pack
+  // first, then the chest — so stored materials work for crafting, cooking,
+  // selling and everything else.
+  const packCountOf = (id) => Math.floor((invRef.current || gsRef.current.inv)?.[id] || 0);
+  const chestCountOf = (id) => Math.floor((chestRef.current || gsRef.current.chest)?.[id] || 0);
+  const countOf = (id) => packCountOf(id) + chestCountOf(id);
 
   const addLoot = (gains, { sellOverflow = true } = {}) => {
     const cur = gsRef.current;
     const c = capsOf(cur);
     const inv = { ...(invRef.current || cur.inv) };
+    const chest = { ...(chestRef.current || cur.chest) };
+    let chestTouched = false;
     let soldGold = 0;
     const soldItems = [];
     Object.entries(gains).forEach(([id, q]) => {
       q = Math.floor(q);
       if (!ITEMS[id] || q === 0) return;
       if (q < 0) {
-        inv[id] = Math.max(0, (inv[id] || 0) + q);
-        if (inv[id] === 0) delete inv[id];
+        // Spend: pack first, then camp chest
+        let need = -q;
+        const fromInv = Math.min(need, inv[id] || 0);
+        if (fromInv > 0) {
+          inv[id] -= fromInv;
+          if (inv[id] <= 0) delete inv[id];
+          need -= fromInv;
+        }
+        if (need > 0) {
+          const fromChest = Math.min(need, chest[id] || 0);
+          if (fromChest > 0) {
+            chest[id] -= fromChest;
+            if (chest[id] <= 0) delete chest[id];
+            chestTouched = true;
+          }
+        }
         return;
       }
-      // Multi-stack: this item may occupy several slots (one per stack of `c.stack`)
-      const have = inv[id] || 0;
-      const used = slotsUsedOf(inv, c.stack);
-      const freeSlots = c.slots - used + Math.ceil(have / c.stack); // slots available to THIS item
-      const maxTotal = freeSlots * c.stack;
-      const add = Math.max(0, Math.min(q, maxTotal - have));
-      if (add > 0) inv[id] = have + add;
+      // Multi-stack + specialist storage: find how much actually fits
+      const add = maxFitOf(inv, id, q, c);
+      if (add > 0) inv[id] = (inv[id] || 0) + add;
       const over = q - add;
       if (over > 0 && sellOverflow) {
         soldGold += (ITEMS[id].sell || 0) * over;
@@ -353,7 +404,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       }
     });
     invRef.current = inv;
-    setGs((p) => ({ ...p, inv: { ...inv }, gold: p.gold + soldGold }));
+    if (chestTouched) chestRef.current = chest;
+    setGs((p) => ({ ...p, inv: { ...inv }, ...(chestTouched ? { chest: { ...chest } } : {}), gold: p.gold + soldGold }));
     dirtyRef.current = true;
     if (soldItems.length > 0) {
       showToastRef.current(`Pack full! Overflow sold: ${soldItems.join(', ')} (+${soldGold} gold). Craft bags & crates to carry more!`, 'info');
@@ -364,22 +416,19 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const canFit = (id, q = 1) => {
     const c = capsOf(gsRef.current);
     const inv = invRef.current || gsRef.current.inv;
-    const have = inv?.[id] || 0;
-    const used = slotsUsedOf(inv, c.stack);
-    const newUsed = used - Math.ceil(have / c.stack) + Math.ceil((have + q) / c.stack);
-    return newUsed <= c.slots;
+    return maxFitOf(inv, id, q, c) >= q;
   };
 
   const hasItems = (req) => Object.entries(req || {}).every(([id, q]) => q === 0 || countOf(id) >= q);
 
   const consumeFuel = (units) => {
-    const inv = invRef.current || gsRef.current.inv;
-    const woods = Object.keys(inv || {}).filter((id) => ITEMS[id]?.burn).sort((a, b) => ITEMS[a].burn - ITEMS[b].burn);
+    const totalWood = (id) => packCountOf(id) + chestCountOf(id);
+    const woods = Object.keys(ITEMS).filter((id) => ITEMS[id]?.burn && totalWood(id) > 0).sort((a, b) => ITEMS[a].burn - ITEMS[b].burn);
     let need = Math.max(1, Math.ceil(units * (1 - Math.min(0.5, buffVal('fuelSave') / 100))));
     const spend = {};
     for (const id of woods) {
       if (need <= 0) break;
-      const take = Math.min(inv[id], Math.ceil(need / ITEMS[id].burn));
+      const take = Math.min(totalWood(id), Math.ceil(need / ITEMS[id].burn));
       spend[id] = -take;
       need -= take * ITEMS[id].burn;
     }
@@ -413,7 +462,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     } else {
       const n = Math.min(qty, chest[id] || 0);
       if (n <= 0) return;
-      const move = Math.min(n, capacityFor(inv, id, c.stack, c.slots));
+      const move = Math.min(n, maxFitOf(inv, id, n, c));
       if (move <= 0) { showToastRef.current('No room in your pack!', 'error'); return; }
       inv[id] = (inv[id] || 0) + move;
       chest[id] -= move;
@@ -708,6 +757,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       for (const r of table) { roll -= weightOf(r); if (roll <= 0) { picked = r[0]; break; } }
       if (picked === 'CRITTER') critterFinds.push(rollCritter().id);
       else if (picked === 'SEED') { const sid = SEED_DROPS[Math.floor(Math.random() * SEED_DROPS.length)]; loot[sid] = (loot[sid] || 0) + 1; }
+      else if (picked === 'RARESEED') { const sid = RARE_SEED_DROPS[Math.floor(Math.random() * RARE_SEED_DROPS.length)]; loot[sid] = (loot[sid] || 0) + 1; }
       else if (picked === 'CURIO') curios.push(RANDOM_CURIO_IDS[Math.floor(Math.random() * RANDOM_CURIO_IDS.length)]);
       else if (picked === 'recipe_scroll') scrolls += 1;
       else if (ITEMS[picked]?.kind === 'curio') curios.push(picked); // named curios (amber, crest…)
@@ -791,13 +841,6 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if (!canFit(id, 1)) { showToast('No room in your pack!', 'error'); return; }
     setGs((p) => ({ ...p, gold: p.gold - cost }));
     addLoot({ [id]: 1 });
-  };
-
-  const sellItem = (id, qty) => {
-    const n = Math.min(qty, countOf(id));
-    if (n <= 0 || !ITEMS[id].sell) return;
-    addLoot({ [id]: -n });
-    setGs((p) => ({ ...p, gold: p.gold + ITEMS[id].sell * n }));
   };
 
   // ── Smelting ────────────────────────────────────────────────────────────────
@@ -1436,7 +1479,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
               {Array.from({ length: farmPlots }).map((_, i) => {
                 const planted = gs.farm.find((f) => f.plot === i);
                 if (!planted) {
-                  const seeds = Object.keys(gs.inv || {}).filter((id) => ITEMS[id]?.kind === 'seed' && gs.inv[id] > 0);
+                  const seeds = [...new Set([...Object.keys(gs.inv || {}), ...Object.keys(gs.chest || {})])]
+                    .filter((id) => ITEMS[id]?.kind === 'seed' && countOf(id) > 0);
                   return (
                     <div key={i} className="rounded-xl border-2 border-dashed border-amber-600/50 bg-black/40 p-3 text-center min-h-[120px] flex flex-col items-center justify-center">
                       <Ico src={`${ICN}/Farm/001-gardening.svg`} size="w-8 h-8" className="opacity-50" />
@@ -1447,7 +1491,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
                           {seeds.slice(0, 4).map((sid) => (
                             <button key={sid} onClick={() => plantSeed(i, sid)}
                               className="flex items-center gap-1 text-[10px] font-bold bg-black/60 border border-amber-600/50 text-amber-200 rounded-full px-2 py-1 hover:bg-amber-900/50 transition"
-                              title={`Plant ${ITEMS[sid].name} (${gs.inv[sid]} owned)`}>
+                              title={`Plant ${ITEMS[sid].name} (${countOf(sid)} owned)`}>
                               <It id={CROP_BY_SEED[sid]?.cropId} size="w-4 h-4" /> Plant
                             </button>
                           ))}
@@ -1515,7 +1559,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
             <Panel className="p-4">
               <h3 className="font-bold text-slate-200 mb-2">Seed Merchant <span className="text-xs text-slate-500 font-normal">— pay with gold</span></h3>
               <div className="divide-y divide-slate-800 max-h-80 overflow-y-auto pr-1">
-                {CROPS.map((c) => (
+                {CROPS.filter((c) => !c.findOnly).map((c) => (
                   <div key={c.seedId} className="flex items-center gap-2 py-1.5">
                     <It id={c.cropId} size="w-7 h-7" />
                     <div className="flex-1">
@@ -1544,17 +1588,27 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
               </div>
             </Panel>
             <Panel className="p-4">
-              <h3 className="font-bold text-slate-200 mb-2">Trading Post <span className="text-xs text-slate-500 font-normal">— sell surplus (also frees pack slots!)</span></h3>
-              <div className="max-h-80 overflow-y-auto divide-y divide-slate-800 pr-1">
-                {Object.entries(gs.inv || {}).filter(([id]) => ITEMS[id]?.sell > 0).sort((a, b) => (ITEMS[b[0]].sell - ITEMS[a[0]].sell)).map(([id, q]) => (
-                  <div key={id} className="flex items-center gap-2 py-1.5">
-                    <It id={id} size="w-7 h-7" />
-                    <p className={`flex-1 text-sm font-bold ${RARITY_STYLE[ITEMS[id].rarity || 'common'].text}`}>{ITEMS[id].name} <span className="text-[10px] text-slate-500 font-normal">× {fmtQty(q)}</span></p>
-                    <span className="text-[10px] text-slate-500">{ITEMS[id].sell}g ea</span>
-                    <button onClick={() => sellItem(id, 1)} className="text-xs font-bold bg-slate-800 text-slate-300 rounded-lg px-2 py-1 hover:bg-amber-900/60 transition">Sell 1</button>
-                    <button onClick={() => sellItem(id, 999999)} className="text-xs font-bold bg-slate-800 text-slate-300 rounded-lg px-2 py-1 hover:bg-amber-900/60 transition">All</button>
+              <h3 className="font-bold text-slate-200 mb-2">Rare Seeds <span className="text-xs text-slate-500 font-normal">— can&apos;t be bought, only FOUND</span></h3>
+              <div className="divide-y divide-slate-800 mb-3">
+                {CROPS.filter((c) => c.findOnly).map((c) => (
+                  <div key={c.seedId} className="flex items-center gap-2 py-1.5">
+                    <It id={c.cropId} size="w-7 h-7" />
+                    <div className="flex-1">
+                      <p className={`text-sm font-bold ${RARITY_STYLE[ITEMS[c.cropId].rarity].text}`}>{ITEMS[c.seedId].name} <span className="text-[10px] text-slate-500 font-normal">(own {countOf(c.seedId)})</span></p>
+                      <p className="text-[10px] text-slate-500">{c.growMin >= 60 ? `${Math.round(c.growMin / 60)}h` : `${c.growMin}min`} · yields {c.yield + caps.cropYield} · found on expeditions &amp; big hunts</p>
+                    </div>
                   </div>
                 ))}
+              </div>
+              <div className="rounded-xl border border-amber-700/50 bg-amber-950/30 p-3">
+                <p className="text-xs font-bold text-amber-300">Looking to SELL your goods?</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">The Trading Post has packed up and joined the Wandering Merchant&apos;s caravan — visit the <span className="font-bold text-amber-300">Town Square</span> to sell your harvest, fish and treasures (straight from your pack AND camp chest)!</p>
+                {onSwitchGame && (
+                  <button onClick={() => onSwitchGame('town-square')}
+                    className="mt-2 text-xs font-bold bg-amber-700 text-white rounded-lg px-3 py-1.5 hover:bg-amber-600 transition">
+                    Head to the Town Square →
+                  </button>
+                )}
               </div>
             </Panel>
           </div>
@@ -1739,6 +1793,24 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
             <p className="text-xs text-orange-100/70 mt-1">
               Cooking burns wood as fuel and serves a timed buff (max {MAX_ACTIVE_BUFFS} meals). {RECIPES.length} recipes exist — levels, scrolls and the Cauldron unlock them all.
             </p>
+            {/* Cooking skill XP bar */}
+            {(() => {
+              const prog = skillProgress(gs.skills?.cook || 0);
+              return (
+                <div className="mt-2.5">
+                  <div className="flex items-center justify-between text-[11px] font-bold">
+                    <span className="text-orange-200 flex items-center gap-1.5">
+                      <Ico src={`${ICN}/Cooking/012-frying pan.svg`} size="w-4 h-4" /> Cooking Lv {prog.level}{prog.level >= SKILL_MAX ? ' — MAX!' : ''}
+                    </span>
+                    {prog.level < SKILL_MAX && <span className="text-orange-200/70">{fmtQty(prog.into)} / {fmtQty(prog.needed)} XP → Lv {prog.level + 1}</span>}
+                  </div>
+                  <div className="h-2.5 rounded-full bg-black/50 border border-orange-900/60 overflow-hidden mt-1">
+                    <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400 transition-all"
+                      style={{ width: `${prog.level >= SKILL_MAX ? 100 : Math.min(100, (prog.into / Math.max(1, prog.needed)) * 100)}%` }} />
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {[['dishes', 'Dishes'], ['cauldron', 'Cauldron Brews']].map(([group, label]) => (
