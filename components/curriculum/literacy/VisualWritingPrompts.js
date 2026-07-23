@@ -10,7 +10,7 @@
 //    portal Writing Studio: read, comment, and award XP.
 //  • Print — generates a ready-to-photocopy worksheet for any prompt.
 //
-// Prompt images live in public/curriculum/literacy/VisualPrompts/<Type>/.
+// Prompt images live in public/Curriculum/Literacy/VisualPrompts/<Type>/.
 // Add images (or new text-type folders) and run
 // `node scripts/generateWritingPromptsManifest.js` to register them.
 // ─────────────────────────────────────────────────────────────────────────────

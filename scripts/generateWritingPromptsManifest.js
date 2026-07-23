@@ -1,6 +1,6 @@
 // scripts/generateWritingPromptsManifest.js
 // ─────────────────────────────────────────────────────────────────────────────
-// Rescans public/curriculum/literacy/VisualPrompts/ and regenerates
+// Rescans public/Curriculum/Literacy/VisualPrompts/ and regenerates
 // components/curriculum/literacy/writing-prompts/promptManifest.js.
 //
 // Run it after dropping new prompt images (or a whole new text-type folder,
@@ -24,7 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const PROMPTS_DIR = path.join(__dirname, '..', 'public', 'curriculum', 'literacy', 'VisualPrompts');
+const PROMPTS_DIR = path.join(__dirname, '..', 'public', 'Curriculum', 'Literacy', 'VisualPrompts');
 const OUT_FILE = path.join(__dirname, '..', 'components', 'curriculum', 'literacy', 'writing-prompts', 'promptManifest.js');
 
 // Legacy word-bank images to skip, as "<Folder>/<filename>".
@@ -75,10 +75,10 @@ function render(manifest) {
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTO-GENERATED — run \`node scripts/generateWritingPromptsManifest.js\` after
 // adding new prompt images (or whole new text-type folders) to
-// public/curriculum/literacy/VisualPrompts/. Do not edit by hand unless you
+// public/Curriculum/Literacy/VisualPrompts/. Do not edit by hand unless you
 // enjoy your edits being overwritten.
 //
-// Each key is a folder name inside public/curriculum/literacy/VisualPrompts/.
+// Each key is a folder name inside public/Curriculum/Literacy/VisualPrompts/.
 // \`images\` lists the image filenames that should appear as prompts, sorted
 // numerically. Legacy word-bank images (from the old odd/even naming scheme)
 // are excluded by the generator script.

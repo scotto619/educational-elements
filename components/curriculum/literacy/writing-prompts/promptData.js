@@ -10,14 +10,15 @@
 //    generic scaffold, so newly added images work immediately.
 //  • Helper functions used by both the teacher and student components.
 //
-// Adding prompts: drop images into public/curriculum/literacy/VisualPrompts/
+// Adding prompts: drop images into public/Curriculum/Literacy/VisualPrompts/
 // and run `node scripts/generateWritingPromptsManifest.js`. Optionally add a
 // scaffold entry here for image-specific word banks and starters.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { PROMPT_MANIFEST } from './promptManifest';
 
-export const PROMPTS_BASE_PATH = '/curriculum/literacy/VisualPrompts';
+// NOTE: exact case matters — Next serves /public files case-sensitively.
+export const PROMPTS_BASE_PATH = '/Curriculum/Literacy/VisualPrompts';
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TEXT TYPE CONFIGURATION

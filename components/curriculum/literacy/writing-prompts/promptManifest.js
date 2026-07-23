@@ -2,10 +2,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // AUTO-GENERATED — run `node scripts/generateWritingPromptsManifest.js` after
 // adding new prompt images (or whole new text-type folders) to
-// public/curriculum/literacy/VisualPrompts/. Do not edit by hand unless you
+// public/Curriculum/Literacy/VisualPrompts/. Do not edit by hand unless you
 // enjoy your edits being overwritten.
 //
-// Each key is a folder name inside public/curriculum/literacy/VisualPrompts/.
+// Each key is a folder name inside public/Curriculum/Literacy/VisualPrompts/.
 // `images` lists the image filenames that should appear as prompts, sorted
 // numerically. Legacy word-bank images (from the old odd/even naming scheme)
 // are excluded by the generator script.
