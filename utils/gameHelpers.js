@@ -280,7 +280,35 @@ export const SHOP_BASIC_PETS = [
   { name: 'Water Spirit', price: 35, path: '/shop/BasicPets/Update2/Water.png' },
   { name: 'Claptrap', price: 30, path: '/shop/BasicPets/Update 3/Claptrap.png' },
   { name: 'Monkey', price: 25, path: '/shop/BasicPets/Update 3/Monkey.png' },
-  { name: 'Waffle', price: 20, path: '/shop/BasicPets/Update 3/Waffle.png' }
+  { name: 'Waffle', price: 20, path: '/shop/BasicPets/Update 3/Waffle.png' },
+  // ── New Pets wave ──────────────────────────────────────────────────────────
+  { name: 'Giggly Ghost', price: 30, path: '/shop/New Pets/1.png' },
+  { name: 'Tinker Bot', price: 30, path: '/shop/New Pets/2.png' },
+  { name: 'Rainbow Whelp', price: 48, path: '/shop/New Pets/a.png' },
+  { name: 'Coral Dragonet', price: 48, path: '/shop/New Pets/b.png' },
+  { name: 'Lilac Kit', price: 28, path: '/shop/New Pets/c.png' },
+  { name: 'Plum Drake', price: 38, path: '/shop/New Pets/d.png' },
+  { name: 'Tidal Pup', price: 36, path: '/shop/New Pets/e.png' },
+  { name: 'Pinkfin Sprite', price: 30, path: '/shop/New Pets/f.png' },
+  { name: 'Moonfluff', price: 30, path: '/shop/New Pets/g.png' },
+  { name: 'Dotty Imp', price: 24, path: '/shop/New Pets/h.png' },
+  { name: 'Nibbles', price: 22, path: '/shop/New Pets/i.png' },
+  { name: 'Wiggle Newt', price: 24, path: '/shop/New Pets/j.png' },
+  { name: 'Stormlet', price: 38, path: '/shop/New Pets/k.png' },
+  { name: 'Batty Boo', price: 28, path: '/shop/New Pets/l.png' },
+  { name: 'Shellback', price: 36, path: '/shop/New Pets/m.png' },
+  { name: 'Sprig', price: 22, path: '/shop/New Pets/o.png' },
+  { name: 'Zippy Gecko', price: 35, path: '/shop/New Pets/p.png' },
+  { name: 'Sky Skitten', price: 32, path: '/shop/New Pets/q.png' },
+  { name: 'Snugglehorn', price: 36, path: '/shop/New Pets/r.png' },
+  { name: 'Ember Whelp', price: 48, path: '/shop/New Pets/s.png' },
+  { name: 'Griffin Cub', price: 50, path: '/shop/New Pets/t.png' },
+  { name: 'Zen Alien', price: 45, path: '/shop/New Pets/u.png' },
+  { name: 'Moss Golem', price: 45, path: '/shop/New Pets/v.png' },
+  { name: 'Lottie the Axolotl', price: 25, path: '/shop/New Pets/w.png' },
+  { name: 'Crimson Drake', price: 60, path: '/shop/New Pets/x.png' },
+  { name: 'Mushroom Buddy', price: 24, path: '/shop/New Pets/y.png' },
+  { name: 'Golden Gryphlet', price: 60, path: '/shop/New Pets/z.png' }
 ];
 
 export const SHOP_PREMIUM_PETS = [

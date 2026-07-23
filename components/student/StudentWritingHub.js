@@ -1,6 +1,7 @@
 // components/student/StudentWritingHub.js — Writing strand hub
 // Small chooser for the Learning → Literacy → Writing strand: pick between
-// Visual Writing Prompts (creative writing) and Sentence Surgeon (editing).
+// the Writing Studio (scaffolded creative writing with teacher feedback) and
+// Sentence Surgeon (editing).
 'use client';
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -11,24 +12,24 @@ const Loading = () => (
   </div>
 );
 
-const VisualWritingPrompts = dynamic(() => import('../curriculum/literacy/VisualWritingPrompts'), { loading: Loading, ssr: false });
+const StudentWritingStudio = dynamic(() => import('./StudentWritingStudio'), { loading: Loading, ssr: false });
 const SentenceSurgeon = dynamic(() => import('./SentenceSurgeon'), { loading: Loading, ssr: false });
 
 const TOOLS = [
   {
+    id: 'writing-studio',
+    name: 'Writing Studio',
+    emoji: '✍️',
+    badge: 'NEW',
+    description: 'Pick a picture prompt, write your story with word banks and sentence starters, then hand it in — your teacher can read it and send you feedback!',
+    color: 'from-indigo-600 to-fuchsia-600',
+  },
+  {
     id: 'sentence-surgeon',
     name: 'Sentence Surgeon',
     emoji: '🩺',
-    badge: 'NEW',
     description: 'Broken sentences need fixing! Hunt down missing capitals, wrong homophones, lost apostrophes and more. Earn ranks from Trainee to Grammar Legend.',
     color: 'from-teal-500 to-emerald-600',
-  },
-  {
-    id: 'writing-prompts',
-    name: 'Visual Writing Prompts',
-    emoji: '🖼️',
-    description: 'Spark your imagination! Explore picture prompts and story starters for your own creative writing.',
-    color: 'from-purple-500 to-pink-500',
   },
 ];
 
@@ -51,10 +52,11 @@ const StudentWritingHub = ({ studentData, showToast, updateStudentData }) => {
             updateStudentData={updateStudentData}
           />
         )}
-        {active === 'writing-prompts' && (
-          <VisualWritingPrompts
+        {active === 'writing-studio' && (
+          <StudentWritingStudio
+            studentData={studentData}
             showToast={showToast}
-            students={[studentData]}
+            updateStudentData={updateStudentData}
           />
         )}
       </div>

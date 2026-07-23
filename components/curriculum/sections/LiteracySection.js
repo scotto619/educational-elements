@@ -77,9 +77,9 @@ const literacyActivities = [
         component: ReadingComprehension, category: 'reading', isUpdated: true
     },
     {
-        id: 'visual-writing-prompts', name: 'Visual Writing Prompts', icon: '🖼️',
-        description: 'Visual storytelling prompts',
-        component: VisualWritingPrompts, category: 'writing'
+        id: 'visual-writing-prompts', name: 'Writing Studio', icon: '✍️',
+        description: 'Visual prompts, scaffolds, fullscreen presenting & student story reviews',
+        component: VisualWritingPrompts, category: 'writing', isUpdated: true
     },
     {
         id: 'vocabulary-builder', name: 'Vocabulary Builder', icon: '📖',

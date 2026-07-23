@@ -34,6 +34,7 @@ const SU3 = '/shop/BasicPets/Update 3';
 const SP = '/shop/PremiumPets';
 const EC = '/shop/Egg/Babies/Common';
 const ER = '/shop/Egg/Babies/Rare';
+const NP = '/shop/New Pets';
 
 export const SPECIES = [
   // ── Common ────────────────────────────────────────────────────────────────
@@ -46,6 +47,12 @@ export const SPECIES = [
   { id: 'patch',       name: 'Patch',          rarity: 'common', family: 'Meadow',  img: `${SU2}/Snoopy.png`,       desc: 'A loyal pup who naps on top of his kennel. Odd.' },
   { id: 'coralfin',    name: 'Coralfin',       rarity: 'common', family: 'Tide',    img: `${SU2}/Nemo.png`,         desc: 'A brave little reef fish, very easy to lose.' },
   { id: 'burrow',      name: 'Burrow',         rarity: 'common', family: 'Wilds',   img: `${SB}/RabbitPet.png`,     desc: 'Grumpy-looking. Actually the softest creature alive.' },
+  { id: 'nibbles',     name: 'Nibbles',        rarity: 'common', family: 'Meadow',  img: `${NP}/i.png`,             desc: 'Cheeks always full. Of what? Nobody knows.' },
+  { id: 'lottie',      name: 'Lottie',         rarity: 'common', family: 'Tide',    img: `${NP}/w.png`,             desc: 'An axolotl who smiles through absolutely everything.' },
+  { id: 'sporeling',   name: 'Sporeling',      rarity: 'common', family: 'Wilds',   img: `${NP}/y.png`,             desc: 'A walking toadstool. Waves at everyone. Everyone.' },
+  { id: 'dottyimp',    name: 'Dotty Imp',      rarity: 'common', family: 'Wilds',   img: `${NP}/h.png`,             desc: 'Covered in spots that rearrange when you blink.' },
+  { id: 'wigglenewt',  name: 'Wiggle Newt',    rarity: 'common', family: 'Tide',    img: `${NP}/j.png`,             desc: 'Those antennae pick up snack-time from miles away.' },
+  { id: 'sprig',       name: 'Sprig',          rarity: 'common', family: 'Meadow',  img: `${NP}/o.png`,             desc: 'Half seedling, half giggle. Waters itself.' },
 
   // ── Uncommon ──────────────────────────────────────────────────────────────
   { id: 'emberfox',    name: 'Emberfox',       rarity: 'uncommon', family: 'Wilds',  img: `${SU2}/Tails.png`,        desc: 'Two tails, twice the zoomies.' },
@@ -55,6 +62,13 @@ export const SPECIES = [
   { id: 'harvestmouse', name: 'Harvest Mouse', rarity: 'uncommon', family: 'Meadow', img: `${SB}/FarmPet3.png`,      desc: 'Carries a pitchfork three times her size.' },
   { id: 'squawks',     name: 'Squawks',        rarity: 'uncommon', family: 'Tide',   img: `${SB}/PiratePet1.png`,    desc: 'Repeats your secrets to everyone. EVERYONE.' },
   { id: 'firstmate',   name: 'First Mate',     rarity: 'uncommon', family: 'Tide',   img: `${SB}/PiratePet2.png`,    desc: 'Handles the gold. Definitely trustworthy. Probably.' },
+  { id: 'gigglyghost', name: 'Giggly Ghost',   rarity: 'uncommon', family: 'Cosmic', img: `${NP}/1.png`,             desc: 'Tries to be spooky. Bursts out laughing every time.' },
+  { id: 'tinkerbot',   name: 'Tinker Bot',     rarity: 'uncommon', family: 'Clockwork', img: `${NP}/2.png`,          desc: 'A rusty little helper who fixes things that were fine.' },
+  { id: 'lilackit',    name: 'Lilac Kit',      rarity: 'uncommon', family: 'Meadow', img: `${NP}/c.png`,             desc: 'Smells faintly of flowers. Sheds glitter, somehow.' },
+  { id: 'moonfluff',   name: 'Moonfluff',      rarity: 'uncommon', family: 'Wilds',  img: `${NP}/g.png`,             desc: 'Softest fur in the menagerie. It KNOWS it, too.' },
+  { id: 'battyboo',    name: 'Batty Boo',      rarity: 'uncommon', family: 'Wilds',  img: `${NP}/l.png`,             desc: 'Ears bigger than its whole body. Hears you whisper snacks.' },
+  { id: 'pinkfin',     name: 'Pinkfin Sprite', rarity: 'uncommon', family: 'Tide',   img: `${NP}/f.png`,             desc: 'Part cat, part fish, entirely dramatic.' },
+  { id: 'skyskitten',  name: 'Sky Skitten',    rarity: 'uncommon', family: 'Cosmic', img: `${NP}/q.png`,             desc: 'A kitten with wings. Ceilings mean nothing now.' },
 
   // ── Rare ──────────────────────────────────────────────────────────────────
   { id: 'snaggle',     name: 'Snaggle',        rarity: 'rare', family: 'Wilds',   img: `${SB}/GoblinPet.png`,     desc: 'A baby goblin. Bites. Affectionately, mostly.' },
@@ -67,6 +81,12 @@ export const SPECIES = [
   { id: 'kickle',      name: 'Kickle',         rarity: 'rare', family: 'Cosmic',  img: `${SB}/SoccerPet.png`,     desc: 'A living ball. Do NOT kick. It kicks back.' },
   { id: 'wafflebeast', name: 'Wafflebeast',    rarity: 'rare', family: 'Cosmic',  img: `${SU3}/Waffle.png`,       desc: 'Smells like breakfast. Fights like lunch.' },
   { id: 'peelian',     name: 'Peelian',        rarity: 'rare', family: 'Cosmic',  img: `${ER}/BananaPet.png`,     desc: 'A radiant banana spirit. Slippery when startled.' },
+  { id: 'tidalpup',    name: 'Tidal Pup',      rarity: 'rare', family: 'Tide',    img: `${NP}/e.png`,             desc: 'Scales like sea-glass and a crest like a breaking wave.' },
+  { id: 'plumdrake',   name: 'Plum Drake',     rarity: 'rare', family: 'Mythic',  img: `${NP}/d.png`,             desc: 'A pocket dragon the exact colour of jam.' },
+  { id: 'stormlet',    name: 'Stormlet',       rarity: 'rare', family: 'Elemental', img: `${NP}/k.png`,           desc: 'Tiny thunderclouds follow it around adoringly.' },
+  { id: 'shellback',   name: 'Shellback',      rarity: 'rare', family: 'Tide',    img: `${NP}/m.png`,             desc: 'Half turtle, half dragon, all nap.' },
+  { id: 'zippygecko',  name: 'Zippy Gecko',    rarity: 'rare', family: 'Cosmic',  img: `${NP}/p.png`,             desc: 'Blink and it is on the other side of the room. Blink again.' },
+  { id: 'snugglehorn', name: 'Snugglehorn',    rarity: 'rare', family: 'Wilds',   img: `${NP}/r.png`,             desc: 'The horns are decorative. The hugs are structural.' },
 
   // ── Epic ──────────────────────────────────────────────────────────────────
   { id: 'zephyrwisp',  name: 'Zephyr Wisp',    rarity: 'epic', family: 'Elemental', img: `${SU2}/Air.png`,        desc: 'A curl of living wind that giggles in storms.' },
@@ -77,6 +97,12 @@ export const SPECIES = [
   { id: 'fernwing',    name: 'Fernwing',       rarity: 'epic', family: 'Mythic',   img: `${SB}/DragonPet.png`,    desc: 'A forest dragon hatchling. Sneezes leaves.' },
   { id: 'solserpent',  name: 'Solserpent',     rarity: 'epic', family: 'Mythic',   img: `${SP}/SnakePet.png`,     desc: 'A serpent of living flame, coiled like a sunrise.' },
   { id: 'duskwing',    name: 'Duskwing',       rarity: 'epic', family: 'Mythic',   img: `${SP}/VampirePet.png`,   desc: 'A velvet-winged bat that only drinks juice boxes.' },
+  { id: 'rainbowwhelp', name: 'Rainbow Whelp', rarity: 'epic', family: 'Mythic',   img: `${NP}/a.png`,            desc: 'Every scale a different colour. Preens constantly.' },
+  { id: 'coraldragonet', name: 'Coral Dragonet', rarity: 'epic', family: 'Mythic', img: `${NP}/b.png`,            desc: 'Hatched from a reef. Wings like stained glass.' },
+  { id: 'emberwhelp',  name: 'Ember Whelp',    rarity: 'epic', family: 'Elemental', img: `${NP}/s.png`,           desc: 'A cheerful little furnace with wings.' },
+  { id: 'mossgolem',   name: 'Moss Golem',     rarity: 'epic', family: 'Elemental', img: `${NP}/v.png`,           desc: 'An ancient forest guardian, roughly knee-high.' },
+  { id: 'zenalien',    name: 'Zen Alien',      rarity: 'epic', family: 'Cosmic',   img: `${NP}/u.png`,            desc: 'Travelled a billion light-years to sit very, very still.' },
+  { id: 'griffincub',  name: 'Griffin Cub',    rarity: 'epic', family: 'Mythic',   img: `${NP}/t.png`,            desc: 'Half eagle, half lion, fully convinced it is a lapdog.' },
 
   // ── Legendary ─────────────────────────────────────────────────────────────
   { id: 'everflame',   name: 'Everflame',      rarity: 'legendary', family: 'Mythic', img: `${EC}/PhoenixPet.png`,          desc: 'A phoenix chick. Has never stayed extinguished.' },
@@ -85,6 +111,8 @@ export const SPECIES = [
   { id: 'midascat',    name: 'Midas Cat',      rarity: 'legendary', family: 'Golden', img: `${ER}/Golden Cat Pet.png`,      desc: 'Everything it naps on turns to treasure.' },
   { id: 'goldauroch',  name: 'Golden Auroch',  rarity: 'legendary', family: 'Golden', img: `${ER}/Golden Bull Pet.png`,     desc: 'A bull of pure gold. Surprisingly light on his hooves.' },
   { id: 'starsovereign', name: 'Star Sovereign', rarity: 'legendary', family: 'Golden', img: `${ER}/Golden Alien Pet.png`,  desc: 'Royalty from a golden galaxy far, far away.' },
+  { id: 'crimsondrake', name: 'Crimson Drake',  rarity: 'legendary', family: 'Mythic', img: `${NP}/x.png`,                 desc: 'A true dragon in miniature. The fire is NOT miniature.' },
+  { id: 'goldgryphlet', name: 'Golden Gryphlet', rarity: 'legendary', family: 'Golden', img: `${NP}/z.png`,                desc: 'A griffin hatchling with wings of white gold.' },
 ];
 
 export const SPECIES_MAP = Object.fromEntries(SPECIES.map((s) => [s.id, s]));
