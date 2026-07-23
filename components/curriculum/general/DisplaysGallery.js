@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 const displayCategories = [
   {
@@ -600,11 +601,18 @@ const DisplaysGallery = ({ subjectFilter } = {}) => {
                     >
                       <button
                         type="button"
-                        className="relative group cursor-pointer w-full"
+                        className="relative group cursor-pointer w-full block h-56"
                         onClick={() => openImage(image)}
                         aria-label={`Open ${image.name} in fullscreen`}
                       >
-                        <img src={imageUrl} alt={image.name} className="w-full h-56 object-cover" loading="lazy" />
+                        <Image
+                          src={imageUrl}
+                          alt={image.name}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                          className="object-cover"
+                          loading="lazy"
+                        />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold">
                           View Fullscreen
                         </div>

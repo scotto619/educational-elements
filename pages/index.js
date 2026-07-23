@@ -107,6 +107,7 @@ function MarqueeRow({ images, reverse = false, cardW = 220, cardH = 290 }) {
             key={i}
             className="marquee-card"
             style={{
+              position: 'relative',
               flexShrink: 0,
               width: cardW,
               height: cardH,
@@ -118,12 +119,13 @@ function MarqueeRow({ images, reverse = false, cardW = 220, cardH = 290 }) {
               background: '#fff',
             }}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={img.src}
               alt={img.alt}
+              fill
+              sizes="220px"
               loading="lazy"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+              style={{ objectFit: 'cover', objectPosition: 'top' }}
             />
           </div>
         ))}
@@ -397,7 +399,7 @@ export default function Home() {
         <title>Educational Elements | The Complete Classroom Platform</title>
         <meta name="description" content="Gamify your classroom, manage behaviour, and access thousands of curriculum resources with Educational Elements." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/Logo/LOGO_NoBG.png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
