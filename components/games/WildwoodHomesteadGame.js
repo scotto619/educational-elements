@@ -458,7 +458,22 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
         }
         return;
       }
-      // Multi-stack + specialist storage: find how much actually fits
+      // AUTO-STASH: if the camp chest already holds this item, new gains join
+      // it there first (chest stacks are 2×) — keeps the pack clear for new finds.
+      if (c.chestSlots > 0 && (chest[id] || 0) > 0) {
+        const have = chest[id] || 0;
+        const used = slotsUsedOf(chest, c.stack * 2);
+        const freeSlots = c.chestSlots - used + Math.ceil(have / (c.stack * 2));
+        const chestRoom = Math.max(0, freeSlots * (c.stack * 2) - have);
+        const toChest = Math.min(q, chestRoom);
+        if (toChest > 0) {
+          chest[id] = have + toChest;
+          chestTouched = true;
+          q -= toChest;
+        }
+        if (q <= 0) return;
+      }
+      // Multi-stack + specialist storage: find how much actually fits in the pack
       const add = maxFitOf(inv, id, q, c);
       if (add > 0) inv[id] = (inv[id] || 0) + add;
       const over = q - add;
@@ -2032,7 +2047,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
               caps.chestSlots === 0 ? (
                 <p className="text-xs text-slate-500 mt-2">No chest yet — craft a <span className="text-emerald-400 font-bold">Camp Chest</span> at the Workbench to store items at camp.</p>
               ) : Object.keys(gs.chest || {}).length === 0 ? (
-                <p className="text-xs text-slate-500 italic mt-2">The chest is empty. Store overflow here from your pack above.</p>
+                <p className="text-xs text-slate-500 italic mt-2">The chest is empty. Store overflow here from your pack above — anything you keep in the chest is auto-stashed here whenever you gather more of it!</p>
               ) : (
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 mt-3">
                   {sortInvEntries(Object.entries(gs.chest || {})).map(([id, q]) => {

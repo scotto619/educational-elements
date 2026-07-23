@@ -352,7 +352,7 @@ const StudentMaths = ({
       id: 'column-strategy',
       name: 'Column Strategy Lab',
       icon: '🧱',
-      description: 'Master column addition & subtraction! Learn carrying and borrowing step by step, then practise with a guide that checks every move',
+      description: 'Master column addition & subtraction — whole numbers AND decimals! Learn carrying and borrowing step by step, then practise with a guide that checks every move',
       color: 'from-indigo-500 to-purple-600',
       component: ColumnStrategy
     },

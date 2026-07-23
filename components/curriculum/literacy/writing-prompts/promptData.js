@@ -160,6 +160,74 @@ export const TEXT_TYPE_CONFIG = {
     ],
     studentPlanning: ['What is this picture asking us to decide?', 'What are your three strongest reasons?', 'What would someone who disagrees say — and how will you answer them?'],
   },
+
+  Informative: {
+    id: 'Informative',
+    label: 'Informative',
+    tagline: 'Explain a topic clearly with facts and detail',
+    icon: '🔍',
+    accent: 'emerald',
+    gradient: 'from-emerald-600 to-teal-600',
+    structure: [
+      {
+        title: 'Classification',
+        short: 'Introduce and define your topic',
+        detail: 'Tell the reader exactly what your topic is and which group or category it belongs to. A surprising fact makes a great opening.',
+        tips: ['Try a definition: "A ___ is a ___ that ___"', 'Hook the reader with an amazing fact', 'Let the reader know what your report will cover'],
+      },
+      {
+        title: 'Features',
+        short: 'What is it like? What are its parts?',
+        detail: 'Describe the main features, parts or characteristics of your topic with precise detail.',
+        tips: ['Group facts about the same thing into one paragraph', 'Use technical vocabulary', 'Sizes, numbers and comparisons paint a clear picture'],
+      },
+      {
+        title: 'How & Why',
+        short: 'Explain how it works or why it happens',
+        detail: 'Explain the process step by step. Show cause and effect so the reader understands how it all fits together.',
+        tips: ['Use connectives: because, therefore, as a result', 'Order words help: first, next, then, finally', 'Stay in the present tense'],
+      },
+      {
+        title: 'Fascinating Facts',
+        short: 'Zoom in on the most interesting details',
+        detail: 'Share the surprising facts, records and details most people don\'t know. This is the paragraph readers remember.',
+        tips: ['Numbers stick in the mind', 'Compare to everyday things ("as heavy as a bus")', 'Pick facts your reader will want to retell'],
+      },
+      {
+        title: 'Conclusion',
+        short: 'Sum up and leave the reader thinking',
+        detail: 'Briefly sum up your topic and explain why it matters — or what might happen to it in the future.',
+        tips: ['No new information here', 'Link back to your opening', 'End with a thought-provoking fact or question'],
+      },
+    ],
+    craft: [
+      { name: 'Technical vocabulary', tip: 'Use the correct scientific words — and explain each one the first time you use it.' },
+      { name: 'Present tense', tip: 'Reports describe how things ARE: "Bees live in colonies", not "Bees lived".' },
+      { name: 'Third person', tip: 'Write about the topic, not about yourself — save "I think" for persuasive writing.' },
+      { name: 'Facts, not opinions', tip: 'Every sentence should be checkable and true.' },
+      { name: 'Compare to explain', tip: '"A blue whale\'s heart is the size of a small car" beats "its heart is big".' },
+    ],
+    genericWordBank: {
+      'Topic words': ['features', 'habitat', 'process', 'cycle', 'structure', 'species', 'environment', 'system'],
+      'Precise verbs': ['consists', 'contains', 'produces', 'develops', 'occurs', 'survives', 'transforms', 'depends'],
+      'Technical adjectives': ['remarkable', 'complex', 'essential', 'unique', 'natural', 'extraordinary', 'microscopic', 'powerful'],
+    },
+    genericStarters: [
+      'Did you know that…?',
+      'This is one of the most fascinating subjects in the natural world.',
+      'Scientists have discovered that…',
+    ],
+    successCriteria: [
+      'My opening tells the reader exactly what the topic is',
+      'My facts are true and checkable',
+      'I grouped information into paragraphs by subtopic',
+      'I used technical vocabulary (and explained it)',
+      'I wrote in the present tense',
+      'My conclusion sums up why the topic matters',
+      'I checked my punctuation and spelling',
+    ],
+    studentPlanning: ['What is this picture showing — and what do you already know about it?', 'What would your reader need explained first?', 'Which three amazing facts will you include?'],
+  },
 };
 
 // Fallback config for text-type folders added later without a config entry —
@@ -594,6 +662,232 @@ export const PROMPT_SCAFFOLDS = {
       'I\'m not saying gaming is bad. I\'m saying sunshine is better.',
     ],
   },
+  'Persuasive/8': {
+    title: 'Adopt, Don\'t Shop',
+    hook: 'Behind the pet shop glass, puppies wait under bright lights. Across the park, shelter animals wait for a second chance. Where should a new best friend come from?',
+    wordBank: {
+      'Topic words': ['shelter', 'adoption', 'pet shop', 'rescue', 'breeder', 'companion', 'kennel', 'second chance'],
+      'Power verbs': ['adopt', 'rescue', 'abandon', 'deserve', 'choose', 'save', 'support', 'care'],
+      'Emotive adjectives': ['abandoned', 'loving', 'hopeful', 'overcrowded', 'loyal', 'heartbreaking', 'kind-hearted', 'forever'],
+    },
+    starters: [
+      'Behind the shiny glass of the pet shop, a shelter dog somewhere waits for a home.',
+      'Every year, thousands of pets in shelters wait for a family to choose them.',
+      'If you truly love animals, there is only one place to find your next pet.',
+    ],
+  },
+  'Persuasive/9': {
+    title: 'Plant a Tree, Change the World',
+    hook: 'One girl, one sapling, one hillside at sunset. Planting a tree takes ten minutes — convince your reader it\'s worth every second.',
+    wordBank: {
+      'Topic words': ['sapling', 'oxygen', 'shade', 'roots', 'forest', 'generation', 'soil', 'habitat'],
+      'Power verbs': ['plant', 'grow', 'breathe', 'nurture', 'restore', 'cool', 'shelter', 'flourish'],
+      'Emotive adjectives': ['life-giving', 'simple', 'powerful', 'greener', 'hopeful', 'healthy', 'lasting', 'growing'],
+    },
+    starters: [
+      'One small sapling today is a towering tree tomorrow.',
+      'Planting a tree takes ten minutes — its gifts last a hundred years.',
+      'If every student planted just one tree, imagine the forest we could grow.',
+    ],
+  },
+  'Persuasive/10': {
+    title: 'Save the Orangutans',
+    hook: 'On one side of the tree: a rainforest full of life. On the other: smoke and machines. Convince your reader the forest is worth saving.',
+    wordBank: {
+      'Topic words': ['orangutan', 'rainforest', 'habitat', 'deforestation', 'palm oil', 'wildlife', 'bulldozer', 'extinction'],
+      'Power verbs': ['destroy', 'protect', 'clear', 'vanish', 'defend', 'replant', 'threaten', 'survive'],
+      'Emotive adjectives': ['endangered', 'precious', 'irreplaceable', 'devastating', 'gentle', 'wild', 'vanishing', 'urgent'],
+    },
+    starters: [
+      'On one side of the tree: a rainforest full of life. On the other: silence and smoke.',
+      'Orangutans share almost all of our DNA — and we are destroying their home.',
+      'Every minute, forests the size of football fields disappear forever.',
+    ],
+  },
+  'Persuasive/11': {
+    title: 'Say No to Plastic',
+    hook: 'A sea turtle glides through water filled with drifting bags and bottles. To a turtle, a plastic bag looks exactly like a jellyfish. Persuade your reader to act.',
+    wordBank: {
+      'Topic words': ['plastic', 'ocean', 'pollution', 'straws', 'packaging', 'recycling', 'marine life', 'turtle'],
+      'Power verbs': ['choke', 'entangle', 'pollute', 'ban', 'refuse', 'reuse', 'protect', 'drift'],
+      'Emotive adjectives': ['single-use', 'deadly', 'avoidable', 'fragile', 'wasteful', 'cleaner', 'innocent', 'urgent'],
+    },
+    starters: [
+      'To a sea turtle, a floating plastic bag looks exactly like lunch.',
+      'Every piece of plastic ever made still exists somewhere — much of it in our oceans.',
+      'One reusable bottle can replace hundreds of pieces of rubbish.',
+    ],
+  },
+  'Persuasive/12': {
+    title: 'Every Home Needs a Pet',
+    hook: 'A girl, a golden retriever and a kitten, curled up in the afternoon sun. Are pets just animals in the house — or part of the family?',
+    wordBank: {
+      'Topic words': ['companionship', 'responsibility', 'friendship', 'comfort', 'exercise', 'family', 'loneliness', 'wellbeing'],
+      'Power verbs': ['comfort', 'teach', 'cuddle', 'protect', 'welcome', 'brighten', 'listen', 'belong'],
+      'Emotive adjectives': ['loyal', 'comforting', 'playful', 'responsible', 'joyful', 'calming', 'faithful', 'priceless'],
+    },
+    starters: [
+      'A pet doesn\'t care about your worst day — they\'re just happy you\'re home.',
+      'Growing up with a pet teaches children lessons no classroom can.',
+      'Some friends have four legs and never let you down.',
+    ],
+  },
+  'Persuasive/13': {
+    title: 'Libraries Matter',
+    hook: 'While the city rushes past the windows, readers of every age are lost in other worlds. Some say libraries are old-fashioned. Prove them wrong — or right.',
+    wordBank: {
+      'Topic words': ['library', 'community', 'knowledge', 'imagination', 'stories', 'learning', 'refuge', 'generations'],
+      'Power verbs': ['discover', 'borrow', 'belong', 'imagine', 'gather', 'preserve', 'inspire', 'escape'],
+      'Emotive adjectives': ['priceless', 'welcoming', 'peaceful', 'essential', 'timeless', 'free', 'magical', 'irreplaceable'],
+    },
+    starters: [
+      'In a world of glowing screens, one building still runs on imagination.',
+      'A library is the only place where anyone can travel anywhere — for free.',
+      'Close a library, and you close a thousand doors.',
+    ],
+  },
+
+  // ── Informative ────────────────────────────────────────────────────────────
+  'Informative/1': {
+    title: 'The Water Cycle',
+    hook: 'Water rises from the sea, gathers into clouds, falls on the mountains and races back again. Explain Earth\'s greatest recycling system.',
+    wordBank: {
+      'Topic words': ['evaporation', 'condensation', 'precipitation', 'water vapour', 'clouds', 'runoff', 'ocean', 'collection'],
+      'Precise verbs': ['evaporates', 'condenses', 'falls', 'flows', 'rises', 'cools', 'collects', 'repeats'],
+      'Technical adjectives': ['continuous', 'invisible', 'endless', 'fresh', 'vital', 'natural', 'recycled', 'powerful'],
+    },
+    starters: [
+      'Every drop of water on Earth has been on an incredible journey.',
+      'The water you drank today may once have floated in a cloud — or an ocean.',
+      'The water cycle is Earth\'s way of recycling every single drop.',
+    ],
+  },
+  'Informative/2': {
+    title: 'Coral Reef Ecosystems',
+    hook: 'Above the waves, a quiet tropical island. Below, one of the busiest habitats on Earth. Explain how a coral reef works and why it matters.',
+    wordBank: {
+      'Topic words': ['coral', 'reef', 'ecosystem', 'polyps', 'marine life', 'algae', 'habitat', 'biodiversity'],
+      'Precise verbs': ['shelters', 'feeds', 'grows', 'protects', 'depends', 'thrives', 'builds', 'supports'],
+      'Technical adjectives': ['vibrant', 'fragile', 'tropical', 'teeming', 'colourful', 'living', 'underwater', 'endangered'],
+    },
+    starters: [
+      'Coral reefs cover less than one percent of the ocean floor, yet support a quarter of all marine life.',
+      'A coral reef is not a rock — it is a living city built by tiny animals.',
+      'Beneath the waves lies one of the busiest habitats on Earth.',
+    ],
+  },
+  'Informative/3': {
+    title: 'Honey Bees',
+    hook: 'Inside the hive, fifty thousand workers build perfect hexagons, feed a queen and dance directions to flowers. Explain the secret world of bees.',
+    wordBank: {
+      'Topic words': ['hive', 'honeycomb', 'pollen', 'nectar', 'queen', 'worker bees', 'colony', 'pollination'],
+      'Precise verbs': ['pollinate', 'collect', 'communicate', 'produce', 'build', 'protect', 'swarm', 'transform'],
+      'Technical adjectives': ['busy', 'essential', 'hexagonal', 'golden', 'hardworking', 'organised', 'tiny', 'vital'],
+    },
+    starters: [
+      'One in every three mouthfuls of food you eat exists thanks to bees.',
+      'Inside every hive is a city of fifty thousand workers — and a single queen.',
+      'A honey bee makes just one twelfth of a teaspoon of honey in its whole life.',
+    ],
+  },
+  'Informative/4': {
+    title: 'Your Amazing Immune System',
+    hook: 'Zoom inside your bloodstream, where white blood cells hunt down invaders every second of every day. Explain the invisible army that keeps you alive.',
+    wordBank: {
+      'Topic words': ['white blood cells', 'germs', 'antibodies', 'virus', 'bacteria', 'bloodstream', 'defence', 'infection'],
+      'Precise verbs': ['attack', 'defend', 'detect', 'destroy', 'protect', 'remember', 'patrol', 'multiply'],
+      'Technical adjectives': ['microscopic', 'invisible', 'constant', 'remarkable', 'protective', 'rapid', 'specialised', 'powerful'],
+    },
+    starters: [
+      'Right now, an invisible army is patrolling your body.',
+      'Your body fights thousands of tiny battles every day — and you never notice.',
+      'White blood cells are the security guards of your bloodstream.',
+    ],
+  },
+  'Informative/5': {
+    title: 'Our Solar System',
+    hook: 'Eight planets, one star, and millions of smaller worlds spinning through space. Take your reader on a tour of our corner of the galaxy.',
+    wordBank: {
+      'Topic words': ['planets', 'orbit', 'Sun', 'gravity', 'asteroid', 'atmosphere', 'moons', 'galaxy'],
+      'Precise verbs': ['orbits', 'rotates', 'shines', 'attracts', 'spins', 'travels', 'formed', 'revolves'],
+      'Technical adjectives': ['vast', 'rocky', 'gaseous', 'frozen', 'distant', 'enormous', 'ancient', 'mysterious'],
+    },
+    starters: [
+      'Our solar system is home to eight planets, one star and millions of smaller worlds.',
+      'If the Sun were a basketball, Earth would be smaller than a peppercorn.',
+      'Everything in our solar system — including you — circles one ordinary star.',
+    ],
+  },
+  'Informative/6': {
+    title: 'Volcanoes',
+    hook: 'This cutaway view shows what most people never see: rivers of molten rock rising from deep underground. Explain how a volcano really works.',
+    wordBank: {
+      'Topic words': ['magma', 'lava', 'eruption', 'crater', 'crust', 'pressure', 'vent', 'chamber'],
+      'Precise verbs': ['erupts', 'flows', 'builds', 'explodes', 'cools', 'hardens', 'forms', 'rumbles'],
+      'Technical adjectives': ['molten', 'explosive', 'dormant', 'active', 'fiery', 'destructive', 'powerful', 'ancient'],
+    },
+    starters: [
+      'Beneath the calm surface of some mountains, rock hotter than 1,000 degrees is waiting.',
+      'A volcano is a window into the fiery heart of our planet.',
+      'When pressure builds deep underground, something has to give.',
+    ],
+  },
+  'Informative/7': {
+    title: 'Wetland Ecosystems',
+    hook: 'Half above the water, half below — a swamp at sunrise, with an alligator gliding through it. Explain why wetlands are among Earth\'s richest habitats.',
+    wordBank: {
+      'Topic words': ['wetlands', 'swamp', 'alligator', 'predator', 'food web', 'species', 'filtration', 'habitat'],
+      'Precise verbs': ['filters', 'lurks', 'breeds', 'nests', 'absorbs', 'teems', 'shelters', 'balances'],
+      'Technical adjectives': ['murky', 'rich', 'protective', 'humid', 'diverse', 'hidden', 'essential', 'thriving'],
+    },
+    starters: [
+      'Wetlands are sometimes called the kidneys of the Earth.',
+      'Beneath the still green water, a whole world is at work.',
+      'Swamps are not wastelands — they are some of the richest habitats on the planet.',
+    ],
+  },
+  'Informative/8': {
+    title: 'The Monarch Butterfly Life Cycle',
+    hook: 'Egg, caterpillar, chrysalis, butterfly — four completely different lives in a few short weeks. Explain nature\'s most astonishing transformation.',
+    wordBank: {
+      'Topic words': ['egg', 'caterpillar', 'chrysalis', 'metamorphosis', 'milkweed', 'larva', 'wings', 'migration'],
+      'Precise verbs': ['hatches', 'transforms', 'sheds', 'emerges', 'feeds', 'migrates', 'develops', 'flutters'],
+      'Technical adjectives': ['delicate', 'striped', 'remarkable', 'complete', 'hungry', 'fragile', 'orange', 'extraordinary'],
+    },
+    starters: [
+      'In just a few weeks, one creature lives as four completely different forms.',
+      'The monarch butterfly begins life smaller than a grain of rice.',
+      'Metamorphosis is one of nature\'s most astonishing magic tricks — and it is completely real.',
+    ],
+  },
+  'Informative/9': {
+    title: 'Glaciers and Icebergs',
+    hook: 'The camera dips below the waterline to reveal the truth: the ice you can see is only the very top. Explain the frozen giants of our planet.',
+    wordBank: {
+      'Topic words': ['glacier', 'iceberg', 'ice sheet', 'freshwater', 'meltwater', 'climate', 'valley', 'fjord'],
+      'Precise verbs': ['carves', 'drifts', 'melts', 'freezes', 'calves', 'flows', 'shrinks', 'floats'],
+      'Technical adjectives': ['colossal', 'frozen', 'ancient', 'slow-moving', 'brilliant-blue', 'hidden', 'mighty', 'melting'],
+    },
+    starters: [
+      'Almost ninety percent of an iceberg hides beneath the surface.',
+      'Glaciers are rivers of ice that carve mountains — one centimetre at a time.',
+      'Some of the ice in today\'s glaciers fell as snow ten thousand years ago.',
+    ],
+  },
+  'Informative/10': {
+    title: 'The Life Cycle of Stars',
+    hook: 'From a cloud of dust to a blazing sun to a supernova — this diagram shows the whole life of a star. Explain how stars are born, live and die.',
+    wordBank: {
+      'Topic words': ['nebula', 'supernova', 'red giant', 'black hole', 'gravity', 'fusion', 'galaxy', 'neutron star'],
+      'Precise verbs': ['forms', 'burns', 'expands', 'collapses', 'explodes', 'shines', 'fuses', 'fades'],
+      'Technical adjectives': ['stellar', 'colossal', 'blazing', 'ancient', 'unimaginable', 'dense', 'luminous', 'spectacular'],
+    },
+    starters: [
+      'Stars are born, live for billions of years, and die in spectacular style.',
+      'Every atom in your body was forged inside a dying star.',
+      'A star\'s life is a tug-of-war between gravity and fire.',
+    ],
+  },
 };
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -605,9 +899,20 @@ const imageNumber = (filename) => {
   return m ? parseInt(m[1], 10) : filename;
 };
 
-/** All available text types, with config merged over sensible defaults. */
+/** All available text types, with config merged over sensible defaults.
+ *  Ordered to match TEXT_TYPE_CONFIG (Narrative first); unknown folders
+ *  added later appear at the end in alphabetical order. */
 export function getTextTypes() {
-  return Object.keys(PROMPT_MANIFEST).map((key) => {
+  const configOrder = Object.keys(TEXT_TYPE_CONFIG);
+  const keys = Object.keys(PROMPT_MANIFEST).sort((a, b) => {
+    const ia = configOrder.indexOf(a);
+    const ib = configOrder.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+  return keys.map((key) => {
     const config = TEXT_TYPE_CONFIG[key] || {};
     return {
       ...DEFAULT_TYPE_CONFIG,
@@ -699,6 +1004,13 @@ export const ACCENT_STYLES = {
     soft: 'bg-amber-50 border-amber-200',
     text: 'text-amber-700',
     ring: 'ring-amber-400',
+  },
+  emerald: {
+    chip: 'bg-emerald-100 text-emerald-700',
+    solid: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+    soft: 'bg-emerald-50 border-emerald-200',
+    text: 'text-emerald-700',
+    ring: 'ring-emerald-400',
   },
   sky: {
     chip: 'bg-sky-100 text-sky-700',

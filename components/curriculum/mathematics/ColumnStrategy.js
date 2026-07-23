@@ -7,9 +7,23 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const PLACE_NAMES = ['ones', 'tens', 'hundreds', 'thousands', 'ten-thousands'];
-const placeName = (i) => PLACE_NAMES[i] || `10^${i}`;
+const DECIMAL_NAMES = ['tenths', 'hundredths', 'thousandths'];
+// Column index i with `dp` decimal places: place value = i - dp
+// (numbers are handled internally as whole numbers scaled by 10^dp).
+const placeName = (i, dp = 0) => {
+  const p = i - dp;
+  if (p >= 0) return PLACE_NAMES[p] || `10^${p}`;
+  return DECIMAL_NAMES[-p - 1] || `10^${p}`;
+};
 
-const digitsOf = (n) => String(n).split('').reverse().map(Number); // index 0 = ones
+// Format a scaled integer back into a decimal string (string-based, no float errors)
+const fmt = (scaled, dp = 0) => {
+  if (!dp) return String(scaled);
+  const s = String(scaled).padStart(dp + 1, '0');
+  return `${s.slice(0, -dp)}.${s.slice(-dp)}`;
+};
+
+const digitsOf = (n) => String(n).split('').reverse().map(Number); // index 0 = smallest place
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 // Count how many columns need a carry / borrow
@@ -41,15 +55,19 @@ const countRegroups = (op, a, b) => {
   return count;
 };
 
-// Generate a problem matching the settings (rejection sampling)
-const genProblem = (op, numDigits, regroup) => {
+// Generate a problem matching the settings (rejection sampling).
+// With dp > 0, a and b are SCALED integers (real value = n / 10^dp) and are
+// guaranteed a ones digit so the display always has a whole-number part.
+const genProblem = (op, numDigits, regroup, dp = 0) => {
+  const eff = Math.max(numDigits, dp + 1); // total columns incl. decimal places
   for (let t = 0; t < 500; t++) {
-    const min = Math.pow(10, numDigits - 1);
-    const max = Math.pow(10, numDigits) - 1;
+    const min = Math.pow(10, eff - 1);
+    const max = Math.pow(10, eff) - 1;
     let a = randInt(min, max);
-    const shorter = numDigits > 2 && Math.random() < 0.25;
+    const canShorter = eff > 2 && eff - 1 > dp;
+    const shorter = canShorter && Math.random() < 0.25;
     let b = shorter
-      ? randInt(Math.pow(10, numDigits - 2), Math.pow(10, numDigits - 1) - 1)
+      ? randInt(Math.pow(10, eff - 2), Math.pow(10, eff - 1) - 1)
       : randInt(min, max);
     if (op === 'sub') {
       if (b > a) [a, b] = [b, a];
@@ -123,9 +141,12 @@ const LEARN_EXAMPLES = [
   { id: 'sub-basic', op: 'sub', a: 75, b: 43, emoji: '🧊', title: 'Subtraction — the basics', blurb: 'No borrowing — take away column by column.' },
   { id: 'sub-borrow', op: 'sub', a: 72, b: 38, emoji: '🤝', title: 'Subtraction with borrowing', blurb: 'Not enough ones? Borrow from next door!' },
   { id: 'sub-zero', op: 'sub', a: 305, b: 127, emoji: '🕳️', title: 'Borrowing across a zero', blurb: 'The trickiest one — the zero has nothing to lend!' },
+  { id: 'add-dec', op: 'add', a: 47, b: 28, dp: 1, emoji: '🎈', title: 'Adding decimals', blurb: 'Line up the decimal points — then it works just the same!' },
+  { id: 'sub-dec', op: 'sub', a: 63, b: 28, dp: 1, emoji: '✂️', title: 'Subtracting decimals', blurb: 'Borrowing works across the decimal point too!' },
+  { id: 'money', op: 'sub', a: 750, b: 285, dp: 2, emoji: '💰', title: 'Money maths', blurb: '$7.50 − $2.85 — subtracting dollars and cents!' },
 ];
 
-const buildLearnSnapshots = (op, a, b) => {
+const buildLearnSnapshots = (op, a, b, dp = 0) => {
   const aD = digitsOf(a);
   const bD = digitsOf(b);
   const cols = Math.max(aD.length, bD.length);
@@ -139,8 +160,13 @@ const buildLearnSnapshots = (op, a, b) => {
     activeCol,
   });
 
+  const aTxt = fmt(a, dp);
+  const bTxt = fmt(b, dp);
+
   if (op === 'add') {
-    snap(`We're adding ${a} + ${b}. Line the numbers up so ones sit above ones, tens above tens. In the column strategy we ALWAYS start on the right, with the ones.`);
+    snap(dp > 0
+      ? `We're adding ${aTxt} + ${bTxt}. With decimals there's ONE golden rule: line up the decimal points so they sit in a straight line! Then tenths sit above tenths and ones above ones. Start on the right, just like always.`
+      : `We're adding ${aTxt} + ${bTxt}. Line the numbers up so ones sit above ones, tens above tens. In the column strategy we ALWAYS start on the right, with the ones.`);
     let carry = 0;
     for (let i = 0; i < cols; i++) {
       const ad = aD[i] ?? null;
@@ -150,12 +176,13 @@ const buildLearnSnapshots = (op, a, b) => {
       if (ad !== null) bits.push(String(ad));
       if (bd !== null) bits.push(String(bd));
       if (carry) bits.push('the carried 1');
-      snap(`Look at the ${placeName(i)} column: ${bits.join(' + ')} = ${total}.`, i);
+      snap(`Look at the ${placeName(i, dp)} column: ${bits.join(' + ')} = ${total}.`, i);
       if (total > 9) {
         state.answer[i] = total % 10;
         if (i < cols - 1) {
           state.carries[i + 1] = 1;
-          snap(`${total} is more than 9, so it can't all fit in one column! Write the ${total % 10} in the answer, and CARRY the 1 (worth ten ${placeName(i)} = one ${placeName(i + 1).replace(/s$/, '')}) to the top of the ${placeName(i + 1)} column.`, i);
+          const crossesPoint = dp > 0 && i === dp - 1;
+          snap(`${total} is more than 9, so it can't all fit in one column! Write the ${total % 10} in the answer, and CARRY the 1 to the top of the ${placeName(i + 1, dp)} column.${crossesPoint ? ' Ten tenths make one whole — the carry hops straight over the decimal point!' : ''}`, i);
           carry = 1;
         } else {
           state.answer[i + 1] = Math.floor(total / 10);
@@ -168,24 +195,27 @@ const buildLearnSnapshots = (op, a, b) => {
         carry = 0;
       }
     }
-    snap(`🎉 All columns done! ${a} + ${b} = ${a + b}. Right to left, carry when a column makes 10 or more — that's the whole strategy!`);
+    snap(`🎉 All columns done! ${aTxt} + ${bTxt} = ${fmt(a + b, dp)}.${dp > 0 ? ' The decimal point in the answer drops straight down, in line with the others.' : ''} Right to left, carry when a column makes 10 or more — that's the whole strategy!`);
   } else {
-    snap(`We're solving ${a} − ${b}. The bigger number goes on TOP. Start on the right with the ones — always top digit minus bottom digit.`);
+    snap(dp > 0
+      ? `We're solving ${aTxt} − ${bTxt}. Line up the decimal points in a straight line, bigger number on top. Then start on the right — top digit minus bottom digit, same as always.`
+      : `We're solving ${aTxt} − ${bTxt}. The bigger number goes on TOP. Start on the right with the ones — always top digit minus bottom digit.`);
     for (let i = 0; i < cols; i++) {
       const bd = bD[i] ?? null;
       const topVal = state.work[i];
       if (bd === null) {
         state.answer[i] = topVal;
-        snap(`The ${placeName(i)} column has nothing underneath — nothing to take away! The ${topVal} comes straight down into the answer.`, i);
+        snap(`The ${placeName(i, dp)} column has nothing underneath — nothing to take away! The ${topVal} comes straight down into the answer.`, i);
         continue;
       }
       const needBorrow = topVal < bd;
-      snap(`Look at the ${placeName(i)} column: can we take ${bd} away from ${topVal}?${needBorrow ? ` No! ${topVal} is too small.` : ` Yes — ${topVal} is big enough.`}`, i);
+      snap(`Look at the ${placeName(i, dp)} column: can we take ${bd} away from ${topVal}?${needBorrow ? ` No! ${topVal} is too small.` : ` Yes — ${topVal} is big enough.`}`, i);
       if (needBorrow) {
         const before = [...state.work];
         const info = applyBorrowCascade(state.work, i);
+        const crossesPoint = dp > 0 && i === dp - 1 && info.donorIdx === dp;
         if (info.crossedZeros === 0) {
-          snap(`Time to BORROW from next door! The ${placeName(i + 1)} digit ${before[i + 1]} lends 1 (that 1 is worth ten ${placeName(i)}). Cross out the ${before[i + 1]}, write ${state.work[i + 1]}, and our ${topVal} becomes ${state.work[i]}.`, i);
+          snap(`Time to BORROW from next door! The ${placeName(i + 1, dp)} digit ${before[i + 1]} lends 1 (that 1 is worth ten ${placeName(i, dp)}). Cross out the ${before[i + 1]}, write ${state.work[i + 1]}, and our ${topVal} becomes ${state.work[i]}.${crossesPoint ? ' One whole broke into ten tenths — borrowing crosses the decimal point!' : ''}`, i);
         } else {
           snap(`We need to borrow — but next door is a 0, and 0 has nothing to lend! So the 0 borrows from ITS neighbour first: the ${before[info.donorIdx]} becomes ${state.work[info.donorIdx]}, the 0 becomes ${info.crossedZeros > 1 ? '9s' : 'a 9'} (it got 10, then lent 1), and our ${topVal} becomes ${state.work[i]}. Phew!`, i);
         }
@@ -194,8 +224,9 @@ const buildLearnSnapshots = (op, a, b) => {
       state.answer[i] = result;
       snap(`Now subtract: ${state.work[i]} − ${bd} = ${result}. Write it in the answer.`, i);
     }
-    const leadingZeros = String(a - b).length < cols;
-    snap(`🎉 All done! ${a} − ${b} = ${a - b}.${leadingZeros ? ' (We can ignore any zeros at the front of the answer.)' : ''} Remember: if the top digit is too small, borrow from next door!`);
+    const sigLen = String(a - b).length;
+    const leadingZeros = sigLen < cols && sigLen >= dp + 1;
+    snap(`🎉 All done! ${aTxt} − ${bTxt} = ${fmt(a - b, dp)}.${dp > 0 ? ' The decimal point drops straight down into the answer.' : ''}${leadingZeros ? ' (We can ignore any zeros at the very front of the answer.)' : ''} Remember: if the top digit is too small, borrow from next door!`);
   }
   return { snaps, cols, aD, bD };
 };
@@ -208,8 +239,19 @@ const DigitCell = ({ children, className = '' }) => (
   </div>
 );
 
+// Narrow separator column holding the decimal points, lined up vertically
+const DecimalPointCol = () => (
+  <div className="flex flex-col w-4 sm:w-6 items-center">
+    <div className="h-8 sm:h-10" />
+    <DigitCell className="text-slate-800">.</DigitCell>
+    <DigitCell className="text-slate-800">.</DigitCell>
+    <div className="h-1 bg-slate-800 rounded-full w-full" />
+    <DigitCell className="text-indigo-600">.</DigitCell>
+  </div>
+);
+
 const Board = ({
-  op, cols, aD, bD, carries, work, answer,
+  op, cols, aD, bD, carries, work, answer, dp = 0,
   activeCol, carryTapMode, onCarryTap, topTapMode, onTopTap, shakeKey,
 }) => {
   // Display columns: leftmost extra column for addition overflow
@@ -237,6 +279,7 @@ const Board = ({
         </div>
 
         {displayCols.map((i) => {
+          const showDotBefore = dp > 0 && i === dp - 1;
           const isActive = activeCol === i;
           const topDigit = op === 'sub' ? (aD[i] ?? null) : (aD[i] ?? null);
           const curWork = op === 'sub' && work ? work[i] : null;
@@ -247,8 +290,9 @@ const Board = ({
           const ansVal = answer ? answer[i] : undefined;
 
           return (
+            <React.Fragment key={i}>
+            {showDotBefore && <DecimalPointCol />}
             <div
-              key={i}
               className={`flex flex-col w-14 sm:w-20 rounded-2xl transition-all duration-300 ${isActive ? 'bg-yellow-100/90 ring-4 ring-amber-300 shadow-md' : ''}`}
             >
               {/* Carry row */}
@@ -297,6 +341,7 @@ const Board = ({
                 {ansVal !== undefined ? <span className="cs-pop inline-block">{ansVal}</span> : ''}
               </DigitCell>
             </div>
+            </React.Fragment>
           );
         })}
       </div>
@@ -378,7 +423,7 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
   const [learnExample, setLearnExample] = useState(null); // example object
   const [learnStep, setLearnStep] = useState(0);
   const learnData = useMemo(
-    () => learnExample ? buildLearnSnapshots(learnExample.op, learnExample.a, learnExample.b) : null,
+    () => learnExample ? buildLearnSnapshots(learnExample.op, learnExample.a, learnExample.b, learnExample.dp || 0) : null,
     [learnExample]
   );
 
@@ -386,6 +431,7 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
   const [opSetting, setOpSetting] = useState('add'); // add | sub | mixed
   const [digitSetting, setDigitSetting] = useState(2); // 2 | 3 | 4
   const [regroupSetting, setRegroupSetting] = useState('mixed'); // mixed | always | never
+  const [dpSetting, setDpSetting] = useState(0); // 0 = whole, 1 = tenths, 2 = hundredths
 
   // ── Practice state ──
   const [problem, setProblem] = useState(null); // {op,a,b,steps,cols,aD,bD}
@@ -409,9 +455,10 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
   // ── New practice question ──
   const newQuestion = useCallback((opOverride) => {
     const op = opOverride || (opSetting === 'mixed' ? (Math.random() < 0.5 ? 'add' : 'sub') : opSetting);
-    const { a, b } = genProblem(op, digitSetting, regroupSetting);
+    const dp = dpSetting;
+    const { a, b } = genProblem(op, digitSetting, regroupSetting, dp);
     const built = buildSteps(op, a, b);
-    setProblem({ op, a, b, ...built });
+    setProblem({ op, a, b, dp, ...built });
     setStepIdx(0);
     setCarries({});
     setWork(built.aD.map(d => d));
@@ -420,24 +467,26 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
     setAttempts(0);
     setMistakesThisQ(0);
     setCelebrating(false);
+    const startCol = placeName(0, dp);
+    const decNote = dp > 0 ? ' The decimal points are lined up for you — work each column just like whole numbers.' : '';
     setFeedback({
       text: op === 'add'
-        ? `Let's add ${a} + ${b}! Start with the ones column on the right. What do the ones make altogether?`
-        : `Let's solve ${a} − ${b}! Start with the ones column on the right.`,
+        ? `Let's add ${fmt(a, dp)} + ${fmt(b, dp)}!${decNote} Start with the ${startCol} column on the right.`
+        : `Let's solve ${fmt(a, dp)} − ${fmt(b, dp)}!${decNote} Start with the ${startCol} column on the right.`,
       tone: 'info',
     });
-  }, [opSetting, digitSetting, regroupSetting]);
+  }, [opSetting, digitSetting, regroupSetting, dpSetting]);
 
   // Start / restart when settings change while practising
   useEffect(() => {
     if (mode === 'practice') newQuestion();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, opSetting, digitSetting, regroupSetting]);
+  }, [mode, opSetting, digitSetting, regroupSetting, dpSetting]);
 
   // ── Step prompts ──
   const promptFor = useCallback((s) => {
     if (!s || !problem) return '';
-    const pn = placeName(s.col);
+    const pn = placeName(s.col, problem.dp);
     if (s.kind === 'sum') {
       const bits = [];
       if (s.ad !== null) bits.push(String(s.ad));
@@ -494,9 +543,11 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
       setBestStreak(b => Math.max(b, newStreak));
       if (perfect) setStars(v => v + 1);
       const result = problem.op === 'add' ? problem.a + problem.b : problem.a - problem.b;
-      const leadingZeros = problem.op === 'sub' && String(result).length < problem.cols;
+      const dp = problem.dp || 0;
+      const sigLen = String(result).length;
+      const leadingZeros = problem.op === 'sub' && sigLen < problem.cols && sigLen >= dp + 1;
       setFeedback({
-        text: `🎉 Brilliant! ${problem.a} ${problem.op === 'add' ? '+' : '−'} ${problem.b} = ${result}.${leadingZeros ? ' (Zeros at the front of an answer can be ignored!)' : ''}${perfect ? ' Perfect solve — you earned a ⭐!' : ''}`,
+        text: `🎉 Brilliant! ${fmt(problem.a, dp)} ${problem.op === 'add' ? '+' : '−'} ${fmt(problem.b, dp)} = ${fmt(result, dp)}.${dp > 0 ? ' Notice the decimal point dropped straight down!' : ''}${leadingZeros ? ' (Zeros at the very front of an answer can be ignored!)' : ''}${perfect ? ' Perfect solve — you earned a ⭐!' : ''}`,
         tone: 'success',
       });
       showToast(perfect ? 'Perfect solve! ⭐' : 'Question complete! 🎉', 'success');
@@ -560,12 +611,14 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
   const handleCarryTap = useCallback((colTapped) => {
     if (!step || step.kind !== 'carryTap') return;
     if (colTapped === step.expected) {
+      const dp = problem?.dp || 0;
+      const crossesPoint = dp > 0 && colTapped === dp;
       setCarries(prev => ({ ...prev, [colTapped]: 1 }));
-      advance({ text: `Perfect! The carried 1 sits at the top of the ${placeName(colTapped)} column, ready to be added in.`, tone: 'success' });
+      advance({ text: `Perfect! The carried 1 sits at the top of the ${placeName(colTapped, dp)} column, ready to be added in.${crossesPoint ? ' Ten tenths made one whole — the carry hopped right over the decimal point!' : ''}`, tone: 'success' });
     } else {
       wrong(`Not that spot! The carry jumps ONE column to the LEFT — right next door.`);
     }
-  }, [step, advance, wrong]);
+  }, [step, problem, advance, wrong]);
 
   // ── Borrow ask (yes / no) ──
   const handleBorrowAnswer = useCallback((saysYes) => {
@@ -591,8 +644,10 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
       const next = [...work];
       const before = [...next];
       const info = applyBorrowCascade(next, step.col);
+      const dp = problem?.dp || 0;
+      const crossesPoint = dp > 0 && step.col === dp - 1 && info.donorIdx === dp;
       const msg = info.crossedZeros === 0
-        ? `Great! The ${before[step.expected]} lends 1 and becomes ${next[step.expected]}. Our digit becomes ${next[step.col]} — now we can subtract!`
+        ? `Great! The ${before[step.expected]} lends 1 and becomes ${next[step.expected]}. Our digit becomes ${next[step.col]} — now we can subtract!${crossesPoint ? ' One whole broke into ten tenths — borrowing works across the decimal point too!' : ''}`
         : `Good tap — but the 0 has nothing to lend! It borrows from ITS neighbour: the ${before[info.donorIdx]} becomes ${next[info.donorIdx]}, the zero${info.crossedZeros > 1 ? 's become 9s' : ' becomes 9'}, and our digit becomes ${next[step.col]}. Phew!`;
       setWork(next);
       advance({ text: msg, tone: 'success' });
@@ -601,7 +656,7 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
     } else {
       wrong(`We always borrow from the NEXT-DOOR neighbour — the digit just one column to the left.`);
     }
-  }, [step, work, advance, wrong]);
+  }, [step, work, problem, advance, wrong]);
 
   // ── Keyboard support ──
   useEffect(() => {
@@ -646,7 +701,7 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
         <span>➕</span><span>➖</span><span>🧮</span><span>➕</span><span>➖</span>
       </div>
       <h1 className="text-3xl sm:text-4xl font-bold mb-2 relative">🧱 Column Strategy Lab</h1>
-      <p className="text-lg opacity-90 relative">Master column addition &amp; subtraction — carrying, borrowing and all!</p>
+      <p className="text-lg opacity-90 relative">Master column addition &amp; subtraction — carrying, borrowing, decimals and all!</p>
     </div>
   );
 
@@ -697,7 +752,9 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
                 </div>
                 <h3 className="font-bold text-slate-800 mb-1">{ex.title}</h3>
                 <p className="text-sm text-slate-500 mb-2">{ex.blurb}</p>
-                <p className="font-mono font-black text-xl text-slate-700">{ex.a} {ex.op === 'add' ? '+' : '−'} {ex.b}</p>
+                <p className="font-mono font-black text-xl text-slate-700">
+                  {ex.id === 'money' ? '$' : ''}{fmt(ex.a, ex.dp || 0)} {ex.op === 'add' ? '+' : '−'} {ex.id === 'money' ? '$' : ''}{fmt(ex.b, ex.dp || 0)}
+                </p>
               </button>
             ))}
           </div>
@@ -735,6 +792,7 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
             cols={snapData.cols}
             aD={snapData.aD}
             bD={snapData.bD}
+            dp={learnExample.dp || 0}
             carries={snap.carries}
             work={snap.work}
             answer={snap.answer}
@@ -806,6 +864,7 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
           {[
             { key: 'op', options: [{ v: 'add', l: '➕ Addition' }, { v: 'sub', l: '➖ Subtraction' }, { v: 'mixed', l: '🎲 Mixed' }], cur: opSetting, set: setOpSetting },
             { key: 'dig', options: [{ v: 2, l: '2-digit' }, { v: 3, l: '3-digit' }, { v: 4, l: '4-digit' }], cur: digitSetting, set: setDigitSetting },
+            { key: 'dp', options: [{ v: 0, l: '🔢 Whole numbers' }, { v: 1, l: '🔟 Tenths (4.7)' }, { v: 2, l: '💰 Hundredths (7.50)' }], cur: dpSetting, set: setDpSetting },
             { key: 'reg', options: [{ v: 'mixed', l: '🎲 Sometimes regroup' }, { v: 'always', l: '🔄 Always regroup' }, { v: 'never', l: '🚫 No regrouping' }], cur: regroupSetting, set: setRegroupSetting },
           ].map(grp => (
             <div key={grp.key} className="flex bg-slate-100 rounded-xl p-1 gap-1">
@@ -837,6 +896,7 @@ const ColumnStrategy = ({ showToast = () => {} }) => {
               cols={problem.cols}
               aD={problem.aD}
               bD={problem.bD}
+              dp={problem.dp || 0}
               carries={carries}
               work={work}
               answer={answer}

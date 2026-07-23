@@ -12,13 +12,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const PROMPT_MANIFEST = {
+  Informative: {
+    folder: 'Informative',
+    images: ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png'],
+  },
   Narrative: {
     folder: 'Narrative',
     images: ['1.png', '3.png', '5.png', '7.png', '9.png', '11.png', '13.png', '15.png', '17.png', '19.png', '21.png', '23.png', '25.png', '27.png', '29.png', '31.png', '33.png', '35.png', '37.png', '39.png', '41.png'],
   },
   Persuasive: {
     folder: 'Persuasive',
-    images: ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png'],
+    images: ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png', '11.png', '12.png', '13.png'],
   },
 };
 
