@@ -249,6 +249,20 @@ export const FURNITURE = [
   { id: 'waterfall_feature', name: 'Waterfall Feature', img: `${HO}/003-waterfall.svg`, zone: 'outdoor', size: 'xl', style: 16,
     src: { craft: { stone: 60, silver_bar: 4, glimmer_dust: 1, pearl: 1 } } },
 
+  // ── Wildwood trees — replant the forest in your own backyard ─────────────
+  { id: 'tree_beech',   name: 'Beech Tree',      img: `${WW}/Trees/001-beech.svg`,       zone: 'outdoor', size: 'xl', style: 6,
+    src: { craft: { beech_wood: 25, fiber: 10 } } },
+  { id: 'tree_cherry',  name: 'Wild Cherry Tree', img: `${WW}/Trees/007-cherry-tree.svg`, zone: 'outdoor', size: 'xl', style: 8,
+    src: { craft: { cherry_wood: 25, fiber: 10 } } },
+  { id: 'tree_banyan',  name: 'Old Banyan',      img: `${WW}/Trees/005-banyan.svg`,      zone: 'outdoor', size: 'xl', style: 10,
+    src: { craft: { banyan_wood: 25, fiber: 15 } } },
+  { id: 'tree_ironroot', name: 'Ironroot Giant', img: `${WW}/Trees/008-joshua-tree.svg`, zone: 'outdoor', size: 'xl', style: 12,
+    src: { craft: { ironroot_wood: 20, stone: 10 } } },
+  { id: 'tree_elder',   name: 'Elderwood Olive', img: `${WW}/Trees/006-olive-tree.svg`,  zone: 'outdoor', size: 'xl', style: 15,
+    src: { craft: { elder_wood: 12, glimmer_dust: 1 } } },
+  { id: 'tree_frostpine', name: 'Frostbark Pine', img: `${WW}/Extra/003-pine.svg`,       zone: 'outdoor', size: 'xl', style: 15,
+    src: { craft: { frost_wood: 15, everice: 1 } } },
+
   // ── FREE STARTERS — every player gets one automatically ──────────────────
   { id: 'arcade_cab', name: 'Arcade Cabinet', img: `${HF}/002-arcade.svg`, zone: 'floor', size: 'lg', style: 8, interactive: 'arcade',
     src: { free: true }, hint: 'Free with every hangout — opens ALL the fun games from the Game Center!' },

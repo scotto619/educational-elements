@@ -100,8 +100,16 @@ const COMPANION_BONUSES = {
   Golden:    { label: '+9% rare find luck',              buffs: { rareLuck: 9 } },
 };
 
+// Every gatherable node by its state key (for save validation)
+const NODE_BY_KEY = {};
+Object.entries(NODES).forEach(([zid, arr]) => arr.forEach((n) => { NODE_BY_KEY[`${zid}_${n.id}`] = n; }));
+
 // Firestore-safe clean of the save object
-const cleanSave = (gs) => ({
+const cleanSave = (gs, nodeState = {}) => ({
+  // Node stock/respawn timers persist — leaving the game can't reset a tree!
+  nodeState: Object.fromEntries(Object.entries(nodeState || {})
+    .filter(([k, s]) => NODE_BY_KEY[k] && s)
+    .map(([k, s]) => [k, { stock: Math.max(0, Math.floor(Number(s.stock) || 0)), hitsLeft: Math.max(0, Math.floor(Number(s.hitsLeft) || 0)), respawnAt: Number(s.respawnAt) || 0 }])),
   inv: Object.fromEntries(Object.entries(gs.inv || {}).filter(([id, v]) => ITEMS[id] && (Number(v) || 0) > 0).map(([k, v]) => [k, Math.floor(Number(v) || 0)])),
   chest: Object.fromEntries(Object.entries(gs.chest || {}).filter(([id, v]) => ITEMS[id] && (Number(v) || 0) > 0).map(([k, v]) => [k, Math.floor(Number(v) || 0)])),
   gold: Math.floor(Number(gs.gold) || 0),
@@ -276,6 +284,46 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
   const usedSlots = effSlotsUsed(gs.inv, caps.stack, caps.kindSlots);
   const chestUsedSlots = slotsUsedOf(gs.chest, caps.stack * 2);
 
+  // ── Inventory panels: split specialist storage into its own boxes ──────────
+  const [invSort, setInvSort] = useState('name');
+  const [invCollapsed, setInvCollapsed] = useState({});
+  const togglePanel = (id) => setInvCollapsed((p) => ({ ...p, [id]: !p[id] }));
+  const RARITY_SORT = { legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4 };
+  const sortInvEntries = (entries) => {
+    const arr = [...entries];
+    const nm = (a, b) => (ITEMS[a[0]]?.name || '').localeCompare(ITEMS[b[0]]?.name || '');
+    if (invSort === 'qty') arr.sort((a, b) => b[1] - a[1] || nm(a, b));
+    else if (invSort === 'value') arr.sort((a, b) => (ITEMS[b[0]]?.sell || 0) - (ITEMS[a[0]]?.sell || 0) || nm(a, b));
+    else if (invSort === 'rarity') arr.sort((a, b) => (RARITY_SORT[ITEMS[a[0]]?.rarity || 'common'] - RARITY_SORT[ITEMS[b[0]]?.rarity || 'common']) || nm(a, b));
+    else if (invSort === 'type') arr.sort((a, b) => (ITEMS[a[0]]?.kind || '').localeCompare(ITEMS[b[0]]?.kind || '') || nm(a, b));
+    else arr.sort(nm);
+    return arr;
+  };
+
+  // Allocate stacks of matching kinds into each crafted specialist storage
+  // (same maths the capacity system uses) — leftovers stay in the main pack.
+  const invPanels = useMemo(() => {
+    const stores = (gs.crafted || [])
+      .map((id) => CRAFT_MAP[id])
+      .filter((c) => c && c.kindStore)
+      .map((c) => ({ id: c.id, name: c.name, img: c.img, tint: c.tint, kinds: c.kindStore.kinds, slots: c.kindStore.slots, items: [], used: 0 }));
+    const remaining = { ...(gs.inv || {}) };
+    stores.forEach((store) => {
+      Object.entries(remaining).forEach(([id, q]) => {
+        if (store.used >= store.slots) return;
+        if (!store.kinds.includes(ITEMS[id]?.kind)) return;
+        const stacksAll = Math.ceil(q / caps.stack);
+        const take = Math.min(stacksAll, store.slots - store.used);
+        const qty = take >= stacksAll ? q : take * caps.stack;
+        if (qty <= 0) return;
+        store.items.push([id, qty]);
+        store.used += Math.ceil(qty / caps.stack);
+        if (qty >= q) delete remaining[id]; else remaining[id] = q - qty;
+      });
+    });
+    return { stores, mainInv: remaining };
+  }, [gs.inv, gs.crafted, caps.stack]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Load (migrates v1 saves — unknown ids are dropped by cleanSave rules) ──
   useEffect(() => {
     if (loaded) return;
@@ -307,6 +355,22 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     save.cookedDishes = (raw?.cookedDishes || []).filter((id) => RECIPE_MAP[id]);
     invRef.current = { ...save.inv };
     chestRef.current = { ...save.chest };
+    // Restore node stock/respawn timers so re-entering the game can't reset them
+    const seededNodes = {};
+    Object.entries(raw?.nodeState || {}).forEach(([k, s]) => {
+      const nodeDef = NODE_BY_KEY[k];
+      if (!nodeDef || !s) return;
+      const zoneId = k.split('_')[0];
+      const zoneDef = ZONES.find((z) => z.id === zoneId);
+      const hits = Math.floor(Number(s.hitsLeft) || 0);
+      seededNodes[k] = {
+        stock: Math.min(nodeDef.stock, Math.max(0, Math.floor(Number(s.stock) || 0)) || nodeDef.stock),
+        hitsLeft: hits > 0 ? hits : clicksNeeded(nodeDef, zoneDef?.tool),
+        respawnAt: Number(s.respawnAt) || 0,
+      };
+    });
+    nodeStateRef.current = seededNodes;
+    setNodeState(seededNodes);
     setGs(save);
     setLoaded(true);
     dirtyRef.current = true;
@@ -339,7 +403,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
     if (savingRef.current || !updateStudentData) return;
     savingRef.current = true;
     try {
-      await updateStudentData({ homesteadData: cleanSave(gsRef.current) });
+      await updateStudentData({ homesteadData: cleanSave(gsRef.current, nodeStateRef.current) });
       dirtyRef.current = false;
     } catch (err) {
       console.error('WildwoodHomestead: save failed', err);
@@ -584,6 +648,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       const next = { ...st, hitsLeft: st.hitsLeft - 1 };
       nodeStateRef.current = { ...nodeStateRef.current, [key]: next };
       setNodeState(nodeStateRef.current);
+      dirtyRef.current = true;
       return;
     }
     // Yield!
@@ -603,6 +668,7 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       : { stock: nextStock, hitsLeft: clicksNeeded(node, zoneDef.tool), respawnAt: 0 };
     nodeStateRef.current = { ...nodeStateRef.current, [key]: next };
     setNodeState(nodeStateRef.current);
+    dirtyRef.current = true;
   };
 
   // ── Fishing ─────────────────────────────────────────────────────────────────
@@ -1879,72 +1945,111 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
       )}
 
       {/* ══ PACK (inventory management) ══ */}
-      {tab === 'inventory' && (
+      {tab === 'inventory' && (() => {
+        const renderInvCard = (id, q, { small = false } = {}) => {
+          const rar = RARITY_STYLE[ITEMS[id]?.rarity || 'common'];
+          const itemSlots = Math.ceil(q / caps.stack);
+          const isDish = ITEMS[id]?.kind === 'dish';
+          return (
+            <div key={id} className={`rounded-xl border-2 ${rar.border} bg-black/40 p-2 text-center relative`}
+              title={`${ITEMS[id]?.name} (${rar.name}) — sells for ${ITEMS[id]?.sell || 0}g${itemSlots > 1 ? ` · fills ${itemSlots} slots` : ''}`}>
+              <It id={id} size={small ? 'w-9 h-9 mx-auto' : 'w-10 h-10 mx-auto'} />
+              <p className={`text-[9px] font-bold truncate mt-1 ${rar.text}`}>{ITEMS[id]?.name}</p>
+              <span className="absolute top-1 right-1.5 text-[10px] font-bold text-slate-300">{q}</span>
+              {itemSlots > 1 && <span className="absolute top-1 left-1.5 text-[8px] font-bold text-amber-400/90" title={`${itemSlots} slots`}>{itemSlots}▮</span>}
+              {isDish && (
+                <button onClick={() => eatDish(id)} className="w-full mt-1 text-[9px] font-bold bg-emerald-800 text-emerald-200 rounded py-0.5 hover:bg-emerald-700 transition">Eat</button>
+              )}
+              {caps.chestSlots > 0 && (
+                <button onClick={() => chestMove(id, q, true)} className="w-full mt-1 text-[9px] font-bold bg-slate-800 text-slate-400 rounded py-0.5 hover:bg-slate-700 transition">Store all</button>
+              )}
+            </div>
+          );
+        };
+        const PanelHeader = ({ pid, icon, tint, title, sub }) => (
+          <button onClick={() => togglePanel(pid)} className="w-full flex items-center gap-2 text-left">
+            <Ico src={icon} tint={tint} size="w-7 h-7" />
+            <span className="font-bold text-slate-200 flex-1">{title} <span className="text-xs text-slate-500 font-normal">{sub}</span></span>
+            <span className="text-slate-500 text-sm font-bold">{invCollapsed[pid] ? '▸ show' : '▾ hide'}</span>
+          </button>
+        );
+        return (
         <div className="space-y-3">
-          <Panel className="p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <h3 className="font-bold text-slate-200 flex items-center gap-2">
-                <Ico src={`${ICN}/Camping/007-backpack.svg`} size="w-7 h-7" /> Your Pack — {usedSlots}/{caps.slots} slots · stacks of {caps.stack}
-              </h3>
-              <p className="text-[11px] text-slate-500">Craft pouches, backpacks and crates in the Craft tab to carry more!</p>
-            </div>
-            <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
-              {Object.entries(gs.inv || {}).sort((a, b) => (ITEMS[a[0]]?.name || '').localeCompare(ITEMS[b[0]]?.name || '')).map(([id, q]) => {
-                const rar = RARITY_STYLE[ITEMS[id]?.rarity || 'common'];
-                const itemSlots = Math.ceil(q / caps.stack);
-                const isDish = ITEMS[id]?.kind === 'dish';
-                return (
-                  <div key={id} className={`rounded-xl border-2 ${rar.border} bg-black/40 p-2 text-center relative`} title={`${ITEMS[id]?.name} (${rar.name}) — sells for ${ITEMS[id]?.sell || 0}g${itemSlots > 1 ? ` · fills ${itemSlots} slots` : ''}`}>
-                    <It id={id} size="w-10 h-10 mx-auto" />
-                    <p className={`text-[9px] font-bold truncate mt-1 ${rar.text}`}>{ITEMS[id]?.name}</p>
-                    <span className="absolute top-1 right-1.5 text-[10px] font-bold text-slate-300">{q}</span>
-                    {itemSlots > 1 && <span className="absolute top-1 left-1.5 text-[8px] font-bold text-amber-400/90" title={`${itemSlots} slots`}>{itemSlots}▮</span>}
-                    {isDish && (
-                      <button onClick={() => eatDish(id)} className="w-full mt-1 text-[9px] font-bold bg-emerald-800 text-emerald-200 rounded py-0.5 hover:bg-emerald-700 transition">
-                        Eat
-                      </button>
-                    )}
-                    {caps.chestSlots > 0 && (
-                      <button onClick={() => chestMove(id, q, true)} className="w-full mt-1 text-[9px] font-bold bg-slate-800 text-slate-400 rounded py-0.5 hover:bg-slate-700 transition">
-                        Store all
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-              {Array.from({ length: Math.max(0, caps.slots - usedSlots) }).map((_, i) => (
-                <div key={`e${i}`} className="rounded-xl border-2 border-dashed border-slate-800 bg-black/20 min-h-[86px] flex items-center justify-center">
-                  <p className="text-slate-700 text-[10px] font-bold">empty</p>
-                </div>
-              ))}
-            </div>
+          {/* Sorting */}
+          <Panel className="p-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-bold text-slate-500 uppercase mr-1">Sort by:</span>
+            {[['name', 'Name'], ['rarity', 'Rarity'], ['qty', 'Quantity'], ['value', 'Value'], ['type', 'Type']].map(([sid, label]) => (
+              <button key={sid} onClick={() => setInvSort(sid)}
+                className={`text-xs font-bold rounded-full px-3 py-1.5 border transition ${invSort === sid ? 'border-emerald-500 bg-emerald-950/60 text-emerald-300' : 'border-slate-700 text-slate-400 hover:border-emerald-700'}`}>
+                {label}
+              </button>
+            ))}
           </Panel>
+
+          {/* Main pack */}
+          <Panel className="p-4">
+            <PanelHeader pid="pack" icon={`${ICN}/Camping/007-backpack.svg`} title="Your Pack"
+              sub={`— ${usedSlots}/${caps.slots} slots · stacks of ${caps.stack}`} />
+            {!invCollapsed.pack && (
+              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 mt-3">
+                {sortInvEntries(Object.entries(invPanels.mainInv)).map(([id, q]) => renderInvCard(id, q))}
+                {Array.from({ length: Math.max(0, caps.slots - usedSlots) }).map((_, i) => (
+                  <div key={`e${i}`} className="rounded-xl border-2 border-dashed border-slate-800 bg-black/20 min-h-[86px] flex items-center justify-center">
+                    <p className="text-slate-700 text-[10px] font-bold">empty</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          {/* Specialist storage — each crafted store is its own inventory */}
+          {invPanels.stores.map((store) => (
+            <Panel key={store.id} className="p-4">
+              <PanelHeader pid={store.id} icon={store.img} tint={store.tint} title={store.name}
+                sub={`— ${store.used}/${store.slots} slots · holds ${store.kinds.join(' / ').toUpperCase()} only`} />
+              {!invCollapsed[store.id] && (
+                store.items.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic mt-2">Empty — matching goods you gather are racked here automatically.</p>
+                ) : (
+                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 mt-3">
+                    {sortInvEntries(store.items).map(([id, q]) => renderInvCard(id, q, { small: true }))}
+                    {Array.from({ length: Math.max(0, store.slots - store.used) }).map((_, i) => (
+                      <div key={`se${i}`} className="rounded-xl border-2 border-dashed border-slate-800 bg-black/20 min-h-[70px] flex items-center justify-center">
+                        <p className="text-slate-700 text-[10px] font-bold">empty</p>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </Panel>
+          ))}
 
           {/* Camp chest */}
           <Panel className="p-4">
-            <h3 className="font-bold text-slate-200 flex items-center gap-2 mb-2">
-              <Ico src={`${ICN}/Camping/008-basket.svg`} size="w-7 h-7" /> Camp Chest — {chestUsedSlots}/{caps.chestSlots} slots · stacks of {caps.stack * 2}
-            </h3>
-            {caps.chestSlots === 0 ? (
-              <p className="text-xs text-slate-500">No chest yet — craft a <span className="text-emerald-400 font-bold">Camp Chest</span> at the Workbench to store items at camp.</p>
-            ) : Object.keys(gs.chest || {}).length === 0 ? (
-              <p className="text-xs text-slate-500 italic">The chest is empty. Store overflow here from your pack above.</p>
-            ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
-                {Object.entries(gs.chest || {}).sort((a, b) => (ITEMS[a[0]]?.name || '').localeCompare(ITEMS[b[0]]?.name || '')).map(([id, q]) => {
-                  const rar = RARITY_STYLE[ITEMS[id]?.rarity || 'common'];
-                  return (
-                    <div key={id} className={`rounded-xl border ${rar.border} bg-black/30 p-2 text-center relative`} title={ITEMS[id]?.name}>
-                      <It id={id} size="w-9 h-9 mx-auto" />
-                      <p className={`text-[9px] font-bold truncate mt-1 ${rar.text}`}>{ITEMS[id]?.name}</p>
-                      <span className="absolute top-1 right-1.5 text-[10px] font-bold text-slate-300">{q}</span>
-                      <button onClick={() => chestMove(id, q, false)} className="w-full mt-1 text-[9px] font-bold bg-slate-800 text-slate-400 rounded py-0.5 hover:bg-slate-700 transition">
-                        Take all
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+            <PanelHeader pid="chest" icon={`${ICN}/Camping/008-basket.svg`} title="Camp Chest"
+              sub={`— ${chestUsedSlots}/${caps.chestSlots} slots · stacks of ${caps.stack * 2}`} />
+            {!invCollapsed.chest && (
+              caps.chestSlots === 0 ? (
+                <p className="text-xs text-slate-500 mt-2">No chest yet — craft a <span className="text-emerald-400 font-bold">Camp Chest</span> at the Workbench to store items at camp.</p>
+              ) : Object.keys(gs.chest || {}).length === 0 ? (
+                <p className="text-xs text-slate-500 italic mt-2">The chest is empty. Store overflow here from your pack above.</p>
+              ) : (
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 mt-3">
+                  {sortInvEntries(Object.entries(gs.chest || {})).map(([id, q]) => {
+                    const rar = RARITY_STYLE[ITEMS[id]?.rarity || 'common'];
+                    return (
+                      <div key={id} className={`rounded-xl border ${rar.border} bg-black/30 p-2 text-center relative`} title={ITEMS[id]?.name}>
+                        <It id={id} size="w-9 h-9 mx-auto" />
+                        <p className={`text-[9px] font-bold truncate mt-1 ${rar.text}`}>{ITEMS[id]?.name}</p>
+                        <span className="absolute top-1 right-1.5 text-[10px] font-bold text-slate-300">{q}</span>
+                        <button onClick={() => chestMove(id, q, false)} className="w-full mt-1 text-[9px] font-bold bg-slate-800 text-slate-400 rounded py-0.5 hover:bg-slate-700 transition">
+                          Take all
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
             )}
           </Panel>
 
@@ -2002,7 +2107,8 @@ const WildwoodHomesteadGame = ({ studentData, updateStudentData, showToast = () 
             </div>
           </Panel>
         </div>
-      )}
+        );
+      })()}
 
       {/* ══ WILD FRIENDS ══ */}
       {tab === 'friends' && (

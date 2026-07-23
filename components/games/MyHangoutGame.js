@@ -116,7 +116,7 @@ const cleanSave = (h) => ({
   lastSaved: new Date().toISOString(),
 });
 
-const roomProfileOf = (hangoutData, sweetEmpireData, menagerieData) => {
+const roomProfileOf = (hangoutData, sweetEmpireData, menagerieData, homesteadData) => {
   const stage = sweetEmpireData ? forgeStageFor(sweetEmpireData) : null;
   const comp = menagerieData?.companionUid
     ? (menagerieData.creatures || []).find((c) => c.uid === menagerieData.companionUid)
@@ -126,6 +126,12 @@ const roomProfileOf = (hangoutData, sweetEmpireData, menagerieData) => {
     hangout: migrate(hangoutData),
     weapon: stage && stage.index > 0 ? { name: stage.name, img: stage.img } : null,
     companion: compSp ? { name: compSp.name, img: compSp.img, shiny: !!comp.shiny, level: menLevelForXp(comp.xp) } : null,
+    // Full Wildwood collections — the Trophy Room displays EVERYTHING
+    collections: {
+      curios: (homesteadData?.discoveredRares || []).filter((id) => WW_ITEMS[id]),
+      critters: (homesteadData?.critters || []).filter((id) => CRITTER_MAP[id]),
+      fish: (homesteadData?.caughtFish || []).filter((id) => WW_ITEMS[id]),
+    },
   };
 };
 
@@ -220,10 +226,12 @@ function CompanionSprite({ companion, area, myPosRef }) {
 // ROOM VIEW — one area, free-placed furniture, live players
 // ═════════════════════════════════════════════════════════════════════════════
 function RoomView({ profile, areaId, ownerName, editMode, placingZone, players = {}, myId, myPosDivRef, myPosRef, myInfo, onRoomClick, onItemClick, musicPlaying }) {
-  const { hangout, weapon, companion } = profile;
+  const { hangout, weapon, companion, collections } = profile;
   const area = hangout.areas[areaId] || hangout.areas.main;
   const areaDef = AREA_MAP[areaId] || AREA_MAP.main;
-  const isMain = areaId === (hangout.showcaseRoom === 'trophy' ? 'trophy' : 'main'); // showcase room (kept name for the blocks below)
+  const inTrophyRoom = areaId === 'trophy'; // the Trophy Room shows the ENTIRE collection
+  const isMain = areaId === (hangout.showcaseRoom === 'trophy' ? 'trophy' : 'main') && !inTrophyRoom; // limited showcase picks (main room)
+  const weaponHere = areaId === (hangout.showcaseRoom === 'trophy' ? 'trophy' : 'main');
   const wallCss = areaDef.type === 'outdoor' ? OUTDOOR_SKY : areaDef.type === 'night' ? NIGHT_SKY : (WALLPAPER_MAP[area.wallpaper] || WALLPAPER_MAP.cream).css;
   const floorCss = areaDef.type === 'outdoor' ? OUTDOOR_GROUND : areaDef.type === 'night' ? NIGHT_GROUND : (FLOOR_MAP[area.floor] || FLOOR_MAP.oak).css;
   const rootRef = useRef(null);
@@ -239,7 +247,7 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
 
   return (
     <div ref={rootRef} onClick={handleClick}
-      className={`relative w-full rounded-2xl overflow-hidden border-4 border-amber-900/50 shadow-2xl select-none ${placingZone ? 'cursor-crosshair' : ''}`}
+      className={`relative isolate w-full rounded-2xl overflow-hidden border-4 border-amber-900/50 shadow-2xl select-none ${placingZone ? 'cursor-crosshair' : ''}`}
       style={{ aspectRatio: '2 / 1.05', minHeight: 320 }}>
       <style>{`
         @keyframes hg-shake { 0%,100% { transform: rotate(-9deg) translateY(0); } 25% { transform: rotate(9deg) translateY(-3px); } 50% { transform: rotate(-9deg) translateY(0); } 75% { transform: rotate(9deg) translateY(-3px); } }
@@ -275,8 +283,51 @@ function RoomView({ profile, areaId, ownerName, editMode, placingZone, players =
             : { top: `${GROUND_BAND.top}%`, height: `${GROUND_BAND.bottom - GROUND_BAND.top}%` }} />
       )}
 
-      {/* Showcase (main room only) */}
-      {isMain && weapon && (
+      {/* TROPHY ROOM — the FULL collection on display, wall to wall */}
+      {inTrophyRoom && collections && (
+        <>
+          {/* Critter frames along the top wall */}
+          <div className="absolute pointer-events-none flex flex-wrap gap-1 justify-center content-start overflow-hidden"
+            style={{ left: '3%', right: '3%', top: '4%', maxHeight: '20%', zIndex: 5 }}>
+            {collections.critters.map((cid) => CRITTER_MAP[cid] && (
+              <div key={cid} className="bg-amber-100/90 border-2 border-amber-800/70 rounded-md p-0.5 shadow" title={CRITTER_MAP[cid].name}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={CRITTER_MAP[cid].img} alt="" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
+              </div>
+            ))}
+          </div>
+          {/* Fish plaques on the lower wall */}
+          <div className="absolute pointer-events-none flex flex-wrap gap-1 justify-center content-start overflow-hidden"
+            style={{ left: '3%', right: '3%', top: '27%', maxHeight: '18%', zIndex: 5 }}>
+            {collections.fish.map((fid) => WW_ITEMS[fid] && (
+              <div key={fid} className="bg-sky-100/90 border-2 border-sky-800/60 rounded-md p-0.5 shadow" title={`Trophy: ${WW_ITEMS[fid].name}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={WW_ITEMS[fid].img} alt="" className="w-5 h-5 md:w-6 md:h-6 object-contain" style={WW_ITEMS[fid].tint ? { filter: WW_ITEMS[fid].tint } : undefined} />
+              </div>
+            ))}
+          </div>
+          {/* Curio pedestals along the back of the floor */}
+          <div className="absolute pointer-events-none flex flex-wrap gap-1.5 justify-center content-end overflow-hidden"
+            style={{ left: '3%', right: '3%', bottom: '1.5%', maxHeight: '16%', zIndex: 5 }}>
+            {collections.curios.map((cid) => WW_ITEMS[cid] && (
+              <div key={cid} className="flex flex-col items-center" title={WW_ITEMS[cid].name}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={WW_ITEMS[cid].img} alt="" className="w-6 h-6 md:w-8 md:h-8 object-contain drop-shadow"
+                  style={{ animation: 'hg-hover 2.4s ease-in-out infinite', ...(WW_ITEMS[cid].tint ? { filter: WW_ITEMS[cid].tint } : {}) }} />
+                <div className="w-7 h-2 rounded-sm bg-amber-950/70 border border-amber-700/60" />
+              </div>
+            ))}
+          </div>
+          {collections.critters.length === 0 && collections.fish.length === 0 && collections.curios.length === 0 && (
+            <div className="absolute inset-x-0 top-[20%] text-center pointer-events-none" style={{ zIndex: 5 }}>
+              <p className="text-amber-950/60 text-sm font-bold bg-amber-100/70 inline-block rounded-full px-4 py-1">Empty walls… fill them with Wildwood discoveries!</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Showcase (limited picks — main room) */}
+      {weaponHere && weapon && (
         <div className="absolute flex flex-col items-center pointer-events-none" style={{ left: '50%', top: '4%', transform: 'translateX(-50%)' }} title={`Forge weapon: ${weapon.name}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={weapon.img} alt="" className="w-14 h-14 md:w-20 md:h-20 object-contain drop-shadow-lg" />
@@ -859,7 +910,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
 
   // ── Derived ─────────────────────────────────────────────────────────────────
   const myProfile = useMemo(
-    () => ({ ...roomProfileOf(null, studentData?.sweetEmpireData, studentData?.menagerieData), hangout: gs }),
+    () => ({ ...roomProfileOf(null, studentData?.sweetEmpireData, studentData?.menagerieData, homesteadRef.current || studentData?.homesteadData), hangout: gs }),
     [gs, studentData]
   );
   const myScore = useMemo(() => styleScoreOf(gs), [gs]);
@@ -875,7 +926,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
     const v = (classmates || []).find((s) => s.id === visitId);
     if (!v) return null;
     const roomData = liveRoom?.data || v.hangoutData; // live mirror wins over the page-load snapshot
-    return { profile: roomProfileOf(roomData, v.sweetEmpireData, v.menagerieData), name: v.firstName || '?', data: v };
+    return { profile: roomProfileOf(roomData, v.sweetEmpireData, v.menagerieData, v.homesteadData), name: v.firstName || '?', data: v };
   }, [visitId, classmates, liveRoom]);
   const [visitAreaId, setVisitAreaId] = useState('main');
   useEffect(() => { setVisitAreaId('main'); }, [visitId]);
@@ -1190,7 +1241,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 space-y-4">
           <div>
             <h3 className="font-bold text-gray-800">🏆 Showcase your collections</h3>
-            <p className="text-xs text-gray-500">Your Forge weapon and Menagerie companion appear automatically. Pick the rest:</p>
+            <p className="text-xs text-gray-500">The <b>Trophy Room</b> automatically displays your ENTIRE bug, curio and fish collection. The picks below are the highlights for your Main Room (your Forge weapon and companion appear on their own):</p>
             <div className="flex items-center gap-1.5 mt-2">
               <span className="text-xs font-bold text-gray-400 uppercase">Display in:</span>
               {[['main', '🛋️ Main Room'], ['trophy', '🏆 Trophy Room']].map(([rid, rlabel]) => (
@@ -1291,7 +1342,7 @@ const MyHangoutGame = ({ studentData, updateStudentData, showToast = () => {}, c
 
       {/* ══ INTERACTIVE MODALS ══ */}
       {interact && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setInteract(null)}>
+        <div className="fixed inset-0 bg-black/60 z-[300] flex items-center justify-center p-4" onClick={() => setInteract(null)}>
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
 
             {interact.type === 'radio' && (
