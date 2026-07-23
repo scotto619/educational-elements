@@ -18,7 +18,8 @@ import {
   HALLOWEEN_PETS,
   CHRISTMAS_BASIC_AVATARS,
   CHRISTMAS_PREMIUM_AVATARS,
-  CHRISTMAS_PETS
+  CHRISTMAS_PETS,
+  isSameItemName
 } from '../../utils/gameHelpers';
 import { normalizeImageSource, serializeFallbacks, createImageErrorHandler } from '../../utils/imageFallback';
 import {
@@ -274,28 +275,20 @@ const calculateSellPrice = (originalPrice) => {
 
 // Find original item price from shop data - UPDATED TO INCLUDE SEASONAL COLLECTIONS
 const findOriginalPrice = (itemName, itemType, SHOP_BASIC_AVATARS, SHOP_PREMIUM_AVATARS, SHOP_BASIC_PETS, SHOP_PREMIUM_PETS, currentRewards) => {
+  // Match through the legacy rename map so old saved names still price correctly
+  const match = (list) => (list || []).find((entry) => isSameItemName(entry.name, itemName));
   if (itemType === 'avatar') {
-    const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
-    const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
-    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
-    const christmasBasic = CHRISTMAS_BASIC_AVATARS.find(a => a.name === itemName);
-    const christmasPremium = CHRISTMAS_PREMIUM_AVATARS.find(a => a.name === itemName);
     return (
-      basicAvatar?.price ||
-      premiumAvatar?.price ||
-      halloweenBasic?.price ||
-      halloweenPremium?.price ||
-      christmasBasic?.price ||
-      christmasPremium?.price ||
+      match(SHOP_BASIC_AVATARS)?.price ||
+      match(SHOP_PREMIUM_AVATARS)?.price ||
+      match(HALLOWEEN_BASIC_AVATARS)?.price ||
+      match(HALLOWEEN_PREMIUM_AVATARS)?.price ||
+      match(CHRISTMAS_BASIC_AVATARS)?.price ||
+      match(CHRISTMAS_PREMIUM_AVATARS)?.price ||
       10
     );
   } else if (itemType === 'pet') {
-    const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
-    const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
-    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
-    const christmasPet = CHRISTMAS_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || halloweenPet?.price || christmasPet?.price || 15;
+    return match(SHOP_BASIC_PETS)?.price || match(SHOP_PREMIUM_PETS)?.price || match(HALLOWEEN_PETS)?.price || match(CHRISTMAS_PETS)?.price || 15;
   } else if (itemType === 'reward') {
     const reward = currentRewards.find(r => r.id === itemName || r.name === itemName);
     return reward?.price || 10;
@@ -922,9 +915,9 @@ const ShopTab = ({
           const isReward = item.type === 'reward';
           const isCardPack = item.type === 'card_pack';
           const owned = isAvatar
-            ? selectedStudent?.ownedAvatars?.includes(item.name)
+            ? selectedStudent?.ownedAvatars?.some(n => isSameItemName(n, item.name))
             : isPet
-              ? selectedStudent?.ownedPets?.some(p => p.name === item.name)
+              ? selectedStudent?.ownedPets?.some(p => isSameItemName(p.name, item.name))
               : false;
 
           if (isCardPack) {
@@ -1171,7 +1164,7 @@ const ShopTab = ({
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 md:gap-4">
             {filteredAvatars.map(avatar => {
-              const owned = selectedStudent?.ownedAvatars?.includes(avatar.name);
+              const owned = selectedStudent?.ownedAvatars?.some(n => isSameItemName(n, avatar.name));
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= avatar.price : false;
               const isChristmas = avatar.theme === 'christmas';
               return (
@@ -1245,7 +1238,7 @@ const ShopTab = ({
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
             {filteredPets.map(pet => {
-              const owned = selectedStudent?.ownedPets?.some(p => p.name === pet.name);
+              const owned = selectedStudent?.ownedPets?.some(p => isSameItemName(p.name, pet.name));
               const canAfford = selectedStudent ? calculateCoins(selectedStudent) >= pet.price : false;
               const isChristmas = pet.theme === 'christmas';
               return (
@@ -1352,9 +1345,9 @@ const ShopTab = ({
                     ...HALLOWEEN_PREMIUM_AVATARS,
                     ...CHRISTMAS_BASIC_AVATARS,
                     ...CHRISTMAS_PREMIUM_AVATARS
-                  ].find(a => a.name === avatarName);
+                  ].find(a => isSameItemName(a.name, avatarName));
 
-                  const isEquipped = selectedStudent.avatarBase === avatarName;
+                  const isEquipped = isSameItemName(selectedStudent.avatarBase, avatarName);
 
                   return (
                     <div key={avatarName} className={`w-full bg-white rounded-xl overflow-hidden text-center border-2 shadow-sm hover:shadow-md transition-all ${isEquipped ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200'}`}>

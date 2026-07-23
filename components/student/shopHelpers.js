@@ -6,7 +6,8 @@ import {
   PET_EGG_TYPES,
   EGG_STAGE_ART,
   getEggStageArt,
-  DEFAULT_PET_IMAGE
+  DEFAULT_PET_IMAGE,
+  isSameItemName
 } from '../../utils/gameHelpers';
 import { normalizeImageSource, createImageErrorHandler } from '../../utils/imageFallback';
 import { CARD_EFFECTS } from '../../constants/cardEffects';
@@ -260,29 +261,21 @@ export const findOriginalPrice = (
   CHRISTMAS_PREMIUM_AVATARS = [],
   CHRISTMAS_PETS = []
 ) => {
+  // Match through the legacy rename map so items bought under OLD names still price correctly
+  const match = (list) => (list || []).find((entry) => isSameItemName(entry.name, itemName));
   if (itemType === 'avatar') {
-    const basicAvatar = SHOP_BASIC_AVATARS.find(a => a.name === itemName);
-    const premiumAvatar = SHOP_PREMIUM_AVATARS.find(a => a.name === itemName);
-    const halloweenBasic = HALLOWEEN_BASIC_AVATARS.find(a => a.name === itemName);
-    const halloweenPremium = HALLOWEEN_PREMIUM_AVATARS.find(a => a.name === itemName);
-    const christmasBasic = CHRISTMAS_BASIC_AVATARS.find(a => a.name === itemName);
-    const christmasPremium = CHRISTMAS_PREMIUM_AVATARS.find(a => a.name === itemName);
     return (
-      basicAvatar?.price ||
-      premiumAvatar?.price ||
-      halloweenBasic?.price ||
-      halloweenPremium?.price ||
-      christmasBasic?.price ||
-      christmasPremium?.price ||
+      match(SHOP_BASIC_AVATARS)?.price ||
+      match(SHOP_PREMIUM_AVATARS)?.price ||
+      match(HALLOWEEN_BASIC_AVATARS)?.price ||
+      match(HALLOWEEN_PREMIUM_AVATARS)?.price ||
+      match(CHRISTMAS_BASIC_AVATARS)?.price ||
+      match(CHRISTMAS_PREMIUM_AVATARS)?.price ||
       10
     );
   }
   if (itemType === 'pet') {
-    const basicPet = SHOP_BASIC_PETS.find(p => p.name === itemName);
-    const premiumPet = SHOP_PREMIUM_PETS.find(p => p.name === itemName);
-    const halloweenPet = HALLOWEEN_PETS.find(p => p.name === itemName);
-    const christmasPet = CHRISTMAS_PETS.find(p => p.name === itemName);
-    return basicPet?.price || premiumPet?.price || halloweenPet?.price || christmasPet?.price || 15;
+    return match(SHOP_BASIC_PETS)?.price || match(SHOP_PREMIUM_PETS)?.price || match(HALLOWEEN_PETS)?.price || match(CHRISTMAS_PETS)?.price || 15;
   }
   if (itemType === 'reward') {
     const reward = (classRewards || []).find(r => r.id === itemName || r.name === itemName);

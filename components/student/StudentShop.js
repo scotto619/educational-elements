@@ -13,7 +13,8 @@ import {
   getEggStageStatus,
   resolveEggHatch,
   getEggTypeById,
-  EGG_STAGE_MESSAGES
+  EGG_STAGE_MESSAGES,
+  isSameItemName
 } from '../../utils/gameHelpers';
 import { serializeFallbacks } from '../../utils/imageFallback';
 import CardPackOpeningModal from './cards/CardPackOpeningModal';
@@ -1795,7 +1796,7 @@ const StudentShop = ({
 
     // Remove item from inventory
     if (sellModal.type === 'avatar') {
-      updates.ownedAvatars = studentData.ownedAvatars.filter(a => a !== sellModal.item);
+      updates.ownedAvatars = studentData.ownedAvatars.filter(a => !isSameItemName(a, sellModal.item));
     } else if (sellModal.type === 'pet') {
       updates.ownedPets = studentData.ownedPets.filter(p => p.id !== sellModal.item.id);
     } else if (sellModal.type === 'reward') {
@@ -2183,9 +2184,9 @@ const StudentShop = ({
           const isCardPack = item.type === 'card_pack';
 
           const owned = isAvatar
-            ? studentData?.ownedAvatars?.includes(item.name)
+            ? studentData?.ownedAvatars?.some(n => isSameItemName(n, item.name))
             : isPet
-              ? studentData?.ownedPets?.some(p => p.name === item.name)
+              ? studentData?.ownedPets?.some(p => isSameItemName(p.name, item.name))
               : isReward
                 ? studentData?.rewardsPurchased?.some(r => r.id === item.id || r.name === item.name)
                 : false;
@@ -2529,7 +2530,7 @@ const StudentShop = ({
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
               {filteredAvatars.map(avatar => {
-                const owned = studentData?.ownedAvatars?.includes(avatar.name);
+                const owned = studentData?.ownedAvatars?.some(n => isSameItemName(n, avatar.name));
                 const canAfford = currentCoins >= avatar.price;
                 const isChristmas = avatar.theme === 'christmas';
 
@@ -2560,7 +2561,7 @@ const StudentShop = ({
                       {owned ? (
                         <div className="space-y-1">
                           <span className="block w-full py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-lg">Owned ✓</span>
-                          {studentData?.avatarBase !== avatar.name && (
+                          {!isSameItemName(studentData?.avatarBase, avatar.name) && (
                             <button
                               onClick={() => handleSellItem(avatar.name, 'avatar')}
                               className="w-full py-1 bg-orange-50 text-orange-600 text-[10px] font-bold rounded-lg hover:bg-orange-100 border border-orange-200 transition-colors active:scale-95"
@@ -2631,7 +2632,7 @@ const StudentShop = ({
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
               {filteredPets.map(pet => {
-                const owned = studentData?.ownedPets?.some(p => p.name === pet.name);
+                const owned = studentData?.ownedPets?.some(p => isSameItemName(p.name, pet.name));
                 const canAfford = currentCoins >= pet.price;
                 const isChristmas = pet.theme === 'christmas';
 
@@ -2662,10 +2663,10 @@ const StudentShop = ({
                       {owned ? (
                         <div className="space-y-1">
                           <span className="block w-full py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-lg">Owned ✓</span>
-                          {studentData?.ownedPets?.[0]?.name !== pet.name && (
+                          {!isSameItemName(studentData?.ownedPets?.[0]?.name, pet.name) && (
                             <button
                               onClick={() => {
-                                const ownedPet = studentData?.ownedPets?.find(p => p.name === pet.name);
+                                const ownedPet = studentData?.ownedPets?.find(p => isSameItemName(p.name, pet.name));
                                 if (ownedPet) handleSellItem(ownedPet, 'pet');
                               }}
                               className="w-full py-1 bg-orange-50 text-orange-600 text-[10px] font-bold rounded-lg hover:bg-orange-100 border border-orange-200 transition-colors active:scale-95"
