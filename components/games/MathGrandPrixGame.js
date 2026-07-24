@@ -15,6 +15,7 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { MATH_SUBLEVELS, generateQuestion } from '../../utils/mathMentalsEngine';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ── Tuning ───────────────────────────────────────────────────────────────────
 const TRACK_LEN = 100;          // units to the finish line
@@ -113,6 +114,7 @@ const MathGrandPrixGame = ({ studentData, updateStudentData, showToast, classDat
   const [mpRoom, setMpRoom] = useState(null);
   const [mpLevel, setMpLevel] = useState(2);
   const [mpMsg, setMpMsg] = useState('');
+  const [kickTarget, setKickTarget] = useState(null); // player object pending removal confirmation
   const [now, setNow] = useState(Date.now());
   const [myId] = useState(() =>
     studentData?.id ? `s_${studentData.id}` : `p_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
@@ -364,12 +366,26 @@ const MathGrandPrixGame = ({ studentData, updateStudentData, showToast, classDat
         setMpRoomCode('');
         setScreen('mpHome');
         setMpMsg('The room was closed by the host.');
+        setKickTarget(null);
         return;
       }
       setMpRoom(data);
     });
     return () => fb.off(rRef, 'value', handler);
   }, [fb, mpRoomCode]);
+
+  // notice if the host removes me from the room
+  useEffect(() => {
+    if (!fb || !mpRoomCode) return undefined;
+    const unsubscribeKick = watchForKick(fb.database, `mathGrandPrixRooms/${mpRoomCode}`, myId, () => {
+      showToast?.('You were removed from the race by the host.', 'error');
+      setMpRoom(null);
+      setMpRoomCode('');
+      setScreen('mpHome');
+      setKickTarget(null);
+    });
+    return () => unsubscribeKick();
+  }, [fb, mpRoomCode, myId, showToast]);
 
   // remove my player (or the whole room, if hosting) when the tab closes
   useEffect(() => {
@@ -454,7 +470,25 @@ const MathGrandPrixGame = ({ studentData, updateStudentData, showToast, classDat
     setMpRoom(null);
     setMpRoomCode('');
     setScreen('mpHome');
+    setKickTarget(null);
   }, [fb, mpRoomCode, isHost, roomRef, myId]);
+
+  const mpKickPlayer = useCallback(async (target) => {
+    if (!fb || !mpRoomCode || !target) { setKickTarget(null); return; }
+    try {
+      await kickPlayer({
+        database: fb.database,
+        roomPath: `mathGrandPrixRooms/${mpRoomCode}`,
+        targetId: target.id,
+        targetName: target.name,
+        hostName: mpRoom?.players?.[myId]?.name || mpName,
+      });
+    } catch (err) {
+      console.error('Kick player failed:', err);
+      setMpMsg('⚠️ Could not remove that player. Try again.');
+    }
+    setKickTarget(null);
+  }, [fb, mpRoomCode, mpRoom, myId, mpName]);
 
   const mpStartRace = useCallback(async () => {
     if (!fb || !isHost) return;
@@ -630,6 +664,9 @@ const MathGrandPrixGame = ({ studentData, updateStudentData, showToast, classDat
         <span className={`absolute left-1.5 top-0.5 text-[10px] font-bold ${opts.colorClass || 'text-gray-300'}`}>
           {name} {done && '🏁'}
         </span>
+        {opts.kickButton && (
+          <span className="absolute right-1.5 top-0.5">{opts.kickButton}</span>
+        )}
       </div>
     );
   };
@@ -831,6 +868,9 @@ const MathGrandPrixGame = ({ studentData, updateStudentData, showToast, classDat
                   <span className="font-bold text-white">{p.name}</span>
                   {p.isHost && <span className="text-[10px] bg-yellow-400/20 text-yellow-300 font-bold px-2 py-0.5 rounded-full">HOST</span>}
                   {p.id === myId && <span className="text-[10px] bg-emerald-400/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full">YOU</span>}
+                  {isHost && p.id !== myId && (
+                    <KickButton onClick={() => setKickTarget(p)} name={p.name} className="ml-auto" />
+                  )}
                 </div>
               ))}
             </div>
@@ -871,6 +911,9 @@ const MathGrandPrixGame = ({ studentData, updateStudentData, showToast, classDat
                     spin: p.id === myId && spinOut,
                     turbo: p.id === myId && turboFlash,
                     colorClass: p.id === myId ? 'text-yellow-300' : 'text-gray-300',
+                    kickButton: isHost && p.id !== myId
+                      ? <KickButton onClick={() => setKickTarget(p)} name={p.name} />
+                      : null,
                   }
                 )
               )}
@@ -1005,6 +1048,14 @@ const MathGrandPrixGame = ({ studentData, updateStudentData, showToast, classDat
         <p className="text-xs text-gray-400 text-center px-4">
           Type the answer and press <b>Enter</b>. Every 3rd correct in a row fires a 🔥 TURBO boost!
         </p>
+      )}
+
+      {kickTarget && (
+        <KickConfirmModal
+          playerName={kickTarget.name}
+          onConfirm={() => mpKickPlayer(kickTarget)}
+          onCancel={() => setKickTarget(null)}
+        />
       )}
     </div>
   );

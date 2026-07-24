@@ -19,6 +19,7 @@
 //   summary: { truth, results: [...], scoredAt }
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ─── Prompt bank (kid-friendly fun facts; blank = the hidden truth) ───────────
 const PROMPTS = [
@@ -116,7 +117,7 @@ const Confetti = () => {
 };
 
 // ─── Scoreboard sidebar ───────────────────────────────────────────────────────
-const Scoreboard = ({ players, title = 'Scores' }) => {
+const Scoreboard = ({ players, title = 'Scores', isHost, myId, onKick }) => {
   const sorted = useMemo(() => [...players].sort((a, b) => (b.score || 0) - (a.score || 0)), [players]);
   return (
     <div className="bg-white/10 border border-white/15 rounded-2xl p-3">
@@ -130,6 +131,9 @@ const Scoreboard = ({ players, title = 'Scores' }) => {
               <span className="text-emerald-300 font-bold text-xs">+{p.roundScore}</span>
             )}
             <span className="text-yellow-300 font-bold tabular-nums">{p.score || 0}</span>
+            {isHost && p.id !== myId && (
+              <KickButton onClick={() => onKick?.(p)} name={p.name} />
+            )}
           </div>
         ))}
       </div>
@@ -151,6 +155,7 @@ const BluffBattleGame = ({ studentData, showToast }) => {
 
   const [lieInput, setLieInput] = useState('');
   const [now, setNow] = useState(Date.now());
+  const [kickTarget, setKickTarget] = useState(null); // { id, name } pending confirm
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 500);
@@ -204,6 +209,19 @@ const BluffBattleGame = ({ studentData, showToast }) => {
       } catch {}
     };
   }, [fb, roomCode, myId]);
+
+  // ── Kick watcher (local player) ──
+  useEffect(() => {
+    if (!fb || !roomCode) return;
+    const unsub = watchForKick(fb.database, `bluffBattleRooms/${roomCode}`, myId, () => {
+      showToast?.('You were removed from the game by the host.', 'error');
+      setRoomCode('');
+      setRoomData(null);
+      setIsHost(false);
+      setScreen('home');
+    });
+    return () => unsub();
+  }, [fb, roomCode, myId, showToast]);
 
   // ── Create / Join ──
   const createRoom = useCallback(async () => {
@@ -259,6 +277,72 @@ const BluffBattleGame = ({ studentData, showToast }) => {
     setRoomCode('');
     setRoomData(null);
   }, [fb, roomCode, myId, roomRef]);
+
+  // ── Host: remove another player from the game ──
+  const kickBluffer = useCallback(async (targetId) => {
+    const rd = roomDataRef.current;
+    if (!fb || !isHost || !rd || !roomCode || targetId === myId) return;
+    const target = rd.players?.[targetId];
+    const roomPath = `bluffBattleRooms/${roomCode}`;
+    const remainingIds = Object.keys(rd.players || {}).filter((id) => id !== targetId);
+    const extraUpdates = {};
+
+    if (rd.phase !== 'lobby' && rd.phase !== 'gameEnd' && remainingIds.length < 2) {
+      // Not enough players left to keep the game going — end it gracefully.
+      extraUpdates[`${roomPath}/phase`] = 'gameEnd';
+    }
+
+    // Writing phase: drop their answer before it can turn into a bluff option.
+    if (rd.answers && rd.answers[targetId] !== undefined) {
+      extraUpdates[`${roomPath}/answers/${targetId}`] = null;
+    }
+
+    // Voting/reveal: scrub their bluff option (and any votes already cast for
+    // it) so nobody's vote is left pointing at an option that's about to
+    // disappear — the reveal screen looks options up by id.
+    const options = rd.options || [];
+    if (options.length) {
+      let changed = false;
+      const removedOids = [];
+      const nextOptions = options.reduce((acc, o) => {
+        if (!(o.ownerIds || []).includes(targetId)) { acc.push(o); return acc; }
+        changed = true;
+        const remainingOwners = o.ownerIds.filter((id) => id !== targetId);
+        if (remainingOwners.length > 0) acc.push({ ...o, ownerIds: remainingOwners });
+        else removedOids.push(o.oid); // no owners left — drop the option entirely
+        return acc;
+      }, []);
+      if (changed) {
+        extraUpdates[`${roomPath}/options`] = nextOptions;
+        Object.entries(rd.votes || {}).forEach(([voterId, oid]) => {
+          if (removedOids.includes(oid)) extraUpdates[`${roomPath}/votes/${voterId}`] = null;
+        });
+      }
+    }
+
+    // Their own cast vote shouldn't count toward "everyone voted" either.
+    if (rd.votes && rd.votes[targetId] !== undefined) {
+      extraUpdates[`${roomPath}/votes/${targetId}`] = null;
+    }
+
+    // If they'd accidentally bluffed the truth, drop them from truthMatchers too.
+    if ((rd.truthMatchers || []).includes(targetId)) {
+      extraUpdates[`${roomPath}/truthMatchers`] = rd.truthMatchers.filter((id) => id !== targetId);
+    }
+
+    try {
+      await kickPlayer({
+        database: fb.database,
+        roomPath,
+        targetId,
+        targetName: target?.name,
+        hostName: rd.players?.[myId]?.name,
+        extraUpdates,
+      });
+    } catch {
+      showToast?.('Failed to remove player', 'error');
+    }
+  }, [fb, isHost, myId, roomCode, showToast]);
 
   // ── Round orchestration (host only) ──
   const beginRound = useCallback(async (roundNumber, promptPool) => {
@@ -501,6 +585,9 @@ const BluffBattleGame = ({ studentData, showToast }) => {
                   <span className="text-xl">{p.emoji}</span>
                   <span className="text-white font-semibold truncate">{p.name}</span>
                   {p.isHost && <span className="text-yellow-300 text-xs">👑</span>}
+                  {isHost && p.id !== myId && (
+                    <KickButton onClick={() => setKickTarget(p)} name={p.name} className="ml-auto" />
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -526,6 +613,13 @@ const BluffBattleGame = ({ studentData, showToast }) => {
 
           <button onClick={leaveRoom} className="w-full mt-3 py-2 text-white/60 hover:text-white text-sm transition">← Leave room</button>
         </div>
+        {kickTarget && (
+          <KickConfirmModal
+            playerName={kickTarget.name}
+            onConfirm={() => { kickBluffer(kickTarget.id); setKickTarget(null); }}
+            onCancel={() => setKickTarget(null)}
+          />
+        )}
       </div>
     );
   }
@@ -690,12 +784,19 @@ const BluffBattleGame = ({ studentData, showToast }) => {
 
         {/* Sidebar */}
         <div className="space-y-3">
-          <Scoreboard players={players} title={phase === 'reveal' ? 'This Round' : 'Scores'} />
+          <Scoreboard players={players} title={phase === 'reveal' ? 'This Round' : 'Scores'} isHost={isHost} myId={myId} onKick={phase !== 'gameEnd' ? (p) => setKickTarget(p) : undefined} />
           {phase !== 'gameEnd' && (
             <button onClick={leaveRoom} className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-sm transition">Leave game</button>
           )}
         </div>
       </div>
+      {kickTarget && (
+        <KickConfirmModal
+          playerName={kickTarget.name}
+          onConfirm={() => { kickBluffer(kickTarget.id); setKickTarget(null); }}
+          onCancel={() => setKickTarget(null)}
+        />
+      )}
     </div>
   );
 };

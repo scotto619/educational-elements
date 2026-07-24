@@ -18,8 +18,8 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
   getTextTypes, getTypeConfig, getPrompts, getPromptById,
   countWords, timeAgo,
+  HIGHLIGHT_COLORS, getHighlightColor, resolveHighlights, buildHighlightSegments,
 } from '../curriculum/literacy/writing-prompts/promptData';
-import { containsProfanity } from '../../utils/profanityFilter';
 
 const MAX_CHARS = 20000;
 const SUBMIT_XP = 5;
@@ -56,7 +56,44 @@ const StoryStatusBadge = ({ story }) => {
   if (story.status === 'submitted') {
     return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Handed in ✅</span>;
   }
+  if (story.status === 'returned') {
+    return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700">Returned ✏️</span>;
+  }
   return <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-500">Draft</span>;
+};
+
+/** Read-only view of the student's text with the teacher's coloured
+ *  highlights painted on. Re-anchors to the student's latest text, so when
+ *  they fix a highlighted part, that highlight naturally disappears. */
+const TeacherMarkupPanel = ({ content, highlights }) => {
+  const resolved = resolveHighlights(content, highlights);
+  const segments = buildHighlightSegments(content, resolved);
+  const usedColors = HIGHLIGHT_COLORS.filter((c) => resolved.some((h) => h.color === c.id));
+  if (resolved.length === 0) return null;
+  return (
+    <div>
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {usedColors.map((c) => (
+          <span key={c.id} className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[11px] font-semibold ${c.chip}`}>
+            <span className={`w-2.5 h-2.5 rounded-full ${c.swatch}`} />
+            {c.meaning}
+          </span>
+        ))}
+      </div>
+      <div className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap max-h-72 overflow-y-auto">
+        {segments.map((seg) =>
+          seg.highlight ? (
+            <span key={seg.key} title={getHighlightColor(seg.highlight.color).meaning} className={`${getHighlightColor(seg.highlight.color).mark} rounded px-0.5`}>
+              {seg.text}
+            </span>
+          ) : (
+            <span key={seg.key}>{seg.text}</span>
+          )
+        )}
+      </div>
+      <p className="text-[11px] text-slate-400 mt-2">💡 When you fix a highlighted part in your writing, its highlight disappears from this copy.</p>
+    </div>
+  );
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -189,10 +226,6 @@ const StudentWritingStudio = ({ studentData, showToast = () => {}, updateStudent
     if (submitting) return;
     if (!title.trim()) { showToast('Give your story a title before handing it in! ✏️', 'error'); return; }
     if (wordCount < 10) { showToast('Write a little more before handing in — aim for at least a paragraph!', 'error'); return; }
-    if (containsProfanity(title) || containsProfanity(content)) {
-      showToast('Please check your language before handing this in. 🙈', 'error');
-      return;
-    }
     setSubmitting(true);
     const firstSubmit = activeStory?.status !== 'submitted' && !activeStory?.submittedAt;
     const ok = await persistStory({
@@ -246,9 +279,19 @@ const StudentWritingStudio = ({ studentData, showToast = () => {}, updateStudent
 
   if (view === 'write' && activeStory && activePrompt && activeType) {
     const feedback = [...(activeStory.feedback || [])].sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+    const hasMarkup = resolveHighlights(content, activeStory.highlights).length > 0;
 
     return (
       <div className="space-y-4">
+        {activeStory.status === 'returned' && (
+          <div className="bg-violet-50 border border-violet-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+            <span className="text-2xl">✏️</span>
+            <p className="text-sm text-violet-800">
+              <span className="font-bold">Your teacher sent this back for another look.</span>{' '}
+              Check their feedback and highlights, make your changes, then hand it in again!
+            </p>
+          </div>
+        )}
         {/* Editor header */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-3 flex items-center justify-between flex-wrap gap-3">
           <button
@@ -336,6 +379,13 @@ const StudentWritingStudio = ({ studentData, showToast = () => {}, updateStudent
                     </div>
                   ))}
                 </div>
+              </SectionCard>
+            )}
+
+            {/* Teacher's coloured highlights */}
+            {hasMarkup && (
+              <SectionCard title="Teacher's highlights" icon="🖍️" defaultOpen>
+                <TeacherMarkupPanel content={content} highlights={activeStory.highlights} />
               </SectionCard>
             )}
 

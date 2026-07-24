@@ -1,5 +1,6 @@
 // components/games/WordImposterGame.js — Word Imposter multiplayer social deduction game
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ─── Word Pairs ───────────────────────────────────────────────────────────────
 const WORD_PAIRS = [
@@ -502,6 +503,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
   const [wordRevealed, setWordRevealed] = useState(false);
   const [clueInput, setClueInput] = useState('');
   const [myVote, setMyVote] = useState(null);
+  const [kickTarget, setKickTarget] = useState(null); // player object pending kick confirmation
   const [fb, setFb] = useState(null);
   const listenerRef = useRef(null);
   const screenRef = useRef(screen);
@@ -534,7 +536,9 @@ const WordImposterGame = ({ studentData, showToast }) => {
       if (data.phase === 'clues' && (cur === 'lobby' || cur === 'wordReveal')) setScreen('clues');
       if (data.phase === 'vote' && cur === 'clues') setScreen('vote');
       if (data.phase === 'results' && cur === 'vote') setScreen('results');
-      if (data.phase === 'lobby' && cur === 'results') {
+      if (data.phase === 'lobby' && cur !== 'lobby') {
+        // Covers the normal results→lobby "play again" flow, and also a host
+        // kick that dropped the room below the 3-player minimum mid-round.
         setScreen('lobby');
         setWordRevealed(false);
         setClueInput('');
@@ -769,6 +773,64 @@ const WordImposterGame = ({ studentData, showToast }) => {
     setMyVote(null);
   }, [fb, roomCode, myId]);
 
+  // ── Host: remove another player from the game ─────────────────────────────
+  const kickWordPlayer = useCallback(async (targetId) => {
+    if (!fb || !isHost || !roomData || !targetId || targetId === myId) return;
+    const livePlayers = Object.values(roomData.players || {});
+    const target = roomData.players?.[targetId];
+    const roomPath = `wordImposterRooms/${roomCode}`;
+    const extraUpdates = {};
+
+    // Clear any votes cast FOR the removed player so the tally (and the
+    // "has everyone voted" check) stays correct with one fewer voter.
+    if (roomData.phase === 'vote') {
+      livePlayers.forEach(p => {
+        if (p.id !== targetId && p.vote === targetId) {
+          extraUpdates[`${roomPath}/players/${p.id}/vote`] = null;
+        }
+      });
+    }
+
+    // Not enough players left to keep playing — end the round back at the lobby.
+    const remainingCount = livePlayers.filter(p => p.id !== targetId).length;
+    if (roomData.phase !== 'lobby' && remainingCount < 3) {
+      extraUpdates[`${roomPath}/phase`] = 'lobby';
+      extraUpdates[`${roomPath}/wordPair`] = null;
+      extraUpdates[`${roomPath}/imposterId`] = null;
+      extraUpdates[`${roomPath}/results`] = null;
+    }
+
+    try {
+      await kickPlayer({
+        database: fb.database,
+        roomPath,
+        targetId,
+        targetName: target?.name,
+        hostName: roomData.players?.[myId]?.name,
+        extraUpdates,
+      });
+      showToast?.(`${target?.name || 'Player'} was removed from the game.`, 'success');
+    } catch {
+      showToast?.('Failed to remove player', 'error');
+    }
+  }, [fb, isHost, roomData, roomCode, myId, showToast]);
+
+  // ── Kick watcher (local player) ────────────────────────────────────────────
+  useEffect(() => {
+    if (!fb || !roomCode) return;
+    const unsub = watchForKick(fb.database, `wordImposterRooms/${roomCode}`, myId, () => {
+      showToast?.('You were removed from the game by the host.', 'error');
+      setScreen('home');
+      setRoomCode('');
+      setRoomData(null);
+      setIsHost(false);
+      setWordRevealed(false);
+      setClueInput('');
+      setMyVote(null);
+    });
+    return () => unsub();
+  }, [fb, roomCode, myId, showToast]);
+
   // ── Derived ────────────────────────────────────────────────────────────────
   const players = roomData ? Object.values(roomData.players || {}) : [];
   const myPlayerData = players.find(p => p.id === myId);
@@ -936,6 +998,9 @@ const WordImposterGame = ({ studentData, showToast }) => {
                   <span className="text-2xl">{p.emoji}</span>
                   <span className="text-white text-xs font-semibold truncate w-full text-center">{p.name}</span>
                   {p.isHost && <span className="text-yellow-400 text-xs">👑 Host</span>}
+                  {isHost && p.id !== myId && (
+                    <KickButton onClick={() => setKickTarget(p)} name={p.name} className="mt-0.5" />
+                  )}
                 </div>
               ))}
               {players.length < 3 && (
@@ -990,6 +1055,14 @@ const WordImposterGame = ({ studentData, showToast }) => {
               <p className="text-white/60">Waiting for the host to start…</p>
             </div>
           )}
+
+          {isHost && kickTarget && (
+            <KickConfirmModal
+              playerName={kickTarget.name}
+              onConfirm={() => { kickWordPlayer(kickTarget.id); setKickTarget(null); }}
+              onCancel={() => setKickTarget(null)}
+            />
+          )}
         </div>
       </div>
     );
@@ -1029,9 +1102,9 @@ const WordImposterGame = ({ studentData, showToast }) => {
                     <div className="bg-red-500/20 rounded-xl px-3 py-1 inline-block mb-3">
                       <span className="text-red-300 text-sm font-bold uppercase tracking-widest">You are the Imposter!</span>
                     </div>
-                    <p className="text-white/60 text-sm mb-4">You don't get the secret word. Bluff your way through!</p>
+                    <p className="text-white/60 text-sm mb-4">You don&apos;t get the secret word. Bluff your way through!</p>
                     <div className="text-4xl font-black text-white mb-1">{myWord}</div>
-                    <p className="text-red-300/70 text-xs mt-2">⚠️ The others have a different word. Don't reveal yours!</p>
+                    <p className="text-red-300/70 text-xs mt-2">⚠️ The others have a different word. Don&apos;t reveal yours!</p>
                   </>
                 ) : (
                   <>
@@ -1039,7 +1112,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
                     <div className="bg-purple-500/20 rounded-xl px-3 py-1 inline-block mb-3">
                       <span className="text-purple-300 text-sm font-bold uppercase tracking-widest">Your Secret Word</span>
                     </div>
-                    <p className="text-white/60 text-sm mb-4">Give a clever one-word clue — not too obvious, but enough for others to know you're legit!</p>
+                    <p className="text-white/60 text-sm mb-4">Give a clever one-word clue — not too obvious, but enough for others to know you&apos;re legit!</p>
                     <div className="text-4xl font-black text-white mb-1">{myWord}</div>
                     <p className="text-purple-300/70 text-xs mt-2">✅ Everyone else (except one imposter) has this word</p>
                   </>
@@ -1053,7 +1126,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
                   onClick={startClues}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-4 rounded-xl text-lg transition-all active:scale-95 hover:from-purple-400 hover:to-pink-400"
                 >
-                  🎤 Everyone's Ready — Start Clues
+                  🎤 Everyone&apos;s Ready — Start Clues
                 </button>
               ) : (
                 <div className="bg-white/10 border border-white/20 rounded-xl p-4 text-center">
@@ -1095,7 +1168,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
           <div className={`rounded-2xl p-4 mb-5 border ${amIImposter ? 'bg-red-900/40 border-red-500/30' : 'bg-purple-900/40 border-purple-500/30'}`}>
             <p className="text-white/50 text-xs uppercase tracking-widest mb-1">Your word</p>
             <p className="text-white font-black text-2xl">{myWord}</p>
-            {amIImposter && <p className="text-red-300 text-xs mt-1">🕵️ You're the imposter — bluff wisely!</p>}
+            {amIImposter && <p className="text-red-300 text-xs mt-1">🕵️ You&apos;re the imposter — bluff wisely!</p>}
           </div>
 
           {/* Clue input */}
@@ -1149,6 +1222,9 @@ const WordImposterGame = ({ studentData, showToast }) => {
                   ) : (
                     <span className="text-white/30 text-sm animate-pulse">thinking…</span>
                   )}
+                  {isHost && p.id !== myId && (
+                    <KickButton onClick={() => setKickTarget(p)} name={p.name} />
+                  )}
                 </div>
               ))}
             </div>
@@ -1163,6 +1239,14 @@ const WordImposterGame = ({ studentData, showToast }) => {
               Skip to Voting (host override)
             </button>
           )}
+
+          {isHost && kickTarget && (
+            <KickConfirmModal
+              playerName={kickTarget.name}
+              onConfirm={() => { kickWordPlayer(kickTarget.id); setKickTarget(null); }}
+              onCancel={() => setKickTarget(null)}
+            />
+          )}
         </div>
       </div>
     );
@@ -1174,8 +1258,8 @@ const WordImposterGame = ({ studentData, showToast }) => {
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-red-950 to-slate-900 p-4 md:p-6">
         <div className="max-w-lg mx-auto">
           <div className="text-center mb-6">
-            <h2 className="text-3xl font-black text-white mb-2">🗳️ Who's the Imposter?</h2>
-            <p className="text-white/50">Tap to cast your vote — you can't vote for yourself!</p>
+            <h2 className="text-3xl font-black text-white mb-2">🗳️ Who&apos;s the Imposter?</h2>
+            <p className="text-white/50">Tap to cast your vote — you can&apos;t vote for yourself!</p>
             <div className="mt-3 bg-white/10 rounded-full px-4 py-1.5 inline-flex items-center gap-2">
               <span className="text-yellow-400 font-bold">{votesSubmitted}</span>
               <span className="text-white/50">/ {players.length} voted</span>
@@ -1193,6 +1277,9 @@ const WordImposterGame = ({ studentData, showToast }) => {
                   <span className="flex-1 text-center bg-white/10 rounded-full px-3 py-1 text-sm text-white/80 font-mono">
                     {p.clue || <span className="text-white/30">—</span>}
                   </span>
+                  {isHost && p.id !== myId && (
+                    <KickButton onClick={() => setKickTarget(p)} name={p.name} />
+                  )}
                 </div>
               ))}
             </div>
@@ -1259,6 +1346,14 @@ const WordImposterGame = ({ studentData, showToast }) => {
               Show Results Now (host override)
             </button>
           )}
+
+          {isHost && kickTarget && (
+            <KickConfirmModal
+              playerName={kickTarget.name}
+              onConfirm={() => { kickWordPlayer(kickTarget.id); setKickTarget(null); }}
+              onCancel={() => setKickTarget(null)}
+            />
+          )}
         </div>
       </div>
     );
@@ -1301,7 +1396,7 @@ const WordImposterGame = ({ studentData, showToast }) => {
                 <p className="text-white/50 text-sm mt-1">
                   Real word: <strong className="text-green-300">{roomData?.wordPair?.realWord}</strong>
                   <span className="mx-2">·</span>
-                  Imposter's card: <strong className="text-red-300">IMPOSTER</strong>
+                  Imposter&apos;s card: <strong className="text-red-300">IMPOSTER</strong>
                 </p>
               </div>
             </div>

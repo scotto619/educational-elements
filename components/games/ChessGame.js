@@ -2,6 +2,7 @@
 // Features: Pawn colour fix · Timed mode · Firebase class leaderboard · Tournament mode
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ─── Chess Engine (pure functions) ────────────────────────────────────────────
 const INIT_BOARD = [
@@ -235,7 +236,7 @@ const ChessLeaderboard = ({ entries, myId }) => (
 );
 
 // ─── Tournament Bracket ────────────────────────────────────────────────────────
-const TournamentBracket = ({ tournament, myId, onPlayMatch }) => {
+const TournamentBracket = ({ tournament, myId, onPlayMatch, isHost, onKickPlayer }) => {
   if (!tournament) return null;
   const { rounds=[], players={}, currentRound=0, winner, status } = tournament;
 
@@ -269,19 +270,26 @@ const TournamentBracket = ({ tournament, myId, onPlayMatch }) => {
               const canJoin = !amP1 && match.gameCode && isMyActiveMatch;
               const canStart = amP1 && !match.gameCode && isMyActiveMatch;
               const waitingForCode = !amP1 && !match.gameCode && isMyActiveMatch;
+              const canKick = isHost && match.p1Id && match.p2Id && match.status!=='finished';
               return (
                 <div key={mIdx} className={`rounded-xl border p-3 text-sm space-y-2
                   ${isMyActiveMatch?'border-amber-400/50 bg-amber-500/10':'border-white/10 bg-slate-800/40'}`}>
                   <div className={`flex items-center gap-1.5 text-xs
                     ${match.winnerId===match.p1Id?'text-yellow-300 font-bold':done?'text-slate-500':'text-slate-300'}`}>
                     <span className="shrink-0">{match.winnerId===match.p1Id?'🏆':'·'}</span>
-                    <span className="truncate">{p1.name||'TBD'}</span>
+                    <span className="truncate flex-1">{p1.name||'TBD'}</span>
+                    {canKick && match.p1Id!==myId && (
+                      <KickButton onClick={()=>onKickPlayer(match,rIdx,mIdx,match.p1Id)} name={p1.name||'this player'} />
+                    )}
                   </div>
                   <div className="border-t border-white/10"/>
                   <div className={`flex items-center gap-1.5 text-xs
                     ${match.winnerId===match.p2Id?'text-yellow-300 font-bold':done?'text-slate-500':'text-slate-300'}`}>
                     <span className="shrink-0">{match.winnerId===match.p2Id?'🏆':'·'}</span>
-                    <span className="truncate">{match.p2Id?p2.name||'TBD':'BYE'}</span>
+                    <span className="truncate flex-1">{match.p2Id?p2.name||'TBD':'BYE'}</span>
+                    {canKick && match.p2Id!==myId && (
+                      <KickButton onClick={()=>onKickPlayer(match,rIdx,mIdx,match.p2Id)} name={p2.name||'this player'} />
+                    )}
                   </div>
                   {done && <p className="text-green-400 text-xs text-center font-bold">✓ Complete</p>}
                   {inProgress && !amInMatch && <p className="text-amber-400 text-xs text-center animate-pulse">⚔ Playing...</p>}
@@ -380,6 +388,10 @@ const ChessGame = ({ studentData, showToast }) => {
   const [tournamentCode, setTournamentCode]       = useState('');
   const [joinTournCode, setJoinTournCode]         = useState('');
   const [tournMatchInfo, setTournMatchInfo]       = useState(null); // {roundIdx,matchIdx}
+
+  // Kick player (host removes another player)
+  const [showKickConfirm, setShowKickConfirm]     = useState(false); // direct room / live match opponent
+  const [tournKickTarget, setTournKickTarget]     = useState(null);  // {roundIdx,matchIdx,targetId,targetName,remainingId,gameCode}
 
   const gameRoom       = useRef(null);
   const tournRoom      = useRef(null);
@@ -515,6 +527,22 @@ const ChessGame = ({ studentData, showToast }) => {
     });
     return ()=>firebase.off(roomRef,'value',unsub);
   },[firebaseReady,firebase,screen,myColor,myId]); // eslint-disable-line
+
+  // ── Watch for being kicked (covers both the direct room and a live tournament
+  //    match, since a tournament match is played through this same chess/{code} room) ──
+  useEffect(()=>{
+    if(!firebaseReady||!firebase||!roomCode) return;
+    const unsubscribeKick = watchForKick(firebase.database, `chess/${roomCode}`, myId, (info)=>{
+      showToast(`You were removed from the game by ${info?.by||'the host'}.`,'info');
+      if(timerRef.current) clearInterval(timerRef.current);
+      gameRoom.current=null; setGameData(null);
+      setSelected(null); setLegalMoves([]); setLastMove(null); setPendingPromo(null);
+      processing.current=false; timeoutFired.current=false;
+      if(tournRoom.current) setScreen('tournament_bracket');
+      else setScreen('menu');
+    });
+    return ()=>unsubscribeKick();
+  },[firebaseReady,firebase,roomCode]); // eslint-disable-line
 
   // ── Firebase tournament listener ───────────────────────────────────────────
   useEffect(()=>{
@@ -687,6 +715,38 @@ const ChessGame = ({ studentData, showToast }) => {
     });
   };
 
+  // ── Kick opponent (host removes the other player from the room/live match) ──
+  const kickOpponent = async () => {
+    setShowKickConfirm(false);
+    if(!firebase||!gameRoom.current||!gameData) return;
+    const opponentEntry = Object.values(gameData.players||{}).find(p=>p.id!==myId);
+    if(!opponentEntry) return;
+    const inProgress = gameData.status==='playing';
+    try{
+      await kickPlayer({
+        database: firebase.database,
+        roomPath: `chess/${gameRoom.current}`,
+        targetId: opponentEntry.id,
+        targetName: opponentEntry.name,
+        hostName: myName,
+        // Mid-game: forfeit the game as a win for the host, reusing the exact
+        // same fields checkmate/resign/timeout already use so the normal
+        // "game over" UI renders correctly — just tagged with a different reason.
+        // Waiting room (no game started yet): just drop them from the lobby.
+        extraUpdates: inProgress ? {
+          [`chess/${gameRoom.current}/status`]:       'finished',
+          [`chess/${gameRoom.current}/result`]:       myColor,
+          [`chess/${gameRoom.current}/resultReason`]: 'kicked',
+          [`chess/${gameRoom.current}/winnerId`]:     myId,
+          [`chess/${gameRoom.current}/winnerName`]:   myName,
+          [`chess/${gameRoom.current}/loserId`]:      opponentEntry.id,
+        } : {
+          [`chess/${gameRoom.current}/playerOrder`]: [myId],
+        },
+      });
+    }catch(e){ showToast('Error removing player','error'); }
+  };
+
   // ── Leave / reset ──────────────────────────────────────────────────────────
   const leaveGame = async () => {
     if(timerRef.current) clearInterval(timerRef.current);
@@ -839,6 +899,38 @@ const ChessGame = ({ studentData, showToast }) => {
       setTournMatchInfo({roundIdx,matchIdx});
       await joinGame(match.gameCode);
     }
+  };
+
+  // ── Tournament: request to kick a player from a specific match (host only) ──
+  const requestKickTournamentPlayer = (match,roundIdx,matchIdx,targetId) => {
+    const remainingId = targetId===match.p1Id ? match.p2Id : match.p1Id;
+    if(!remainingId) return;
+    const targetName = tournamentData?.players?.[targetId]?.name || 'this player';
+    setTournKickTarget({ roundIdx, matchIdx, targetId, targetName, remainingId, gameCode: match.gameCode||null });
+  };
+
+  // ── Tournament: confirm kick — forfeit their match so the remaining player
+  //    advances, reusing the exact same bracket-advancement logic a normal
+  //    match result (or an existing bye) already goes through ──────────────
+  const kickTournamentPlayer = async () => {
+    if(!tournKickTarget||!tournRoom.current) return;
+    const { roundIdx, matchIdx, targetId, targetName, remainingId, gameCode } = tournKickTarget;
+    setTournKickTarget(null);
+    try{
+      await updateTournamentMatch(tournRoom.current, roundIdx, matchIdx, remainingId, false);
+      // Best-effort: if that match already has a live chess room, also mark the
+      // kicked player there so they get an immediate real-time notice if they're
+      // sitting in it (watchForKick picks up the same `chess/{code}` room).
+      if(gameCode && firebase){
+        try{
+          await kickPlayer({
+            database: firebase.database,
+            roomPath: `chess/${gameCode}`,
+            targetId, targetName, hostName: myName,
+          });
+        }catch{}
+      }
+    }catch(e){ showToast('Error removing player','error'); }
   };
 
   // ── Leave tournament ───────────────────────────────────────────────────────
@@ -1064,6 +1156,13 @@ const ChessGame = ({ studentData, showToast }) => {
     const isHost = td?.hostId===myId;
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-950 via-slate-900 to-slate-950 p-4 md:p-8">
+        {tournKickTarget && (
+          <KickConfirmModal
+            playerName={tournKickTarget.targetName}
+            onConfirm={kickTournamentPlayer}
+            onCancel={()=>setTournKickTarget(null)}
+          />
+        )}
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="flex items-center justify-between bg-slate-900/80 backdrop-blur rounded-2xl px-5 py-3 border border-white/10">
             <div className="flex items-center gap-3">
@@ -1103,6 +1202,8 @@ const ChessGame = ({ studentData, showToast }) => {
               tournament={td}
               myId={myId}
               onPlayMatch={playTournamentMatch}
+              isHost={isHost}
+              onKickPlayer={requestKickTournamentPlayer}
             />
           </div>
 
@@ -1136,6 +1237,13 @@ const ChessGame = ({ studentData, showToast }) => {
     const tLabel = TIME_OPTIONS.find(o=>o.seconds===tSecs)?.label || `${tSecs}s`;
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
+        {showKickConfirm && (
+          <KickConfirmModal
+            playerName={Object.values(gameData?.players||{}).find(p=>p.id!==myId)?.name||'this player'}
+            onConfirm={kickOpponent}
+            onCancel={()=>setShowKickConfirm(false)}
+          />
+        )}
         <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}}
           className="bg-slate-900/90 backdrop-blur border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center space-y-6">
           <div>
@@ -1158,6 +1266,9 @@ const ChessGame = ({ studentData, showToast }) => {
                   {pl[pid]?.color==='w'?'White':'Black'}
                 </span>
                 {pid===myId&&<span className="text-green-400 text-xs font-bold bg-green-400/10 px-2 py-0.5 rounded-full">YOU</span>}
+                {isHost&&pid!==myId&&(
+                  <KickButton onClick={()=>setShowKickConfirm(true)} name={pl[pid]?.name||'this player'} />
+                )}
               </div>
             ))}
             {po.length<2&&(
@@ -1210,6 +1321,7 @@ const ChessGame = ({ studentData, showToast }) => {
     const captured = getCaptured(board);
     const timerOn  = !!gameData.timerEnabled;
 
+    const isHost    = gameData?.hostId===myId;
     const myPlayer  = Object.values(players).find(p=>p.id===myId)||{name:myName,color:myColor};
     const oppPlayer = Object.values(players).find(p=>p.id!==myId)||{name:'Opponent'};
     const inCheck   = isInCheck(board,turn);
@@ -1307,6 +1419,9 @@ const ChessGame = ({ studentData, showToast }) => {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">{oppPlayer.color==='w'?'⬜':'⬛'}</span>
             <span className="text-white font-bold text-sm truncate flex-1">{oppPlayer.name}</span>
+            {isHost&&status==='playing'&&oppPlayer.id&&(
+              <KickButton onClick={()=>setShowKickConfirm(true)} name={oppPlayer.name} />
+            )}
             {timerOn && (
               <TimerDisplay
                 ms={oppPlayer.color==='w'?dispW:dispB}
@@ -1410,7 +1525,8 @@ const ChessGame = ({ studentData, showToast }) => {
         reason==='checkmate' ? 'Checkmate!' :
         reason==='stalemate' ? 'Stalemate' :
         reason==='resign'    ? 'Opponent resigned' :
-        reason==='timeout'   ? '⏱ Time ran out!' : 'Game over';
+        reason==='timeout'   ? '⏱ Time ran out!' :
+        reason==='kicked'    ? 'Opponent removed from the game' : 'Game over';
       const inTourn = !!gameData.tournamentCode;
       return (
         <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
@@ -1442,6 +1558,13 @@ const ChessGame = ({ studentData, showToast }) => {
           {pendingPromo&&<PromotionModal color={myColor} onPick={promo=>{executeMove(pendingPromo.fr,pendingPromo.fc,pendingPromo.tr,pendingPromo.tc,promo);setPendingPromo(null);}}/>}
           {status==='finished'&&renderGameResult()}
         </AnimatePresence>
+        {showKickConfirm && (
+          <KickConfirmModal
+            playerName={oppPlayer.name}
+            onConfirm={kickOpponent}
+            onCancel={()=>setShowKickConfirm(false)}
+          />
+        )}
 
         {/* Header */}
         <div className="max-w-5xl mx-auto mb-4 flex items-center justify-between bg-slate-900/80 backdrop-blur rounded-2xl px-4 py-3 border border-white/10">

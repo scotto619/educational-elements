@@ -22,6 +22,7 @@ import {
 import {
   getTextTypes, getTypeConfig, getPrompts, getPromptById, getAccent,
   countWords, timeAgo,
+  HIGHLIGHT_COLORS, getHighlightColor, resolveHighlights, buildHighlightSegments,
 } from './writing-prompts/promptData';
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -297,13 +298,37 @@ const printWorksheet = (prompt, type) => {
 // Student Writing — review inbox
 // ═════════════════════════════════════════════════════════════════════════════
 
-const QUICK_FEEDBACK = [
-  'Fantastic hook — it pulled me straight in! 🎣',
-  'Great use of the word bank vocabulary. 💬',
-  'I love the details you included. ✨',
-  'Can you SHOW the feelings here instead of telling them?',
-  'Check your paragraphs — where could a new one start?',
-  'What a powerful ending! 🌟',
+const QUICK_FEEDBACK_GROUPS = [
+  {
+    label: '⭐ Praise',
+    items: [
+      'Fantastic hook — it pulled me straight in! 🎣',
+      'Great use of the word bank vocabulary. 💬',
+      'I love the details you included. ✨',
+      'What a powerful ending! 🌟',
+      'Your dialogue makes the characters feel real. 🗣️',
+      'Wonderful describing words — I can picture it perfectly. 🎨',
+      'Strong argument — your evidence is really convincing. 💪',
+      'Excellent paragraphing — your ideas are easy to follow. 🧱',
+      'I can see how much effort you put into this. 🏆',
+      'This made me smile — what a great imagination! 😄',
+    ],
+  },
+  {
+    label: '🔧 Next steps',
+    items: [
+      'Can you SHOW the feelings here instead of telling them?',
+      'Check your paragraphs — where could a new one start?',
+      'Read it aloud — can you hear where the full stops go?',
+      'Some capital letters have gone missing — can you find them?',
+      'Can you swap some plain words for word-bank words?',
+      'Your ending feels rushed — can you stretch it out?',
+      'Look at the parts I\'ve highlighted and see what you can improve. 🖍️',
+      'Check the spelling of your tricky words.',
+      'Add some dialogue to bring this scene to life. 💬',
+      'Great start — now push your best idea even further!',
+    ],
+  },
 ];
 
 const storyNeedsReview = (story) => {
@@ -315,6 +340,9 @@ const storyNeedsReview = (story) => {
 };
 
 const StatusBadge = ({ story }) => {
+  if (story.status === 'returned') {
+    return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">Returned to student</span>;
+  }
   if (story.status !== 'submitted') {
     return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">In progress</span>;
   }
@@ -322,6 +350,112 @@ const StatusBadge = ({ story }) => {
     return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">Awaiting feedback</span>;
   }
   return <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Reviewed</span>;
+};
+
+/** Character offsets of the current text selection inside `container`,
+ *  measured against the container's full text content. Returns null when the
+ *  selection is empty or falls outside the container. */
+const getSelectionOffsets = (container) => {
+  if (typeof window === 'undefined') return null;
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+  const range = sel.getRangeAt(0);
+  if (!container.contains(range.startContainer) || !container.contains(range.endContainer)) return null;
+  const pre = range.cloneRange();
+  pre.selectNodeContents(container);
+  pre.setEnd(range.startContainer, range.startOffset);
+  const start = pre.toString().length;
+  const length = range.toString().length;
+  return length > 0 ? { start, end: start + length } : null;
+};
+
+/** Teacher marking view: select text, click a colour to highlight it.
+ *  Click an existing highlight to remove it. */
+const HighlightableStory = ({ content, highlights, onChangeHighlights, showToast }) => {
+  const containerRef = useRef(null);
+  const resolved = useMemo(() => resolveHighlights(content, highlights), [content, highlights]);
+  const segments = useMemo(() => buildHighlightSegments(content, resolved), [content, resolved]);
+
+  const addHighlight = (colorId) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const offsets = getSelectionOffsets(el);
+    if (!offsets) {
+      showToast('Select some of the story text first, then click a colour.', 'info');
+      return;
+    }
+    const overlaps = resolved.some((h) => offsets.start < h.end && offsets.end > h.start);
+    if (overlaps) {
+      showToast('That overlaps an existing highlight — remove it first (click it).', 'info');
+      return;
+    }
+    const entry = {
+      id: `hl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      color: colorId,
+      start: offsets.start,
+      end: offsets.end,
+      text: (content || '').slice(offsets.start, offsets.end),
+      createdAt: new Date().toISOString(),
+    };
+    onChangeHighlights([...resolved, entry]);
+    if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+  };
+
+  const removeHighlight = (id) => {
+    onChangeHighlights(resolved.filter((h) => h.id !== id));
+  };
+
+  return (
+    <div>
+      {/* Colour palette */}
+      <div className="flex items-center gap-2 flex-wrap px-6 py-3 bg-slate-50 border-b border-slate-100">
+        <span className="text-xs font-semibold text-slate-500 mr-1">🖍️ Select text, then click a colour:</span>
+        {HIGHLIGHT_COLORS.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => addHighlight(c.id)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold transition hover:scale-105 ${c.chip}`}
+            title={c.label}
+          >
+            <span className={`w-3 h-3 rounded-full ${c.swatch}`} />
+            {c.label}
+          </button>
+        ))}
+        {resolved.length > 0 && (
+          <button
+            onClick={() => onChangeHighlights([])}
+            className="ml-auto px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-rose-500 transition"
+          >
+            Clear all
+          </button>
+        )}
+      </div>
+
+      {/* Story text */}
+      <div className="px-6 py-5">
+        {content ? (
+          <div ref={containerRef} className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+            {segments.map((seg) =>
+              seg.highlight ? (
+                <span
+                  key={seg.key}
+                  onClick={() => removeHighlight(seg.highlight.id)}
+                  title={`${getHighlightColor(seg.highlight.color).label} — click to remove`}
+                  className={`${getHighlightColor(seg.highlight.color).mark} rounded px-0.5 cursor-pointer hover:ring-2 hover:ring-slate-300`}
+                >
+                  {seg.text}
+                </span>
+              ) : (
+                <span key={seg.key}>{seg.text}</span>
+              )
+            )}
+          </div>
+        ) : (
+          <p className="text-slate-400 italic">Nothing written yet.</p>
+        )}
+      </div>
+    </div>
+  );
 };
 
 const StudentWorkReview = ({ students, showToast }) => {
@@ -432,6 +566,44 @@ const StudentWorkReview = ({ students, showToast }) => {
     setAwarding(false);
   };
 
+  const saveHighlights = async (newHighlights) => {
+    if (!selectedRow) return;
+    try {
+      const { student, story } = selectedRow;
+      await updateDoc(doc(firestore, 'students', student.id), {
+        [`writingStories.${story.id}.highlights`]: newHighlights,
+        [`writingStories.${story.id}.feedbackUpdatedAt`]: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('Writing Studio: error saving highlights', err);
+      showToast('Could not save the highlight. Please try again.', 'error');
+    }
+  };
+
+  const sendBack = async () => {
+    if (!selectedRow) return;
+    const { student, story } = selectedRow;
+    const sure = typeof window !== 'undefined'
+      ? window.confirm(`Send "${story.title || 'this story'}" back to ${student.firstName} to keep working on?`)
+      : false;
+    if (!sure) return;
+    try {
+      const nowIso = new Date().toISOString();
+      await updateDoc(doc(firestore, 'students', student.id), {
+        [`writingStories.${story.id}.status`]: 'returned',
+        [`writingStories.${story.id}.returnedAt`]: nowIso,
+        [`writingStories.${story.id}.feedbackUpdatedAt`]: nowIso,
+        updatedAt: nowIso,
+      });
+      showToast(`Sent back to ${student.firstName} to keep working. ↩️`, 'success');
+      setSelected(null);
+    } catch (err) {
+      console.error('Writing Studio: error sending story back', err);
+      showToast('Could not send the story back. Please try again.', 'error');
+    }
+  };
+
   if (!classId) {
     return (
       <div className="bg-slate-50 border border-slate-200 rounded-2xl p-10 text-center">
@@ -460,7 +632,7 @@ const StudentWorkReview = ({ students, showToast }) => {
           >
             ← All student writing
           </button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm text-slate-500">Quick award:</span>
             {[2, 5, 10].map((n) => (
               <button
@@ -472,6 +644,15 @@ const StudentWorkReview = ({ students, showToast }) => {
                 +{n} XP
               </button>
             ))}
+            {story.status === 'submitted' && (
+              <button
+                onClick={sendBack}
+                className="px-3 py-1.5 rounded-lg bg-violet-100 hover:bg-violet-200 text-violet-800 text-sm font-bold transition"
+                title="Return this story to the student to keep working on — no feedback required"
+              >
+                ↩️ Send back
+              </button>
+            )}
           </div>
         </div>
 
@@ -489,13 +670,12 @@ const StudentWorkReview = ({ students, showToast }) => {
               </div>
               <StatusBadge story={story} />
             </div>
-            <div className="px-6 py-5">
-              {story.content
-                ? story.content.split(/\n+/).map((para, i) => (
-                    <p key={i} className="text-slate-700 leading-relaxed mb-3 whitespace-pre-wrap">{para}</p>
-                  ))
-                : <p className="text-slate-400 italic">Nothing written yet.</p>}
-            </div>
+            <HighlightableStory
+              content={story.content}
+              highlights={story.highlights}
+              onChangeHighlights={saveHighlights}
+              showToast={showToast}
+            />
           </div>
 
           {/* Side: prompt + feedback */}
@@ -523,16 +703,23 @@ const StudentWorkReview = ({ students, showToast }) => {
                   </div>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {QUICK_FEEDBACK.map((qf) => (
-                  <button
-                    key={qf}
-                    onClick={() => sendFeedback(qf)}
-                    disabled={saving}
-                    className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 text-xs font-medium transition disabled:opacity-50"
-                  >
-                    {qf}
-                  </button>
+              <div className="space-y-2.5 mb-3">
+                {QUICK_FEEDBACK_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">{group.label}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.items.map((qf) => (
+                        <button
+                          key={qf}
+                          onClick={() => sendFeedback(qf)}
+                          disabled={saving}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 text-xs font-medium transition disabled:opacity-50"
+                        >
+                          {qf}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
               <textarea

@@ -2,6 +2,7 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ─── Role Definitions (only roles with character images) ─────────────────────
 const ROLES = {
@@ -396,6 +397,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
   const [finalRolesData, setFinalRolesData]         = useState(null);
   const [nightCountdown, setNightCountdown]         = useState(14);
   const [dayCountdown, setDayCountdown]             = useState(300);
+  const [kickTarget, setKickTarget]                 = useState(null); // { id, name } pending host kick confirmation
 
   const roomRef        = useRef(null);
   const hostIntervalRef = useRef(null);
@@ -454,20 +456,41 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       if (data.phase === 'vote' && screen === 'day') {
         setScreen('vote'); setMyVote(null);
       }
-      if (data.phase === 'results' && screen === 'vote') {
+      if (data.phase === 'results' && screen !== 'results') {
+        // Broadened from `screen === 'vote'` so a host-triggered early end (e.g. a kick
+        // that drops the room below 3 players) can jump straight to results from any screen.
         setScreen('results');
         const originalRoles = {};
         Object.entries(data.players || {}).forEach(([id, p]) => { originalRoles[id] = p.originalRole; });
         const { finalRoles } = resolveNightActions(originalRoles, data.centerCards || [], data.nightActions || {});
-        const playerIds = Object.keys(data.players || {});
-        const result = determineWinner(finalRoles, data.votes || {}, playerIds, originalRoles);
         setFinalRolesData(finalRoles);
-        setGameResult(result);
+        if (data.aborted) {
+          // Safety net: the round was cut short (too few players left after a kick) —
+          // show a neutral "game ended early" outcome instead of guessing a winner.
+          setGameResult({ winner: 'aborted', eliminated: [] });
+        } else {
+          const playerIds = Object.keys(data.players || {});
+          const result = determineWinner(finalRoles, data.votes || {}, playerIds, originalRoles);
+          setGameResult(result);
+        }
       }
     });
 
     return () => fb.off(rRef, 'value', unsub);
   }, [roomCode, screen, myId, myOriginalRole, fb]);
+
+  // ── Watch for being kicked by the host ────────────────────────────────────
+  useEffect(() => {
+    if (!fb?.database || !roomCode || !myId) return;
+    const unsub = watchForKick(fb.database, `werewolfRooms/${roomCode}`, myId, () => {
+      showToast?.('You were removed from the game by the host.', 'error');
+      setScreen('menu'); setRoomCode(''); setRoomData(null); setMyOriginalRole(null);
+      setNightResult(null); setNightActionDone(false); setMyVote(null);
+      setGameResult(null); setFinalRolesData(null); setRoleRevealed(false); setRoleVisible(false);
+      setSeerMode(null); setSelectedTargets([]); setNightActionSubStep(null); setWitchPeekedCard(null);
+    });
+    return () => unsub();
+  }, [fb, roomCode, myId, showToast]);
 
   // ── Night countdown (local tick from stepStartTime) ───────────────────────
   useEffect(() => {
@@ -666,6 +689,53 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     await fb.set(fb.ref(fb.database, `werewolfRooms/${roomCode}/votes/${myId}`), targetId);
   }, [fb, myVote, roomCode, myId]);
 
+  // ── Host: remove another player from the game ────────────────────────────
+  const kickWerewolfPlayer = useCallback(async targetId => {
+    if (!isHost || !fb || !roomCode || !roomData) return;
+    const target = roomData.players?.[targetId];
+    const targetName = target?.name || 'Player';
+    const roomPath = `werewolfRooms/${roomCode}`;
+    const extraUpdates = {};
+    const phase = roomData.phase;
+    const remainingCount = Object.keys(roomData.players || {}).filter(id => id !== targetId).length;
+
+    if (['roleReveal', 'night', 'day', 'vote'].includes(phase) && remainingCount < 3) {
+      // Not enough players left for a fair round to continue — end gracefully,
+      // no winner declared, instead of trying to salvage the win-condition logic.
+      extraUpdates[`${roomPath}/phase`] = 'results';
+      extraUpdates[`${roomPath}/aborted`] = true;
+    } else if (phase === 'night') {
+      // If it's currently this player's turn (and no one else shares their role),
+      // skip straight to the next role instead of waiting out the full step timer.
+      const targetRole = target?.originalRole;
+      const activeOrderNow = roomData.activeNightOrder || [];
+      const stepNow = roomData.nightStep ?? 0;
+      const otherSameRole = Object.entries(roomData.players || {})
+        .some(([id, p]) => id !== targetId && p.originalRole === targetRole);
+      if (targetRole && activeOrderNow[stepNow] === targetRole && !otherSameRole) {
+        const nextStep = stepNow + 1;
+        if (nextStep >= activeOrderNow.length) {
+          extraUpdates[`${roomPath}/phase`] = 'day';
+          extraUpdates[`${roomPath}/dayEndTime`] = Date.now() + 300000;
+        } else {
+          extraUpdates[`${roomPath}/nightStep`] = nextStep;
+          extraUpdates[`${roomPath}/stepStartTime`] = Date.now();
+        }
+      }
+    } else if (phase === 'vote') {
+      // Drop the kicked player's own cast vote, and anyone else's vote that targeted them
+      extraUpdates[`${roomPath}/votes/${targetId}`] = null;
+      Object.entries(roomData.votes || {}).forEach(([voterId, votedFor]) => {
+        if (votedFor === targetId) extraUpdates[`${roomPath}/votes/${voterId}`] = null;
+      });
+    }
+
+    await kickPlayer({
+      database: fb.database, roomPath, targetId, targetName,
+      hostName: playerName, extraUpdates,
+    });
+  }, [isHost, fb, roomCode, roomData, playerName]);
+
   const resetToMenu = useCallback(async () => {
     if (roomCode && fb) await fb.remove(fb.ref(fb.database, `werewolfRooms/${roomCode}/players/${myId}`)).catch(() => {});
     setScreen('menu'); setRoomCode(''); setRoomData(null); setMyOriginalRole(null);
@@ -678,7 +748,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
     if (!isHost || !fb) return;
     await fb.update(fb.ref(fb.database, `werewolfRooms/${roomCode}`), {
       phase: 'lobby', centerCards: [], nightActions: {}, votes: {},
-      activeNightOrder: null, rolePool: getRolePoolArray(),
+      activeNightOrder: null, rolePool: getRolePoolArray(), aborted: null,
     });
     // Clear player roles
     const playerIds = Object.keys(roomData?.players || {});
@@ -910,10 +980,13 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
                   <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-white/10">
                     <img src={getRoleImage('villager', p.gender || 'male', 1)} alt="" className="w-full h-full object-cover object-top" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold truncate text-white/80">{p.name}</p>
                     <p className="text-[10px] text-white/30 capitalize">{p.gender || 'male'}{p.isHost ? ' · host' : ''}{p.id === myId ? ' · you' : ''}</p>
                   </div>
+                  {isHost && p.id !== myId && (
+                    <KickButton name={p.name} onClick={() => setKickTarget({ id: p.id, name: p.name })} />
+                  )}
                 </div>
               ))}
             </div>
@@ -963,6 +1036,12 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
         <AnimatePresence>
           {roleInfoModal && <RoleInfoModal roleKey={roleInfoModal} gender={myGender} onClose={() => setRoleInfoModal(null)} />}
         </AnimatePresence>
+
+        {kickTarget && (
+          <KickConfirmModal playerName={kickTarget.name}
+            onConfirm={() => { kickWerewolfPlayer(kickTarget.id); setKickTarget(null); }}
+            onCancel={() => setKickTarget(null)} />
+        )}
       </div>
     );
   }
@@ -1206,8 +1285,13 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
           {/* Players */}
           <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
             {playerList.map(p => (
-              <div key={p.id} className={`flex flex-col items-center gap-1.5 p-2 rounded-xl border
+              <div key={p.id} className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border
                 ${p.id === myId ? 'bg-white/10 border-white/20' : 'bg-white/[0.04] border-white/[0.06]'}`}>
+                {isHost && p.id !== myId && (
+                  <div className="absolute -top-1.5 -right-1.5 z-10">
+                    <KickButton name={p.name} onClick={() => setKickTarget({ id: p.id, name: p.name })} />
+                  </div>
+                )}
                 <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10">
                   <img src={getRoleImage('villager', p.gender || 'male', 1)} alt="" className="w-full h-full object-cover object-top" />
                 </div>
@@ -1223,6 +1307,12 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
             </button>
           )}
         </motion.div>
+
+        {kickTarget && (
+          <KickConfirmModal playerName={kickTarget.name}
+            onConfirm={() => { kickWerewolfPlayer(kickTarget.id); setKickTarget(null); }}
+            onCancel={() => setKickTarget(null)} />
+        )}
       </div>
     );
   }
@@ -1316,6 +1406,7 @@ const WerewolfGame = ({ studentData, showToast, updateStudentData, classData }) 
       villagers: { emoji: '🏘️', title: 'Village Wins!',    sub: 'A werewolf has been hunted down.', color: 'from-green-900/50 to-green-950', border: 'border-green-500/30' },
       werewolves: { emoji: '🐺', title: 'Werewolves Win!', sub: 'The village was deceived.',         color: 'from-red-900/50 to-red-950',   border: 'border-red-500/30' },
       tanner:    { emoji: '😅', title: 'Tanner Wins!',     sub: 'They got what they wanted.',        color: 'from-amber-900/50 to-amber-950', border: 'border-amber-500/30' },
+      aborted:   { emoji: '🚪', title: 'Game Ended Early', sub: 'Not enough players remained to continue.', color: 'from-slate-800/50 to-slate-950', border: 'border-slate-500/30' },
     };
     const bannerInfo = bannerMap[winner] || bannerMap.villagers;
 
@@ -1561,7 +1652,7 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
             <span className="font-bold text-red-200">🐺 {p.name}</span>
           </div>
         ))}
-        {!wolves.length && <p className="text-white/40 text-sm">You're on your own — be careful!</p>}
+        {!wolves.length && <p className="text-white/40 text-sm">You&apos;re on your own — be careful!</p>}
         <p className="text-white/25 text-xs text-center">Press Confirm when ready</p>
       </div>
     );
@@ -1668,7 +1759,7 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
   if (role === 'troublemaker') {
     return (
       <div className="space-y-2">
-        <p className="text-white/50 text-sm">Select two players to swap (you won't see their roles):</p>
+        <p className="text-white/50 text-sm">Select two players to swap (you won&apos;t see their roles):</p>
         {otherPlayers.map(p => <PlayerBtn key={p.id} {...p} />)}
         {selectedTargets.length > 0 && <p className="text-white/30 text-xs text-center">{selectedTargets.length}/2 selected</p>}
       </div>
@@ -1679,7 +1770,7 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
   if (role === 'drunk') {
     return (
       <div className="space-y-2">
-        <p className="text-white/50 text-sm">Pick a center card (you won't know what you become):</p>
+        <p className="text-white/50 text-sm">Pick a center card (you won&apos;t know what you become):</p>
         <div className="flex gap-3 justify-center mt-2">
           {centerCards.map((_, i) => <CenterBtn key={i} index={i} selected={selectedTargets.includes(i)} />)}
         </div>
@@ -1713,7 +1804,7 @@ const NightActionUI = ({ role, players, myId, centerCards, selectedTargets, setS
             <span className="font-bold text-yellow-200">😅 {tanner[1].name}</span>
           </div>
         )}
-        {!tanner && <p className="text-white/40 text-sm">You're on your own — be suspicious!</p>}
+        {!tanner && <p className="text-white/40 text-sm">You&apos;re on your own — be suspicious!</p>}
         <p className="text-white/25 text-xs text-center">Press Confirm when ready</p>
       </div>
     );
@@ -1787,13 +1878,13 @@ const NightResultContent = ({ res, players, centerCards, myGender, myMasonSlot }
     title = '🦹 You Stole a Role!';
     content = (
       <div className="space-y-2">
-        <p className="text-white/50 text-sm">You took {res.targetName}'s card. Your new role:</p>
+        <p className="text-white/50 text-sm">You took {res.targetName}&apos;s card. Your new role:</p>
         {roleCard(res.newRole, myGender, myMasonSlot)}
       </div>
     );
   } else if (res.type === 'troublemaker') {
     title = '🔀 Cards Swapped!';
-    content = <p className="text-amber-300 font-semibold">You swapped <strong>{res.name1}</strong> and <strong>{res.name2}</strong>'s cards. You don't know what they have now.</p>;
+    content = <p className="text-amber-300 font-semibold">You swapped <strong>{res.name1}</strong> and <strong>{res.name2}</strong>&apos;s cards. You don&apos;t know what they have now.</p>;
   } else if (res.type === 'drunk') {
     title = '🍺 You Took a Card!';
     content = <p className="text-orange-300">You took center card {res.index + 1}. You have no idea what you are now — figure it out during the day!</p>;

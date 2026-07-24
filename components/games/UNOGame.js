@@ -1,6 +1,7 @@
 // components/games/UNOGame.js - Full multiplayer UNO (up to 4 players)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ─── Card Data ────────────────────────────────────────────────────────────────
 const COLORS = ['red', 'yellow', 'green', 'blue'];
@@ -218,12 +219,14 @@ const UNOGame = ({ studentData, showToast, classmates }) => {
   const [sortMode,        setSortMode]        = useState('none'); // none | color | value
   const [leaderboard,     setLeaderboard]     = useState([]);
   const [gameData,        setGameData]        = useState(null);
+  const [kickTarget,      setKickTarget]      = useState(null); // { id, name } pending confirm
 
   const [myPlayerId]  = useState(() => studentData?.id || `guest_${Date.now()}`);
   const gameRoom      = useRef(null);
   const isProcessing  = useRef(false); // prevents double-plays
 
   const playerInfo = { id: myPlayerId, name: studentData?.firstName || 'Player' };
+  const isHost      = gameData?.hostId === myPlayerId;
 
   // ── Firebase ──
   useEffect(() => {
@@ -286,11 +289,26 @@ const UNOGame = ({ studentData, showToast, classmates }) => {
             data.winnerId === myPlayerId ? 'success' : 'info');
           recordWin(data.winnerId, data.winnerName, Object.keys(data.players || {}));
           setLeaderboard(JSON.parse(localStorage.getItem('uno_leaderboard') || '[]'));
+        } else {
+          showToast('Not enough players remaining — game ended.', 'info');
         }
       }
     });
     return () => firebase.off(roomRef, 'value', unsub);
   }, [firebaseReady, firebase, screen, myPlayerId]);
+
+  // ── Kick Watcher (local player) ──
+  useEffect(() => {
+    if (!firebaseReady || !firebase || !gameRoom.current) return;
+    const roomPath = `uno/${gameRoom.current}`;
+    const unsub = watchForKick(firebase.database, roomPath, myPlayerId, () => {
+      showToast('You were removed from the game by the host.', 'info');
+      gameRoom.current = null; setGameData(null); setScreen('menu');
+      setJoinCode(''); setRoomCode(''); setSelectedCardId(null);
+      setShowColorPicker(false); isProcessing.current = false;
+    });
+    return () => unsub();
+  }, [firebaseReady, firebase, roomCode]);
 
   // ── Helpers ──
   const genCode = () => Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -308,6 +326,38 @@ const UNOGame = ({ studentData, showToast, classmates }) => {
     let n = ((cur + step) % total + total) % total;
     if (skip) n = ((n + step) % total + total) % total;
     return n;
+  };
+
+  // ── Turn-order recompute after a host kick ──────────────────────────────
+  // Splicing a player out of `playerOrder` shifts everyone after them down
+  // by one array slot, so `currentPlayerIndex` has to be corrected to keep
+  // pointing at the right actual player (or hand off the turn correctly if
+  // it was the kicked player's own turn). Three cases:
+  //   1. Kicked player's slot was BEFORE the current player's slot → the
+  //      current player's absolute position shifted down by one, so
+  //      decrement the index by 1 to keep pointing at the same person.
+  //   2. Kicked player WAS the current player (it was their turn) → their
+  //      turn is simply forfeit; whoever now sits at that same index in the
+  //      shortened array goes next, so do NOT decrement. If the kicked
+  //      player was last in the array this index runs one past the end of
+  //      the new (shorter) array — wrap it back to 0 with modulo.
+  //   3. Kicked player's slot was AFTER the current player → nothing before
+  //      the current player moved, so the index is left untouched.
+  const recomputeTurnAfterKick = (playerOrder, currentPlayerIndex, kickedId) => {
+    const kickedIdx = playerOrder.indexOf(kickedId);
+    const newPlayerOrder = playerOrder.filter(id => id !== kickedId);
+    if (kickedIdx === -1 || newPlayerOrder.length === 0) {
+      return { newPlayerOrder, newCurrentPlayerIndex: 0 };
+    }
+    let newCurrentPlayerIndex;
+    if (kickedIdx < currentPlayerIndex) {
+      newCurrentPlayerIndex = currentPlayerIndex - 1;
+    } else if (kickedIdx === currentPlayerIndex) {
+      newCurrentPlayerIndex = currentPlayerIndex % newPlayerOrder.length; // wrap if they were last
+    } else {
+      newCurrentPlayerIndex = currentPlayerIndex;
+    }
+    return { newPlayerOrder, newCurrentPlayerIndex };
   };
 
   const buildInitialState = (players) => {
@@ -546,6 +596,46 @@ const UNOGame = ({ studentData, showToast, classmates }) => {
     setShowColorPicker(false); isProcessing.current = false;
   };
 
+  // ── Host: remove another player from the game ──
+  const kickTablePlayer = async (targetId) => {
+    if (!gameData || !firebase || !gameRoom.current || !isHost || targetId === myPlayerId) return;
+    const targetName = gameData.players?.[targetId]?.name || targetId;
+    const po = gameData.playerOrder || [];
+    const { newPlayerOrder, newCurrentPlayerIndex } =
+      recomputeTurnAfterKick(po, gameData.currentPlayerIndex ?? 0, targetId);
+
+    const roomPath     = `uno/${gameRoom.current}`;
+    const kickedHand    = gameData.hands?.[targetId] || [];
+    const newDeck       = [...(gameData.deck || []), ...kickedHand]; // cards go back to the draw pile
+
+    const extraUpdates = {
+      [`${roomPath}/playerOrder`]:         newPlayerOrder,
+      [`${roomPath}/currentPlayerIndex`]:  newCurrentPlayerIndex,
+      [`${roomPath}/hands/${targetId}`]:   null,
+      [`${roomPath}/deck`]:                newDeck,
+    };
+
+    if (newPlayerOrder.length < 2) {
+      // Not enough players left to keep the game going — end it gracefully.
+      extraUpdates[`${roomPath}/status`]     = 'finished';
+      extraUpdates[`${roomPath}/winnerId`]   = null;
+      extraUpdates[`${roomPath}/winnerName`] = null;
+    }
+
+    try {
+      await kickPlayer({
+        database: firebase.database,
+        roomPath,
+        targetId,
+        targetName,
+        hostName: playerInfo.name,
+        extraUpdates,
+      });
+    } catch {
+      showToast('Failed to remove player', 'error');
+    }
+  };
+
   // ─────────────────── RENDER ───────────────────────────────────────────────
 
   if (!firebaseReady) {
@@ -699,6 +789,13 @@ const UNOGame = ({ studentData, showToast, classmates }) => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-950 via-slate-900 to-blue-950 p-3 md:p-5 flex flex-col gap-3">
         <AnimatePresence>{showColorPicker && <ColorPicker onPick={handleColorPick} />}</AnimatePresence>
+        {kickTarget && (
+          <KickConfirmModal
+            playerName={kickTarget.name}
+            onConfirm={() => { kickTablePlayer(kickTarget.id); setKickTarget(null); }}
+            onCancel={() => setKickTarget(null)}
+          />
+        )}
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between bg-slate-900/80 backdrop-blur rounded-2xl px-4 py-3 border border-white/10 flex-shrink-0">
@@ -741,6 +838,12 @@ const UNOGame = ({ studentData, showToast, classmates }) => {
                         {p?.name?.[0] || '?'}
                       </div>
                       <span className="text-white font-bold text-sm truncate max-w-[80px]">{p?.name || pid}</span>
+                      {isHost && (
+                        <KickButton
+                          name={p?.name || pid}
+                          onClick={() => setKickTarget({ id: pid, name: p?.name || pid })}
+                        />
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5">
                       {hSize === 1 && (
@@ -878,9 +981,9 @@ const UNOGame = ({ studentData, showToast, classmates }) => {
               className="fixed inset-0 z-40 flex items-center justify-center bg-black/75 backdrop-blur-sm">
               <motion.div initial={{ scale: 0.5, y: 60 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
                 className="bg-slate-900 border border-white/20 rounded-3xl p-10 text-center max-w-sm mx-4 shadow-2xl space-y-5">
-                <div className="text-7xl">{winnerId === myPlayerId ? '🎉' : '😔'}</div>
+                <div className="text-7xl">{winnerId === myPlayerId ? '🎉' : winnerId ? '😔' : '🚪'}</div>
                 <h2 className={`text-4xl font-black ${winnerId === myPlayerId ? 'text-yellow-400' : 'text-slate-300'}`}>
-                  {winnerId === myPlayerId ? 'YOU WIN!' : `${winnerName} Wins!`}
+                  {winnerId === myPlayerId ? 'YOU WIN!' : winnerId ? `${winnerName} Wins!` : 'Not Enough Players'}
                 </h2>
                 {winnerId === myPlayerId && (
                   <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-3">

@@ -1,6 +1,7 @@
 // components/games/BattleshipsGame.js - COMPLETE OVERHAUL v3
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 const GRID_SIZE = 8;
 const COLS = ['A','B','C','D','E','F','G','H'];
@@ -62,6 +63,9 @@ const BattleshipsGame = ({ studentData, showToast }) => {
   const [activeReaction, setActiveReaction] = useState(null);
   const [lastProcessedReactionId, setLastProcessedReactionId] = useState(null);
   const [sunkShips, setSunkShips] = useState([]);
+  const [showKickConfirm, setShowKickConfirm] = useState(false);
+
+  const isHost = gameData?.host === playerInfo.id;
 
   function initEmptyGrid() {
     return Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null).map(() => ({ type: null, hit: false, id: null })));
@@ -120,6 +124,15 @@ const BattleshipsGame = ({ studentData, showToast }) => {
 
     return () => firebase.off(gameRef, 'value', unsubscribe);
   }, [firebaseReady, firebase, gameRoom, gameState, lastProcessedReactionId, sunkShips]);
+
+  useEffect(() => {
+    if (!firebaseReady || !firebase || !gameRoom) return;
+    const unsubscribeKick = watchForKick(firebase.database, `battleships/${gameRoom}`, playerInfo.id, (info) => {
+      showToast(`You were removed from the game by ${info?.by || 'the host'}.`, 'info');
+      resetGame();
+    });
+    return () => unsubscribeKick();
+  }, [firebaseReady, firebase, gameRoom]);
 
   const sendReaction = async (emoji) => {
     setActiveReaction({ emoji, isMine: true, id: Date.now() });
@@ -258,9 +271,31 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     } catch { showToast('Attack failed', 'error'); }
   };
 
+  const kickOpponent = async () => {
+    setShowKickConfirm(false);
+    if (!firebaseReady || !firebase || !gameRoom || !gameData) return;
+    const opponentId = Object.keys(gameData.players || {}).find(id => id !== playerInfo.id);
+    if (!opponentId) return;
+    const opponentName = gameData.players[opponentId]?.name || 'Opponent';
+    try {
+      await kickPlayer({
+        database: firebase.database,
+        roomPath: `battleships/${gameRoom}`,
+        targetId: opponentId,
+        targetName: opponentName,
+        hostName: playerInfo.name,
+        extraUpdates: {
+          [`battleships/${gameRoom}/status`]: 'finished',
+          [`battleships/${gameRoom}/winner`]: playerInfo.id,
+          [`battleships/${gameRoom}/forfeitReason`]: 'kicked',
+        },
+      });
+    } catch { showToast('Error removing player', 'error'); }
+  };
+
   const resetGame = () => {
     setGameState('menu'); setGameRoom(null); setGameData(null); setActiveReaction(null);
-    setLocalGrid(initEmptyGrid()); setCurrentShipIndex(0); setSunkShips([]);
+    setLocalGrid(initEmptyGrid()); setCurrentShipIndex(0); setSunkShips([]); setShowKickConfirm(false);
   };
 
   const endGame = async () => {
@@ -469,7 +504,6 @@ const BattleshipsGame = ({ studentData, showToast }) => {
                           const shipDef = cell.type === 'ship' ? SHIPS.find(s => s.id === cell.id) : null;
                           return (
                             <div key={`p-${r}-${c}`}
-                              style={{ width: 28, height: 28 }}
                               className={`border border-cyan-950/60 relative transition-all cursor-pointer flex items-center justify-center
                                 ${!cell.type || !shipDef
                                   ? isPreview
@@ -523,7 +557,7 @@ const BattleshipsGame = ({ studentData, showToast }) => {
     const isMyTurn = gameData.currentPlayer === playerInfo.id;
     const opponentId = Object.keys(gameData.players).find(id => id !== playerInfo.id);
     const opponentName = gameData.players[opponentId]?.name || 'Enemy';
-    const myFlatBoard = gameData.players[playerInfo.id].board || {};
+    const myFlatBoard = gameData.players[playerInfo.id]?.board || {};
     const oppFlatBoard = opponentId ? (gameData.players[opponentId].board || {}) : {};
     const mySunkCount = getSunkShips(myFlatBoard).length;
 
@@ -599,6 +633,15 @@ const BattleshipsGame = ({ studentData, showToast }) => {
 
     return (
       <div className="max-w-2xl mx-auto">
+        {/* Kick confirmation */}
+        {showKickConfirm && (
+          <KickConfirmModal
+            playerName={opponentName}
+            onConfirm={kickOpponent}
+            onCancel={() => setShowKickConfirm(false)}
+          />
+        )}
+
         {/* Reaction overlay */}
         <AnimatePresence>
           {activeReaction && (
@@ -642,6 +685,9 @@ const BattleshipsGame = ({ studentData, showToast }) => {
             <span className={`text-xs font-bold tracking-wider ${!isMyTurn && gameState === 'playing' ? 'text-red-400' : 'text-slate-500'}`}>
               {!isMyTurn && gameState === 'playing' ? `${opponentName} attacking` : opponentName.toUpperCase()}
             </span>
+            {isHost && gameState === 'playing' && opponentId && (
+              <KickButton onClick={() => setShowKickConfirm(true)} name={opponentName} />
+            )}
           </div>
         </div>
 
@@ -715,7 +761,9 @@ const BattleshipsGame = ({ studentData, showToast }) => {
                 {gameData.winner === playerInfo.id ? 'Victory!' : 'Defeat!'}
               </h3>
               <p className="text-slate-500 text-sm mb-5">
-                {gameData.winner === playerInfo.id ? 'You sank the entire enemy fleet!' : 'Your fleet has been destroyed.'}
+                {gameData.forfeitReason === 'kicked'
+                  ? (gameData.winner === playerInfo.id ? 'You won — the opponent was removed from the game.' : 'You were removed from the game.')
+                  : (gameData.winner === playerInfo.id ? 'You sank the entire enemy fleet!' : 'Your fleet has been destroyed.')}
               </p>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={endGame}

@@ -1,6 +1,7 @@
 // components/games/TicTacToeGame.js - COMPLETE OVERHAUL v3
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 const EMOJI_LIST = ['👍', '😂', '😲', '😠', '🎉', '🔥'];
 
@@ -64,6 +65,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [activeReaction, setActiveReaction] = useState(null);
   const [lastProcessedReactionId, setLastProcessedReactionId] = useState(null);
+  const [showKickConfirm, setShowKickConfirm] = useState(false);
 
   const playerInfo = {
     id: studentData?.id || `player_${Date.now()}`,
@@ -119,20 +121,31 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       }
 
       if (gameState === 'playing' && !winner) {
-        const winResult = checkWinner(processedBoard);
-        if (winResult.winner) {
-          setWinner(winResult);
-          setGameState('finished');
-          if (winResult.winner === playerRole) {
+        if (data.forfeitWinner) {
+          if (data.forfeitWinner === playerRole) {
+            const forfeitResult = { winner: data.forfeitWinner, line: [], reason: data.forfeitReason || 'Opponent was removed from the game.' };
+            setWinner(forfeitResult);
+            setGameState('finished');
             setShowConfetti(true);
             setScores(s => ({ ...s, me: s.me + 1 }));
-            showToast('🏆 You Won!', 'success');
-          } else if (winResult.winner === 'draw') {
-            setScores(s => ({ ...s, draws: s.draws + 1 }));
-            showToast("It's a Draw!", 'info');
-          } else {
-            setScores(s => ({ ...s, opponent: s.opponent + 1 }));
-            showToast('You Lost!', 'error');
+            showToast('🏆 Opponent removed — you win!', 'success');
+          }
+        } else {
+          const winResult = checkWinner(processedBoard);
+          if (winResult.winner) {
+            setWinner(winResult);
+            setGameState('finished');
+            if (winResult.winner === playerRole) {
+              setShowConfetti(true);
+              setScores(s => ({ ...s, me: s.me + 1 }));
+              showToast('🏆 You Won!', 'success');
+            } else if (winResult.winner === 'draw') {
+              setScores(s => ({ ...s, draws: s.draws + 1 }));
+              showToast("It's a Draw!", 'info');
+            } else {
+              setScores(s => ({ ...s, opponent: s.opponent + 1 }));
+              showToast('You Lost!', 'error');
+            }
           }
         }
       }
@@ -143,6 +156,15 @@ const TicTacToeGame = ({ studentData, showToast }) => {
 
     return () => firebase.off(gameRef, 'value', unsubscribe);
   }, [firebaseReady, firebase, gameRoom, playerRole, gameState, winner, isMyTurn, lastProcessedReactionId]);
+
+  useEffect(() => {
+    if (!firebaseReady || !firebase || !gameRoom) return;
+    const unsubscribeKick = watchForKick(firebase.database, `ticTacToe/${gameRoom}`, playerInfo.id, () => {
+      showToast('You were removed from the game by the host.', 'error');
+      resetGame();
+    });
+    return () => unsubscribeKick();
+  }, [firebaseReady, firebase, gameRoom]);
 
   const checkWinner = (b) => {
     b = b.map(c => (c === undefined || c === '' ? null : c));
@@ -220,6 +242,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     setPlayerRole(null); setIsMyTurn(false); setGameData(null); setWinner(null);
     setBoard(Array(9).fill(null)); setActiveReaction(null);
     setShowConfetti(false); setScores({ me: 0, opponent: 0, draws: 0 });
+    setShowKickConfirm(false);
   };
 
   const playAgain = async () => {
@@ -229,7 +252,8 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       const firstPlayer = newGamesPlayed % 2 === 1 ? 'X' : 'O';
       await firebase.update(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`), {
         board: Array(9).fill(null), currentPlayer: firstPlayer,
-        status: 'playing', lastMove: null, gameResetAt: Date.now(), gamesPlayed: newGamesPlayed
+        status: 'playing', lastMove: null, gameResetAt: Date.now(), gamesPlayed: newGamesPlayed,
+        forfeitWinner: null, forfeitReason: null
       });
       setBoard(Array(9).fill(null)); setWinner(null); setShowConfetti(false);
       setGameState('playing'); setIsMyTurn(playerRole === firstPlayer); setActiveReaction(null);
@@ -241,6 +265,26 @@ const TicTacToeGame = ({ studentData, showToast }) => {
       try { await firebase.remove(firebase.ref(firebase.database, `ticTacToe/${gameRoom}`)); } catch {}
     }
     resetGame();
+  };
+
+  const kickOpponent = async (target) => {
+    if (!firebaseReady || !firebase || !gameRoom || !target) { setShowKickConfirm(false); return; }
+    const roomPath = `ticTacToe/${gameRoom}`;
+    try {
+      await kickPlayer({
+        database: firebase.database,
+        roomPath,
+        targetId: target.id,
+        targetName: target.name,
+        hostName: playerInfo.name,
+        extraUpdates: {
+          [`${roomPath}/forfeitWinner`]: playerRole,
+          [`${roomPath}/forfeitReason`]: 'Opponent was removed from the game.',
+          [`${roomPath}/status`]: 'finished'
+        }
+      });
+    } catch { showToast('Failed to remove player', 'error'); }
+    setShowKickConfirm(false);
   };
 
   // LOADING
@@ -374,6 +418,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
     const players = gameData?.players ? Object.values(gameData.players) : [];
     const opponent = players.find(p => p.id !== playerInfo.id);
     const winLine = winner?.line || [];
+    const isHost = gameData?.host === playerInfo.id;
 
     return (
       <div className="max-w-sm mx-auto select-none relative">
@@ -413,7 +458,12 @@ const TicTacToeGame = ({ studentData, showToast }) => {
               <svg viewBox="0 0 24 24" className="w-5 h-5"><circle cx="12" cy="12" r="8" stroke="#f472b6" strokeWidth="2.5" fill="none"/></svg>
             </div>
             <div className="text-right">
-              <div className="text-white font-bold text-sm leading-tight">{opponent?.name || '...'}</div>
+              <div className="text-white font-bold text-sm leading-tight flex items-center gap-1.5 justify-end">
+                {isHost && opponent && gameState === 'playing' && (
+                  <KickButton onClick={() => setShowKickConfirm(true)} name={opponent.name} />
+                )}
+                {opponent?.name || '...'}
+              </div>
               <div className="text-pink-300 font-black text-xl leading-tight">{scores.opponent}</div>
             </div>
           </div>
@@ -547,7 +597,7 @@ const TicTacToeGame = ({ studentData, showToast }) => {
                 {winner.winner === playerRole ? 'You Win!' : winner.winner === 'draw' ? "It's a Draw!" : 'You Lose!'}
               </h3>
               <p className="text-slate-600 text-sm mb-5">
-                {winner.winner === playerRole ? 'Excellent play!' : winner.winner === 'draw' ? 'Evenly matched!' : 'Better luck next round!'}
+                {winner.winner === playerRole ? (winner.reason || 'Excellent play!') : winner.winner === 'draw' ? 'Evenly matched!' : 'Better luck next round!'}
               </p>
               <div className="flex gap-2.5">
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
@@ -564,6 +614,14 @@ const TicTacToeGame = ({ studentData, showToast }) => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {showKickConfirm && opponent && (
+          <KickConfirmModal
+            playerName={opponent.name}
+            onConfirm={() => kickOpponent(opponent)}
+            onCancel={() => setShowKickConfirm(false)}
+          />
+        )}
       </div>
     );
   }

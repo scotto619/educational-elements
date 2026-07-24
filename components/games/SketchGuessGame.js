@@ -12,6 +12,7 @@
 //   strokes/{sid}: { at, color, size, pts: [x0,y0,x1,y1,...] (0–1000 normalized) }
 //   guesses/{gid}: { pid, name, emoji, text|null, correct, at }
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ─── Words (kid-friendly) ─────────────────────────────────────────────────────
 const WORDS = [
@@ -90,8 +91,40 @@ const maskedWord = (word, turnStartAt, turnEndsAt, now) => {
   return letters.map((ch, i) => (ch === ' ' ? '  ' : revealed.has(i) ? ch : '_')).join(' ');
 };
 
+// ── Turn-order recompute after a host kick ──────────────────────────────────
+// Splicing a player out of `drawOrder` shifts everyone after them down by one
+// array slot, so `turnIndex` has to be corrected to keep pointing at the
+// right actual player (or hand off the turn correctly if it was the kicked
+// player's own turn). Three cases:
+//   1. Kicked player's slot was BEFORE the current turn index → the current
+//      drawer's absolute position shifted down by one, so decrement the
+//      index by 1 to keep pointing at the same person.
+//   2. Kicked player WAS the current turn holder → do NOT decrement; whoever
+//      now sits at that same index in the shortened array draws next. If the
+//      kicked player was last in the array this index runs one past the end
+//      of the new (shorter) array — wrap it back with modulo.
+//   3. Kicked player's slot was AFTER the current turn index → nothing
+//      before the current index moved, so it's left untouched.
+const recomputeDrawTurnAfterKick = (drawOrder, turnIndex, kickedId) => {
+  const kickedIndex = drawOrder.indexOf(kickedId);
+  const newDrawOrder = drawOrder.filter((id) => id !== kickedId);
+  if (kickedIndex === -1 || newDrawOrder.length === 0) {
+    return { newDrawOrder, newTurnIndex: 0, wasCurrentDrawer: false };
+  }
+  let newTurnIndex;
+  const wasCurrentDrawer = kickedIndex === turnIndex;
+  if (kickedIndex < turnIndex) {
+    newTurnIndex = turnIndex - 1;
+  } else if (wasCurrentDrawer) {
+    newTurnIndex = turnIndex % newDrawOrder.length; // wrap if they were last
+  } else {
+    newTurnIndex = turnIndex;
+  }
+  return { newDrawOrder, newTurnIndex, wasCurrentDrawer };
+};
+
 // ─── Scoreboard sidebar ───────────────────────────────────────────────────────
-const PlayerList = ({ players, drawerId, turnStartAt }) => {
+const PlayerList = ({ players, drawerId, turnStartAt, isHost, myId, onKick }) => {
   const sorted = useMemo(() => [...players].sort((a, b) => (b.score || 0) - (a.score || 0)), [players]);
   return (
     <div className="space-y-1.5">
@@ -110,6 +143,9 @@ const PlayerList = ({ players, drawerId, turnStartAt }) => {
               {p.id === drawerId && <span className="ml-1">✏️</span>}
             </span>
             <span className="text-yellow-300 font-bold">{p.score || 0}</span>
+            {isHost && p.id !== myId && (
+              <KickButton onClick={() => onKick?.(p)} name={p.name} />
+            )}
           </div>
         );
       })}
@@ -127,6 +163,7 @@ const SketchGuessGame = ({ studentData, showToast }) => {
   const [roomData, setRoomData] = useState(null);
   const [isHost, setIsHost] = useState(false);
   const [fb, setFb] = useState(null);
+  const [kickTarget, setKickTarget] = useState(null); // { id, name } pending confirm
   const [rounds, setRounds] = useState(3);
   const [drawTime, setDrawTime] = useState(80);
 
@@ -194,6 +231,19 @@ const SketchGuessGame = ({ studentData, showToast }) => {
       } catch {}
     };
   }, [fb, roomCode, myId]);
+
+  // ── Kick watcher (local player) ──
+  useEffect(() => {
+    if (!fb || !roomCode) return;
+    const unsub = watchForKick(fb.database, `sketchGuessRooms/${roomCode}`, myId, () => {
+      showToast?.('You were removed from the game by the host.', 'error');
+      setRoomCode('');
+      setRoomData(null);
+      setIsHost(false);
+      setScreen('home');
+    });
+    return () => unsub();
+  }, [fb, roomCode, myId, showToast]);
 
   // ── Create / Join ──
   const createRoom = useCallback(async () => {
@@ -553,6 +603,58 @@ const SketchGuessGame = ({ studentData, showToast }) => {
     setScreen('home');
   }, [fb, roomCode, myId]);
 
+  // ── Host: remove another player from the game ──
+  const kickGuesser = useCallback(async (targetId) => {
+    const rd = roomDataRef.current;
+    if (!fb || !isHost || !rd || !roomCode || targetId === myId) return;
+    const target = rd.players?.[targetId];
+    const roomPath = `sketchGuessRooms/${roomCode}`;
+    const remainingIds = Object.keys(rd.players || {}).filter((id) => id !== targetId);
+    const extraUpdates = {};
+
+    if (rd.phase !== 'lobby' && remainingIds.length < 2) {
+      // Not enough players left to keep the game going — end it gracefully.
+      extraUpdates[`${roomPath}/phase`] = 'gameEnd';
+    } else if (Array.isArray(rd.drawOrder) && rd.drawOrder.includes(targetId)) {
+      const { newDrawOrder, newTurnIndex, wasCurrentDrawer } =
+        recomputeDrawTurnAfterKick(rd.drawOrder, rd.turnIndex || 0, targetId);
+      extraUpdates[`${roomPath}/drawOrder`] = newDrawOrder;
+      extraUpdates[`${roomPath}/turnIndex`] = newTurnIndex;
+
+      if (wasCurrentDrawer && (rd.phase === 'choosing' || rd.phase === 'drawing')) {
+        // The kicked player was mid-turn as the drawer — deal a fresh turn to
+        // whoever slid into their slot right here in the same atomic write
+        // (mirrors beginTurn()), instead of leaving drawerId/turnEndsAt
+        // dangling for the host watchdog to spin on with nobody able to draw.
+        remainingIds.forEach((pid) => {
+          extraUpdates[`${roomPath}/players/${pid}/guessedAt`] = null;
+        });
+        extraUpdates[`${roomPath}/phase`] = 'choosing';
+        extraUpdates[`${roomPath}/drawerId`] = newDrawOrder[newTurnIndex];
+        extraUpdates[`${roomPath}/wordOptions`] = pickWordOptions();
+        extraUpdates[`${roomPath}/word`] = null;
+        extraUpdates[`${roomPath}/chooseEndsAt`] = Date.now() + 20000;
+        extraUpdates[`${roomPath}/strokes`] = null;
+        extraUpdates[`${roomPath}/guesses`] = null;
+        extraUpdates[`${roomPath}/clearAt`] = Date.now();
+        extraUpdates[`${roomPath}/turnSummary`] = null;
+      }
+    }
+
+    try {
+      await kickPlayer({
+        database: fb.database,
+        roomPath,
+        targetId,
+        targetName: target?.name,
+        hostName: rd.players?.[myId]?.name,
+        extraUpdates,
+      });
+    } catch {
+      showToast?.('Failed to remove player', 'error');
+    }
+  }, [fb, isHost, myId, roomCode, showToast]);
+
   // ── Derived ──
   const players = useMemo(() => Object.values(roomData?.players || {}), [roomData?.players]);
   const drawer = roomData?.players?.[roomData?.drawerId];
@@ -644,6 +746,9 @@ const SketchGuessGame = ({ studentData, showToast }) => {
                 <span className="text-2xl">{p.emoji}</span>
                 <span className="text-white font-semibold text-sm truncate">{p.name}</span>
                 {p.isHost && <span className="text-[10px] bg-yellow-400/20 text-yellow-300 font-bold px-1.5 py-0.5 rounded-full ml-auto">HOST</span>}
+                {isHost && p.id !== myId && (
+                  <KickButton onClick={() => setKickTarget(p)} name={p.name} className={p.isHost ? '' : 'ml-auto'} />
+                )}
               </div>
             ))}
           </div>
@@ -684,6 +789,13 @@ const SketchGuessGame = ({ studentData, showToast }) => {
             ← Leave room
           </button>
         </div>
+        {kickTarget && (
+          <KickConfirmModal
+            playerName={kickTarget.name}
+            onConfirm={() => { kickGuesser(kickTarget.id); setKickTarget(null); }}
+            onCancel={() => setKickTarget(null)}
+          />
+        )}
       </div>
     );
   }
@@ -734,7 +846,14 @@ const SketchGuessGame = ({ studentData, showToast }) => {
         <div className="grid grid-cols-1 lg:grid-cols-[200px_1fr_260px] gap-3">
           {/* Players sidebar */}
           <div className="order-2 lg:order-1">
-            <PlayerList players={players} drawerId={roomData?.drawerId} turnStartAt={roomData?.turnStartAt} />
+            <PlayerList
+              players={players}
+              drawerId={roomData?.drawerId}
+              turnStartAt={roomData?.turnStartAt}
+              isHost={isHost}
+              myId={myId}
+              onKick={(p) => setKickTarget(p)}
+            />
           </div>
 
           {/* Canvas area */}
@@ -925,6 +1044,14 @@ const SketchGuessGame = ({ studentData, showToast }) => {
           <span className="text-gray-600"><strong className="text-gray-800">No letters or spelling</strong> in your drawing — pictures only!</span>
         </div>
       </div>
+
+      {kickTarget && (
+        <KickConfirmModal
+          playerName={kickTarget.name}
+          onConfirm={() => { kickGuesser(kickTarget.id); setKickTarget(null); }}
+          onCancel={() => setKickTarget(null)}
+        />
+      )}
     </div>
   );
 };

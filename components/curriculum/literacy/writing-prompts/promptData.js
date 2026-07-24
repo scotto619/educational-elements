@@ -746,6 +746,104 @@ export const PROMPT_SCAFFOLDS = {
       'Close a library, and you close a thousand doors.',
     ],
   },
+  'Persuasive/14': {
+    title: 'Should Students Wear Uniforms?',
+    hook: 'On one path, matching blazers and ties. On the other, everyone in their own style. Which side of the schoolyard are you on?',
+    wordBank: {
+      'Topic words': ['uniform', 'identity', 'equality', 'dress code', 'individuality', 'belonging', 'pride', 'expression'],
+      'Power verbs': ['represent', 'express', 'belong', 'unite', 'restrict', 'choose', 'judge', 'respect'],
+      'Emotive adjectives': ['smart', 'identical', 'fair', 'comfortable', 'strict', 'proud', 'individual', 'practical'],
+    },
+    starters: [
+      'Two schools, two choices: matching blazers or your own style.',
+      'A uniform is more than clothing — it\'s a message.',
+      'Should what you wear to school be your choice, or the school\'s?',
+    ],
+  },
+  'Persuasive/15': {
+    title: 'Ban Junk Food Ads?',
+    hook: 'Giant burgers and doughnuts tower over the street, and every child is pointing at them. Should junk food advertising aimed at kids be banned?',
+    wordBank: {
+      'Topic words': ['advertising', 'junk food', 'billboards', 'health', 'temptation', 'marketing', 'choices', 'childhood'],
+      'Power verbs': ['tempt', 'target', 'bombard', 'persuade', 'protect', 'crave', 'influence', 'ban'],
+      'Emotive adjectives': ['irresistible', 'unhealthy', 'flashy', 'sugary', 'clever', 'harmful', 'everywhere', 'responsible'],
+    },
+    starters: [
+      'Everywhere these children look, a billboard is telling them what to eat.',
+      'Advertisers spend millions targeting kids — and it works.',
+      'If junk food ads didn\'t work on children, companies wouldn\'t pay for them.',
+    ],
+  },
+  'Persuasive/16': {
+    title: 'Vending Machines at School',
+    hook: 'Glowing vending machines packed with fizzy drinks — right beside the overflowing bins and the healthy food stand. Should schools sell this stuff at all?',
+    wordBank: {
+      'Topic words': ['vending machines', 'soft drinks', 'sugar', 'canteen', 'energy', 'nutrition', 'rubbish', 'habits'],
+      'Power verbs': ['sell', 'tempt', 'fuel', 'ban', 'replace', 'choose', 'promote', 'crash'],
+      'Emotive adjectives': ['sugary', 'convenient', 'unhealthy', 'fizzy', 'wasteful', 'nutritious', 'tempting', 'sensible'],
+    },
+    starters: [
+      'Rows of glowing vending machines — right next to the overflowing bins.',
+      'Schools teach healthy eating in class, then sell fizzy drinks in the hallway.',
+      'What we sell at school shows what we really think about student health.',
+    ],
+  },
+  'Persuasive/17': {
+    title: 'Should We Limit Tourists?',
+    hook: 'One side of the mountain is packed shoulder-to-shoulder with visitors; the other shows the ancient city in peace. Should the world\'s wonders limit their crowds?',
+    wordBank: {
+      'Topic words': ['tourism', 'heritage', 'crowds', 'preservation', 'wonder', 'erosion', 'economy', 'generations'],
+      'Power verbs': ['preserve', 'damage', 'crowd', 'restrict', 'protect', 'experience', 'erode', 'respect'],
+      'Emotive adjectives': ['ancient', 'overcrowded', 'sacred', 'fragile', 'breathtaking', 'unspoiled', 'priceless', 'packed'],
+    },
+    starters: [
+      'On the left, a queue of thousands. On the right, the wonder they came to see.',
+      'Machu Picchu survived five hundred years of storms — can it survive us?',
+      'Some places belong to the whole world. That\'s exactly why we must protect them.',
+    ],
+  },
+  'Persuasive/18': {
+    title: 'Who Deserves the Bigger Paycheque?',
+    hook: 'A superstar athlete walks to his sports car through a crowd of cameras. A nurse walks to work through a struggling neighbourhood. Who should society pay more — and why?',
+    wordBank: {
+      'Topic words': ['salary', 'fame', 'athletes', 'nurses', 'value', 'sacrifice', 'community', 'worth'],
+      'Power verbs': ['earn', 'deserve', 'sacrifice', 'entertain', 'heal', 'serve', 'reward', 'compare'],
+      'Emotive adjectives': ['famous', 'tireless', 'wealthy', 'essential', 'glamorous', 'underpaid', 'dedicated', 'fair'],
+    },
+    starters: [
+      'One entertains a stadium; the other saves lives before breakfast.',
+      'We cheer for athletes — but who cheers for nurses?',
+      'What a society pays reveals what it truly values.',
+    ],
+  },
+  'Persuasive/19': {
+    title: 'Should Humans Colonise Mars?',
+    hook: 'Domed cities, rockets and explorers on the red horizon. Is colonising Mars humanity\'s greatest adventure — or a billion-dollar distraction from problems here on Earth?',
+    wordBank: {
+      'Topic words': ['Mars', 'colony', 'exploration', 'astronauts', 'resources', 'technology', 'frontier', 'Earth'],
+      'Power verbs': ['explore', 'colonise', 'invest', 'discover', 'risk', 'pioneer', 'survive', 'dream'],
+      'Emotive adjectives': ['barren', 'daring', 'expensive', 'groundbreaking', 'hostile', 'visionary', 'bold', 'red'],
+    },
+    starters: [
+      'Humanity\'s next great address could be 225 million kilometres away.',
+      'Some say Mars is a dream worth billions. Others say charity begins on Earth.',
+      'Every explorer in history was told it couldn\'t be done.',
+    ],
+  },
+  'Persuasive/20': {
+    title: 'Fix Our Park',
+    hook: 'Half the park is rust, weeds and puddles. The other half shows what it could be: courts, ramps and a whole community outdoors. Persuade your council to act.',
+    wordBank: {
+      'Topic words': ['playground', 'skate park', 'community', 'investment', 'youth', 'facilities', 'safety', 'belonging'],
+      'Power verbs': ['invest', 'rebuild', 'gather', 'belong', 'transform', 'neglect', 'thrive', 'deserve'],
+      'Emotive adjectives': ['rundown', 'vibrant', 'safe', 'welcoming', 'neglected', 'brand-new', 'active', 'proud'],
+    },
+    starters: [
+      'On one side of the fence: rust and puddles. On the other: what our town could be.',
+      'Give young people somewhere to go, and watch what happens.',
+      'A park is never just a park — it\'s where a community grows up.',
+    ],
+  },
 
   // ── Informative ────────────────────────────────────────────────────────────
   'Informative/1': {
@@ -965,6 +1063,67 @@ export function getPromptById(promptId) {
   const sep = String(promptId).lastIndexOf('-');
   const typeId = String(promptId).slice(0, sep);
   return getPrompts(typeId).find((p) => p.id === promptId) || null;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// STORY HIGHLIGHTS (teacher marking colours)
+// ═════════════════════════════════════════════════════════════════════════════
+
+/** Marking colours teachers can paint onto student stories. Shared by the
+ *  teacher review panel and the student "teacher's markup" view so the
+ *  legend always matches. Class names are full literals for Tailwind. */
+export const HIGHLIGHT_COLORS = [
+  { id: 'green', label: 'Love this part', meaning: 'Your teacher loves this part!', mark: 'bg-emerald-200/90 decoration-clone', swatch: 'bg-emerald-300', chip: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  { id: 'yellow', label: 'Check spelling / punctuation', meaning: 'Check the spelling or punctuation here', mark: 'bg-yellow-200/90 decoration-clone', swatch: 'bg-yellow-300', chip: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  { id: 'red', label: 'Change or remove', meaning: 'Change or remove this part', mark: 'bg-rose-200/90 decoration-clone', swatch: 'bg-rose-300', chip: 'bg-rose-100 text-rose-800 border-rose-300' },
+  { id: 'blue', label: 'Add more detail', meaning: 'Add more detail here', mark: 'bg-sky-200/90 decoration-clone', swatch: 'bg-sky-300', chip: 'bg-sky-100 text-sky-800 border-sky-300' },
+];
+
+export const getHighlightColor = (id) => HIGHLIGHT_COLORS.find((c) => c.id === id) || HIGHLIGHT_COLORS[0];
+
+/**
+ * Validate highlight ranges against the current text. Each highlight stores
+ * the exact text it covered; if the story has since been edited, we try to
+ * re-anchor by searching for that text, and silently drop highlights whose
+ * text no longer exists (i.e. the student fixed/changed that part).
+ * Returns non-overlapping ranges sorted by start position.
+ */
+export function resolveHighlights(content, highlights) {
+  const text = content || '';
+  const resolved = [];
+  (highlights || []).forEach((h) => {
+    if (!h || !h.text) return;
+    if (text.slice(h.start, h.end) === h.text) {
+      resolved.push({ ...h });
+      return;
+    }
+    const idx = text.indexOf(h.text);
+    if (idx >= 0) resolved.push({ ...h, start: idx, end: idx + h.text.length });
+  });
+  resolved.sort((a, b) => a.start - b.start || a.end - b.end);
+  const out = [];
+  let lastEnd = -1;
+  resolved.forEach((h) => {
+    if (h.start >= lastEnd) {
+      out.push(h);
+      lastEnd = h.end;
+    }
+  });
+  return out;
+}
+
+/** Split content into plain/highlighted segments for rendering. */
+export function buildHighlightSegments(content, resolved) {
+  const text = content || '';
+  const segments = [];
+  let pos = 0;
+  (resolved || []).forEach((h) => {
+    if (h.start > pos) segments.push({ key: `t${pos}`, text: text.slice(pos, h.start) });
+    segments.push({ key: `h${h.id || h.start}`, text: text.slice(h.start, h.end), highlight: h });
+    pos = h.end;
+  });
+  if (pos < text.length) segments.push({ key: `t${pos}`, text: text.slice(pos) });
+  return segments;
 }
 
 /** Word count that behaves sensibly with empty strings. */

@@ -1,5 +1,6 @@
 // components/games/WordAgentsGame.js — Word Agents: team-based word deduction (Codenames-style)
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { kickPlayer, watchForKick, KickButton, KickConfirmModal } from './shared/kickPlayer';
 
 // ─── Word Bank ────────────────────────────────────────────────────────────────
 const WORD_BANK = [
@@ -93,6 +94,7 @@ const WordAgentsGame = ({ studentData, showToast }) => {
   const [clueWordInput, setClueWordInput] = useState('');
   const [clueNumberInput, setClueNumberInput] = useState(2);
   const [confirmCard, setConfirmCard] = useState(null); // index awaiting tap-to-confirm
+  const [kickTarget, setKickTarget] = useState(null); // player object pending kick confirmation
   const [fb, setFb] = useState(null);
   const screenRef = useRef(screen);
   screenRef.current = screen;
@@ -128,6 +130,22 @@ const WordAgentsGame = ({ studentData, showToast }) => {
     });
     return () => fb.off(rRef, 'value', handler);
   }, [roomCode, fb]);
+
+  // ── Kick watcher (local player) ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!fb || !roomCode || !myId) return;
+    const unsubscribe = watchForKick(fb.database, `wordAgentsRooms/${roomCode}`, myId, () => {
+      showToast?.('You were removed from the game by the host.', 'error');
+      setScreen('home');
+      setRoomCode('');
+      setRoomData(null);
+      setIsHost(false);
+      setClueWordInput('');
+      setConfirmCard(null);
+      setKickTarget(null);
+    });
+    return () => unsubscribe();
+  }, [fb, roomCode, myId, showToast]);
 
   // ── Clear tap-to-confirm whenever the turn or stage changes ────────────────
   useEffect(() => {
@@ -374,6 +392,65 @@ const WordAgentsGame = ({ studentData, showToast }) => {
     setConfirmCard(null);
   }, [fb, roomCode, myId]);
 
+  // ── Kick a player (host) ────────────────────────────────────────────────────
+  const kickAgent = useCallback(async (targetId) => {
+    if (!fb || !roomCode || !roomData || !isHost) return;
+    const target = roomData.players?.[targetId];
+    if (!target) return;
+    const hostPlayer = roomData.players?.[myId];
+    const roomPath = `wordAgentsRooms/${roomCode}`;
+    const extraUpdates = {};
+
+    if (roomData.phase === 'playing' && target.team) {
+      const teammates = Object.values(roomData.players || {})
+        .filter(p => p.id !== targetId && p.team === target.team);
+      const isCurrentTeam = target.team === roomData.currentTeam;
+
+      if (target.role === 'spymaster') {
+        if (isCurrentTeam && roomData.turnStage === 'clue') {
+          // No one can give a clue anymore — promote a teammate, or end the
+          // mission if the team is now empty.
+          const replacement = teammates[0];
+          if (replacement) {
+            extraUpdates[`${roomPath}/players/${replacement.id}/role`] = 'spymaster';
+          } else {
+            const otherTeam = target.team === 'red' ? 'blue' : 'red';
+            extraUpdates[`${roomPath}/phase`] = 'gameover';
+            extraUpdates[`${roomPath}/winner`] = otherTeam;
+            extraUpdates[`${roomPath}/winReason`] = 'forfeit';
+            extraUpdates[`${roomPath}/teamWins/${otherTeam}`] = (roomData.teamWins?.[otherTeam] || 0) + 1;
+          }
+        } else if (teammates.length) {
+          // Spymaster removed off-turn (or mid-guess) — still hand the role
+          // over so the team isn't leaderless next time it's their turn.
+          extraUpdates[`${roomPath}/players/${teammates[0].id}/role`] = 'spymaster';
+        }
+      } else if (isCurrentTeam && roomData.turnStage === 'guess') {
+        const remainingOperatives = teammates.filter(p => p.role === 'operative');
+        if (remainingOperatives.length === 0) {
+          // Last operative on the guessing team — force the turn to advance,
+          // same update shape as the host's "Force End Turn" override.
+          const nextTeam = roomData.currentTeam === 'red' ? 'blue' : 'red';
+          extraUpdates[`${roomPath}/currentTeam`] = nextTeam;
+          extraUpdates[`${roomPath}/turnStage`] = 'clue';
+          extraUpdates[`${roomPath}/clue`] = null;
+          extraUpdates[`${roomPath}/guessesLeft`] = 0;
+        }
+      }
+    }
+
+    await kickPlayer({
+      database: fb.database,
+      roomPath,
+      targetId,
+      targetName: target.name,
+      hostName: hostPlayer?.name,
+      extraUpdates,
+    });
+    addLog(`${target.name} was removed from the mission by the host.`);
+    setKickTarget(null);
+  }, [fb, roomCode, roomData, isHost, myId, addLog]);
+
   // ── Derived ────────────────────────────────────────────────────────────────
   const players = roomData ? Object.values(roomData.players || {}) : [];
   const me = roomData?.players?.[myId];
@@ -534,6 +611,9 @@ const WordAgentsGame = ({ studentData, showToast }) => {
                 {spy.id === myId && (
                   <button onClick={stepDownSpymaster} className="text-white/40 hover:text-white text-xs underline">step down</button>
                 )}
+                {isHost && spy.id !== myId && (
+                  <KickButton onClick={() => setKickTarget(spy)} name={spy.name} />
+                )}
               </div>
             ) : (
               <button
@@ -548,8 +628,11 @@ const WordAgentsGame = ({ studentData, showToast }) => {
           <p className="text-white/50 text-xs uppercase tracking-widest mb-1.5">🕵️ Field Agents</p>
           <div className="flex flex-wrap gap-1.5 mb-3 min-h-[32px]">
             {teamPlayers.filter(p => p.role !== 'spymaster').map(p => (
-              <span key={p.id} className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1 text-xs text-white font-semibold">
+              <span key={p.id} className="inline-flex items-center gap-1 bg-white/10 rounded-full pl-2.5 pr-1 py-1 text-xs text-white font-semibold">
                 {p.emoji} {p.name}{p.id === myId ? ' (you)' : ''}
+                {isHost && p.id !== myId && (
+                  <KickButton onClick={() => setKickTarget(p)} name={p.name} className="ml-1" />
+                )}
               </span>
             ))}
             {teamPlayers.filter(p => p.role !== 'spymaster').length === 0 && (
@@ -592,8 +675,11 @@ const WordAgentsGame = ({ studentData, showToast }) => {
               <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Waiting to pick a team</p>
               <div className="flex flex-wrap gap-1.5">
                 {benchPlayers.map(p => (
-                  <span key={p.id} className="inline-flex items-center gap-1 bg-white/10 rounded-full px-2.5 py-1 text-xs text-white/70 font-semibold">
+                  <span key={p.id} className="inline-flex items-center gap-1 bg-white/10 rounded-full pl-2.5 pr-1 py-1 text-xs text-white/70 font-semibold">
                     {p.emoji} {p.name}{p.id === myId ? ' (you)' : ''}
+                    {isHost && p.id !== myId && (
+                      <KickButton onClick={() => setKickTarget(p)} name={p.name} className="ml-1" />
+                    )}
                   </span>
                 ))}
               </div>
@@ -613,6 +699,14 @@ const WordAgentsGame = ({ studentData, showToast }) => {
               <div className="text-3xl mb-1 animate-pulse">⏳</div>
               <p className="text-white/60 text-sm">Pick a team, then wait for the host to start…</p>
             </div>
+          )}
+
+          {isHost && kickTarget && (
+            <KickConfirmModal
+              playerName={kickTarget.name}
+              onConfirm={() => kickAgent(kickTarget.id)}
+              onCancel={() => setKickTarget(null)}
+            />
           )}
         </div>
       </div>
@@ -818,6 +912,41 @@ const WordAgentsGame = ({ studentData, showToast }) => {
             >
               Force End Turn (host override)
             </button>
+          )}
+
+          {/* Host: manage agents */}
+          {isHost && (
+            <div className="mt-3 bg-white/5 border border-white/10 rounded-2xl p-3">
+              <p className="text-white/40 text-xs uppercase tracking-widest mb-2">🕵️ Manage Agents (host)</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {['red', 'blue'].map(team => (
+                  <div key={team}>
+                    <p className={`text-xs font-bold mb-1 ${team === 'red' ? 'text-red-300' : 'text-blue-300'}`}>{TEAM_META[team].emoji} {TEAM_META[team].name}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {players.filter(p => p.team === team).map(p => (
+                        <span key={p.id} className="inline-flex items-center gap-1 bg-white/10 rounded-full pl-2.5 pr-1 py-1 text-xs text-white font-semibold">
+                          {p.emoji} {p.name}{p.role === 'spymaster' ? ' 🧠' : ''}{p.id === myId ? ' (you)' : ''}
+                          {p.id !== myId && (
+                            <KickButton onClick={() => setKickTarget(p)} name={p.name} className="ml-1" />
+                          )}
+                        </span>
+                      ))}
+                      {players.filter(p => p.team === team).length === 0 && (
+                        <span className="text-white/25 text-xs italic">No agents</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isHost && kickTarget && (
+            <KickConfirmModal
+              playerName={kickTarget.name}
+              onConfirm={() => kickAgent(kickTarget.id)}
+              onCancel={() => setKickTarget(null)}
+            />
           )}
         </div>
       </div>
